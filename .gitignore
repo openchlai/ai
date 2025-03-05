@@ -1,2 +1,3 @@
 venv
 ai/logs
+.env
