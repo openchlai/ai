@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     # Local apps
     'api',
     'training',
+    'audio_data_preparation',
 ]
 
 # ... rest of the default settings ...
@@ -81,6 +82,14 @@ LOGGING = {
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [],
     'DEFAULT_PERMISSION_CLASSES': [],
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ],
+    'DEFAULT_PARSER_CLASSES': [
+        'rest_framework.parsers.JSONParser',
+        'rest_framework.parsers.FormParser',
+        'rest_framework.parsers.MultiPartParser'
+    ]
 }
 
 # Add the MIDDLEWARE section (you may already have part of this)
@@ -130,3 +139,13 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+AUDIO_STORAGE_PATH = '/mnt/shared'
+PROCESSED_AUDIO_PATH = os.path.join(AUDIO_STORAGE_PATH, 'processed')
+DIARIZED_AUDIO_PATH = os.path.join(AUDIO_STORAGE_PATH, 'diarized')
+CHUNKED_AUDIO_PATH = os.path.join(AUDIO_STORAGE_PATH, 'chunks')
+
+# Ensure directories exist
+os.makedirs(PROCESSED_AUDIO_PATH, exist_ok=True)
+os.makedirs(DIARIZED_AUDIO_PATH, exist_ok=True)
+os.makedirs(CHUNKED_AUDIO_PATH, exist_ok=True)
