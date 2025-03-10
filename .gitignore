@@ -1,3 +1,6 @@
 venv
 ai/logs
 .env
+ai/*/__pycache__
+ai/*/*/__pycache__
+ai/db.sqlite3
