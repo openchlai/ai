@@ -3,12 +3,17 @@
 import os
 import uuid
 import threading
+import traceback
+import logging
 from django.utils import timezone
 from django.db import transaction
 from .models import AudioProcessingTask
 from .utils.audio_cleanup import preprocess_audio
 from .utils.speaker_diarization import perform_diarization
 from .utils.audio_chunking import chunk_audio_files
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 def generate_task_id():
     """Generate a unique task ID"""
@@ -71,7 +76,7 @@ def process_task(task_id):
     try:
         task = AudioProcessingTask.objects.get(task_id=task_id)
     except AudioProcessingTask.DoesNotExist:
-        print(f"Task {task_id} not found")
+        logger.error(f"Task {task_id} not found")
         return
     
     # Mark as processing
@@ -88,14 +93,24 @@ def process_task(task_id):
         else:
             raise ValueError(f"Unknown task type: {task.task_type}")
         
-        # Mark as completed with results
-        task.update_status('completed', output_path=result['output_path'], metadata=result)
+        # Check if the result indicates an error
+        if result.get('status') == 'error':
+            task.update_status('failed', error_message=result.get('error', 'Unknown error'), 
+                                metadata={'error_details': result})
+        else:
+            # Mark as completed with results
+            task.update_status('completed', output_path=result['output_path'], metadata=result)
         
     except Exception as e:
-        # Mark as failed with error message
+        # Get full traceback for better debugging
         error_message = str(e)
-        print(f"Error processing task {task_id}: {error_message}")
-        task.update_status('failed', error_message=error_message)
+        error_traceback = traceback.format_exc()
+        logger.error(f"Error processing task {task_id}: {error_message}")
+        logger.error(f"Traceback: {error_traceback}")
+        
+        # Mark as failed with error message
+        task.update_status('failed', error_message=error_message, 
+                         metadata={'error_traceback': error_traceback})
 
 def process_preprocessing_task(task):
     """
@@ -117,12 +132,18 @@ def process_preprocessing_task(task):
     noise_reduction = params.get('noise_reduction', 0.3)
     normalize = params.get('normalize', True)
     
+    logger.info(f"Running preprocessing on {task.input_path}")
+    
     # Run preprocessing
     result = preprocess_audio(
         task.input_path,
         noise_reduction=noise_reduction,
         normalize=normalize
     )
+    
+    # Ensure result has status field
+    if 'status' not in result:
+        result['status'] = 'success'
     
     return result
 
@@ -145,6 +166,8 @@ def process_diarization_task(task):
     # Extract parameters
     min_speakers = params.get('min_speakers', 2)
     max_speakers = params.get('max_speakers', 2)
+    
+    logger.info(f"Running diarization on {task.input_path} with min_speakers={min_speakers}, max_speakers={max_speakers}")
     
     # Run diarization
     result = perform_diarization(
@@ -177,6 +200,8 @@ def process_chunking_task(task):
     overlap = params.get('overlap', 2.0)
     min_chunk = params.get('min_chunk', 1.0)
     
+    logger.info(f"Running chunking on {task.input_path}")
+    
     # Run chunking
     result = chunk_audio_files(
         task.input_path,
@@ -185,5 +210,9 @@ def process_chunking_task(task):
         overlap=overlap,
         min_chunk=min_chunk
     )
+    
+    # Ensure result has status field
+    if 'status' not in result:
+        result['status'] = 'success'
     
     return result

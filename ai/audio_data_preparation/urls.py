@@ -17,13 +17,3 @@ urlpatterns = [
     path('status/', TaskStatusView.as_view(), name='task-status'),
     path('tasks/', TaskListView.as_view(), name='task-list'),
 ]
-
-# audio_processing_api/urls.py
-
-from django.contrib import admin
-from django.urls import path, include
-
-urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('api/audio/', include('audio_data_preparation.urls')),
-]

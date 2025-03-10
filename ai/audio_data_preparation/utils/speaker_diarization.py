@@ -5,39 +5,91 @@ import json
 import numpy as np
 import librosa
 import soundfile as sf
-from pyannote.audio import Pipeline
 import torch
 import uuid
+import logging
 from django.conf import settings
 
+# Configure logging
+logger = logging.getLogger(__name__)
+
+# Global pipeline instance (singleton)
+_PIPELINE = None
+
+def get_diarization_pipeline():
+    """
+    Get or initialize the speaker diarization pipeline.
+    Uses a singleton pattern to ensure the model is loaded only once.
+    
+    Returns:
+    --------
+    Pipeline
+        The initialized diarization pipeline, or None if initialization failed
+    """
+    global _PIPELINE
+    
+    if _PIPELINE is not None:
+        return _PIPELINE
+    
+    # Get token from settings or environment
+    token = getattr(settings, 'HUGGINGFACE_TOKEN', os.environ.get('HUGGINGFACE_TOKEN'))
+    if not token:
+        logger.error("No Hugging Face token configured. Set HUGGINGFACE_TOKEN in settings or environment.")
+        return None
+    
+    # Set environment variables
+    os.environ["HUGGINGFACE_TOKEN"] = token
+    os.environ["HF_TOKEN"] = token
+    
+    try:
+        # Suppress specific warnings about version mismatches
+        import warnings
+        warnings.filterwarnings("ignore", message="Model was trained with")
+        
+        # Choose device
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        logger.info(f"Loading diarization model on {device}...")
+        
+        # Import here to ensure environment is set
+        from pyannote.audio import Pipeline
+        
+        # Load the pipeline
+        pipeline = Pipeline.from_pretrained(
+            "pyannote/speaker-diarization",
+            use_auth_token=token
+        )
+        
+        # Move to device
+        pipeline = pipeline.to(device)
+        
+        # Store in global variable
+        _PIPELINE = pipeline
+        logger.info("Diarization model loaded successfully!")
+        return pipeline
+    
+    except Exception as e:
+        logger.error(f"Error loading diarization model: {e}")
+        logger.error("\nTroubleshooting steps:")
+        logger.error("1. Make sure your token has proper permissions")
+        logger.error("2. Ensure you've accepted the model terms at: https://huggingface.co/pyannote/speaker-diarization")
+        logger.error("3. Check your internet connection")
+        return None
+
 class SpeakerDiarizer:
-    def __init__(self, model_name="pyannote/speaker-diarization@2.1", device=None):
+    def __init__(self, device=None):
         """
         Initialize the speaker diarization pipeline.
         
         Parameters:
         -----------
-        model_name : str
-            The name of the pretrained diarization model to use
         device : str
             Device to run the model on ('cuda' or 'cpu'), if None, will use CUDA if available
         """
-        if device is None:
-            device = "cuda" if torch.cuda.is_available() else "cpu"
+        # Get the pipeline
+        self.pipeline = get_diarization_pipeline()
         
-        print(f"Loading diarization model on {device}...")
-        try:
-            self.pipeline = Pipeline.from_pretrained(model_name, use_auth_token=False)
-            self.pipeline = self.pipeline.to(torch.device(device))
-            print("Model loaded successfully!")
-        except Exception as e:
-            print(f"Error loading model: {e}")
-            print("\nNote: You may need to obtain an access token from HuggingFace:")
-            print("1. Create an account at https://huggingface.co/")
-            print("2. Create an access token at https://huggingface.co/settings/tokens")
-            print("3. Run 'huggingface-cli login' and enter your token")
-            print("4. Or set environment variable 'export HUGGINGFACE_TOKEN=your_token'")
-            raise
+        if self.pipeline is None:
+            raise RuntimeError("Failed to initialize diarization pipeline")
 
     def diarize(self, audio_file, min_speakers=2, max_speakers=2):
         """
@@ -57,7 +109,7 @@ class SpeakerDiarizer:
         dict
             Diarization results containing segments with speaker labels
         """
-        print(f"Diarizing {audio_file}...")
+        logger.info(f"Diarizing {audio_file}...")
         
         # Apply diarization
         diarization = self.pipeline(
@@ -70,10 +122,10 @@ class SpeakerDiarizer:
         segments = []
         for turn, _, speaker in diarization.itertracks(yield_label=True):
             segments.append({
-                'start': turn.start,
-                'end': turn.end,
+                'start': float(turn.start),
+                'end': float(turn.end),
                 'speaker': speaker,
-                'duration': turn.end - turn.start
+                'duration': float(turn.end - turn.start)
             })
         
         # Sort segments by start time
@@ -121,7 +173,7 @@ class SpeakerDiarizer:
         os.makedirs(output_dir, exist_ok=True)
         
         # Load the audio file
-        print(f"Loading audio file {audio_file}...")
+        logger.info(f"Loading audio file {audio_file}...")
         audio, sr = librosa.load(audio_file, sr=None)
         audio_duration = len(audio) / sr
         
@@ -148,7 +200,7 @@ class SpeakerDiarizer:
         # Create timeline-preserved audio for each speaker
         output_info = {}
         
-        print("Creating timeline-preserved audio files for each speaker...")
+        logger.info("Creating timeline-preserved audio files for each speaker...")
         for speaker in speakers:
             # Create a silent audio array of the same length as the original
             speaker_audio = np.zeros_like(audio)
@@ -182,7 +234,7 @@ class SpeakerDiarizer:
                 'segments': speaker_segments[speaker]
             }
             
-            print(f"Created {output_path} ({audio_duration:.2f} seconds)")
+            logger.info(f"Created {output_path} ({audio_duration:.2f} seconds)")
         
         return output_info
 
@@ -219,39 +271,50 @@ def perform_diarization(audio_path, output_dir=None, min_speakers=2, max_speaker
     result_dir = os.path.join(output_dir, f"{base_filename}_{file_id}")
     os.makedirs(result_dir, exist_ok=True)
     
-    # Initialize diarizer
-    diarizer = SpeakerDiarizer()
+    try:
+        # Initialize diarizer
+        diarizer = SpeakerDiarizer()
+        
+        # Perform diarization
+        diarization_result = diarizer.diarize(
+            audio_path,
+            min_speakers=min_speakers,
+            max_speakers=max_speakers
+        )
+        
+        # Save diarization results
+        json_output = os.path.join(result_dir, "diarization_result.json")
+        with open(json_output, 'w') as f:
+            json.dump(diarization_result, f, indent=2)
+        
+        # Create timeline-preserved audio files for each speaker
+        speaker_files = diarizer.create_timeline_preserved_audio(
+            audio_path, 
+            diarization_result,
+            result_dir
+        )
+        
+        # Prepare output details
+        speaker_paths = {}
+        for speaker, info in speaker_files.items():
+            speaker_paths[speaker] = info['path']
+        
+        output_details = {
+            'output_path': result_dir,
+            'diarization_json': json_output,
+            'speaker_count': len(speaker_paths),
+            'speaker_paths': speaker_paths,
+            'original_audio': audio_path,
+            'status': 'success'
+        }
+        
+        return output_details
     
-    # Perform diarization
-    diarization_result = diarizer.diarize(
-        audio_path,
-        min_speakers=min_speakers,
-        max_speakers=max_speakers
-    )
-    
-    # Save diarization results
-    json_output = os.path.join(result_dir, "diarization_result.json")
-    with open(json_output, 'w') as f:
-        json.dump(diarization_result, f, indent=2)
-    
-    # Create timeline-preserved audio files for each speaker
-    speaker_files = diarizer.create_timeline_preserved_audio(
-        audio_path, 
-        diarization_result,
-        result_dir
-    )
-    
-    # Prepare output details
-    speaker_paths = {}
-    for speaker, info in speaker_files.items():
-        speaker_paths[speaker] = info['path']
-    
-    output_details = {
-        'output_path': result_dir,
-        'diarization_json': json_output,
-        'speaker_count': len(speaker_paths),
-        'speaker_paths': speaker_paths,
-        'original_audio': audio_path
-    }
-    
-    return output_details
+    except Exception as e:
+        logger.error(f"Error in diarization process: {str(e)}")
+        return {
+            'output_path': result_dir,
+            'error': str(e),
+            'status': 'error',
+            'original_audio': audio_path
+        }
