@@ -19,7 +19,7 @@ def generate_task_id():
     """Generate a unique task ID"""
     return str(uuid.uuid4())
 
-def create_task(task_type, input_path, **params):
+def create_task(task_type, project_id, input_path, **params):
     """
     Create a new audio processing task.
     
@@ -27,6 +27,8 @@ def create_task(task_type, input_path, **params):
     -----------
     task_type : str
         Type of task ('preprocessing', 'diarization', or 'chunking')
+    project_id : str
+        ID of the project associated with the task
     input_path : str
         Path to the input audio file
     **params : dict
@@ -42,6 +44,7 @@ def create_task(task_type, input_path, **params):
     with transaction.atomic():
         task = AudioProcessingTask.objects.create(
             task_id=task_id,
+            project_id=project_id,
             task_type=task_type,
             input_path=input_path,
             status='pending',

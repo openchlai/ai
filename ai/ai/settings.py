@@ -150,3 +150,8 @@ CHUNKED_AUDIO_PATH = os.path.join(AUDIO_STORAGE_PATH, 'chunks')
 os.makedirs(PROCESSED_AUDIO_PATH, exist_ok=True)
 os.makedirs(DIARIZED_AUDIO_PATH, exist_ok=True)
 os.makedirs(CHUNKED_AUDIO_PATH, exist_ok=True)
+
+S3_SERVER_BASE_URL = 'http://127.0.0.1:8000/api'
+AUTH_ENDPOINT = f"{S3_SERVER_BASE_URL}/auth/staff-token/"
+AUTH_WHATSAPP = '2547001122336'
+AUTH_PASSWORD = 'your-secure-password'

@@ -22,6 +22,7 @@ class AudioProcessingTask(models.Model):
     )
     
     task_id = models.CharField(max_length=100, unique=True)
+    project_id = models.UUIDField()
     task_type = models.CharField(max_length=20, choices=TASK_TYPES)
     input_path = models.CharField(max_length=255)
     output_path = models.CharField(max_length=255, blank=True, null=True)
