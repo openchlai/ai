@@ -61,10 +61,12 @@ class SpeakerDiarizationView(APIView):
         serializer = SpeakerDiarizationRequestSerializer(data=request.data)
         if serializer.is_valid():
             audio_path = serializer.validated_data["audio_path"]
+            project_id = request.data.get("project_id")
 
             # Create task
             task = create_task(
                 "diarization",
+                project_id,
                 audio_path,
                 min_speakers=serializer.validated_data.get("min_speakers", 2),
                 max_speakers=serializer.validated_data.get("max_speakers", 2),
@@ -97,10 +99,12 @@ class AudioChunkingView(APIView):
         serializer = AudioChunkingRequestSerializer(data=request.data)
         if serializer.is_valid():
             audio_path = serializer.validated_data["audio_path"]
+            project_id = request.data.get("project_id")
 
             # Create task
             task = create_task(
                 "chunking",
+                project_id,
                 audio_path,
                 diarization_result=serializer.validated_data.get("diarization_result"),
                 max_length=serializer.validated_data.get("max_length", 10.0),

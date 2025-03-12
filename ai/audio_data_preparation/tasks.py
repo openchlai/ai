@@ -101,6 +101,7 @@ def process_task(task_id):
             task.update_status('failed', error_message=result.get('error', 'Unknown error'), 
                                 metadata={'error_details': result})
         else:
+            print(result)
             # Mark as completed with results
             task.update_status('completed', output_path=result['output_path'], metadata=result)
         
