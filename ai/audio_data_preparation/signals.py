@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 S3_SERVER_BASE_URL = getattr(settings, 'S3_SERVER_BASE_URL')
 PROCESSED_AUDIO_ENDPOINT = f"{S3_SERVER_BASE_URL}/transcriptions/processed-audio-files/"
 DIARIZED_AUDIO_ENDPOINT = f"{S3_SERVER_BASE_URL}/transcriptions/diarized-audio-files/"
+CHUCKED_AUDIO_ENDPOINT = f"{S3_SERVER_BASE_URL}/transcriptions/audio-chunks/"
 
 @receiver(post_save, sender=AudioProcessingTask)
 def handle_preprocessing_task_completion(sender, instance, **kwargs):
@@ -45,7 +46,6 @@ def handle_preprocessing_task_completion(sender, instance, **kwargs):
             'processed_file': rel_path,
             'file_size': metadata['file_size'],
             'duration': metadata['duration'],
-            'is_diarized': False,  # Set to True if this was a diarization task
         }
         
         logger.info(f"Sending request to create ProcessedAudioFile with data: {request_data}")
@@ -124,7 +124,87 @@ def handle_diarization_task_completion(sender, instance, **kwargs):
             else:
                 logger.error(f"Failed to create DiarizedAudioFile for speaker {speaker_id} in task {instance.task_id}")
 
+@receiver(post_save, sender=AudioProcessingTask)
+def handle_chunking_task_completion(sender, instance, **kwargs):
+    """
+    Signal handler to process completed chunking tasks.
+    When a chunking task is completed successfully and has no errors,
+    this will create AudioChunk objects for each chunk on the S3 server.
+    """
+    # Check if this is a completed chunking task with no errors
+    if (instance.status == 'completed' and 
+        instance.error_message is None and 
+        instance.task_type == 'chunking' and
+        instance.metadata):
+        
+        logger.info(f"Processing completed chunking task: {instance.task_id}")
+        
+        # Extract the metadata which contains chunk paths
+        metadata = instance.metadata
+        
+        # Ensure we have the expected metadata structure
+        if not ('chunks' in metadata and 
+                'speaker' in metadata and 
+                metadata.get('status') == 'success'):
+            logger.error(f"Invalid metadata format for chunking task {instance.task_id}")
+            return
+        
+        # Get speaker information from metadata
+        speaker = metadata.get('speaker', '')
+        
+        # Process each audio chunk
+        for chunk in metadata['chunks']:
+            logger.info(f"Processing chunk {chunk.get('chunk_id')} with path {chunk.get('path')}")
+            
+            # Extract path and duration
+            chunk_path = chunk.get('path')
+            duration = float(chunk.get('duration', 0))
+            
+            # Skip if missing essential data
+            if not chunk_path:
+                logger.warning(f"Missing path for chunk in task {instance.task_id}")
+                continue
+            
+            # Get additional metadata from the audio file if needed
+            try:
+                chunk_metadata = get_audio_metadata(chunk_path)
+                # If duration wasn't in the JSON, try to get it from the file
+                if duration == 0 and 'duration' in chunk_metadata:
+                    duration = chunk_metadata['duration']
+            except Exception as e:
+                logger.warning(f"Error getting metadata for chunk {chunk_path}: {str(e)}")
+                # Continue with available information
+            
+            # Convert to relative path for storage
+            rel_chunk_path = convert_to_relative_path(chunk_path)
+            
+            # Prepare the request data
+            request_data = {
+                'chunk_file': rel_chunk_path,
+                'duration': duration,
+                # Default values for optional fields
+                # 'gender': 'not_sure',
+                # 'locale': 'EN',
+                # Additional metadata that might be useful
+                # 'speaker_id': speaker,
+                # 'start_time': float(chunk.get('start', 0)),
+                # 'end_time': float(chunk.get('end', 0)),
+                # 'chunk_id': chunk.get('chunk_id', '')
+            }
+            
+            logger.info(f"Sending request to create AudioChunk with data: {request_data}")
 
+            # Send the request to create an AudioChunk
+            success, response = send_api_request(
+                CHUCKED_AUDIO_ENDPOINT, 
+                request_data,
+                instance.project_id
+            )
+            
+            if success:
+                logger.info(f"Successfully created AudioChunk for {chunk.get('chunk_id')} in task {instance.task_id}")
+            else:
+                logger.error(f"Failed to create AudioChunk for {chunk.get('chunk_id')} in task {instance.task_id}")
 
 
 # Initialize by logging in when the module is loaded

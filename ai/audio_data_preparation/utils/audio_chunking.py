@@ -244,7 +244,7 @@ def chunk_audio_files(audio_path, diarization_json=None, output_dir=None,
                 
                 # Save chunk info
                 info = {
-                    'output_dir': chunk_dir,
+                    'output_path': chunk_dir,
                     'original_audio': audio_path,
                     'speaker': speaker,
                     'chunks': chunks,
@@ -306,7 +306,7 @@ def chunk_audio_files(audio_path, diarization_json=None, output_dir=None,
         
         # Save combined chunk info
         info = {
-            'output_dir': chunk_dir,
+            'output_path': chunk_dir,
             'original_audio': audio_path,
             'diarization_json': diarization_json,
             'chunks': all_chunks,
@@ -380,7 +380,7 @@ def chunk_audio_files(audio_path, diarization_json=None, output_dir=None,
         
         # Save combined chunk info
         info = {
-            'output_dir': chunk_dir,
+            'output_path': chunk_dir,
             'original_audio': audio_path,
             'diarization_output': diarization_output['output_path'],
             'diarization_json': diarization_output['diarization_json'],

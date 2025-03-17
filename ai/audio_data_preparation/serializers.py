@@ -52,7 +52,7 @@ class SpeakerDiarizationRequestSerializer(serializers.Serializer):
 class AudioChunkingRequestSerializer(serializers.Serializer):
     """Serializer for audio chunking request"""
     audio_path = serializers.CharField(max_length=255)
-    diarization_result = serializers.CharField(required=False)
+    diarization_result = serializers.CharField(required=True)
     
     # Optional chunking parameters
     max_length = serializers.FloatField(required=False, default=10.0)
@@ -67,7 +67,7 @@ class AudioChunkingRequestSerializer(serializers.Serializer):
         return value
         
     def validate_diarization_result(self, value):
-        """Validate that the diarization result file exists if provided"""
+        """Validate that the diarization result file exists"""
         if value:
             import os
             if not os.path.isfile(value):
