@@ -30,7 +30,6 @@ INSTALLED_APPS = [
     'rest_framework',
     
     # Local apps
-    'api',
     'training',
     'audio_data_preparation',
 ]
@@ -63,12 +62,6 @@ LOGGING = {
     },
     'handlers': {
         # Define handlers for each app
-        'api_file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs', 'api.log'),
-            'formatter': 'verbose',
-        },
         'training_file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
@@ -89,11 +82,6 @@ LOGGING = {
     },
     'loggers': {
         # Configure app-specific loggers
-        'api': {
-            'handlers': ['api_file', 'console'],
-            'level': 'INFO',
-            'propagate': False,
-        },
         'training': {
             'handlers': ['training_file', 'console'],
             'level': 'INFO',
