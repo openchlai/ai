@@ -1,22 +1,33 @@
-# Contributing Guidelines
+# 🚀 Contributing Guidelines
 
-Thank you for considering contributing to this project! 🚀
+## 🧠 Code Style
 
-## 🛠️ How to Contribute
-1. **Fork** the repository.
-2. **Create a feature branch** (`feature/your-feature-name`).
-3. **Commit your changes** (`git commit -m "feat: add your feature"`).
-4. **Push** to your branch (`git push origin feature/your-feature-name`).
-5. **Open a Pull Request**.
+### Django (Python)
+- Follow **PEP 8**.
+- Use **Black** for formatting (`black .`).
+- Ensure **docstrings** are present for functions and classes.
+
+### Vue 3 (JavaScript/TypeScript)
+- Use **ESLint + Prettier** for linting and formatting.
+- Follow **Vue Style Guide** (https://vuejs.org/style-guide/).
+
+### PHP (Backend)
+- Follow **PSR-12** coding standards.
+- Use **PHP-CS-Fixer** for code formatting.
+
+### Vanilla JS
+- Use **ESLint** for consistency (`airbnb` style guide).
 
 ---
 
-## 💬 Code of Conduct
-Please note that by participating in this project, you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md).
+## 🔧 Pull Request Requirements
+- Include **unit tests** for new features or fixes.
+- Ensure **all lint checks pass**.
+- Ensure **all tests pass** (backend + frontend).
+- Describe the change and link relevant issues.
 
 ---
 
-## ✨ How to Report Issues
-If you encounter any problems, open an issue or email us at **[your-email@example.com]**.
-
-We’re happy to help and appreciate respectful collaboration! 💙
+## 🔥 Security Best Practices
+- **Never** hard-code secrets or credentials.
+- Report vulnerabilities privately — see [SECURITY.md](./SECURITY.md).
