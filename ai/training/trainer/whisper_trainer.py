@@ -11,7 +11,7 @@ from .dataset_loader import DatasetLoader
 from .model_loader import ModelLoader
 from .callbacks import ProgressCallback
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('training')
 
 class WhisperTrainer:
     """

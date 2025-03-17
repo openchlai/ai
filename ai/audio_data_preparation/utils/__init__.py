@@ -5,7 +5,7 @@ from django.conf import settings
 import requests
 
 # Setup logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('audio_data_preparation')
 
 # Authentication settings
 AUTH_ENDPOINT = getattr(settings, 'AUTH_ENDPOINT')

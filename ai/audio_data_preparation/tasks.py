@@ -13,7 +13,7 @@ from .utils.speaker_diarization import perform_diarization
 from .utils.audio_chunking import chunk_audio_files
 
 # Configure logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('audio_data_preparation')
 
 def generate_task_id():
     """Generate a unique task ID"""

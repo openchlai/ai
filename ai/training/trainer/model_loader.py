@@ -9,7 +9,7 @@ from transformers import (
     WhisperTokenizer
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('training')
 
 class ModelLoader:
     """

@@ -3,7 +3,7 @@ from celery import shared_task
 from .trainer.whisper_trainer import WhisperTrainer
 from .utils.backend_client import BackendClient
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('training')
 
 @shared_task(bind=True)
 def start_whisper_training(self, session_id, config):

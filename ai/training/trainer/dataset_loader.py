@@ -1,7 +1,7 @@
 import logging
 from datasets import Audio, DatasetDict, load_dataset
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('training')
 
 class DatasetLoader:
     """

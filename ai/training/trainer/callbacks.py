@@ -1,7 +1,7 @@
 import logging
 from transformers import TrainerCallback
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('training')
 
 class ProgressCallback(TrainerCallback):
     """

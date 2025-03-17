@@ -11,7 +11,7 @@ import logging
 from django.conf import settings
 
 # Configure logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('audio_data_preparation')
 
 # Global pipeline instance (singleton)
 _PIPELINE = None

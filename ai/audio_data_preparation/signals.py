@@ -8,7 +8,7 @@ from .utils import get_audio_metadata, convert_to_relative_path, send_api_reques
 from .models import AudioProcessingTask
 
 # Setup logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('audio_data_preparation')
 
 # S3 Server API settings
 S3_SERVER_BASE_URL = getattr(settings, 'S3_SERVER_BASE_URL')

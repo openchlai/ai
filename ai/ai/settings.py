@@ -50,7 +50,8 @@ MAIN_BACKEND_URL = os.getenv('MAIN_BACKEND_URL', 'http://localhost:8000/api')
 MAIN_BACKEND_NUMBER = os.getenv('MAIN_BACKEND_NUMBER')
 MAIN_BACKEND_PASSWORD = os.getenv('MAIN_BACKEND_PASSWORD')
 
-# Add logging configuration
+# Logging configuration
+# https://docs.djangoproject.com/en/4.0/topics/logging/
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -61,10 +62,23 @@ LOGGING = {
         },
     },
     'handlers': {
-        'file': {
+        # Define handlers for each app
+        'api_file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'api.log'),
+            'formatter': 'verbose',
+        },
+        'training_file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, 'logs', 'training.log'),
+            'formatter': 'verbose',
+        },
+        'audio_data_preparation_file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'audio_data_preparation.log'),
             'formatter': 'verbose',
         },
         'console': {
@@ -73,8 +87,26 @@ LOGGING = {
             'formatter': 'verbose',
         },
     },
+    'loggers': {
+        # Configure app-specific loggers
+        'api': {
+            'handlers': ['api_file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'training': {
+            'handlers': ['training_file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'audio_data_preparation': {
+            'handlers': ['audio_data_preparation_file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
     'root': {
-        'handlers': ['console', 'file'],
+        'handlers': ['console'],
         'level': 'INFO',
     },
 }
