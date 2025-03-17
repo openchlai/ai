@@ -1,13 +1,13 @@
----
 name: Agile Backlog Item
-about: Track a new feature, user story, or task in Agile format
-title: ''
-labels: 'backlog', 'enhancement', 'user story'
-assignees: ''
+description: Track a new feature, user story, or task in Agile format
+title: "[Agile Item]: "
+labels: ["backlog", "enhancement", "user story"]
+assignees: []
+
 ---
 
 ## 📝 User Story  
-As a **[type of user]**, I want **[some goal]** so that **[some reason/benefit]**.  
+**As a** [type of user], **I want** [some goal], **so that** [some reason/benefit].  
 
 *Example:*  
 _As a call center agent, I want an automated speech-to-text feature so that I can quickly log case details without manual typing._
