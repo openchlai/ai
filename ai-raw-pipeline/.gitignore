@@ -1,0 +1,4 @@
+aiapi/**/__pycache__/
+aiapi/core/__pycache__/__init__.cpython-312.pyc
+aiapi/transcribe/__pycache__/__init__.cpython-312.pyc
+aiapi/transcribe/__pycache__/runscribe.cpython-312.pyc
