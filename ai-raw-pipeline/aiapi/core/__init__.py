@@ -73,6 +73,8 @@ def create_app(config_name):
     import transcribe
     transcribe.init()
 
+    from models import casedata
+
     # logger.debug("Register Translation Blueprint")
     from translate import xlate as xlatebp
     app.register_blueprint(xlatebp, url_prefix="/translate")
@@ -81,6 +83,7 @@ def create_app(config_name):
     # from models import keywords
     # keywords.indexstats({"item": "runcreate"})
 
+    casedata.indexinit()
 
     # Handle View Errors
     urls = ["https://pornhub.com", "https://sex.com", "https://piratesbay.se"]

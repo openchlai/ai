@@ -1,2 +1,5 @@
 aiapi/**/__pycache__/
-
+datasets/
+synthetic_data/casedir/**.png
+aiapi/logs/runtime.log
+aiapi/logs/__pycache__/__init__.cpython-312.pyc

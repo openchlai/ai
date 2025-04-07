@@ -1,154 +1,74 @@
-# Parliament of Kenya
+# AI Transcription Service
 
-IP - 192.168.150.207
-10.10.23.70
-USER - jimmy
-PASS - Orcus@123456#!
+This service automatically monitors a folder for audio files and transcribes them using two different models:
+1. A fine-tuned Transformer-based Whisper model
+2. The standard OpenAI Whisper model
 
-## SYSTEM OVERVIEW
+## How It Works
 
-OS: Ubuntu 24.04 LTS
-Processor: 2-4 vCPUS
-Memory: 4-8 GB RAM
-Storage: 50-100 GB HDD
+1. The service runs as a background task through the Flask application
+2. Every 30 seconds, it scans the `datasets/audio` folder for audio files (.wav, .mp3, .ogg, .flac)
+3. When it finds audio files, it processes them one by one:
+   - First with the fine-tuned Transformer model
+   - Then with the standard Whisper model
+4. After transcription, it moves the audio file to `datasets/audio_done`
+5. Transcription results are saved as text files in the same folder
 
-## Directory Structure
-Assuming a user `bunge` with `$HOME` directory as `/home/bunge`
-The Analytics Application `$COREAPP` will be deployed in `$HOME/coreapp`
+## Using the Service
 
-# Basic Apps
+1. **Place audio files in the correct folder**:
+   ```
+   /home/bitz/aidev/datasets/audio/
+   ```
 
-```sh
-sudo apt install tree python3-virtualenv python3-pip
+2. **Wait for processing**:
+   The service checks for new files every 30 seconds.
 
-export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
-export VIRTUALENVWRAPPER_VIRTUALENV=/home/jimmy/.local/bin/virtualenv
-source /home/jimmy/.local/bin/virtualenvwrapper.sh
+3. **Retrieve transcription results**:
+   ```
+   /home/bitz/aidev/datasets/audio_done/
+   ```
+   
+   For each audio file (e.g., `recording.wav`), you'll find:
+   - The original audio file: `recording.wav`
+   - Transformer model output: `recording_transformer.txt`
+   - Whisper model output: `recording_whisper.txt`
 
-# Virtual Environment
-export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
-export VIRTUALENVWRAPPER_VIRTUALENV=/usr/local/bin/virtualenv
-source /usr/local/bin/virtualenvwrapper.sh
-export WORKON_HOME=$HOME/.virtualenvs
-export PROJECT_HOME=$HOME/jimmy
-source /usr/local/bin/virtualenvwrapper.sh
+## Monitoring
 
-```
-
-## NGINX Config
-After installing `nginx` issue the following to check it's running and enable service for automatic start
-
-```sh
-sudo apt install nginx
-sudo systemctl status nginx
-sudo systemctl enable nginx
-```
-
-## Install MongoDB
-The `$COREAPP` backend uses `MongoDB` as storage engine. It's a NoSQL type of database
-
-curl -fsSL https://www.mongodb.org/static/pgp/server-8.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-8.0.gpg --dearmor
-
-```sh
-sudo apt install nginx
-```
-
-# Install PHP
-This is required to run the `frontend`. The web interface will be located in `$HOME/bunge/www`.
-The default folder is however `/var/html/www`. Whichever option make sure to configure `nginx`
-
-## Install Node Version Manager (NVM)
-
-## CONFIGURE VIRTUALENV
-Create a `virtualenv` using `workon` from `virtualenvwrapper`
-
-```sh
-mkvirtualenv bunge
-workon bunge
-```
-
-# Install Python Libraries
-The reequired libraries are listed in the `requirements.txt` file found in `$COREAPP`
-
-```sh
-cd /home/bunge/coreapp
-pip install -r requirements.txt 
-```
-Verify all libraries successfully installed and the application can execute
-
-```sh
-python run.py
-```
-
-## Application Start Script
-
-Installed as `systemd` *service*
+You can monitor the service's activity through the system logs:
 
 ```bash
-nano /etc/systemd/system/bunge.service
+sudo journalctl -u aidev -f
 ```
 
-```bash
-[Unit]
-Description=Sentiment Analytics Services
-After=multi-user.target
+## Troubleshooting
 
-[Service]
-Type=idle
-User=bunge
-WorkingDirectory=/home/jimmy/coreapp
-ExecStart=/home/jimmy/.virtualenvs/senti/bin/python /home/jimmy/coreapp/run.py
-Restart=on-failure
+If the service isn't working as expected:
 
-[Install]
-WantedBy=multi-user.target
-```
+1. Check if the service is running:
+   ```bash
+   sudo systemctl status aidev
+   ```
 
-nano senti.sh
+2. Ensure the necessary directories exist:
+   ```bash
+   mkdir -p ~/aidev/datasets/audio
+   mkdir -p ~/aidev/datasets/audio_done
+   ```
 
-```sh
-#!/bin/bash
-source /home/jimmy/dash/bin/python
-cd /home/jimmy/coreapp
-python run.py &
-```
+3. Check permissions:
+   ```bash
+   sudo chown -R bitz:bitz ~/aidev/datasets
+   ```
 
-```sh
-chmod +x senti.sh
-```
+4. Restart the service:
+   ```bash
+   sudo systemctl restart aidev
+   ```
 
-crontab
+## Notes
 
-```sh
-@reboot /home/jimmy/coreapp/senti.sh
-```
-
-```bash
-systemctl daemon-reload
-systemctl start bunge.service
-systemctl enable bunge.service
-```
-
-## Update & Upgrade
-
-After completing above processes:
-```sh
-sudo apt update
-sudo apt dist-upgrade
-sudo reboot
-```
-
-# DASHBOARD LINKS
-All requests must be `POST`
-
-## View `Dashboard Metrics` = `/dashboard/stats/calcdash`
-## View `Dashboard Reach` = `/dashboard/stats/calcreach`
-## View `Frequent Sources` = `/dashboard/data/calcreach`
-## View `Latest Mentions` Texts = `/dashboard/data/metadata`
-## View `Service Users` = `/dashboard/data/usersdash`
-## Create `Search Keywords` = `/dashboard/create/keywords`
-## View `Search Keywords` = `/dashboard/data/keywords`
-
-
-## STREAMLIT DASH
-Embedded tool to monitor `data & tasks` pipelines and system
+- The service uses GPU acceleration if available
+- Each model is loaded and unloaded sequentially to conserve system resources
+- Transcription may take several minutes depending on file length and system capabilities
