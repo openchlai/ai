@@ -3,7 +3,7 @@
 
 ## ✅ Overview
 
-- **Endpoint**: `POST /api/cases/`
+- **Endpoint**: `POST /api/webhook/webform`
 - **Purpose**: Creates a new case in the Helpline Case Management System.
 - **Authentication**: Required (Bearer Token)
 - **Content-Type**: `application/json`
@@ -26,7 +26,7 @@ Authorization: Bearer <your_access_token>
 
 ```json
 {
-  "src": "walkin",
+  "src": "webform",
   "src_uid": "walkin-100-1741960667824",
   "src_address": "",
   "src_uid2": "walkin-100-1741960667824-2",
