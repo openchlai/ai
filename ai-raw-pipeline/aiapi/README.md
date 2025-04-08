@@ -72,3 +72,10 @@ If the service isn't working as expected:
 - The service uses GPU acceleration if available
 - Each model is loaded and unloaded sequentially to conserve system resources
 - Transcription may take several minutes depending on file length and system capabilities
+
+## Transcription
+```sh
+curl "localhost:50001/transcribe/data/casedata" \
+-H "Content-Type: application/json" \
+--data '{"task": "transcribe", "docs":100}'
+```
