@@ -1,9 +1,8 @@
-```markdown
 # 📂 Case Creation API – Helpline CMS
 
 ## ✅ Overview
 
-- **Endpoint**: `POST /api/webhook/webform`
+- **Endpoint**: `POST /api/webhook/webform/`
 - **Purpose**: Creates a new case in the Helpline Case Management System.
 - **Authentication**: Required (Bearer Token)
 - **Content-Type**: `application/json`
@@ -15,7 +14,7 @@
 Use Bearer Token in the `Authorization` header.
 
 ```
-Authorization: Bearer <your_access_token>
+Authorization: Bearer "sci9de994iddqlmj8fv7r1js74"
 ```
 
 ---
@@ -26,7 +25,7 @@ Authorization: Bearer <your_access_token>
 
 ```json
 {
-  "src": "webform",
+  "src": "webform", # or CMIS
   "src_uid": "walkin-100-1741960667824",
   "src_address": "",
   "src_uid2": "walkin-100-1741960667824-2",
@@ -35,7 +34,7 @@ Authorization: Bearer <your_access_token>
   "src_callid": "walkin-100-1741960667824",
   "src_ts": "1741960667.824",
   "reporter": {
-    "fname": "Ras Singh",
+    "fname": "Ras Singh",  /* MANDATORY */
     "age_t": "0",
     "age": "22",
     "dob": "1046120400",
@@ -107,13 +106,14 @@ Authorization: Bearer <your_access_token>
   "attachments_case": [],
   "services": [],
   "knowabout116_id": "",
-  "case_category_id": "362484",
-  "narrative": "---",
-  "plan": "---",
+  "gbv_related": true,  /* MANDATORY */
+  "case_category_id": "362484",  /* MANDATORY */
+  "narrative": "---",  /* MANDATORY */
+  "plan": "---",  /* MANDATORY */
   "justice_id": "",
   "assessment_id": "",
-  "priority": "1",
-  "status": "1",
+  "priority": "1",  /* MANDATORY */
+  "status": "1",  /* MANDATORY */
   "escalated_to_id": "0"
 }
 ```
@@ -124,39 +124,39 @@ Authorization: Bearer <your_access_token>
 
 ### 🧾 Metadata
 
-| Field         | Type   | Description |
-|---------------|--------|-------------|
-| `src`         | string | Case intake source (e.g., `walkin`, `phone`). |
-| `src_uid`     | string | Unique ID combining source, user ID, timestamp. |
-| `src_address` | string | Address related to intake (blank for walk-ins). |
-| `src_uid2`    | string | Alternate session/case ID. |
-| `src_usr`     | string | User ID of agent/staff creating the case. |
-| `src_vector`  | string | Source vector or terminal/device used. |
-| `src_callid`  | string | Session or source call ID. |
-| `src_ts`      | string | Case creation timestamp (Unix epoch with ms). |
+| Field         | Type   | Description | Required |
+|---------------|--------|-------------|----------|
+| `src`         | string | Case intake source (e.g., `walkin`, `phone`, `CMIS`). | No |
+| `src_uid`     | string | Unique ID combining source, user ID, timestamp. | No |
+| `src_address` | string | Address related to intake (blank for walk-ins). | No |
+| `src_uid2`    | string | Alternate session/case ID. | No |
+| `src_usr`     | string | User ID of agent/staff creating the case. | No |
+| `src_vector`  | string | Source vector or terminal/device used. | No |
+| `src_callid`  | string | Session or source call ID. | No |
+| `src_ts`      | string | Case creation timestamp (Unix epoch with ms). | No |
 
 ---
 
 ### 👤 Reporter
 
-| Field                 | Type   | Description |
-|-----------------------|--------|-------------|
-| `fname`               | string | Reporter’s full name. |
-| `age_t`               | string | Age type (`0` = years, `1` = months). |
-| `age`                 | string | Age value. |
-| `dob`                 | string | Date of birth (Unix timestamp). |
-| `age_group_id`        | string | ID for age group category. |
-| `location_id`         | string | Geographical location ID. |
-| `sex_id`              | string | Gender ID. |
-| `landmark`            | string | Additional location landmark. |
-| `nationality_id`      | string | Nationality ID. |
-| `national_id_type_id` | string | Type of ID provided. |
-| `national_id`         | string | National ID number. |
-| `lang_id`             | string | Language ID. |
-| `tribe_id`            | string | Tribe/ethnicity ID. |
-| `phone`, `phone2`     | string | Contact numbers. |
-| `email`               | string | Email address. |
-| `.id`                 | string | Internal system reporter ID. |
+| Field                 | Type   | Description | Required |
+|-----------------------|--------|-------------|----------|
+| `fname`               | string | Reporter's full name. | **YES** |
+| `age_t`               | string | Age type (`0` = years, `1` = months). | No |
+| `age`                 | string | Age value. | No |
+| `dob`                 | string | Date of birth (Unix timestamp). | No |
+| `age_group_id`        | string | ID for age group category. | No |
+| `location_id`         | string | Geographical location ID. | No |
+| `sex_id`              | string | Gender ID. | No |
+| `landmark`            | string | Additional location landmark. | No |
+| `nationality_id`      | string | Nationality ID. | No |
+| `national_id_type_id` | string | Type of ID provided. | No |
+| `national_id`         | string | National ID number. | No |
+| `lang_id`             | string | Language ID. | No |
+| `tribe_id`            | string | Tribe/ethnicity ID. | No |
+| `phone`, `phone2`     | string | Contact numbers. | No |
+| `email`               | string | Email address. | No |
+| `.id`                 | string | Internal system reporter ID. | No |
 
 ---
 
@@ -170,18 +170,18 @@ Array of clients with same fields as reporter. Multiple affected persons can be 
 
 Array of alleged perpetrators.
 
-| Field             | Type   | Description |
-|------------------|--------|-------------|
-| `fname`, `age_t`, `age`, `dob` | string | Personal details. |
-| `age_group_id`, `age_group`   | string | Age group ID and label. |
-| `location_id`, `landmark`     | string | Location info. |
-| `sex_id`, `sex`               | string | Gender info. |
-| `relationship_id`             | string | Relationship to client. |
-| `shareshome_id`               | string | Shared residence flag. |
-| `health_id`, `employment_id`, `marital_id` | string | Socio-demographic indicators. |
-| `guardian_fullname`          | string | Guardian name if minor. |
-| `notes`                      | string | Notes or additional info. |
-| `.id`                        | string | Internal system ID. |
+| Field             | Type   | Description | Required |
+|------------------|--------|-------------|----------|
+| `fname`, `age_t`, `age`, `dob` | string | Personal details. | No |
+| `age_group_id`, `age_group`   | string | Age group ID and label. | No |
+| `location_id`, `landmark`     | string | Location info. | No |
+| `sex_id`, `sex`               | string | Gender info. | No |
+| `relationship_id`             | string | Relationship to client. | No |
+| `shareshome_id`               | string | Shared residence flag. | No |
+| `health_id`, `employment_id`, `marital_id` | string | Socio-demographic indicators. | No |
+| `guardian_fullname`          | string | Guardian name if minor. | No |
+| `notes`                      | string | Notes or additional info. | No |
+| `.id`                        | string | Internal system ID. | No |
 
 ---
 
@@ -199,17 +199,18 @@ Array of alleged perpetrators.
 
 ### 🧠 Other Fields
 
-| Field               | Type   | Description |
-|---------------------|--------|-------------|
-| `knowabout116_id`   | string | How reporter found out about helpline. |
-| `case_category_id`  | string | Category/type of the case. |
-| `narrative`         | string | Description/story of the case. |
-| `plan`              | string | Initial action plan. |
-| `justice_id`        | string | Legal or justice system involvement. |
-| `assessment_id`     | string | Associated assessments. |
-| `priority`          | string | `"1"` = High, `"2"` = Medium, etc. |
-| `status`            | string | `"1"` = Open; other values may vary. |
-| `escalated_to_id`   | string | ID of the person or group case is escalated to. |
+| Field               | Type   | Description | Required |
+|---------------------|--------|-------------|----------|
+| `gbv_related`       | boolean| Indicates if case is gender-based violence related. | **YES** |
+| `knowabout116_id`   | string | How reporter found out about helpline. | No |
+| `case_category_id`  | string | Category/type of the case. | **YES** |
+| `narrative`         | string | Description/story of the case. | **YES** |
+| `plan`              | string | Initial action plan. | **YES** |
+| `justice_id`        | string | Legal or justice system involvement. | No |
+| `assessment_id`     | string | Associated assessments. | No |
+| `priority`          | string | `"1"` = High, `"2"` = Medium, etc. | **YES** |
+| `status`            | string | `"1"` = Open; other values may vary. | **YES** |
+| `escalated_to_id`   | string | ID of the person or group case is escalated to. | No |
 
 ---
 
@@ -231,7 +232,7 @@ Array of alleged perpetrators.
 
 ```json
 {
-  "error": "Missing required field: caller_id"
+  "error": "Missing required field: [field_name]"
 }
 ```
 
@@ -240,10 +241,44 @@ Array of alleged perpetrators.
 ## 🧪 Test Cases
 
 - ✅ **Create Case - Valid Walk-in**
-- ⚠️ **Create Case - Missing reporter**
+- ⚠️ **Create Case - Missing mandatory field**
 - ❌ **Create Case - Invalid timestamp**
 - 🔒 **Create Case - Unauthorized request**
 
 ---
 
 ## 📌 Notes
+
+### Mandatory Fields with Default Values
+
+All mandatory fields can be pre-populated with default values of your choosing:
+
+| Mandatory Field      | Possible Default Value | Notes |
+|----------------------|------------------------|-------|
+| `reporter.fname`     | "Walk-in Client"       | Default for anonymous cases |
+| `gbv_related`        | "To be determined"     | Can be set based on your use case |
+| `case_category_id`   |                        | Default to a general category ID |
+| `narrative`          | "Details pending"      | Placeholder until case details are added |
+| `plan`               | "Initial assessment required" | Standard starting action |
+| `priority`           | "2"                           | Default to medium priority |
+| `status`             | "1"                           | Default to open status |
+
+### Minimal Valid Payload
+
+Below is an example of a minimal valid payload containing only the mandatory fields with sample default values:
+
+```json
+{
+  "reporter": {
+    "fname": "Jasson"
+  },
+  "gbv_related": true,
+  "case_category_id": "362484",
+  "narrative": "I was abused",
+  "plan": "Escalate the matter",
+  "priority": "2",
+  "status": "1"
+}
+```
+
+These default values can be customized according to your organization's needs and automatically included in your API implementation.
