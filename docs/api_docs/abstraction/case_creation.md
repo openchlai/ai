@@ -12,7 +12,7 @@
 
 ## 🔐 Authorization
 
-Use Bearer Token in the `Authorization` header.
+Use Bearer Token in the `Authorization` header
 
 ```
 Authorization: Bearer <your_access_token>
@@ -26,7 +26,7 @@ Authorization: Bearer <your_access_token>
 
 ```json
 {
-  "src": "webform",
+  "src": "webform",  # or CMIS 
   "src_uid": "walkin-100-1741960667824",
   "src_address": "",
   "src_uid2": "walkin-100-1741960667824-2",
