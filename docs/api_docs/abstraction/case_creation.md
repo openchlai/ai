@@ -9,13 +9,45 @@
 
 ---
 
-## 🔐 Authorization
+## 🔐 Authentication and Authorization
 
-Use Bearer Token in the `Authorization` header.
+### Token Generation API (Live Environment Only)
+
+To obtain an authentication token, use the following endpoint (available only in the live environment):
 
 ```
-Authorization: Bearer "sci9de994iddqlmj8fv7r1js74"
+POST /api/webhook/webform/auth/token/
+Content-Type: application/json
 ```
+
+**Request Body:**
+```json
+{
+  "organization_name": "CPMIS System",
+  "organization_email": "admin@cpmis.org"
+}
+```
+
+**Example Response:**
+```json
+{
+  "status": "success",
+  "message": "Authentication token generated successfully.",
+  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+  "organization_id": "12345",
+  "expires": "2026-04-03T11:09:50.554Z"
+}
+```
+
+### Using the Token
+
+Use the obtained Bearer Token in the `Authorization` header for subsequent API calls:
+
+```
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+```
+
+⚠️ **Important Note**: The token generation API is only available in the live environment, not in testing or staging environments.
 
 ---
 
@@ -228,11 +260,28 @@ Array of alleged perpetrators.
 }
 ```
 
-### ❌ Error (400 Bad Request)
+### ❌ Error Responses
 
+**400 Bad Request**
 ```json
 {
   "error": "Missing required field: [field_name]"
+}
+```
+
+**401 Unauthorized**
+```json
+{
+  "status": "error",
+  "message": "Invalid or expired authentication token"
+}
+```
+
+**403 Forbidden**
+```json
+{
+  "status": "error",
+  "message": "Organization not authorized to access this resource"
 }
 ```
 
@@ -243,7 +292,7 @@ Array of alleged perpetrators.
 - ✅ **Create Case - Valid Walk-in**
 - ⚠️ **Create Case - Missing mandatory field**
 - ❌ **Create Case - Invalid timestamp**
-- 🔒 **Create Case - Unauthorized request**
+- 🔒 **Create Case - Unauthorized request (invalid or expired token)**
 
 ---
 
@@ -255,13 +304,13 @@ All mandatory fields can be pre-populated with default values of your choosing:
 
 | Mandatory Field      | Possible Default Value | Notes |
 |----------------------|------------------------|-------|
-| `reporter.fname`     | "Walk-in Client"       | Default for anonymous cases |
-| `gbv_related`        | "To be determined"     | Can be set based on your use case |
-| `case_category_id`   |                        | Default to a general category ID |
-| `narrative`          | "Details pending"      | Placeholder until case details are added |
+| `reporter.fname`     | "Client" | Default for anonymous cases |
+| `gbv_related`        | | Can be set based on your use case |
+| `case_category_id`   |  | Default to a general category ID |
+| `narrative`          |  | Placeholder until case details are added |
 | `plan`               | "Initial assessment required" | Standard starting action |
-| `priority`           | "2"                           | Default to medium priority |
-| `status`             | "1"                           | Default to open status |
+| `priority`           | "2" | Default to medium priority |
+| `status`             | "1" | Default to open status |
 
 ### Minimal Valid Payload
 
@@ -270,12 +319,12 @@ Below is an example of a minimal valid payload containing only the mandatory fie
 ```json
 {
   "reporter": {
-    "fname": "Jasson"
+    "fname": "jasson"
   },
-  "gbv_related": true,
+  "gbv_related": false,
   "case_category_id": "362484",
-  "narrative": "I was abused",
-  "plan": "Escalate the matter",
+  "narrative": "I was asulted",
+  "plan": "Initial assessment required",
   "priority": "2",
   "status": "1"
 }
