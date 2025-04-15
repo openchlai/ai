@@ -26,7 +26,7 @@ te["case_form_client_r_"] = { c:
 				]},
 				{ div:["e"] }
 			]},
-			{ contact_vw_rv:[":v:clients:contact_fullname", ":v:clients:contact_age_group", ":v:clients:contact_sex", ":v:clients:contact_location", ":v:clients:contact_landmark"] },
+			{ contact_vw_rv:[":v:clients:contact_fullname", ":v:clients:contact_age_group", ":v:clients:contact_sex", "","", ":v:clients:contact_location", ":v:clients:contact_landmark"] },
 			{ contact_vw_rv_phone:[":v:clients:contact_phone", ":v:clients:contact_email"] },
 			{ div:["g"], arg:["",".id","%0"] }
 		]},
@@ -213,9 +213,9 @@ te["case_client_ed_"] = { div:["w68 ma mb sh__ gw_"], c:
 	]}
 ]};	
 
-te["case_client_ed"] = { case_client_ed_:["Edit Client Details","client_ed-clients","_activity_case_postj","Update","Updating...","client_vw_id-clients-vp","_u","Cancel"] };
+te["case_client_ed"] = { case_client_ed_:["Edit Client Details","client_ed-clients","_activity_postj","Update","Updating...","client_vw_id-clients-vp","_u","Cancel"] };
 
-te["case_client_new"] = { case_client_ed_:["New Client","client_new-clients","_activity_case_postj","Create","Creating...","","_uvp","Cancel"] };
+te["case_client_new"] = { case_client_ed_:["New Client","client_new-clients","_activity_postj","Create","Creating...","","_uvp","Cancel"] };
 
 // --------------------------------------------------------------------------------------------
 
@@ -224,7 +224,7 @@ te["case_vw_client_r_"] = { div:["","ve"], c:
 	{ input:["g","","case_vw_a","%0","radio",""] },
 	{ li:["xx y bd cb gws_","client_vw_id-clients-^"], ev:["_vp"], s:["",""], c:
 	[
-		{ contact_vw_rv:[":v:clients:contact_fullname", ":v:clients:contact_age_group", ":v:clients:contact_sex", ":v:clients:contact_location", ":v:clients:contact_landmark"] },
+		{ contact_vw_rv:[":v:clients:contact_fullname", ":v:clients:contact_age_group", ":v:clients:contact_sex", "","", ":v:clients:contact_location", ":v:clients:contact_landmark"] },
 		{ contact_vw_rv_phone:[":v:clients:contact_phone", ":v:clients:contact_email"] },
 		{ div:["g"], arg:["",".id","%0"] }
 	]},

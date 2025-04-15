@@ -83,23 +83,23 @@ te["branch_footer"] = { s:["mln2 mtn13 x y15 abs gws_",""] };
 
 te["pgto2"] = { c:
 [
-	{ div:["c x t03"], s:["cgr","-"] },
-	{ div:["c x t03"], s:["","%3"] }
+	{ div:["c x"], s:["cgr","-"] },
+	{ div:["c x"], s:["","%3"] }
 ]};
 
 te["pgto"] = { c:
 [
-	{ div:["c x t03"], s:["cgr","-"] },
-	{ div:["c x t03"], s:["","%3"] }
+	{ div:["c x"], s:["cgr","-"] },
+	{ div:["c x"], s:["","%3"] }
 ]};
 
 te["pg"] = { c: 
 [
-	{ div:["c"], s:["x t03","%2"] },
+	{ div:["c"], s:["x","%2"] },
 	{ u:[null] },
-	{ div:["c"], s:["x t03","of"] },
-	{ div:["c"], s:["x t03","%4"] },
-	{ div:["c l"], c:[ { aci:["nav",null,"_nav",null,"prev",""], c:[ { div:[null] }, { arg:["","_a","%0"] } ] }, { s:["navl","..."] } ] },
+	{ div:["c"], s:["x","of"] },
+	{ div:["c"], s:["x","%4"] },
+	{ div:["c"], c:[ { aci:["nav",null,"_nav",null,"prev",""], c:[ { div:[null] }, { arg:["","_a","%0"] } ] }, { s:["navl","..."] } ] },
 	{ div:["c"], c:[ { ac:["nav",null,"_nav",null,""], c:[ { div:[null] }, { arg:["","_a","%0"] } ] }, { s:["navl","..."] } ] }
 ]};
 
@@ -124,14 +124,14 @@ te["argf"] = { arg:["","%3","%1"] };
 
 te["kf_n"] = { p:["","o"], c: // 	
 [
-	{ s:["c w15 y08 cb",null] }, 
+	{ s:["c w14 y08 cb",null] }, 
 	{ li:["d"], txt:[" ba w30"," w30 x y07","",null,null] },
 	{ div:["e"] }
 ]};
 
 te["kf_d"] = { c:   // 		
 [
-	{ s:["c w15 y08 cb",null] }, 
+	{ s:["c w14 y08 cb",null] }, 
 	{ div:["d","calw"], c:
 	[
 		{ li:["w30 ba gw_ cb","va"], c:[ { div:[""], ev:["_dd"], c:
@@ -158,7 +158,7 @@ te["kf_d"] = { c:   //
 
 te["kf_l"] = { c:
 [
-	{ s:["c w15 y08 cb",null] }, 
+	{ s:["c w14 y08 cb",null] }, 
 	{ div:["d",null], c:
 	[
 		{ li:["w30 ba gw_ cb","va"], c:[ { div:["",null], ev:["_dd"], c: // 
@@ -178,7 +178,7 @@ te["kf_l"] = { c:
 
 te["kf_c"] = { c: 
 [
-	{ s:["c w15 y08 cb",null] }, 
+	{ s:["c w14 y08 cb",null] }, 
 	{ div:["d",null], c:
 	[
 		{ li:["w30 ba gw_ cb","va"], c:[ { div:[""], ev:["_dd"], c:
@@ -199,7 +199,7 @@ te["kf_c"] = { c:
 
 te["kf_s"] = { p:["","o"], c: // 	
 [
-	{ s:["c w15 y08 cb",null] }, 
+	{ s:["c w14 y08 cb",null] }, 
 	{ li:["d"], txt:[" ba w30"," w30 x y07","",null,null] },
 	{ div:["e"] }
 ]};
@@ -283,7 +283,7 @@ te["sub"] = { u:["%0","%1"] };
 
 te["btnwait"] = { c:[ { s:["%0","%1"] }, { arg:["tso","","12"] } ] };
 
-te["uvpfn"] = { ufn:["uvpfn"] };
+te["uvpfn"] = { ufn:["uvpr"] };
 
 te["ufn_attach"] = { ufn:["ufn_attach"] };
 
@@ -493,7 +493,10 @@ function jso (p, o, k)
 			}
 			continue;
 		}
-		if (coll[i].id=="o") argv (coll[i], o, k, null, b);
+		if (coll[i].id=="o") 
+		{
+			argv (coll[i], o, k, null, b);
+		}
 	}
 
 	console.log ("[jso]  ("+p.id+"/"+p.className+") "+JSON.stringify (o)+" | "+JSON.stringify (b));
@@ -584,8 +587,8 @@ function hmst (t,a)
 function vdt (x,a)
 {
 	// var x = r[a[3]];
-        if (x.length<1) return ""; // :d:dmyhm:1:
-	var vv = x.split (";");	// console.log (a);
+        if (x.length<1) return ""; 	// :d:dmyhm:1:
+	var vv = x.split (";");		// console.log (a);
 	var na = a[2].length; 
 	var kk = {"d":0, "m":1, "y":2, "h":3, "n":4, "s":5, "r":6, "x":7};
 	var c = 0;
@@ -649,7 +652,13 @@ function vel (r,a) // :v:table_name:col_name::enum:enum_col
 	};
 	if (a[4]=="d") // date
 	{
-		return  vdt (v,["","d","dmy","0"," "]);
+		// console.log (a);
+		return  vdt (v,["","d",a[5],"0"," "]);
+	}
+	if (a[4]=="z")
+	{
+		if (v.length>0) return a[5];
+		return a[6];
 	}
 	return v;
 }
@@ -714,8 +723,8 @@ function val (v, a, r, m, el, k, w)
 	{
 		if (k=="innerHTML") 
 		{
-			//v_ = v_.replace (/>/gm,"&gt;"); 
-			//v_ = v_.replace (/</gm,"&lt;"); 
+			v_ = v_.replace (/>/gm,"&gt;"); 
+			v_ = v_.replace (/</gm,"&lt;"); 
 			//v_ = v_.replace (/\n/gm,""); // line break
 		}
 		el[k] = v_; 
@@ -745,7 +754,7 @@ function uv (el, u, a, r, m)
 {
 	var a = {args:"?", ".id":""};
 	argv (el, a);
-	//console.log (JSON.stringify (u)+"|"+JSON.stringify(a))
+	// console.log ("[uv] "+JSON.stringify (u)+"|"+JSON.stringify(a));
 	url (el, u[0], u[1], (a[".id"]+a.args));
 }
 
@@ -799,10 +808,35 @@ function uval (el, u, a, r, m)
 	uval_ (el, u, 1, "");
 }
 
+function umimek (el,u,r,vo,z)
+{
+	console.log ("[umimek] -------------------"+z)
+	var ko = re[(u[3]+z)];
+	var kk = rk[(u[3]+z)];
+	for (var k=0; k<kk.length; k++)
+	{
+               if (!vo[kk[k]]) continue;
+		if (ko[kk[k]][2]=="o")
+		{
+			umimek (el,u,r,vo[kk[k]],("_"+kk[k]));
+			continue;
+		}
+               nd (el, te[(u[0]+"_o")], [(""+vo[kk[k]]), (""+ko[kk[k]][1])], r, [2]); //
+//                                  console.log ("[umime] "+u[3]+"|"+ kk[k]+" => " + ko[kk[k]][1])
+        }
+}
+
 function umime (el, u, a, r, m)
 {
 	var v = u[2];
 	
+	if (u[1]=="text/plain")
+	{
+		v = u[2];
+		try { v=atob (u[2]); } catch (e) {}
+		nd (el, te[u[0]], [v], r, [1]);
+		return ;
+	}
 	if (u[1]=="application/json")
 	{
 		v = atob (u[2]); 
@@ -820,14 +854,15 @@ function umime (el, u, a, r, m)
 			}
 			v = "Invalid Payload Received!";
 			if (vo)
-			{ 
-				var kk = rk[u[3]]
-				for (var k=0; k<kk.length; k++)
-				{
-					if (!vo[kk[k]]) continue;
-					nd (el, te[(u[0]+"_o")], [vo[kk[k]], ko[kk[k]][1]], r, [2]); // 
-//					console.log ("[umime] "+u[3]+"|"+ kk[k]+" => " + ko[kk[k]][1])
-				}
+			{
+				umimek (el,u,r,vo,"");
+				//var kk = rk[u[3]]
+				//for (var k=0; k<kk.length; k++)
+				//{
+				//	if (!vo[kk[k]]) continue;
+				//	nd (el, te[(u[0]+"_o")], [vo[kk[k]], ko[kk[k]][1]], r, [2]); // 
+//				//	console.log ("[umime] "+u[3]+"|"+ kk[k]+" => " + ko[kk[k]][1])
+				//}
 				return;	
 			}
 		} 
@@ -1114,9 +1149,10 @@ function ld (p, m, http_status)
 	console.log (http_status+" -> "+m+":"+JSON.stringify (uu)+" @"+p.id)
 
 	for (var i=0; i<uu.length; i++)
-	{		
+	{	
 		var u_ = uu[i];
 		var p_ = p;
+
 		// if (!ra[u_[1]]) continue;
 		if (u_.length>2 && u_[2].length>0 && p_.id.substr (0,u_[2].length)!=u_[2])
 		{
@@ -1146,6 +1182,12 @@ function ld (p, m, http_status)
 		// for (var j=ra.a[i].length-1; j>-1; j--) { a_[m_[0]]=ra.a[i][j]; m_[0]++; }
 		// console.log (p_.id+" | "+u_[0]+" "+u_[1]);
 		nd (p_, {u:[u_[0],u_[1]]}, a_, [], m_);
+
+		if (p_.id=="vp"  && p_.childNodes.length>0) 
+		{
+			p_.firstChild.style.marginTop = window.scrollY+"px";
+			// console.log ("[LDvp] "+p_.id+"|"+window.scrollY)
+		}
 	}
 
 	ra["auth_nb"] = [];
@@ -1239,22 +1281,9 @@ function url (p, u, m, a="", data=null, l=0, o=null, meth="GET")
         x.send (data);
 }
 
-function postj (el,k,mode=2) 
-{
-        var id = "v"
-        var u = el.id.split ("-");
-        if (u.length>2) id=u[2] 
-        var p = __(el,id);
-        var o = {}; 
-        jso (p,o,k);
-        url (p, u[0], u[1], o[".id"], null, mode, o, "POST");
-}
-
 function urargs (el, p)
 {
-	//console.log ("urargs("+el.id+")----------------------------")
 	var u = el.id.split("-");
-
 	if (re[u[1]]!=undefined)
 	{
 		ra = [];
@@ -1266,7 +1295,6 @@ function urargs (el, p)
 		nd (p, te[u[0]], [], r_, [0]); 
 		return;
 	}
-
 	var a = {args:"?", ".id":""};	
 	argv (el.lastChild,a);
 	url (p, u[0], u[1], (a[".id"]+a.args));
@@ -1285,7 +1313,6 @@ function uvpfl (p, m=1)
 	}
 
 	if (m==1) coll[2].value =  Math.floor(Date.now ()/1000); // update filter_ts
-	//console.log ("uvpfl("+coll[0].value+")----------------------------"+p.previousSibling.value+","+coll[2].value)
 	if (p.previousSibling.value>=coll[2].value) return;	// skip if no change in  filter_ts
 	p.previousSibling.value = coll[2].value;
 
@@ -1306,6 +1333,26 @@ function uvpfl (p, m=1)
 	url (p, u[0], u[1], (a[".id"]+a.args));
 }
 
+function uvpr (el, u, a, r, m) // uvp return
+{
+	el.style.display = "none"; // hide vp
+	el.innerHTML = "";
+	if (!elvp.firstChild) { elvp=null; return; }
+	var u_ = elvp.firstChild.value.split ("-");
+	el = elvp;
+	elvp = null;
+	if (u_.length>2 && u_[2].length>0) el = __(el, u_[2]); 	// ascend
+	if (u_.length>3 && u_[3].length>0) el = _(el, u_[3]); 	// descend
+	if (u_.length>4 && u_[4]!="!") el.innerHTML = "";
+        if (u_.length>4 && u_[4]=="!" && el.childNodes.length>0)
+        {
+                var el_ = document.createElementNS ("http://www.w3.org/1999/xhtml", "div");
+                el.insertBefore (el_, el.firstChild);
+                el = el_;
+        }
+	nd (el, te[u_[0]], [], r, [0]);
+}
+
 function uvpf (el)
 {
 	var u = el.id.split ("-");
@@ -1319,30 +1366,8 @@ function uvpf (el)
 	p.style.display = "none";
 	p.innerHTML = "";
 	pvf.firstChild.innerHTML = "";
-console.log (el.id);
 	nd (pvf.firstChild, te[u[0]], [], [], [0]);
 	uvpfl (pvf.parentNode)
-}
-
-function uvpfn (el, u, a, r, m)
-{
-	el.style.display = "none"; // hide vp
-	el.innerHTML = "";
-	if (!elvp.firstChild) { elvp=null; return; }
-	var u_ = elvp.firstChild.value.split ("-");
-	el = elvp;
-	elvp = null;
-	//console.log ("uvpfn: "+u_)
-	if (u_.length>2 && u_[2].length>0) el = __(el, u_[2]); 	// ascend
-	if (u_.length>3 && u_[3].length>0) el = _(el, u_[3]); 	// descend
-	if (u_.length>4 && u_[4]!="!") el.innerHTML = "";
-        if (u_.length>4 && u_[4]=="!" && el.childNodes.length>0)
-        {
-                var el_ = document.createElementNS ("http://www.w3.org/1999/xhtml", "div");
-                el.insertBefore (el_, el.firstChild);
-                el = el_;
-        }
-	nd (el, te[u_[0]], [], r, [0]);
 }
 
 function uvp ()
@@ -1381,30 +1406,12 @@ function vp (p)
 	p.style.width = w
 	p.style.display = "block";
 	p.innerHTML = ""; // todo: doc-fragment	
- 	window.scrollTo(0, 0); 
+	console.log (window.innerHeight+" / "+document.body.scrollHeight+" "+window.scrollY);
+	// window.scrollTo(0, 0); 
 	// console.log (p.className)
 } 
 
 // ---
-
-function _nd (ev)
-{
-	ra = [];
-	for (var k in re) ra[k]=re[k]; // reset ra
-
-	var u = this.id.split("-");
-	var p = this;
-	if (u.length>2 && u[2].length>0) p = __(p,u[2]);
-	if (u.length>3 && u[3].length>0) p = _(p,u[3]);
-	if (u.length>4 && u[4].length>0) p.innerHTML = ""; // todo: doc-fragment
-	
-	var r_ = ra[u[1]][0].slice(0); // get a copy
-	rargs (r_, this.firstChild.lastChild.childNodes, r_);
-	
-	//console.log ("[nd] "+u[0]+" "+u[1]+" | "+JSON.stringify (r_));
-	nd (p, te[u[0]], [], r_, [0]);
-	boo(ev);
-}
 
 function _u (ev) 
 {
@@ -1440,66 +1447,18 @@ function _nav (ev)
 	boo(ev)
 }
 
-function _del (ev) // delete record
-{
-	// todo: js confirm
-	var u = this.id.split ("-");
-	var el = __(this,"va");
-	var p = el.parentNode;
-	var o = {};
-	argv (this, o);
-	if (this.id.length<1) 
-	{
-		p.removeChild (el);
-		return;
-	}
-	url (el, u[0], u[1], o[".id"], null, 2, o, "POST");
-	boo(ev);
-}
-
 function _postj (ev)
 {
-	postj (this,"name");
-	// boo(ev);
+	var p = __(this,id);
+        var o = {}; 
+        var u = this.id.split ("-");
+        var id = "v"
+	if (u.length>2) id=u[2] 
+        jso (p,o); 
+        url (p, u[0], u[1], o[".id"], null, 2, o, "POST");
 }
 
-function _postji (ev) 
-{
-	postj (this,"id");
-	boo(ev);
-}
-
-function _postjb (ev) 
-{       
-        postj (this,"name",3);
-        boo(ev);
-}
-
-function _uvpf () { uvpf (this); }
-
-function _uvpd (ev)
-{	
-	if (!this.firstChild) return;
-	if (this.firstChild.id!="vddvw" && this.firstChild.id!="vddvf") return; // block non-vddvw from closing
-	this.style.display = "none";
-	if (this.firstChild.id=="vddvf") uvpf (this.firstChild.lastChild.firstChild.firstChild);
-	if (elvp) uvp ();
-}
-
-function _uvp (ev)
-{
-	var p = document.getElementById ("vp");
-	p.style.display = "none";
-	p.innerHTML = "";
-	if (elvp) uvp ();
-	boo(ev);	
-}
-
-function _uvw ()
-{
-	var p = __(this,"vfvw");
-	p.parentNode.previousSibling.firstChild.checked = true;
-}
+// ---
 
 function _vpf ()
 {
@@ -1508,6 +1467,7 @@ function _vpf ()
 	var o = {}; 
 	elvpf = __(this,"vb").nextSibling;
 	jso (elvpf, o);
+	argv (this.firstChild.lastChild, o)
 	ra[u[1]] = o;
 	vp (p);
 	nd (p, te[u[0]], [], [], [0]);
@@ -1517,22 +1477,25 @@ function _vp (ev)
 {
 	var p = document.getElementById ("vp");
 	var u = this.id.split ("-");
+	if (this.previousSibling) this.previousSibling.checked=true;
 	elvp = null;
 	if (u.length>2) elvp = this.nextSibling;
 	vp (p);
 	urargs (this, p);
 	boo(ev);
 }
-
+ 
 function _vw (ev)
 {
 	var u = this.id.split ("-");
-	var p = __(this,"vftab").parentNode.nextSibling;
+	var p = __(this,"vf").parentNode.parentNode.childNodes[this.previousSibling.value];
 	this.previousSibling.checked=true;
 	p.firstChild.checked = true;
-	// if (u.length<3 && p.childNodes[1].childNodes.length>0) return; // dont repopulate
-	p.childNodes[1].innerHTML = ""
-	urargs (this, p.childNodes[1]);
+	if (u.length>1)
+	{
+		p.childNodes[1].innerHTML = ""
+		urargs (this, p.childNodes[1]);
+	}
 	boo (ev)
 }
 
@@ -1564,7 +1527,34 @@ function _tab (ev)
 	urargs (this, p.childNodes[1]);
 }
 
-// --------------------
+// ---
+
+function _uvpd (ev)
+{	
+	if (!this.firstChild) return;
+	if (this.firstChild.id!="vddvw" && this.firstChild.id!="vddvf") return; // block non-vddvw from closing
+	this.style.display = "none";
+	if (this.firstChild.id=="vddvf") uvpf (this.firstChild.lastChild.firstChild.firstChild);
+	if (elvp) uvp ();
+}
+
+function _uvpf () { uvpf (this); }
+
+function _uvp (ev)
+{
+	var p = document.getElementById ("vp");
+	p.style.display = "none";
+	p.innerHTML = "";
+	if (elvp) uvp ();
+	boo(ev);	
+}
+
+function _uvw ()
+{
+	__(this,"vf").parentNode.parentNode.firstChild.firstChild.checked = true;
+}
+
+// ---
 
 function _print ()
 {

@@ -103,7 +103,7 @@ te["ati_ended"] = { s:["t cd tc","Chat Closed"] };
 
 te["ati_btns"] = { c:
 [
-	{ div:["d x"], c:
+	{ div:["d x g"], c:
 	[
 		{ input:["g","","sbr","1","radio"] },
 		{ ac:["x","","_activity_close","x cb",""], c:
@@ -127,7 +127,21 @@ te["ati_btns"] = { c:
 	{ div:["e"] }
 ]};
 
-te["ati_toolbar"] = { div:["ma w20",":v:activities:src_callid"], c: //  
+
+te["ati_toolbar"] = { div:["ma w15 ",":v:activities:src_callid"], c: //
+[
+	{ input:["g","ati_toolbar","sbl","1","radio","1"] },
+	{ ac:["abs mtn37 ao w15 sbl bd","","_activity_show","w15 bd tc cb bd gws_",""], c:[ { div:[""], c:
+	[
+		{ s:["c ll y",":v:activities:src::case_src:1"] },
+		{ s:["c",""] }, //	{ s:["c w08 y tc b",":v:activities:src_address"] },
+		{ s:["d r10 y tr",""] },
+		{ arg:["ts","",":v:activities:src_ts"] },
+		{ div:["e"] }
+	]} ]}
+]};
+
+/*te["ati_toolbar"] = { div:["ma w20",":v:activities:src_callid"], c: //  
 [
 	{ input:["g","ati_toolbar","barr","1","radio","1"] },
 	{ li:["abs mtn37 ao w20 bd"], ev:["_activity_show"], s:["gr bd cw",""], c:
@@ -144,7 +158,7 @@ te["ati_toolbar"] = { div:["ma w20",":v:activities:src_callid"], c: //
 		//{ div:["e"] }
 	]}
 ]};
-
+*/
 
 te["ati_available"] = { div:[], s:["xx y cd","Text Queues On"] };
 
@@ -227,8 +241,8 @@ function ati_popup (el, f=0)
 
 	var u_ = re["case_src"][a.src];
 	nd (coll[1], te["ati_toolbar"], [], r_, [0]); // show toolbar	
-	nd (coll[6].childNodes[1].childNodes[1], te["activity_vw_id"], [u_[8],"1",""], r_, [3]);
-	url (coll[6].childNodes[1].childNodes[1].lastChild, u_[9], "activities", s);	
+	nd (coll[6].childNodes[1].childNodes[1], te["activity_vw_id"], [u_[8],"","","1"], r_, [4]);
+	url (coll[6].childNodes[1].childNodes[1].lastChild, "activity_vw_id_tabs_message", "activities", s);
 }
 
 function _ati_popup ()

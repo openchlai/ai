@@ -573,25 +573,28 @@ function phone_hangup (id)
 
 function _hangup (ev)
 {
-	var id = __(this,"va").previousSibling.value;
-	phone_hangup (id)
+	var o = {};
+	argv (__(this,"vb").lastChild, o)
+	phone_hangup (o["src_callid"])
 	boo (ev);
 }
 
 function _hold (ev)
 {
-	var id = __(this,"va").previousSibling.value;
-	var vs= CALLS[id]
-	console.log ("hold("+vs.ishold+")---------------------"+id)
+	var o = {};
+	argv (__(this,"vb").lastChild, o);
+	var vs= CALLS[o["src_callid"]];
+	console.log ("hold("+vs.ishold+")---------------------"+o["src_callid"])
 	VOICEAPPS_UA.sethold (vs, !vs.ishold);
 	boo (ev);
 }
 
 function _answer (ev)
 {
-	var id = __(this,"va").previousSibling.value;
-	CALLS[id].session.accept ({ sessionDescriptionHandlerOptions: { constraints: { audio: true, video: false } } });
-	console.log ("answer---------------------"+id)
+	var o = {};
+	argv (__(this,"vb").lastChild, o);
+	CALLS[o["src_callid"]].session.accept ({ sessionDescriptionHandlerOptions: { constraints: { audio: true, video: false } } });
+	console.log ("answer---------------------"+o["src_callid"])
 	boo (ev);
 }
 
