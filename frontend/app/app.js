@@ -1,3 +1,6 @@
+// "lets think of this as a brainstorming pharse - no bad ideas. Keep spit balling!"
+// "maybe the solution is ai. (how can AI be the solution?) Thats the first question we will ask Ai"
+// 
 
 var APIPATH = "/helpline/api/";  
 
@@ -78,7 +81,6 @@ var UU =
 "qa_main":{ 200:[["qa_main","qas_ctx"]] },
 "qas":{ 200:[["qas","qas_ctx"]], 201:[["qas","qas_ctx"]] },
 
-
 "call_rpt_vw":{ 200:[["rpt_vw","calls_rpt"]] },
 "call_dispositioned":{ 201:[["call_dispositioned","activities","vp"]], 202:[["call_dispositioned","activities","vp"]], 412:[["nb","errors","v","nb"]] },
 "call_case":{ 200:[["call_case","cases_ctx"]] },
@@ -93,43 +95,32 @@ var UU =
 "pmessage_list":{ 200:[["pmessage_list","pmessages_ctx"]] },
 "pmessage_main":{ 200:[["pmessage_main","pmessages_ctx"]] },
 "pmessages":{ 200:[["pmessages","pmessages_ctx"]] },
-
+ 
 "activity_message_send":{ 201:[["activity_message_sended","messages","","sended"]] },
 "activity_messages":{ 200:[["activity_messages_ufn","messages_ctx"]] },
-
-
-"activity_call":{ 201:[["activity_call","activities"]], 202:[["activity_call","activities"]], 412:[["nb","errors","","nb"]] },
-
-"activity_contact_list":{ 200:[["activity_contact_list","contacts_ctx"]] },
-
+"activity_contact_ed":{ 200:[["activity_contact_updated","contacts_disposition","vf"]], 202:[["activity_contact_updated","contacts_disposition"]], 412:[["nb","errors","v","nb"]] },
+"activity_contact_new":{ 201:[["activity_contact_created","contacts_disposition","vf"]], 412:[["nb","errors","v","nb"]] },
+"activity_contact_ls":{ 200:[["activity_contact_ls","dispositions_ctx"]] },
+"activity_contact_ls_main":{ 200:[["activity_contact_ls_main","dispositions_ctx"]] },
+"activity_contact_main":{ 200:[["activity_contacts","dispositions_ctx"]] },
+"activity_reporter":{ 201:[["activity_reporter_ufn","reporters_uuid"]], 412:[["nb","errors","v","nb"]] },
+"activity_disposition_ed_r":{ 200:[["activity_disposition_ed_r","subcategories"]] },
+"activity_disposition_unknown":{ 201:[["activity_disposition_ufn","dispositions_unknown"]] },
+"activity_disposition":{ 200:[["activity_disposition_form","contacts_disposition"]], 201:[["activity_disposition_ufn","dispositions"]], 412:[["nb","errors","v","nb"]] },
 "activity_disposition_vwr":{ 200:[["activity_disposition_vwr","dispositions"]] },
-"activity_disposition":{ 201:[["uvpfn","dispositions","vp"]], 412:[["nb","errors","v","nb"]], 200:[["activity_disposition","dispositions_ctx"]] },
-"activity_disposition_new":{ 201:[["activity_disposition_new","cases_uuid"]], 412:[["nb","errors","v","nb"]] },
-
-
-"activity_match_list":{ 200:[["activity_match_list","dispositions_ctx"]] },
-"activity_match":{ 200:[["activity_match","dispositions_ctx"]] },
-
-"activity_vw_id_messages_match":{ 200:[["activity_vw_id_messages_match","activities"]] },
-"activity_vw_id_messages":{ 200:[["activity_vw_id_messages","activities"]] },
-"activity_vw_id_match":{ 200:[["activity_vw_id_match","activities"]] },
+"activity_list":{ 200:[["activity_list","dispositions_ctx"]] },
+"activity_main":{ 200:[["activity_main","dispositions_ctx"]] },
+"activity_vw_id_tabs_message":{ 200:[["activity_vw_id_tabs_message","activities"]] },
+"activity_vw_id_tabs":{ 200:[["activity_vw_id_tabs","activities"]] },
 "activity_vw_id":{ 200:[["activity_vw_id","activities"]] },
+"activity_call":{ 201:[["activity_call","activities"]], 202:[["activity_call","activities"]], 412:[["nb","errors","","nb"]] },
 "activity_lst":{ 200:[["activity_lst","activities_ctx"]] },
 
 // ---
 
-"case_uuid_update":{ 201:[["case_update","cases"]], 412:[["nb","errors","v","nb"]] },
-"case_uuid_edit":{ 201:[["case_ed","cases"]], 412:[["nb","errors","v","nb"]] },
-"case_uuid_new":{ 201:[["case_new","r_"]], 412:[["nb","errors","v","nb"]] },
-
-// ---
-
-"reporter_duuid":{ 201:[["activity_disposition_new","r_"]], 	412:[["nb","errors"]] },
-"reporter_fuuid":{ 201:[["case_vw_id","cases"]], 		412:[["reporter_not_selected","r_"]] },
-"reporter_uuid": { 201:[["case_new","r_"]], 			412:[["reporter_not_selected","r_"]] },
 "reporter_is_client":{ 202:[["reporter_isclient_ufn","reporters_isclient","va"]],  412:[["nb","errors","v","nb"]] },
 "reporter_ed":{ 200:[["case_reporter_ed","reporters","vp"]], 202:[["uvpfn","reporters","vp"]], 412:[["nb","errors","v","nb"]] },
-"reporter_new":{ 201:[["uvpfn","contacts","vp"]], 412:[["nb","errors","v","nb"]] },
+"reporter_new":{ 201:[["sasasas","reporters"]], 412:[["nb","errors","v","nb"]] },
 "reporter_vw_id":{ 200:[["case_reporter_vw_id","reporters"]] },
 
 "client_del":{ 202:[["case_client_del","clients_del","va"]], 412:[["nb","errors","v","nb"]] },
@@ -150,13 +141,10 @@ var UU =
 "referal_del":{ 202:[["case_notif_del","referals"]], 412:[["nb","errors","v","nb"]] },
 "service_del":{ 202:[["case_notif_del","services"]], 412:[["nb","errors","v","nb"]] },
 
-"case_contact_ed":{ 200:[["case_contact_ed","contacts"]], 202:[["uvpfn","contacts","vp"]], 412:[["nb","errors","v","nb"]] },
-"case_contact_new":{ 201:[["uvpfn","contacts_disposition","vp"]], 412:[["nb","errors","v","nb"]] },
-
 "case_rpt_vw":{ 200:[["rpt_vw","cases_rpt"]] },
 "case_update":{ 202:[["uvpfn","cases","vp"]], 412:[["nb","errors","v","nb"]], 200:[["case_update","cases"]] },
-"case_ed":{ 202:[["activity_case_ufn","cases","vfvw"]], 412:[["nb","errors","v","nb"]], 200:[["case_ed","cases"]] },
-"case_new":{ 200:[["case_new","cases"]], 201:[["activity_case_ufn","cases","vfvw"]], 202:[["activity_case_ufn","cases","vfvw"]], 412:[["nb","errors","v","nb"]] },
+"case_ed":{ 202:[["activity_case_ufn","dispositions"]], 412:[["nb","errors","v","nb"]], 200:[["case_ed","cases"]] },
+"case_new":{ 201:[["activity_case_ufn","dispositions"]], 412:[["nb","errors","v","nb"]] },
 "case_vw_id":{ 200:[["case_vw_id","cases"]] },
 "case_vw":{ 200:[["case_vw","cases"]] },
 "case_list":{ 200:[["case_list","cases_ctx"]] },
@@ -399,13 +387,20 @@ re["case_status"] =
 "3":["3","Escalated","Escalated to","","","#ff0000"],
 };
 
-
 rk["case_priority_form"] = ["1","2","3"];
 re["case_priority_form"] = re["case_priority"];
 
 rk["case_status_form"] = ["1","2"];
 re["case_status_form"] = re["case_status"];
 
+
+rk["case_dept"] = ["0","1"];
+re["case_dept"] =
+{
+"":["","116","","","",""],
+"0":["0","116","","","",""],
+"1":["1","Labor","","","",""]
+};
 
 //
 //rk["case_src"] = ["walkin","call","sms","email","safepal","WHATSAPP","FACEBOOK","TWITTER"];
@@ -428,33 +423,66 @@ re["case_status_form"] = re["case_status"];
 //"TWITTER":["TWITTER","TWITTER","Chat Activity","chat",                   "ati_btns","activity_messages_main","activities"],
 
 
-rk["case_src"] = ["walkin","call","sms","email","safepal","chat","WHATSAPP","FACEBOOK","TWITTER","WENI"];
+rk["case_src"] = ["walkin","call","sms","email","safepal","chat","whatsup","FACEBOOK","TWITTER","WENI"];
 re["case_src"] = 
 {                               
-//"":["","",""],          
-"":["edit","edit","",                               "g","", "g","edit","Edit Activity",                             "noop","activity_vw_id_match", "Edit", "", ""],
-
+"":["edit","edit","",                               	"g","", "g","edit","Edit Activity",                             "noop","activity_vw_id_match", "Edit", "", ""],
 "all":["all","Total",":k:case_source:total:1",          "g","", "micon hh co","cases","All Cases",                      "noop","noop","","", ""],
 "social":["social","Social Media",":k:case_source:socialmedia:1", "g","", "micon cbl hh","share","Social Media",        "noop","noop","","", ""],
-"edit":["edit","edit","",                               "g","", "g","edit","Edit Activity",                             "noop","activity_vw_id_match", "Edit", "", ""],
-"walkin":["walkin","Walkin",":k:case_source:walkin:1",  "g","", "micon cg hh","directions_walk","Walkin Activity",      "activity_btns","activity_vw_id_match","Walkin", "reporter_phone", ""],
-"call":["call","Call",":k:case_source:call:1",          "","/helpline/images/bxs-phone-call.png","g","call","Call Activity","cti_btns","activity_vw_id_match","Call", 
+"edit":["edit","edit","",                               "g","", "g","edit","Edit Activity",                             "noop","activity_vw_id_tabs", "Edit", "", ""],
+"walkin":["walkin","Walkin",":k:case_source:walkin:1",  "g","", "micon cg hh","directions_walk","Walkin Activity",      "activity_btns","activity_vw_id_tabs","Walk In", "reporter_phone", ""],
+"call":["call","Call",":k:case_source:call:1",          "","/helpline/images/bxs-phone-call.png","g","call","Call Activity","cti_btns","activity_vw_id_tabs","Call", 
 "reporter_phone", ""],
-"sms":["sms","SMS",":k:case_source:sms:1",              "","/helpline/images/sms.png","g","sms","SMS Activity",            "ati_btns","activity_vw_id_messages","SMS Chat", "reporter_phone", ""],
-"email":["email","Email",":k:case_source:email:1",      "","/helpline/images/envelope-fill.png","g","chat","Email Activity","ati_btns","activity_vw_id_messages","Email", "reporter_email", ""],
-"safepal":["safepal","SafePal","",                      "","/helpline/images/safepal_ico.png","g","chat","Safepal Activity","ati_btns","activity_vw_id_messages","Safepal", "reporter_phone", "safepal"],
-"whatsup":["whatsup","Whatsup","",                      "","/helpline/images/watsap_ico.png","g","chat","Whatup Activity", "ati_btns","activity_vw_id_messages","Whatsapp Chat", "reporter_phone", ""],
-"facebook":["facebook","Facebook","",                   "","/helpline/images/fb_ico.png","g","chat","Facebook Activity",   "ati_btns","activity_vw_id_messages","Facebook Posts", "reporter_email", ""],
-"twitter":["twitter","Twitter","",                      "","/helpline/images/twitter_ico.png","g","chat","Twitter Activity","ati_btns","activity_vw_id_messages","Twitter Posts", "reporter_email", ""],
-"chat":["chat","Chat","",                               "","/helpline/images/chat.png","g","chat","Chat Activity",         "ati_btns","activity_vw_id_messages","Web Chat", "reporter_phone", "safepal"],
-"escalation":["escalation","Escalation","",		"","","","","",							   "nti_btns","activity_vw_id_notify","activities^case", "reporter_phone", ""],
-"WENI":["WENI","WENI","",                      		"","/helpline/images/watsap_ico.png","g","chat","WENI Activity", "ati_btns","activity_vw_id_messages","Weni Chat", "reporter_phone", ""], 
-"WHATSAPP":["WHATSAPP","WHATSAPP","",                   "","/helpline/images/watsap_ico.png","g","chat","Whatsup Activity", "ati_btns","activity_vw_id_messages","Whatsapp Chat", "reporter_phone", ""],
-"FACEBOOK":["FACEBOOK","FACEBOOK","",                   "","/helpline/images/watsap_ico.png","g","chat","Facebook Activity", "ati_btns","activity_vw_id_messages","Facebook Chat", "reporter_email", ""], 
-"TWITTER":["TWITTER","TWITTER","",                      "","/helpline/images/watsap_ico.png","g","chat","Twitter Activity", "ati_btns","activity_vw_id_messages","Twitter Chat", "reporter_email", ""], 
+"sms":["sms","SMS",":k:case_source:sms:1",              "","/helpline/images/sms.png","g","sms","SMS Activity",            "ati_btns","activity_vw_id_tabs_message","SMS Chat", "reporter_phone", ""],
+"email":["email","Email",":k:case_source:email:1",      "","/helpline/images/envelope-fill.png","g","chat","Email Activity","ati_btns","activity_vw_id_tabs_message","Email", "reporter_email", ""],
+"safepal":["safepal","SafePal","",                      "","/helpline/images/safepal_ico.png","g","chat","Safepal Activity","ati_btns","activity_vw_id_tabs_message","Safepal", "reporter_phone", "safepal"],
+"whatsup":["whatsup","Whatsup","",                      "","/helpline/images/watsap_ico.png","g","chat","Whatup Activity", "ati_btns","activity_vw_id_tabs_message","Whatsapp Chat", "reporter_phone", ""],
+"facebook":["facebook","Facebook","",                   "","/helpline/images/fb_ico.png","g","chat","Facebook Activity",   "ati_btns","activity_vw_id_tabs_message","Facebook Posts", "reporter_email", ""],
+"twitter":["twitter","Twitter","",                      "","/helpline/images/twitter_ico.png","g","chat","Twitter Activity","ati_btns","activity_vw_id_tabs_message","Twitter Posts", "reporter_email", ""],
+"chat":["chat","Chat","",                               "","/helpline/images/chat.png","g","chat","Chat Activity",         "ati_btns","activity_vw_id_tabs_message","Web Chat", "reporter_phone", "safepal"],
+"escalation":["escalation","Escalation","",		"","","","","",							   "nti_btns","activity_vw_id_tabs_message","activities^case", "reporter_phone", ""],
+"WENI":["WENI","WENI","",                      		"","/helpline/images/watsap_ico.png","g","chat","WENI Activity", "ati_btns","activity_vw_id_tabs_message","Weni Chat", "reporter_phone", ""], 
+"whatsup":["whatsup","WHATSAPP","",                   "","/helpline/images/watsap_ico.png","g","chat","Whatsup Activity", "ati_btns","activity_vw_id_tabs_message","Whatsapp Chat", "reporter_phone", ""],
+"FACEBOOK":["FACEBOOK","FACEBOOK","",                   "","/helpline/images/watsap_ico.png","g","chat","Facebook Activity", "ati_btns","activity_vw_id_tabs_message","Facebook Chat", "reporter_email", ""], 
+"TWITTER":["TWITTER","TWITTER","",                      "","/helpline/images/watsap_ico.png","g","chat","Twitter Activity", "ati_btns","activity_vw_id_tabs_message","Twitter Chat", "reporter_email", ""], 
+
+
+"webform":["webform","Webform",":k:case_source:webform:1",  "g","", "micon cg hh","directions_walk","Webform Activity",      "activity_btns","activity_vw_id_tabs","Web Form", "reporter_phone", ""],
+
+"cmis":["cmis","CMIS",":k:case_source:cmis:1",  "g","", "micon cg hh","directions_walk","CMIS Activity",      "activity_btns","activity_vw_id_tabs","CMIS", "reporter_phone", ""],
+
 };
 
- 
+rk["safepal"] = ["timestamp","reporter_nickname","case_category","victim","perpetrator"];
+
+re["safepal"] = 
+{
+"timestamp": ["timestamp","Timestamp"],
+"reporter_nickname": ["reporter_nickname","Reporter Nickname"],
+"case_category":[ "case_category", "Category" ],
+"victim":["victim","Victim","o"],
+"perpetrator":["perpetrator","Perpetrator","o"]
+};
+
+rk["safepal_victim"] = ["name","age","gender"];
+
+re["safepal_victim"] =
+{
+"name": ["name","Victim Name"],
+"age": ["age","Victim Age"],
+"gender":[ "gender", "Victim Gender"],
+};
+
+rk["safepal_perpetrator"] = ["name","age","gender"];
+
+re["safepal_perpetrator"] =
+{
+"name": ["name","Perpetrator Name"],
+"age": ["age","Perpetrator Age"],
+"gender":[ "gender", "Perpetrator Gender"],
+};
+
+/*
 rk["safepal"] = ["id", "incident_report_id", "survivor_name", "survivor_gender", "survivor_contact_phone_number", "survivor_contact_email", "survivor_age", "unique_case_number", "incident_location", "incident_date_and_time", "incident_type", "incident_descriptio", "incident_reported_by", "number_of_perpetrators", "perpetrator_name", "perpetrator_gender", "perpetrator_estimated_age", "perpetrator_relationship", "perpetrator_location", "date_of_interview_with_cso", "chl_status", "chl_case_id", "chl_time", "chl_user_id"]; // safepal msg object schema
 re["safepal"] = 
 {
@@ -483,7 +511,7 @@ re["safepal"] =
 "chl_time": 		["chl_time","CHL Tie"],
 "chl_user_id": 		["chl_user_id","CHL User"],
 };
-
+*/
 
 rk["dash_src"] = ["all","call","sms","social","email","walkin"];
 re["dash_src"] = 
@@ -649,21 +677,23 @@ te["loadphone"] = { ufn:["loadphone"] };
 
 te["vfile_not_found"] = { s:["xx y gp cr bd8","Recording Not Found"] };
 
-te["vp_apply"] = { div:["x25 t b15"], c: // 
+te["vp_apply_"] = { div:["xx t b15"], c: // 
 [
-	{ div:["d l15"], c:[ { ac:["ag btn w06",null,"_uvpf","x y04 w05 gb cw tc","Apply"] }, { s:["y07 bd b savl","..."] } ] },
-	{ div:["d","va"], ac:["ay","","_uvp","x y03 w05 ba tc cd","Cancel"] },
+	{ div:["d l15"], c:[ { ac:["ao btn w06",null,null,"x y04 w05 gb bd8 cw tc","Apply"] }, { s:["x y04 w05 gb bd8 cw tc b savl","..."] } ] },
+	{ div:["d","va"], ac:["ay",null,null,"x y03 w05 ba bd8 tc cd","Cancel"] },
 	{ div:["e"] }
 ]};
+
+te["vp_apply"] = { vp_apply_:[null,"_uvpf","","_uvp"] };
 
 te["vp_sav"] = { c:
 [
 	{ div:["d l15"], c:
 	[ 
-		{ ac:["ag btn",null,null,"w10 y gb cw tc",null] }, 
+		{ ac:["ao btn",null,null,"w10 y gb bd8 cw tc",null] }, 
 		{ s:["y b savl",null] } 
 	]},
-	{ div:["d","va"], ac:["ay",null,null,"w09 y04 ba tc cd",""], c:
+	{ div:["d","va"], ac:["ay",null,null,"w09 y04 bd8 ba tc cd",""], c:
 	[ 
 		{ s:["",null] },
 		{ p:["g","o"], arg:["",".id","%0"] } 
@@ -1208,7 +1238,7 @@ te["toolbar_default"] = { div:["ma w15"], c:
 [
 	{ input:["g","","sbl_","1","radio","1"] },
 	{ input:["g","","sbr_","1","radio"] },
-	{ ac:["abs mtn45 ao t08 w15","","_activity_vw","xx bd gg cw",""], c:
+	{ ac:["abs mtn45 ao t08 w15","","_activity_vw_id","xx bd gg cw",""], c:
 	[
 		{ s:["c y","Walk In"]},
 		{ s:["d t03 h2 micon","directions_walk"] },
@@ -1218,21 +1248,21 @@ te["toolbar_default"] = { div:["ma w15"], c:
 			
 te["main"] = { c: 
 [
-	{ div:["x y07 gw"], c: // 
+	{ div:[" gw"], c: // 
 	[
 		{ div:["c "], s:["",""], c:
 		[
-			{ a:["c aa","","","/helpline/"], c:[ { img:["","",APP_LOGO, "48"] } ] },
+			{ a:["c aa x02 y02","","","/helpline/"], c:[ { img:["","",APP_LOGO, "44"] } ] },
 			{ div:["e"] }
 		]}, 		
 			
-		{ div:["d r10"], c:
+		{ div:["d t08 r20"], c:
 		[
 			{ input:["g","","rtab","0","radio"] },
 			{ ac:["ll ay tab","","_mtabr","gw bd x y micon h2_ cb","history"] }				
 		]},
 		
-		{ div:["d mr"], c:
+		{ div:["d mr t08"], c:
 		[
 			{ input:["g","","rtab","1","radio"] },
 			{ ac:["l15 ay tab","","_mtabr","gw bd cb",""], c:
@@ -1242,7 +1272,7 @@ te["main"] = { c:
 			]},
 		]},
 		
-		{ div:["d mr g"], c: // active chat (shown only when chat-activity is open)
+		{ div:["d mr t g"], c: // active chat (shown only when chat-activity is open)
 		[
 			{ input:["g","","rtab","2","radio"] },
 			{ ac:["l15 ay rb","","_mtabr","gw bd cb",""], c:
@@ -1252,7 +1282,7 @@ te["main"] = { c:
 			]},
 		]},
 					
-		{ div:["d w17 t01"], s:["abs w17 zzz",""], c:
+		{ div:["d w17 t08"], s:["abs w17 zzz",""], c:
 		[
 			{ div:["ay","va"], ac:["","","_dd","w17 bd gws_",""], c:
 			[
@@ -1288,7 +1318,7 @@ te["main"] = { c:
 	]},
 	
 	{ div:["","vb"], toolbar_default:[] },
-	
+
 	{ div:["g"], c:  // 
 	[
 		{ div:["d w28"], s:["abs zz w28 gw mt",""], c:
@@ -1320,11 +1350,7 @@ te["main"] = { c:
 		
 		{ div:["e"] } 
 	]},
-
-	{ p:["abs zz y op_ga g","vp"], ev:["_uvpd"] }, // popup window	
 	
-	{ p:["abs zzzz y op_ga g","vip"], ev:["_uvpd"] }, // incoming call popup	
-		
 	{ div:["h80 gb abs","vb"], s:["sb_",""], c: 
 	[
 		{ sbl:["","2","1","","speed","Dash","noop"] },
@@ -1361,13 +1387,17 @@ te["main"] = { c:
 		{ sbl:["admin_","7","","contacts-contacts","import_contacts","Contacts","noop"] },
 	]},
 
+	{ p:["abs zz y op_ga g","vp"], ev:["_uvpd"] }, // popup window	
+	
+	{ p:["abs zzzz y op_ga g","vip"], ev:["_uvpd"] }, // incoming call popup	
+
 	{ div:["ml6"], c: // 
 	[
 		{ div:[], c:[ { div:["d w28"], s:["abs w27 x y zzz",""], c:
 		[
 			 // notifications
 		]} ]},
-		{ div:[], c:[ { input:["g","","mtv","1","radio"] }, { p:["tabv gw  mm","vfvwm"] } ] }, // on call & right sb vw
+		{ div:[], c:[ { input:["g","","mtv","1","radio"] }, { p:["tabv gw bd12 mm","vfvwm"] } ] }, // on call & right sb vw
 		{ div:[], c:[ { input:["g","","mtv","2","radio","1"] }, { p:["tabv mm","vftab"], u:["dash","dash"] } ] }, // wall board
 		{ div:[], c:[ { input:["g","","mtv","3","radio"] }, { p:["tabv","vfvwm"] } ] }, // cases
 		{ div:[], c:[ { input:["g","","mtv","4","radio"] }, { p:["tabv","vftab"] } ] }, // calls
@@ -1378,12 +1408,10 @@ te["main"] = { c:
 		{ div:[], c:[ { input:["g","","mtv","9","radio"] }, { p:["tabv","vftab"] } ] }, // 
 		{ div:[], c:[ { input:["g","","mtv","10","radio"] }, { p:["tabv gw mm","vfvwm"], wallboard:[] } ] }, // wallboard
 
-
-		
 		{ div:["g"], c:
 		[
-			// { iframe:["","",VA_AMI_HOST] },
-			// { iframe:["","",VA_ATI_HOST] },
+			{ iframe:["","",VA_AMI_HOST] },
+			{ iframe:["","",VA_ATI_HOST] },
 		]},
 	]}
 ]};
@@ -1511,7 +1539,7 @@ function loadphone (el, u, a, r, m)
 	if (v) document.getElementById ("vv").className = v[2];
 	console.log ("loadphone: "+ra["auth"][0][7]+" | "+JSON.stringify (v));
 	DetectDevices ();
-	// VOICEAPPS_UA.connect (ra["auth"][0][7]);
+	VOICEAPPS_UA.connect (ra["auth"][0][7]);
 }
 
 function ami_wait (el, u, a, r, m)

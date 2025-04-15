@@ -36,8 +36,20 @@ te["list"] = { c:
 		{ div:[""], u:[null,null] }, 	// rows
 	]},
 	{ u:[null] }		// footer
-]};
+]}; 
 
+te["listo"] = { c:
+[
+	{ u:[null] }, // title
+	{ u:[null] }, // nb
+	{ div:[null], c:
+	[ 
+		{ p:["","vc"], c:[ { u:[null] }, { arg:["","_c","%1"] }, { div:["e"] } ] }, // header
+		{ p:["","o"], u:[null,null] }, 	// rows
+	]},
+	{ u:[null] }		// footer
+]}; 
+	
 te["listb"] = { c:
 [
 	{ u:[null] }, // title
