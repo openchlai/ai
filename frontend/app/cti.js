@@ -167,31 +167,32 @@ te["call_add_form_main"] = { div:["w30 ma bd sh__ gw xx yy","vddvw"], ev:["_undd
 
 te["call_btns"] = { c: 
 [	
-	{ arg:["","",":v:activities:src_callid"] }, // sipid needed to invoke call actions
-	{ div:["","va"],  c:
-	[	
-		{ div:["d w09 gnws x call_ended_"], c:
+//	{ arg:["","",":v:activities:src_callid"] }, // sipid needed to invoke call actions
+//	{ div:["","va"],  c:
+//	[	
+		{ div:["d w09 x call_ended_"], c:
 		[
+		//	{ s:["d x t08 cb tc","Close"] },
 			{ input:["g","","sbr","1","radio"] },
 			{ ac:["d x t","","_activity_close","x y03 h2 cb bd16","&Cross;"] },
 			{ s:["d x t08 cb tc","Close"] },
 			{ div:["e"] }
 		]},
 		
-		{ div:["d w09 gnws x call_hangup_"], c:
+		{ div:["d w09 x call_hangup_"], c:
 		[
-			{ ac:["c ao","","_hangup","x t b03 w02 h02 h2 ma bd16 gb cw tc",""], c:
+			{ ac:["d ao","","_hangup","x t b03 w02 h02 h2 ma bd16 gb cw tc",""], c:
 			[
 				{ s:["","&Cross;"] },
 				{ div:["e"] }
 			]},
-			{ s:["c x s cb t tc","Hangup"] },
+			{ s:["d x s cb t tc","Hangup"] },
 			{ div:["e"] }
 		]}, 
 			
-		{ div:["d w09 gnws x"], c:
+		{ div:["d w09 x"], c:
 		[
-			{ div:["c"], c:
+			{ div:["d"], c:
 			[
 				{ ac:["ao call_connected_","call_add_form_main-r_","_add_dial_form","x t b03 w02 h02 h2 ma bd16 gb cw tc",""], c:
 				[
@@ -200,21 +201,23 @@ te["call_btns"] = { c:
 				]},
 				{ div:[] }
 			]},
-			{ s:["c call_connected_ x t s cb tc","Add"] },
-			{ s:["c call_connected__ x y w02 ma bd16 cd_ tc h2","+"] },
-			{ s:["c call_connected__ x t s cd_ tc","Add"] },
+			{ s:["d call_connected__ x y w02 ma bd16 gws_ cd_ tc h2","+"] },
+			{ s:["d call_connected_ x t s cb tc","Add"] },
+			//{ s:["d call_connected__ x y w02 ma bd16 gws_ cd_ tc h2","+"] },
+			{ s:["d call_connected__ x t s cd_ tc","Add"] },
 			{ div:["e"] }
 		]},
-		{ div:["d w09 gnws x"], c:
+		{ div:["d w09 x"], c:
 		[
 			{ input:["g","chanholdstate","","1","checkbox"] },
 			{ div:["w10 btnhold"], c:
 			[
-				{ ac:["c ao call_connected_","","_hold","x y w02 h2 ma bd16 gb cw tc","||"] },
-				{ div:["c call_connected_"], s:["x y s cb btnhold_lbl","Hold"] },
-				{ div:["c call_connected_"], s:["x y s cr btnunhold_lbl","UnHold"] },
-				{ s:["c call_connected__ x y w02 ma bd16 cd_ tc h2","||"] },
-				{ s:["c call_connected__ x y s cd_ btnhold_lbl","Hold"] },
+				{ ac:["d ao call_connected_","","_hold","x y w02 h2 ma bd16 gb cw tc","||"] },
+				{ s:["d call_connected__ x y w02 ma bd16 gws_ cd_ tc h2","||"] },
+				{ div:["d call_connected_"], s:["x y s cb btnhold_lbl","Hold"] },
+				{ div:["d call_connected_"], s:["x y s cr btnunhold_lbl","UnHold"] },
+				// { s:["d call_connected__ x y w02 ma bd16 gws_ cd_ tc h2","||"] },
+				{ s:["d call_connected__ x y s cd_ btnhold_lbl","Hold"] },
 				{ div:["e"] }
 			]}
 		]},
@@ -223,24 +226,23 @@ te["call_btns"] = { c:
 		[
 			{ div:["g"], c: // show only in cbid
 			[
-				{ ac:["c ao","","_answer","x t b03 w02 h02 h2 ma cb tc micon","group"] },
-				{ s:["c t08 cb","4"] },
+				{ ac:["d ao","","_answer","x t b03 w02 h02 h2 ma cb tc bd16 gws_ micon","group"] },
+				{ s:["d t08 cb","4"] },
 				{ div:["e"] }
 			]}
 		]},
 			
-		{ div:["d w09 gnws"], s:[":v:activities:src_vector::vector:7",""], c:
+		{ div:["d w09"], s:[":v:activities:src_vector::vector:7",""], c:
 		[ 
 			{ div:["w09 x ao call_ringing_"], c:
 			[
-				{ ac:["c ","","_answer","x t b03 w02 h02 h2 ma bd16 gb cw tc micon","call"] },
-				{ s:["c x t s cb tc","Answer"] },
+				{ ac:["d ","","_answer","x t b03 w02 h02 h2 ma bd16 gb cw tc micon","call"] },
+				{ s:["d x t s cb tc","Answer"] },
 				{ div:["e"] }
 			]} 
 		]},
 				
 		{ div:["e"] }
-	]}
 ]};
 
 //te["call_toolbar"] = { div:["ma w14",":v:activities:src_uid"], c: //  
@@ -258,10 +260,10 @@ te["call_btns"] = { c:
 te["call_toolbar"] = { div:["ma w20",":v:activities:src_uid"], c: //  
 [
 	{ input:["g","ati_toolbar","barr","1","radio","1"] },
-	{ li:["abs mtn37 ao w20 bd"], ev:["_activity_show"], s:["w20 bd cw",""], c:[ { div:["gr"], c:
+	{ li:["abs mtn37 ao w20 bd"], ev:["_activity_show"], s:["w13 bd cw",""], c:[ { div:["gr"], c:
 	[
-		{ s:["c x y ",":v:activities:src_address"] },
-		{ s:["c x y ",""] },
+		{ s:["c ll y g",":v:activities:src"] },
+		{ s:["c ll y ",""] },
 		{ s:["d xx y ",""] },
 		{ arg:["ts","",":v:activities:src_ts"] }, 
 		{ div:["e"] }
@@ -489,14 +491,14 @@ function call_popup_end (ts)
 	// toolbar
 	var coll_ = coll[1].firstChild.childNodes[1].firstChild.firstChild.childNodes;
 	coll_[0].parentNode.className = "cr b gp";
-	coll_[0].innerHTML = "Wrapup";
-	coll_[1].innerHTML = hmst ((ts*1), ["","","","","","",""]); // status-duration;
-	coll_[2].value = ts; // dont stop timer
+	coll_[1].innerHTML = "Wrapup";
+	coll_[2].innerHTML = hmst ((ts*1), ["","","","","","",""]); // status-duration;
+	coll_[3].value = ts; // dont stop timer
 	
 	// action btns
-	var p = _(coll[6].childNodes[1].childNodes[1].firstChild,"src_btns")
-	var last_status = p.firstChild.childNodes[1].className;
-	p.firstChild.childNodes[1].className = "call_ended";
+	var p = coll[6].childNodes[1].childNodes[1].firstChild,firstChild;
+	var last_status = p.className;
+	p.className = "call_ended";
 	if (last_status!="call_connected")  // auto close popup is call not connected
 	{
 		activity_close (); // clear
@@ -547,12 +549,12 @@ function call_popup_upd (el)
 	
 	coll_ = coll[1].firstChild.childNodes[1].firstChild.firstChild.childNodes;
 	//coll_[0].parentNode.className = ss[a.src_state][2];
-	coll_[0].innerHTML = ss[a.src_state][0];
-	coll_[1].innerHTML = ts_txt;
-	coll_[2].value = a.src_state_ts;
+	coll_[1].innerHTML = ss[a.src_state][0];
+	coll_[2].innerHTML = ts_txt;
+	coll_[3].value = a.src_state_ts;
 		
 	// action btns
-	_(coll[6].childNodes[1].childNodes[1].firstChild,"src_btns").firstChild.childNodes[1].className = ss[a.src_state][1];
+	coll[6].childNodes[1].childNodes[1].firstChild.firstChild.className = ss[a.src_state][1];
 	
 	return 0;	
 }
@@ -605,8 +607,8 @@ function call_popup (el, f=0)
 	}
 
 	nd (coll[1], te["call_toolbar"], [], r_, [0]); // show toolbar	
-	nd (coll[6].childNodes[1].childNodes[1], te["activity_vw_id"], ["call_btns","","1"], r_, [3]);	
-	url (coll[6].childNodes[1].childNodes[1].lastChild, "activity_vw_id_match", "activities", s);
+	nd (coll[6].childNodes[1].childNodes[1], te["activity_vw_id"], ["call_btns","1","",""], r_, [4]);	
+	url (coll[6].childNodes[1].childNodes[1].lastChild, "activity_vw_id_tabs", "activities", s);
 
 	var isaa = document.getElementById ("is_auto_answer");
 	var sess = CALLS[r_[k["src_callid"][0]]];
@@ -1013,10 +1015,61 @@ function chans (o,k,ts)
 
 function ldami (o,c)
 {
-        var ts = (Date.now ()/1000);
+        console.log (o)
+	var ts = (Date.now ()/1000);
         var k = Object.keys (o);
         re["channels"] = o;
         chans (o, k, ts);
         chans_pop (ts);
+}
+
+// depricated te
+
+function _postjb (ev)
+{
+	var id = "v"
+        var u = this.id.split ("-");
+        if (u.length>2) id=u[2]
+        var p = __(this,id);
+        var o = {}; // console.log (k+"|"+id+"|"+p.id);
+        jso (p,o);
+        url (p, u[0], u[1], o[".id"], null, 3, o, "POST");
+        boo(ev);
+}
+
+function _del (ev) // delete record
+{
+	// todo: js confirm
+	var u = this.id.split ("-");
+	var el = __(this,"va");
+	var p = el.parentNode;
+	var o = {};
+	argv (this, o);
+	if (this.id.length<1)
+	{
+		p.removeChild (el);
+		return;
+	}
+	url (el, u[0], u[1], o[".id"], null, 2, o, "POST");
+	boo(ev);
+}
+
+function _nd (ev)
+{
+	ra = [];
+	for (var k in re) ra[k]=re[k]; // reset ra
+
+	var u = this.id.split("-");
+	var p = this;
+	if (u.length>2 && u[2].length>0) p = __(p,u[2]);
+	if (u.length>3 && u[3].length>0) p = _(p,u[3]);
+	if (u.length>4 && u[4].length>0) p.innerHTML = ""; // todo: doc-fragment
+
+	var r_ = ra[u[1]][0].slice(0); // get a copy
+	rargs (r_, this.firstChild.lastChild.childNodes, r_);
+
+	//console.log ("[nd] "+u[0]+" "+u[1]+" | "+JSON.stringify (r_));
+	nd (p, te[u[0]], [], r_, [0]);
+	boo(ev);
 }
 
