@@ -1,0 +1,89 @@
+# OS specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# Build and dependency directories
+node_modules/
+dist/
+build/
+target/
+out/
+.next/
+.nuxt/
+.output/
+vendor/
+
+# Environment and secret files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+.secret*
+
+# Log files and caches
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.cache/
+.npm/
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# Python specific
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.env
+.venv
+env.bak/
+venv.bak/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Java specific
+*.class
+*.jar
+*.war
+*.ear
+*.logs
+.gradle/
+.mvn/
+
+# Misc
+.lock-wscript
+.node_repl_history
+.eslintcache
+.stylelintcache
+.temp/
+
