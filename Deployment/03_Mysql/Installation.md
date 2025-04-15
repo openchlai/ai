@@ -48,37 +48,44 @@ Installation Steps:
 
     * You should see an "active (running)" message if MariaDB is running correctly.
 
-7. create the sql user account.
+7. ## 1. Database Setup
 
-    ```sudo mysql```
+### 1.1 Create User
+Run the following command to create a MySQL user with `unix_socket` authentication:
+```bash
+sudo mysql -e "CREATE USER 'nginx'@'localhost' IDENTIFIED VIA unix_socket;"
+```
 
-    * then on the mysql command you can create a user
-    ```create user nginx@localhost identified via unix_socket;```
+### 1.2 Create Database
+Create the database `helpline`:
+```bash
+sudo mysql -e "CREATE DATABASE helpline;"
+```
 
-    ```create database tower;```
+### 1.3 Import Database Schema
+Import the database schema into the `helpline` database:
+```bash
+sudo mysql helpline < /usr/src/OpenChs/rest_api/uchl.sql
+```
 
-    ```use tower;```
+### 1.4 Grant Permissions
+Grant necessary permissions to the `nginx` user:
+```bash
+sudo mysql -e "
+GRANT SELECT, INSERT ON helpline.* TO 'nginx'@'localhost';
+GRANT UPDATE ON helpline.auth TO 'nginx'@'localhost';
+GRANT UPDATE ON helpline.contact TO 'nginx'@'localhost';
+GRANT UPDATE ON helpline.kase TO 'nginx'@'localhost';
+GRANT UPDATE ON helpline.kase_activity TO 'nginx'@'localhost';
+GRANT UPDATE ON helpline.activity TO 'nginx'@'localhost';
+GRANT UPDATE ON helpline.disposition TO 'nginx'@'localhost';
+GRANT DELETE ON helpline.session TO 'nginx'@'localhost';
+GRANT UPDATE ON helpline.chan TO 'nginx'@'localhost';
+FLUSH PRIVILEGES;"
+```
 
-    ```exit```
-
-   ```mysql tower < /usr/src/Sacco_CRM/src/tower_schema.sql```
-
-- Grant Authorization to the Nginx User 
-
-    ```grant select,insert on tower.* to nginx@localhost;```
-
-    ```grant update on tower.auth to nginx@localhost;```
-
-    ```grant update on tower.contact to nginx@localhost;```
-
-    ```grant update on tower.kase to nginx@localhost;```
-
-    ```grant update on tower.kase_activity to nginx@localhost;```
-
-    ```grant update on tower.activity to nginx@localhost;```
-    
-    ```grant update on tower.disposition to nginx@localhost;```
-
-    ```grant delete on tower.session to nginx@localhost;```
-
-    ```grant update on tower.chan to nginx@localhost;```
+### 1.5 Exit MySQL
+Exit the MySQL prompt:
+```bash
+exit
+```

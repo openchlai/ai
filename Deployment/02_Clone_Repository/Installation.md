@@ -1,6 +1,6 @@
-# Sacco_CRM App Deployment Instructions
+# OPENCHL AI Deployment Instructions
 
-Follow the steps below to deploy the Sacco_CRM app:
+Follow the steps below to deploy the OPENCHLAI:
 
 1. Open a terminal.
 
@@ -11,7 +11,7 @@ cd /usr/
 ```
 
 ```
-git clone https://github.com/openchlsystem/Sacco_CRM.git
+git clone https://github.com/openchlai/ai.git
 ```
 
 
