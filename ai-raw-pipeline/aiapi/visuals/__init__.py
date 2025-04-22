@@ -39,8 +39,8 @@ curl -X POST "localhost:50001/dashboard/{create, data, action, stats, index}/ite
 -H "Content-Type: application/json" \
 --data "{}"
 """
-@dash.route("/create/<itemname>", methods=['POST'])
-def create(itemname):
+@dash.route("/create/<filepath>/<filename>", methods=['POST'])
+def create(filepath, filename):
     logger.debug("""Dashboard Create""")
 
     try:
@@ -48,7 +48,7 @@ def create(itemname):
         data = {}
         x = request.get_json()
 
-        path = locate('models.' + itemname)
+        path = locate('models.' + filepath + '.' + filename)
 
         if path is not None:
             """Create Data"""
@@ -63,8 +63,8 @@ def create(itemname):
     return jsonify(data), 404
 
 
-@dash.route("/data/<itemname>", methods=['POST'])
-def data(itemname):
+@dash.route("/data/<filepath>/<filename>", methods=['POST'])
+def data(filepath, filename):
     logger.debug("""Dashboard Data""")
 
     try:
@@ -72,7 +72,7 @@ def data(itemname):
         data = {}
         x = request.get_json()
 
-        path = locate('models.' + itemname)
+        path = locate('models.' + filepath + '.' + filename)
 
         if path is not None:
             """Gather Data"""
@@ -87,8 +87,8 @@ def data(itemname):
     return jsonify(data), 404
 
 
-@dash.route("/action/<itemname>", methods=['POST'])
-def action(itemname):
+@dash.route("/action/<filepath>/<filename>", methods=['POST'])
+def action(filepath, filename):
     logger.debug("""Dashboard Action: """ + itemname)
 
     try:
@@ -96,7 +96,7 @@ def action(itemname):
         data = {}
         x = request.get_json()
 
-        path = locate('models.' + itemname)
+        path = locate('models.' + filepath + '.' + filename)
 
         if path is not None:
             """Update Data"""
@@ -111,8 +111,8 @@ def action(itemname):
     return jsonify(data), 404
 
 
-@dash.route("/stats/<itemname>", methods=['POST'])
-def stats(itemname):
+@dash.route("/stats/<filepath>/<filename>", methods=['POST'])
+def stats(filepath, filename):
     logger.debug("""Dashboard Stats: """ + itemname)
 
     try:
@@ -120,7 +120,7 @@ def stats(itemname):
         data = {}
         x = request.get_json()
 
-        path = locate('models.' + itemname)
+        path = locate('models.' + filepath + '.' + filename)
 
         if path is not None:
             """Stats Data"""
@@ -135,8 +135,8 @@ def stats(itemname):
     return jsonify(data), 404
 
 
-@dash.route("/reset/<itemname>", methods=['POST'])
-def resets(itemname):
+@dash.route("/reset/<filepath>/<filename>", methods=['POST'])
+def resets(filepath, filename):
     logger.debug("""Dashboard Reset: """ + itemname)
 
     try:
@@ -144,7 +144,7 @@ def resets(itemname):
         data = {}
         x = request.get_json()
 
-        path = locate('models.' + itemname)
+        path = locate('models.' + filepath + '.' + filename)
 
         if path is not None:
             """Stats Data"""

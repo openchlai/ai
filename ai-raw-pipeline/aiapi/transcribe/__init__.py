@@ -45,12 +45,12 @@ def init():
 
 
 """
-curl -X POST "localhost:50001/transcribe/{create, data, action, stats, index}/item" \
+curl -X POST "localhost:50001/casedata/{create, data, action, stats, index}/item" \
 -H "Content-Type: application/json" \
 --data "{}"
 """
-@scribe.route("/create/<itemname>", methods=['POST'])
-def create(itemname):
+@scribe.route("/create/<filepath>/<filename>", methods=['POST'])
+def create(filepath, filename):
     logger.debug("""Transcribe Create""")
 
     try:
@@ -58,7 +58,7 @@ def create(itemname):
         data = {}
         x = request.get_json()
 
-        path = locate('models.' + itemname)
+        path = locate('models.' + filepath + '.' + filename)
 
         if path is not None:
             """Create Data"""
@@ -73,8 +73,8 @@ def create(itemname):
     return jsonify(data), 404
 
 
-@scribe.route("/data/<itemname>", methods=['POST'])
-def data(itemname):
+@scribe.route("/data/<filepath>/<filename>", methods=['POST'])
+def data(filepath, filename):
     logger.debug("""Transcribe Data""")
 
     try:
@@ -82,7 +82,7 @@ def data(itemname):
         data = {}
         x = request.get_json()
 
-        path = locate('models.' + itemname)
+        path = locate('models.' + filepath + '.' + filename)
 
         if path is not None:
             """Gather Data"""
@@ -97,16 +97,16 @@ def data(itemname):
     return jsonify(data), 404
 
 
-@scribe.route("/action/<itemname>", methods=['POST'])
-def action(itemname):
-    logger.debug("""Transcribe Action: """ + itemname)
+@scribe.route("/action/<filepath>/<filename>", methods=['POST'])
+def action(filepath, filename):
+    logger.debug("""Transcribe Action: """ + filepath)
 
     try:
 
         data = {}
         x = request.get_json()
 
-        path = locate('models.' + itemname)
+        path = locate('models.' + filepath + '.' + filename)
 
         if path is not None:
             """Update Data"""
@@ -121,16 +121,16 @@ def action(itemname):
     return jsonify(data), 404
 
 
-@scribe.route("/stats/<itemname>", methods=['POST'])
-def stats(itemname):
-    logger.debug("""Transcribe Stats: """ + itemname)
+@scribe.route("/stats/<filepath>/<filename>", methods=['POST'])
+def stats(filepath, filename):
+    logger.debug("""Transcribe Stats: """ + filepath)
 
     try:
 
         data = {}
         x = request.get_json()
 
-        path = locate('models.' + itemname)
+        path = locate('models.' + filepath + '.' + filename)
 
         if path is not None:
             """Stats Data"""
@@ -145,16 +145,16 @@ def stats(itemname):
     return jsonify(data), 404
 
 
-@scribe.route("/reset/<itemname>", methods=['POST'])
-def resets(itemname):
-    logger.debug("""Transcribe Reset: """ + itemname)
+@scribe.route("/reset/<filepath>/<filename>", methods=['POST'])
+def resets(filepath, filename):
+    logger.debug("""Transcribe Reset: """ + filepath)
 
     try:
 
         data = {}
         x = request.get_json()
 
-        path = locate('models.' + itemname)
+        path = locate('models.' + filepath + '.' + filename)
 
         if path is not None:
             """Stats Data"""

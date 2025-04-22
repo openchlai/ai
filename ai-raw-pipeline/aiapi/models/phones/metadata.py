@@ -5,41 +5,46 @@ from __future__ import (
     print_function
     )
 
-from datetime import datetime
-import hashlib
 import os
 import json
-import random
-import string
 import pandas as pd
+import phonenumbers
 
 from time import (
-    mktime,
-    strftime,
     time)
 from core import (
     creds)
 from logs import (
     logger)
+from pymongo import (
+    MongoClient)
 from bson.objectid import (
     ObjectId)
-from pymongo import MongoClient
+from phonenumbers import (
+    geocoder,
+    carrier,
+    timezone)
 
 client = MongoClient(creds.MONGOHOST)
 db = client.helpline
+
+edir = os.path.dirname(os.path.realpath(__file__))
+epath = edir + "/phonedata.py"
 
 
 def indexinit():
     """Create Synthetic Data"""
 
     try:
-        data = creds.DATASETS + "/casesdata.json"
+        data = []
+        dat = creds.DATASETS + "/phonedata.json"
 
-        with open(data, 'r') as fp:
-            data = json.load(fp)
+        if os.path.isfile(dat):
+            with open(dat, 'r') as fp:
+                data = json.load(fp)
 
-        if not db.helpline_casedata.count_documents({}):
-            # db.helpline_casedata.delete_many({"demo": True})
+        if len(data) and not db.helpline_phonedata.count_documents({}):
+            # db.helpline_phonedata.delete_many({"demo": True})
 
             edit = {}
             # edit['demo'] = True
@@ -47,8 +52,8 @@ def indexinit():
             edit['audit'] = []
             edit['created'] = int(time())
 
-            db.helpline_casedata.insert_many(data)
-            db.helpline_casedata.update_many({},{"$set": edit})
+            db.helpline_phonedata.insert_many(data)
+            db.helpline_phonedata.update_many({},{"$set": edit})
 
     except Exception as e:
         print("Error Init {}".format(e))
@@ -66,63 +71,66 @@ def indexcreate(dat):
 
     try:
 
-        required_fields = ['meta', 'init', 'exit']
-        for field in required_fields:
-            if field not in dat:
-                data['error'] = f"Missing required field: {field}"
-                return data
-
-        if db.helpline_casedata.count_documents({
-            "meta": dat['meta'],
-            "status": {"$ne": ['deleted', 'expired']},
+        if db.helpline_phonedata.count_documents({
+            "phone": dat['phone'],
+            "status": {"$nin": ['deleted']},
             }):
             logger.warn("""FIX-ME""")
-            x = db.helpline_casedata.find_one({
-                "meta": dat['meta'],
-                "init": {"$gte": dat['init']},
-                "exit": {"$lte": dat['exit']},
-                "status": {"$ne": ['completed', 'expired']},
+            x = db.helpline_phonedata.find_one({
+                "phone": dat['phone'],
+                "status": {"$nin": ['deleted']},
                 })
 
             data['data'] = True
-            data['track'] = x.get('track')
+            data['id'] = str(x.get('_id'))
             data['status'] = x.get('status')
 
             return data
 
-        data['track'] = False
+        phone = "".join([x for x in dat['phone'] if x.isdigit()])
 
-        tracks = list(set(string.digits))
-        tracks += list(set(string.ascii_uppercase))
+        pn = phonenumbers.parse("+" + phone)
+        if not phonenumbers.is_valid_number(pn):
+            data['error'] = "Not A Valid Phone Number"
+            logger.error(data['error'] + " +" + phone)
+            return data
 
-        while True:
-            random.shuffle(tracks)
-            track = "".join(tracks[0:12])
-            if not db.helpline_casedata.count_documents({
-                "track": track}):
-                data['track'] = track
-                break
+        elif not phonenumbers.is_possible_number(pn):
+            data['error'] = "Not a Possible Phone Number"
+            ogger.error(data['error'] + " +" + phone)
+            return data
 
-        if 'fees' not in dat:
-            dat['fees'] = 0
+        dat['network'] = carrier.name_for_number(pn, 'en')
+        dat['timezone'] = timezone.time_zones_for_number(pn)[0]
+        dat['country'] = geocoder.country_name_for_number(pn, 'en')
+        dat['region'] = geocoder.description_for_number(pn,'en')
 
-        x = db.helpline_casedata.insert_one(dat)
+        x = db.helpline_phonedata.insert_one({
+            "admin": {},
+            "audit": [],
+            "phone": phone,
+            "status": "active",
+            "created": int(time()),
+            "source": dat['source'],  # manual, call, chat
+            "network": carrier.name_for_number(pn, 'en'),
+            "timezone": timezone.time_zones_for_number(pn)[0],
+            "region": geocoder.description_for_number(pn,'en'),
+            "country": geocoder.country_name_for_number(pn, 'en'),
+            })
 
         data['id'] = str(x.inserted_id)
 
         if 'edit' in dat and type(dat['edit']) == dict and len(dat['edit']):
-            db.helpline_casedata.update_one({
-                "track": data['track']},{"$set": dat['edit']})
+            db.helpline_phonedata.update_one({
+                "_id": x.inserted_id},
+                {"$set": dat['edit']})
 
-    except KeyError as e:
-        data['error'] = f"Missing key in data: {e}"
-        logger.critical(data['error'])
     except Exception as e:
-        data['error'] = f"Error Module Helpline Case Create Helpline-Case: {e}"
+        data['error'] = "Error Module Helpline Call Create Helpline-Case {}".format(e)
         logger.critical(data['error'])
 
     if data['error'] and 'id' in data:
-        db.helpline_casedata.delete_one({"_id": ObjectId(data['id'])})
+        db.helpline_phonedata.delete_one({"_id": ObjectId(data['id'])})
         del data['id']
 
     data['data'] = True
@@ -155,25 +163,6 @@ def indexdata(dat):
             if 'today' in dat:
                 pass
 
-            if 'task' in dat and dat['task'] == "transcribe":
-                query['transcription'] = {}
-                # If specifically requesting cases that need transcription
-                if 'transcription_only' in dat and dat['transcription_only']:
-                    # Only return uniqueid field for these cases
-                    projection = {'uniqueid': 1, '_id': 0}
-                    limit = dat.get('docs', 100)  # Default to 100 if not specified
-                    
-                    # Get the unique IDs directly without using pandas
-                    cursor = db.helpline_casedata.find(query, projection).limit(limit)
-                    unique_ids = [doc.get('uniqueid') for doc in cursor if 'uniqueid' in doc]
-                    
-                    data['data'] = True
-                    data['unique_ids'] = unique_ids
-                    data['count'] = len(unique_ids)
-                    data['total_pending'] = db.helpline_casedata.count_documents(query)
-                    
-                    return data
-
             if 'week' in dat:
                 pass
 
@@ -193,9 +182,9 @@ def indexdata(dat):
             """Limit Docs"""
             dat['docs'] = 25
 
-        df = pd.DataFrame(list(db.helpline_casedata.find(
+        df = pd.DataFrame(list(db.helpline_phonedata.find(
             query).limit(dat['docs'])))            
-        data['total'] = db.helpline_casedata.count_documents({
+        data['total'] = db.helpline_phonedata.count_documents({
             "status": {"$ne": "deleted"}})
 
         if len(df):
@@ -212,115 +201,95 @@ def indexdata(dat):
             else:
                 if 'next' in dat and dat['next']:
                     data['prev'] = dat['next']
-                if db.helpline_casedata.count_documents({
+                if db.helpline_phonedata.count_documents({
                     "_id": {"$gt": ObjectId(data['meta'][-1]["id"])}}):
                     """Gather Next"""
-                    x = db.helpline_casedata.find_one({
+                    x = db.helpline_phonedata.find_one({
                         "_id": {"$gt": ObjectId(data['meta'][-1]["id"])}
                         })
                     data['next'] = str(x.get('_id'))
 
             del df
 
-        data['module'] = "Helpline Case Data"
+        data['module'] = "Helpline Call Data"
 
         data['data'] = True
     except Exception as e:
-        data['error'] = "Error Module Helpline Case Data {}".format(e)
+        data['error'] = "Error Module Helpline Call Data {}".format(e)
         logger.critical(data['error'])
 
     return data
 
+
 def indexinfo(dat):
     """Info Helpline-Case Metadata"""
+
     data = {}
     data['data'] = False
     data['error'] = False
+
     try:
-        edit = {}
-        info = {}
-        if 'track' in dat:
-            info['track'] = dat['track']
-        elif 'id' in dat:
-            info['_id'] = ObjectId(dat['id'])
-        else:
-            data['error'] = "Helpline-Case Metadata Error. "
-            data['error'] += "One-Of `track` or `id`."
-            data['data'] = True
-            return data
-
-        if not db.helpline_casedata.count_documents(info):
-            data['error'] = "Helpline-Case Metadata Info "
-            data['error'] += "Data not Found"
-            data['data'] = True
-            return data
-
-        x = db.helpline_casedata.find_one(info)
-
-        if 'item' in dat:
-            data[dat['item']] = x.get(dat['item'])
-            data['data'] = True
+        
+        pass
 
     except Exception as e:
-        data['error'] = "Error Module Helpline Case Info {}".format(e)
+        data['error'] = "Error Module Helpline Call Info {}".format(e)
         logger.critical(data['error'])
 
     return data
 
 
 def indexaction(dat):
-    """Action Book"""
+    logger.debug("""Helpline Call Action """ + str(dat))
+
     data = {}
     data['data'] = False
     data['error'] = False
+
     try:
+        
         edit = {}
         audit = {}
-
-        demo = False
-        if 'demo' in dat and dat['demo']:
-            demo = dat['demo']
-
-        created = int(time())
-        if 'created' in dat and dat['created']:
-            created = int(dat['created'])
-
         info = {}
+
         if 'track' in dat:
             info['track'] = dat['track']
         elif 'id' in dat:
             info['_id'] = ObjectId(dat['id'])
         else:
-            data['error'] = "Helpline-Case Metadata Error. "
-            data['error'] += "One-Of `track` or `id`."
-            data['data'] = True
+            data['error'] = "Call Metadata Error. One-Of `track` or `id`."
             return data
 
-        if not db.helpline_casedata.count_documents(info):
-            data['error'] = "Helpline-Case Metadata Action "
-            data['error'] += "Data not Found"
-            data['data'] = True
+        if not db.helpline_phonedata.count_documents(info):
+            data['error'] = "Call Metadata Action Data not Found"
             return data
 
-        x = db.helpline_casedata.find_one(info)
+        x = db.helpline_phonedata.find_one(info)
 
-        if dat['item'] in ["multipull", "pull"]:
+        if dat['item'] == "pull":
             """Update and Audit"""
-            db.helpline_casedata.update_one(
+            db.helpline_phonedata.update_one(
                 {"track": x.get('track')},
                 {"$unset": {dat['pull']: ""}}
                 )
 
-        if dat['item'] in ["multiedit", "edit"] or len(edit):
+        if dat['item'] == "push":
+            """Update and Audit"""
+            db.helpline_phonedata.update_one(
+                {"track": x.get('track')},
+                {"$push": {dat['push']: dat['data']}}
+                )
+
+        if dat['item'] == "edit" or len(edit):
             """Update and Audit"""
             if len(edit):
                 dat['edit'] = edit
-            db.helpline_casedata.update_one(
+            db.helpline_phonedata.update_one(
                 {"track": x.get('track')},
                 {"$set": dat['edit']}
                 )
 
-        if dat['item'] in ["multiaudit", "audit"] or len(audit):
+        if dat['item'] == "audit" or len(audit):
             """Update and Audit"""
             if len(audit):
                 dat['audit'] = audit
@@ -328,14 +297,14 @@ def indexaction(dat):
                 int(time())).strftime('%d %B %Y')
             dat['audit']['createtime'] = datetime.fromtimestamp(
                 int(time())).strftime('%H:%M:%S %p')
-            db.helpline_casedata.update_one(
+            db.helpline_phonedata.update_one(
                 {"track": x.get('track')},
                 {"$push": {"audit": dat['audit']}}
                 )
 
         data['data'] = True
     except Exception as e:
-        data['error'] = "Error Module Helpline Case Action {}".format(e)
+        data['error'] = "Error Module Helpline Call Action {}".format(e)
         logger.critical(data['error'])
 
     return data
@@ -356,31 +325,24 @@ def indexstats(dat):
             ).timetuple()))
 
         if dat['item'] == "unsetdata":
-            logger.debug("""Reset Helpline Case Data""")
+            logger.debug("""Reset Helpline Call Data""")
 
-            data['entries'] = db.helpline_casedata.count_documents(
+            data['entries'] = db.helpline_phonedata.count_documents(
                 {dat['keys']: {"$ne": None}})
             
             if data['entries']:
-                db.helpline_casedata.update_many(
+                db.helpline_phonedata.update_many(
                     {dat['keys']: {"$ne": None}},
                     {"$unset": {dat['keys']: ""}}
                     )
 
-        if dat['item'] == "diarized":
-            # logger.debug("Helpline-Case Info")
-
-            data['stats'] = {}
-            data['diary'] = {}
-
         if dat['item'] == "dummy":
-
-            data['diary'] = {}
+            data['dummy'] = {}
 
 
         data['data'] = True
     except Exception as e:
-        data['error'] = "Error Module Helpline Case Stats {}".format(e)
+        data['error'] = "Error Module Helpline Call Stats {}".format(e)
         logger.critical(data['error'])
 
     return data
@@ -395,7 +357,7 @@ def indexapis(dat):
     try:
         data['data'] = True
     except Exception as e:
-        data['error'] = "Error Module Helpline Case APIs {}".format(e)
+        data['error'] = "Error Module Helpline Call APIs {}".format(e)
         logger.critical(data['error'])
 
     return data
@@ -408,19 +370,19 @@ def indexreset(dat=False):
     data['error'] = False
 
     try:
-        data['source'] = "Helpline Case Data"
+        data['source'] = "Helpline Call Data"
 
         if dat and 'stats' in dat:
             """App-Stats"""
-            data['stats'] = db.helpline_casedata.count_documents({})
+            data['stats'] = db.helpline_phonedata.count_documents({})
 
         elif dat and 'track' in dat:
             """Delete Specific Item"""
-            data['meta'] = db.helpline_casedata.count_documents({
+            data['meta'] = db.helpline_phonedata.count_documents({
                 "track": dat['track']
                 })
             if data['meta']:
-                x = db.helpline_casedata.find_one({
+                x = db.helpline_phonedata.find_one({
                     "track": dat['track']
                     })
                 edit = {}
@@ -432,25 +394,25 @@ def indexreset(dat=False):
                     ).hexdigest()
                 edit['status'] = "deleted"
                 edit['admin.deleted'] = int(time())
-                db.helpline_casedata.update_one(
+                db.helpline_phonedata.update_one(
                     {"track": dat['track']},
                     {"$set": edit})
 
         elif dat and 'demo' in dat:
             """Delete Demo Metadatas"""
-            data['demo'] =  db.helpline_casedata.count_documents({
+            data['demo'] =  db.helpline_phonedata.count_documents({
                 "demo": {"$ne": False}
                 })
             if data['demo']:
-                db.helpline_casedata.delete_many({
+                db.helpline_phonedata.delete_many({
                     "demo": {"$ne": False},
                     })
 
         elif dat and 'backup' in dat:
             """Delete Demo Metadatas"""
             core = []
-            if db.helpline_casedata.count_documents({}):
-                df = pd.DataFrame(list(db.helpline_casedata.find({})))
+            if db.helpline_phonedata.count_documents({}):
+                df = pd.DataFrame(list(db.helpline_phonedata.find({})))
                 df = df.drop(columns=['_id'])
                 df = df.to_json(orient='records')
                 core = json.loads(df)
@@ -460,32 +422,32 @@ def indexreset(dat=False):
                 cmd = "mkdir -p " + backup
 
             if len(core):
-                with open(backup + "/helpline_casedata.json", 'w') as fp:
+                with open(backup + "/helpline_phonedata.json", 'w') as fp:
                     fp.write(json.dumps(core, indent=2))
 
             data['meta'] = len(core)
 
-        elif not dat and creds.RUNSTATUS == 'production':
+        elif not dat and credentials.RUNSTATUS == 'production':
             """Production Reset All"""
-            data['meta'] = db.helpline_casedata.count_documents({})
+            data['meta'] = db.helpline_phonedata.count_documents({})
             if data['meta']:
                 edit = {}
                 edit['status'] = "deleted"
                 edit['admin.deleted'] = int(time())
-                db.helpline_casedata.update_many(
+                db.helpline_phonedata.update_many(
                     {"status": {"$ne": "deleted"}},
                     {"$set": edit}
                     )
 
         elif not dat:
             """Dev Reset All"""
-            data['meta'] = db.helpline_casedata.count_documents({})
+            data['meta'] = db.helpline_phonedata.count_documents({})
             if data['meta']:
-                db.helpline_casedata.delete_many({})
+                db.helpline_phonedata.delete_many({})
                 
         data['data'] = True
     except Exception as e:
-        data['error'] = "Error Module Helpline Case Reset {}".format(e)
+        data['error'] = "Error Module Helpline Call Reset {}".format(e)
         logger.critical(data['error'])
 
     return data

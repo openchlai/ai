@@ -14,7 +14,7 @@ locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 
 
 # Datasets
-DATASETS = os.path.dirname(os.getcwd()) + "/datasets"
+DATASETS = os.getcwd() +  "/datasets"
 
 # MongoDB Host
 MONGOUSER = "bitzdb"
@@ -24,7 +24,7 @@ MONGOURLS = "localhost"
 MONGOHOST = "mongodb://%s:%s@%s" % (quote_plus(MONGOUSER), quote_plus(MONGOPASS), MONGOURLS)
 
 # if no password
-MONGOHOST = MONGOURLS
+# MONGOHOST = MONGOURLS
 
 # Flask Secret
 FLASKSECRET = "\xfb\x12\xdf\xa1@i\xd6>V\xc0\xbb\x8fp\x16#Z\x0b\x81\xeb\x16"

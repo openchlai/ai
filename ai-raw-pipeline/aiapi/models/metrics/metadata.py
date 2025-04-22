@@ -5,17 +5,12 @@ from __future__ import (
     print_function
     )
 
-from datetime import datetime
-import hashlib
 import os
+import copy
 import json
-import random
-import string
 import pandas as pd
 
 from time import (
-    mktime,
-    strftime,
     time)
 from core import (
     creds)
@@ -28,27 +23,15 @@ from pymongo import MongoClient
 client = MongoClient(creds.MONGOHOST)
 db = client.helpline
 
+edir = os.path.dirname(os.path.realpath(__file__))
+epath = edir + "/metrics.py"
+
 
 def indexinit():
     """Create Synthetic Data"""
 
     try:
-        data = creds.DATASETS + "/casesdata.json"
-
-        with open(data, 'r') as fp:
-            data = json.load(fp)
-
-        if not db.helpline_casedata.count_documents({}):
-            # db.helpline_casedata.delete_many({"demo": True})
-
-            edit = {}
-            # edit['demo'] = True
-            edit['admin'] = {}
-            edit['audit'] = []
-            edit['created'] = int(time())
-
-            db.helpline_casedata.insert_many(data)
-            db.helpline_casedata.update_many({},{"$set": edit})
+        data = creds.DATASETS + "/metricsdata.json"
 
     except Exception as e:
         print("Error Init {}".format(e))
@@ -57,7 +40,7 @@ def indexinit():
 
 
 def indexcreate(dat):
-    # print("""Create Helpline-Case Entry""",dat)
+    # print("""Create AI-Metrics Entry""",dat)
 
     data = {}
     data['data'] = False
@@ -66,63 +49,31 @@ def indexcreate(dat):
 
     try:
 
-        required_fields = ['meta', 'init', 'exit']
-        for field in required_fields:
-            if field not in dat:
-                data['error'] = f"Missing required field: {field}"
-                return data
+        dat['admin'] = {}
+        dat['audit'] = []
+        dat['status'] = "active"
+        dat['created'] = int(time())
 
-        if db.helpline_casedata.count_documents({
-            "meta": dat['meta'],
-            "status": {"$ne": ['deleted', 'expired']},
-            }):
-            logger.warn("""FIX-ME""")
-            x = db.helpline_casedata.find_one({
-                "meta": dat['meta'],
-                "init": {"$gte": dat['init']},
-                "exit": {"$lte": dat['exit']},
-                "status": {"$ne": ['completed', 'expired']},
-                })
+        edit = {}
+        if 'edit' in dat:
+            if type(dat['edit']) == dict:
+                edit = copy.deepcopy(dat['edit'])
+            del dat['edit']
 
-            data['data'] = True
-            data['track'] = x.get('track')
-            data['status'] = x.get('status')
-
-            return data
-
-        data['track'] = False
-
-        tracks = list(set(string.digits))
-        tracks += list(set(string.ascii_uppercase))
-
-        while True:
-            random.shuffle(tracks)
-            track = "".join(tracks[0:12])
-            if not db.helpline_casedata.count_documents({
-                "track": track}):
-                data['track'] = track
-                break
-
-        if 'fees' not in dat:
-            dat['fees'] = 0
-
-        x = db.helpline_casedata.insert_one(dat)
+        x = db.helpline_aimetrics.insert_one(dat)
 
         data['id'] = str(x.inserted_id)
 
-        if 'edit' in dat and type(dat['edit']) == dict and len(dat['edit']):
-            db.helpline_casedata.update_one({
-                "track": data['track']},{"$set": dat['edit']})
+        if len(edit):
+            db.helpline_aimetrics.update_one({
+                "_id": x.inserted_id}, {"$set": edit})
 
-    except KeyError as e:
-        data['error'] = f"Missing key in data: {e}"
-        logger.critical(data['error'])
     except Exception as e:
-        data['error'] = f"Error Module Helpline Case Create Helpline-Case: {e}"
+        data['error'] = "Error Module AI-Metrics Create AI-Metrics {}".format(e)
         logger.critical(data['error'])
 
     if data['error'] and 'id' in data:
-        db.helpline_casedata.delete_one({"_id": ObjectId(data['id'])})
+        db.helpline_aimetrics.delete_one({"_id": ObjectId(data['id'])})
         del data['id']
 
     data['data'] = True
@@ -131,7 +82,7 @@ def indexcreate(dat):
 
 
 def indexdata(dat):
-    # print("""Data Helpline-Case""", dat)
+    # print("""Data AI-Metrics""", dat)
     data = {}
     data['data'] = False
     data['error'] = False
@@ -155,25 +106,6 @@ def indexdata(dat):
             if 'today' in dat:
                 pass
 
-            if 'task' in dat and dat['task'] == "transcribe":
-                query['transcription'] = {}
-                # If specifically requesting cases that need transcription
-                if 'transcription_only' in dat and dat['transcription_only']:
-                    # Only return uniqueid field for these cases
-                    projection = {'uniqueid': 1, '_id': 0}
-                    limit = dat.get('docs', 100)  # Default to 100 if not specified
-                    
-                    # Get the unique IDs directly without using pandas
-                    cursor = db.helpline_casedata.find(query, projection).limit(limit)
-                    unique_ids = [doc.get('uniqueid') for doc in cursor if 'uniqueid' in doc]
-                    
-                    data['data'] = True
-                    data['unique_ids'] = unique_ids
-                    data['count'] = len(unique_ids)
-                    data['total_pending'] = db.helpline_casedata.count_documents(query)
-                    
-                    return data
-
             if 'week' in dat:
                 pass
 
@@ -193,9 +125,9 @@ def indexdata(dat):
             """Limit Docs"""
             dat['docs'] = 25
 
-        df = pd.DataFrame(list(db.helpline_casedata.find(
+        df = pd.DataFrame(list(db.helpline_aimetrics.find(
             query).limit(dat['docs'])))            
-        data['total'] = db.helpline_casedata.count_documents({
+        data['total'] = db.helpline_aimetrics.count_documents({
             "status": {"$ne": "deleted"}})
 
         if len(df):
@@ -212,115 +144,94 @@ def indexdata(dat):
             else:
                 if 'next' in dat and dat['next']:
                     data['prev'] = dat['next']
-                if db.helpline_casedata.count_documents({
+                if db.helpline_aimetrics.count_documents({
                     "_id": {"$gt": ObjectId(data['meta'][-1]["id"])}}):
                     """Gather Next"""
-                    x = db.helpline_casedata.find_one({
+                    x = db.helpline_aimetrics.find_one({
                         "_id": {"$gt": ObjectId(data['meta'][-1]["id"])}
                         })
                     data['next'] = str(x.get('_id'))
 
             del df
 
-        data['module'] = "Helpline Case Data"
+        data['module'] = "AI-Metrics Data"
 
         data['data'] = True
     except Exception as e:
-        data['error'] = "Error Module Helpline Case Data {}".format(e)
+        data['error'] = "Error Module AI-Metrics Data {}".format(e)
         logger.critical(data['error'])
 
     return data
 
+
 def indexinfo(dat):
-    """Info Helpline-Case Metadata"""
+    """Info AI-Metrics Metadata"""
     data = {}
     data['data'] = False
     data['error'] = False
+
     try:
-        edit = {}
-        info = {}
-        if 'track' in dat:
-            info['track'] = dat['track']
-        elif 'id' in dat:
-            info['_id'] = ObjectId(dat['id'])
-        else:
-            data['error'] = "Helpline-Case Metadata Error. "
-            data['error'] += "One-Of `track` or `id`."
-            data['data'] = True
-            return data
-
-        if not db.helpline_casedata.count_documents(info):
-            data['error'] = "Helpline-Case Metadata Info "
-            data['error'] += "Data not Found"
-            data['data'] = True
-            return data
-
-        x = db.helpline_casedata.find_one(info)
-
-        if 'item' in dat:
-            data[dat['item']] = x.get(dat['item'])
-            data['data'] = True
+        
+        pass
 
     except Exception as e:
-        data['error'] = "Error Module Helpline Case Info {}".format(e)
+        data['error'] = "Error Module AI-Metrics Info {}".format(e)
         logger.critical(data['error'])
 
     return data
 
 
 def indexaction(dat):
-    """Action Book"""
+    logger.debug("""Helpline AI-Metrics Action """ + str(dat))
+
     data = {}
     data['data'] = False
     data['error'] = False
+
     try:
+        
         edit = {}
         audit = {}
-
-        demo = False
-        if 'demo' in dat and dat['demo']:
-            demo = dat['demo']
-
-        created = int(time())
-        if 'created' in dat and dat['created']:
-            created = int(dat['created'])
-
         info = {}
+
         if 'track' in dat:
             info['track'] = dat['track']
         elif 'id' in dat:
             info['_id'] = ObjectId(dat['id'])
         else:
-            data['error'] = "Helpline-Case Metadata Error. "
-            data['error'] += "One-Of `track` or `id`."
-            data['data'] = True
+            data['error'] = "AI-Metrics Metadata Error. One-Of `track` or `id`."
             return data
 
-        if not db.helpline_casedata.count_documents(info):
-            data['error'] = "Helpline-Case Metadata Action "
-            data['error'] += "Data not Found"
-            data['data'] = True
+        if not db.helpline_aimetrics.count_documents(info):
+            data['error'] = "AI-Metrics Metadata Action Data not Found"
             return data
 
-        x = db.helpline_casedata.find_one(info)
+        x = db.helpline_aimetrics.find_one(info)
 
-        if dat['item'] in ["multipull", "pull"]:
+        if dat['item'] == "pull":
             """Update and Audit"""
-            db.helpline_casedata.update_one(
+            db.helpline_aimetrics.update_one(
                 {"track": x.get('track')},
                 {"$unset": {dat['pull']: ""}}
                 )
 
-        if dat['item'] in ["multiedit", "edit"] or len(edit):
+        if dat['item'] == "push":
+            """Update and Audit"""
+            db.helpline_aimetrics.update_one(
+                {"track": x.get('track')},
+                {"$push": {dat['push']: dat['data']}}
+                )
+
+        if dat['item'] == "edit" or len(edit):
             """Update and Audit"""
             if len(edit):
                 dat['edit'] = edit
-            db.helpline_casedata.update_one(
+            db.helpline_aimetrics.update_one(
                 {"track": x.get('track')},
                 {"$set": dat['edit']}
                 )
 
-        if dat['item'] in ["multiaudit", "audit"] or len(audit):
+        if dat['item'] == "audit" or len(audit):
             """Update and Audit"""
             if len(audit):
                 dat['audit'] = audit
@@ -328,21 +239,21 @@ def indexaction(dat):
                 int(time())).strftime('%d %B %Y')
             dat['audit']['createtime'] = datetime.fromtimestamp(
                 int(time())).strftime('%H:%M:%S %p')
-            db.helpline_casedata.update_one(
+            db.helpline_aimetrics.update_one(
                 {"track": x.get('track')},
                 {"$push": {"audit": dat['audit']}}
                 )
 
         data['data'] = True
     except Exception as e:
-        data['error'] = "Error Module Helpline Case Action {}".format(e)
+        data['error'] = "Error Module AI-Metrics Action {}".format(e)
         logger.critical(data['error'])
 
     return data
 
 
 def indexstats(dat):
-    """Stats Helpline-Case """
+    """Stats AI-Metrics """
 
     data = {}
     data['data'] = False
@@ -356,31 +267,25 @@ def indexstats(dat):
             ).timetuple()))
 
         if dat['item'] == "unsetdata":
-            logger.debug("""Reset Helpline Case Data""")
+            logger.debug("""Reset AI-Metrics Data""")
 
-            data['entries'] = db.helpline_casedata.count_documents(
+            data['entries'] = db.helpline_aimetrics.count_documents(
                 {dat['keys']: {"$ne": None}})
             
             if data['entries']:
-                db.helpline_casedata.update_many(
+                db.helpline_aimetrics.update_many(
                     {dat['keys']: {"$ne": None}},
                     {"$unset": {dat['keys']: ""}}
                     )
 
-        if dat['item'] == "diarized":
-            # logger.debug("Helpline-Case Info")
-
-            data['stats'] = {}
-            data['diary'] = {}
-
         if dat['item'] == "dummy":
 
-            data['diary'] = {}
+            data['dummy'] = {}
 
 
         data['data'] = True
     except Exception as e:
-        data['error'] = "Error Module Helpline Case Stats {}".format(e)
+        data['error'] = "Error Module AI-Metrics Stats {}".format(e)
         logger.critical(data['error'])
 
     return data
@@ -395,32 +300,32 @@ def indexapis(dat):
     try:
         data['data'] = True
     except Exception as e:
-        data['error'] = "Error Module Helpline Case APIs {}".format(e)
+        data['error'] = "Error Module AI-Metrics APIs {}".format(e)
         logger.critical(data['error'])
 
     return data
 
 
 def indexreset(dat=False):
-    """Helpline-Case Reset"""
+    """AI-Metrics Reset"""
     data = {}
     data['data'] = False
     data['error'] = False
 
     try:
-        data['source'] = "Helpline Case Data"
+        data['source'] = "AI-Metrics Data"
 
         if dat and 'stats' in dat:
             """App-Stats"""
-            data['stats'] = db.helpline_casedata.count_documents({})
+            data['stats'] = db.helpline_aimetrics.count_documents({})
 
         elif dat and 'track' in dat:
             """Delete Specific Item"""
-            data['meta'] = db.helpline_casedata.count_documents({
+            data['meta'] = db.helpline_aimetrics.count_documents({
                 "track": dat['track']
                 })
             if data['meta']:
-                x = db.helpline_casedata.find_one({
+                x = db.helpline_aimetrics.find_one({
                     "track": dat['track']
                     })
                 edit = {}
@@ -432,25 +337,25 @@ def indexreset(dat=False):
                     ).hexdigest()
                 edit['status'] = "deleted"
                 edit['admin.deleted'] = int(time())
-                db.helpline_casedata.update_one(
+                db.helpline_aimetrics.update_one(
                     {"track": dat['track']},
                     {"$set": edit})
 
         elif dat and 'demo' in dat:
             """Delete Demo Metadatas"""
-            data['demo'] =  db.helpline_casedata.count_documents({
+            data['demo'] =  db.helpline_aimetrics.count_documents({
                 "demo": {"$ne": False}
                 })
             if data['demo']:
-                db.helpline_casedata.delete_many({
+                db.helpline_aimetrics.delete_many({
                     "demo": {"$ne": False},
                     })
 
         elif dat and 'backup' in dat:
             """Delete Demo Metadatas"""
             core = []
-            if db.helpline_casedata.count_documents({}):
-                df = pd.DataFrame(list(db.helpline_casedata.find({})))
+            if db.helpline_aimetrics.count_documents({}):
+                df = pd.DataFrame(list(db.helpline_aimetrics.find({})))
                 df = df.drop(columns=['_id'])
                 df = df.to_json(orient='records')
                 core = json.loads(df)
@@ -460,32 +365,32 @@ def indexreset(dat=False):
                 cmd = "mkdir -p " + backup
 
             if len(core):
-                with open(backup + "/helpline_casedata.json", 'w') as fp:
+                with open(backup + "/helpline_aimetrics.json", 'w') as fp:
                     fp.write(json.dumps(core, indent=2))
 
             data['meta'] = len(core)
 
-        elif not dat and creds.RUNSTATUS == 'production':
+        elif not dat and credentials.RUNSTATUS == 'production':
             """Production Reset All"""
-            data['meta'] = db.helpline_casedata.count_documents({})
+            data['meta'] = db.helpline_aimetrics.count_documents({})
             if data['meta']:
                 edit = {}
                 edit['status'] = "deleted"
                 edit['admin.deleted'] = int(time())
-                db.helpline_casedata.update_many(
+                db.helpline_aimetrics.update_many(
                     {"status": {"$ne": "deleted"}},
                     {"$set": edit}
                     )
 
         elif not dat:
             """Dev Reset All"""
-            data['meta'] = db.helpline_casedata.count_documents({})
+            data['meta'] = db.helpline_aimetrics.count_documents({})
             if data['meta']:
-                db.helpline_casedata.delete_many({})
+                db.helpline_aimetrics.delete_many({})
                 
         data['data'] = True
     except Exception as e:
-        data['error'] = "Error Module Helpline Case Reset {}".format(e)
+        data['error'] = "Error Module AI-Metrics Reset {}".format(e)
         logger.critical(data['error'])
 
     return data

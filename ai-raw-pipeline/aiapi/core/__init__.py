@@ -79,11 +79,15 @@ def create_app(config_name):
     from translate import xlate as xlatebp
     app.register_blueprint(xlatebp, url_prefix="/translate")
 
+    # logger.debug("Register Case Data Blueprint")
+    from casedata import cases as casebp
+    app.register_blueprint(casebp, url_prefix="/casedata")
+
     # Create Thread to Manage Keywords
     # from models import keywords
     # keywords.indexstats({"item": "runcreate"})
 
-    casedata.indexinit()
+    # casedata.indexinit()
 
     # Handle View Errors
     urls = ["https://pornhub.com", "https://sex.com", "https://piratesbay.se"]

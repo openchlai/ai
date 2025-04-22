@@ -6,6 +6,4 @@ from __future__ import (
     )
 
 from . import (
-    phones,
-    callcdr,
-    casedata)
+    metadata)

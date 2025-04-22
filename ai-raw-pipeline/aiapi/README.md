@@ -73,9 +73,9 @@ If the service isn't working as expected:
 - Each model is loaded and unloaded sequentially to conserve system resources
 - Transcription may take several minutes depending on file length and system capabilities
 
-## Transcription
+## Transcription, to get unique ids
 ```sh
 curl "localhost:50001/transcribe/data/casedata" \
 -H "Content-Type: application/json" \
---data '{"task": "transcribe", "docs":100}'
-```
+--data '{"task": "transcribe", "transcription_only": "true", "docs":100}'
+```   

@@ -1,5 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+"""
+Transcription Service with Database Integration
+
+This service processes audio files for cases that need transcription.
+It queries the database for pending cases, finds the corresponding audio files,
+transcribes them using multiple models, and updates the database with the results.
+
+Usage:
+    python transcription_service.py
+
+Author: Updated script based on original
+"""
+
 from __future__ import (
     unicode_literals,
     print_function
@@ -13,14 +26,35 @@ import torch
 import shutil
 import librosa
 from time import sleep, time
+import importlib
+import sys
 from core import creds
 from transformers import WhisperProcessor, WhisperForConditionalGeneration, Wav2Vec2Processor, Wav2Vec2ForCTC
 import whisper
+import logging
+
+# Set up logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger('transcription_service')
 
 # Paths
 AUDIO_DIR = os.path.join(creds.DATASETS, "audio")
 DONE_DIR = os.path.join(creds.DATASETS, "audio_done")
 HF_MEDIUM_FINETUNED_MODEL_PATH = "/home/bitz/voice_recognition/whisper-medium-sw-3"
+
+# Function to dynamically locate and import modules
+def locate(module_name):
+    try:
+        logger.info(f"Locating module: {module_name}")
+        module = importlib.import_module(f"models.{module_name}")
+        logger.info(f"Successfully located module: {module_name}")
+        return module
+    except ImportError as e:
+        logger.error(f"Error importing module {module_name}: {str(e)}")
+        raise
 
 # Ensure necessary directories exist
 def ensure_dirs():
@@ -43,7 +77,7 @@ def get_latest_checkpoint(model_dir):
 # Detected language (analyzing multiple segments)
 def detect_language_from_multiple_segments(audio_path, model, num_segments=5):
     """Detect language by analyzing multiple segments of the audio file"""
-    print(f"Detecting language from {num_segments} segments...")
+    logger.info(f"Detecting language from {num_segments} segments...")
     
     # Load full audio
     full_audio = whisper.load_audio(audio_path)
@@ -80,7 +114,7 @@ def detect_language_from_multiple_segments(audio_path, model, num_segments=5):
         # Detect language for this segment
         _, probs = model.detect_language(mel)
         
-        print(f"Segment {i+1}/{len(positions)} ({pos/16000:.1f}s): Top lang = {max(probs, key=probs.get)}")
+        logger.info(f"Segment {i+1}/{len(positions)} ({pos/16000:.1f}s): Top lang = {max(probs, key=probs.get)}")
         
         # Aggregate probabilities
         for lang, prob in probs.items():
@@ -101,27 +135,27 @@ def detect_language_from_multiple_segments(audio_path, model, num_segments=5):
     # Print top 3 languages with probabilities
     top_langs = sorted(all_probs.items(), key=lambda x: x[1], reverse=True)[:3]
     lang_info = ", ".join([f"{lang}: {prob:.2f}" for lang, prob in top_langs])
-    print(f"Overall language detection: {detected_language} (Top langs: {lang_info})")
+    logger.info(f"Overall language detection: {detected_language} (Top langs: {lang_info})")
     
     return detected_language, all_probs
 
 # Function to transcribe using the HF whisper medium finetuned model
 def transcribe_hf_whisper_medium_finetuned(audio_path, task):
-    print(f"Starting hf whisper model finetuned with commonvoices sw for: {audio_path} task {task}")
+    logger.info(f"Starting hf whisper model finetuned with commonvoices sw for: {audio_path} task {task}")
     
     try:
         # Get the latest checkpoint
         checkpoint_path = get_latest_checkpoint(HF_MEDIUM_FINETUNED_MODEL_PATH)
         if not checkpoint_path:
-            print("No checkpoint found, using the base model")
+            logger.info("No checkpoint found, using the base model")
             checkpoint_path = HF_MEDIUM_FINETUNED_MODEL_PATH
         
-        print(f"Using model checkpoint: {checkpoint_path}")
+        logger.info(f"Using model checkpoint: {checkpoint_path}")
         
         # Load processor from base model and model from checkpoint
         processor = WhisperProcessor.from_pretrained(HF_MEDIUM_FINETUNED_MODEL_PATH)
         device = "cuda" if torch.cuda.is_available() else "cpu"
-        print(f"Using device: {device}")
+        logger.info(f"Using device: {device}")
         
         # Loading from checkpoint
         model = WhisperForConditionalGeneration.from_pretrained(checkpoint_path).to(device)
@@ -135,9 +169,9 @@ def transcribe_hf_whisper_medium_finetuned(audio_path, task):
         model.generation_config.forced_decoder_ids = None  # Fix forced_decoder_ids warning
 
         # Load audio using librosa for better handling of long files
-        print(f"Loading audio file: {audio_path}")
+        logger.info(f"Loading audio file: {audio_path}")
         speech_array, sampling_rate = librosa.load(audio_path, sr=16000, mono=True)
-        print(f"Audio loaded: {len(speech_array)/sampling_rate:.2f} seconds")
+        logger.info(f"Audio loaded: {len(speech_array)/sampling_rate:.2f} seconds")
 
         # Split the audio into 30-second chunks (Whisper's maximum length)
         chunk_size = 30 * 16000  # 30 seconds * 16,000 samples per second
@@ -149,7 +183,7 @@ def transcribe_hf_whisper_medium_finetuned(audio_path, task):
             # For a fine-tuned Swahili model, we can use a simplified approach
             # We'll look at the first few tokens of transcription to determine language
             language_detection_enabled = True
-            print("Language detection enabled for fine-tuned model")
+            logger.info("Language detection enabled for fine-tuned model")
             
             # Define common words for language detection
             swahili_words = ["na", "kwa", "ya", "wa", "ni", "za", "kuwa", "kutoka", "sasa", "hivyo", 
@@ -161,7 +195,7 @@ def transcribe_hf_whisper_medium_finetuned(audio_path, task):
                            "there", "their", "will", "would", "about", "what", "which", "when"]
             
         except Exception as lang_e:
-            print(f"Language detection setup failed: {str(lang_e)}")
+            logger.error(f"Language detection setup failed: {str(lang_e)}")
             language_detection_enabled = False
             language_counts = {"sw": 1}  # Default to Swahili
 
@@ -173,7 +207,7 @@ def transcribe_hf_whisper_medium_finetuned(audio_path, task):
             if len(chunk) < 1600:  # Skip if less than 0.1 seconds
                 continue
                 
-            print(f"Processing chunk {i//chunk_size + 1}")
+            logger.info(f"Processing chunk {i//chunk_size + 1}")
 
             # Convert chunk to model input format
             inputs = processor.feature_extractor(
@@ -212,14 +246,14 @@ def transcribe_hf_whisper_medium_finetuned(audio_path, task):
                     if sw_count > 0 or en_count > 0:  # Only if we found language markers
                         detected_lang = "sw" if sw_count >= en_count else "en"
                         language_counts[detected_lang] = language_counts.get(detected_lang, 0) + 1
-                        print(f"Detected language for chunk {i//chunk_size + 1}: {detected_lang} (SW:{sw_count}/EN:{en_count})")
+                        logger.info(f"Detected language for chunk {i//chunk_size + 1}: {detected_lang} (SW:{sw_count}/EN:{en_count})")
                     else:
-                        print(f"No language markers found in chunk {i//chunk_size + 1}")
+                        logger.info(f"No language markers found in chunk {i//chunk_size + 1}")
                 except Exception as lang_e:
-                    print(f"Language detection error for chunk {i//chunk_size + 1}: {str(lang_e)}")
+                    logger.error(f"Language detection error for chunk {i//chunk_size + 1}: {str(lang_e)}")
 
             transcriptions.append(transcription)  # Save chunk result
-            print(f"📝 Transformer: Transcribed chunk {i//chunk_size + 1}")
+            logger.info(f"📝 Transformer: Transcribed chunk {i//chunk_size + 1}")
 
         end_time = int(time())  # End time for the last chunk
 
@@ -233,32 +267,32 @@ def transcribe_hf_whisper_medium_finetuned(audio_path, task):
         }
         primary_language = language_names.get(detected_language, detected_language)
         
-        print(f"Most frequent detected language: {primary_language}")
+        logger.info(f"Most frequent detected language: {primary_language}")
         
         processing_time = end_time - start_time
-        print(f"Total processing time: {processing_time} seconds")
+        logger.info(f"Total processing time: {processing_time} seconds")
 
         full_transcription = " ".join(transcriptions)
 
+        # But the return value would change:
+        model_name = 'whisper_medium_finetuned_commonvoice'  # Use underscores instead of hyphens
         transformer_dict = {
-                'transcription.transformer.text': full_transcription,
-                'transcription.transformer.length': audio_length,
-                'transcription.transformer.init': start_time,
-                'transcription.transformer.exit': end_time,
-                'transcription.transformer.processing_time': processing_time,
-                'transcription.transformer.model': 'whisper-medium-finetuned-commonvoice',
-                'transcription.transformer.checkpoint': checkpoint_path,
-                'transcription.transformer.language': primary_language,  # Use the most common detected language
-                'transcription.transformer.language_distribution': language_counts,  # Add distribution for analysis
-                'transcription.transformer.task': task,
-                'transcription.transformer.sampling_rate': 16000,
-                }
+            'text': full_transcription,
+            'length': audio_length,
+            'init': start_time,
+            'exit': end_time,
+            'processing_time': processing_time,
+            'language': primary_language,
+            'language_distribution': language_counts,
+            'task': task,
+            'sampling_rate': 16000,
+        }
         
-        print(transformer_dict)
+        logger.info(f"Transformer transcription completed: {model_name}")
         
         # Merge all transcriptions
-        print("\n🚀 **Transformer Transcription Result (First 100 chars):**")
-        print(full_transcription[:100] + "..." if len(full_transcription) > 100 else full_transcription)
+        logger.info("\n🚀 **Transformer Transcription Result (First 100 chars):**")
+        logger.info(full_transcription[:100] + "..." if len(full_transcription) > 100 else full_transcription)
         
         # Clean up GPU memory
         del model
@@ -273,10 +307,11 @@ def transcribe_hf_whisper_medium_finetuned(audio_path, task):
             torch.cuda.empty_cache()
             torch.cuda.synchronize()
         
-        return full_transcription
+        return {model_name: transformer_dict}
         
     except Exception as e:
-        print(f"Error in transformer transcription: {str(e)}")
+        error_msg = f"Error in transformer transcription: {str(e)}"
+        logger.error(error_msg)
         traceback.print_exc()  # Print the full traceback for debugging
         
         # Enhanced cleanup in case of error
@@ -287,35 +322,35 @@ def transcribe_hf_whisper_medium_finetuned(audio_path, task):
             torch.cuda.empty_cache()
             torch.cuda.synchronize()
             
-        return f"ERROR: {str(e)}"
-
+        return {"error": error_msg}
+    
 # Function to transcribe using OpenAI Whisper large model
 def transcribe_openai_whisper_large(audio_path, task):
-    print(f"Starting OpenAI Whisper Large transcription for: {audio_path} task {task}")
+    logger.info(f"Starting OpenAI Whisper Large transcription for: {audio_path} task {task}")
     # Check if task is valid
     valid_tasks = ["transcribe", "translate"]
     if task not in valid_tasks:
-        raise ValueError(f"Invalid task: {task}. Valid options are: {valid_tasks}")
+        error_msg = f"Invalid task: {task}. Valid options are: {valid_tasks}"
+        logger.error(error_msg)
+        return {"error": error_msg}
     
     try:
         # Load the Whisper model
         model_id = "large"
-        print(f"Loading Whisper model: {model_id}")
+        logger.info(f"Loading Whisper model: {model_id}")
         model = whisper.load_model(model_id)
 
         detected_language, language_probs = detect_language_from_multiple_segments(audio_path, model, num_segments=40)
-        print(f"Detected language: {detected_language}")
+        logger.info(f"Detected language: {detected_language}")
         start_time = int(time())
         audio_length = librosa.get_duration(path=audio_path)
-        print(f"Audio length: {audio_length:.2f} seconds")
+        logger.info(f"Audio length: {audio_length:.2f} seconds")
 
-
-        
         # Use transcribe method to process the entire audio file
         # This automatically handles longer audio files by processing them in chunks
         result = model.transcribe(
             audio_path,
-            task= task,
+            task=task,
         )
         
         # Get the transcription text - model.transcribe returns a dictionary
@@ -332,22 +367,22 @@ def transcribe_openai_whisper_large(audio_path, task):
         processing_time = end_time - start_time
         
         # Create result dictionary
+        model_name = f'whisper-{model_id}'
         torch_dict = {
-            'transcription.torch.text': transcription_text,
-            'transcription.torch.length': audio_length,
-            'transcription.torch.init': start_time,
-            'transcription.torch.exit': end_time,
-            'transcription.torch.processing_time': processing_time,
-            'transcription.torch.model': model_id,
-            'transcription.torch.language': detected_language,
-            'transcription.torch.task': task,
-            'transcription.torch.sampling_rate': 16000,
+            'text': transcription_text,
+            'length': audio_length,
+            'init': start_time,
+            'exit': end_time,
+            'processing_time': processing_time,
+            'language': detected_language,
+            'task': task,
+            'sampling_rate': 16000,
         }
 
-        print(torch_dict)
+        logger.info(f"Whisper transcription completed: {model_name}")
         
-        print("\n🚀 **Whisper Transcription Result (First 100 chars):**")
-        print(transcription_text[:100] + "..." if len(transcription_text) > 100 else transcription_text)
+        logger.info("\n🚀 **Whisper Transcription Result (First 100 chars):**")
+        logger.info(transcription_text[:100] + "..." if len(transcription_text) > 100 else transcription_text)
         
         # Better cleanup to ensure GPU memory is released
         # Clean up model
@@ -361,10 +396,11 @@ def transcribe_openai_whisper_large(audio_path, task):
             torch.cuda.empty_cache()
             torch.cuda.synchronize()  # Wait for all CUDA operations to finish
             
-        return transcription_text
+        return {model_name: torch_dict}
         
     except Exception as e:
-        print(f"Error in Whisper transcription: {str(e)}")
+        error_msg = f"Error in Whisper transcription: {str(e)}"
+        logger.error(error_msg)
         traceback.print_exc()  # Print the full traceback for debugging
         
         # Enhanced cleanup in case of error
@@ -375,7 +411,7 @@ def transcribe_openai_whisper_large(audio_path, task):
             torch.cuda.empty_cache()
             torch.cuda.synchronize()
             
-        return f"ERROR: {str(e)}"
+        return {"error": error_msg}
     
 # Function to transcribe using HuggingFace Whisper base model    
 def transcribe_hf_whisper_base(audio_path, model_size, task="transcribe"):
@@ -388,28 +424,33 @@ def transcribe_hf_whisper_base(audio_path, model_size, task="transcribe"):
         task (str): Either "transcribe" (default) or "translate" to English
         
     Returns:
-        str: The full transcription or translation text
+        dict: Dictionary containing transcription results
     """
-    print(f"Starting HF base (not finetuned) Whisper {model_size} {task} for: {audio_path} task {task}")
+    logger.info(f"Starting HF base (not finetuned) Whisper {model_size} {task} for: {audio_path} task {task}")
     # Check if model size is valid
     valid_model_sizes = ["tiny", "base", "small", "medium", "large-v2", "large-v3"]
     if model_size not in valid_model_sizes:
-        raise ValueError(f"Invalid model size: {model_size}. Valid options are: {valid_model_sizes}")
-    print(f"Using model size: {model_size}")
+        error_msg = f"Invalid model size: {model_size}. Valid options are: {valid_model_sizes}"
+        logger.error(error_msg)
+        return {"error": error_msg}
+    logger.info(f"Using model size: {model_size}")
+    
     # Check if task is valid
     valid_tasks = ["transcribe", "translate"]
     if task not in valid_tasks:
-        raise ValueError(f"Invalid task: {task}. Valid options are: {valid_tasks}")
-    print(f"Using task: {task}")
+        error_msg = f"Invalid task: {task}. Valid options are: {valid_tasks}"
+        logger.error(error_msg)
+        return {"error": error_msg}
+    logger.info(f"Using task: {task}")
     
     try:
         # Load model and processor
         model_id = f"openai/whisper-{model_size}"
-        print(f"Loading model: {model_id}")
+        logger.info(f"Loading model: {model_id}")
         
         processor = WhisperProcessor.from_pretrained(model_id)
         device = "cuda" if torch.cuda.is_available() else "cpu"
-        print(f"Using device: {device}")
+        logger.info(f"Using device: {device}")
         
         model = WhisperForConditionalGeneration.from_pretrained(model_id).to(device)
 
@@ -421,9 +462,9 @@ def transcribe_hf_whisper_base(audio_path, model_size, task="transcribe"):
         model.eval()
         
         # Load audio using librosa for better handling of long files
-        print(f"Loading audio file: {audio_path}")
+        logger.info(f"Loading audio file: {audio_path}")
         speech_array, sampling_rate = librosa.load(audio_path, sr=16000, mono=True)
-        print(f"Audio loaded: {len(speech_array)/sampling_rate:.2f} seconds")
+        logger.info(f"Audio loaded: {len(speech_array)/sampling_rate:.2f} seconds")
 
         # Define common words for language detection
         swahili_words = ["na", "kwa", "ya", "wa", "ni", "za", "kuwa", "kutoka", "sasa", "hivyo", 
@@ -441,7 +482,7 @@ def transcribe_hf_whisper_base(audio_path, model_size, task="transcribe"):
         num_segments = min(3, int(len(speech_array) / (16000 * 30)) + 1)
         segment_positions = [i * len(speech_array) // num_segments for i in range(num_segments)]
         
-        print("Performing content-based language detection...")
+        logger.info("Performing content-based language detection...")
         for i, pos in enumerate(segment_positions):
             # Extract segment for language detection
             segment_end = min(pos + 30 * 16000, len(speech_array))
@@ -477,15 +518,15 @@ def transcribe_hf_whisper_base(audio_path, model_size, task="transcribe"):
                 if sw_count > 0 or en_count > 0:
                     detected_lang = "sw" if sw_count > en_count else "en"
                     language_counts[detected_lang] += 1
-                    print(f"Segment {i+1}: Detected {detected_lang} (SW:{sw_count}/EN:{en_count})")
+                    logger.info(f"Segment {i+1}: Detected {detected_lang} (SW:{sw_count}/EN:{en_count})")
                 else:
                     # If no markers found, default to English
                     language_counts["en"] += 1
-                    print(f"Segment {i+1}: No clear markers, defaulting to English")
+                    logger.info(f"Segment {i+1}: No clear markers, defaulting to English")
 
         # Get most common language
         detected_language = max(language_counts.items(), key=lambda x: x[1])[0]
-        print(f"Overall detected language: {detected_language}")
+        logger.info(f"Overall detected language: {detected_language}")
 
         # Split the audio into 30-second chunks (Whisper's maximum length)
         chunk_size = 30 * 16000  # 30 seconds * 16,000 samples per second
@@ -499,7 +540,7 @@ def transcribe_hf_whisper_base(audio_path, model_size, task="transcribe"):
             if len(chunk) < 1600:  # Skip if less than 0.1 seconds
                 continue
                 
-            print(f"Processing chunk {i//chunk_size + 1}")
+            logger.info(f"Processing chunk {i//chunk_size + 1}")
 
             # Convert chunk to model input format
             inputs = processor.feature_extractor(
@@ -535,11 +576,11 @@ def transcribe_hf_whisper_base(audio_path, model_size, task="transcribe"):
             transcription = re.sub(r"\s+", " ", transcription).strip()  # Clean extra spaces
             
             transcriptions.append(transcription)  # Save chunk result
-            print(f"📝 Whisper {model_size}: Processed chunk {i//chunk_size + 1}")
+            logger.info(f"📝 Whisper {model_size}: Processed chunk {i//chunk_size + 1}")
 
         end_time = int(time())  # End time for the last chunk
         processing_time = end_time - start_time
-        print(f"Total processing time: {processing_time} seconds")
+        logger.info(f"Total processing time: {processing_time} seconds")
 
         full_transcription = " ".join(transcriptions)
 
@@ -562,24 +603,24 @@ def transcribe_hf_whisper_base(audio_path, model_size, task="transcribe"):
         # Get full language name if available
         language_name = language_names.get(detected_language, detected_language)
         
+        model_name = f'whisper-{model_size}'
         whisper_dict = {
-            'transcription.whisper.text': full_transcription,
-            'transcription.whisper.length': audio_length,
-            'transcription.whisper.init': start_time,
-            'transcription.whisper.exit': end_time,
-            'transcription.whisper.processing_time': processing_time,
-            'transcription.whisper.model': f'whisper-{model_size}',
-            'transcription.whisper.language': language_name,
-            'transcription.whisper.language_distribution': language_counts,
-            'transcription.whisper.task': task,
-            'transcription.whisper.sampling_rate': 16000,
+            'text': full_transcription,
+            'length': audio_length,
+            'init': start_time,
+            'exit': end_time,
+            'processing_time': processing_time,
+            'language': language_name,
+            'language_distribution': language_counts,
+            'task': task,
+            'sampling_rate': 16000,
         }
         
-        print(whisper_dict)
+        logger.info(f"HF Whisper base transcription completed: {model_name}")
         
         # Output preview
-        print(f"\n🚀 **Whisper {model_size} Result (First 100 chars):**")
-        print(full_transcription[:100] + "..." if len(full_transcription) > 100 else full_transcription)
+        logger.info(f"\n🚀 **Whisper {model_size} Result (First 100 chars):**")
+        logger.info(full_transcription[:100] + "..." if len(full_transcription) > 100 else full_transcription)
         
         # Clean up GPU memory
         del model
@@ -594,10 +635,11 @@ def transcribe_hf_whisper_base(audio_path, model_size, task="transcribe"):
             torch.cuda.empty_cache()
             torch.cuda.synchronize()
         
-        return full_transcription
+        return {model_name: whisper_dict}
         
     except Exception as e:
-        print(f"Error in Whisper {model_size} processing: {str(e)}")
+        error_msg = f"Error in Whisper {model_size} processing: {str(e)}"
+        logger.error(error_msg)
         traceback.print_exc()  # Print the full traceback for debugging
         
         # Enhanced cleanup in case of error
@@ -608,8 +650,9 @@ def transcribe_hf_whisper_base(audio_path, model_size, task="transcribe"):
             torch.cuda.empty_cache()
             torch.cuda.synchronize()
             
-        return f"ERROR: {str(e)}"
- 
+        return {"error": error_msg}
+    
+# Function to transcribe using Wav2Vec2 model
 def transcribe_wav2vec2(audio_path, model_id="facebook/wav2vec2-large-960h-lv60-self"):
     """
     Transcribe audio using a Wav2Vec2 model from HuggingFace.
@@ -619,17 +662,17 @@ def transcribe_wav2vec2(audio_path, model_id="facebook/wav2vec2-large-960h-lv60-
         model_id (str): HuggingFace model ID for the Wav2Vec2 model
         
     Returns:
-        str: The full transcription text
+        dict: Dictionary containing transcription results
     """
-    print(f"Starting Wav2Vec2 transcription for: {audio_path}")
+    logger.info(f"Starting Wav2Vec2 transcription for: {audio_path}")
     
     try:
         # Load model and processor
-        print(f"Loading model: {model_id}")
+        logger.info(f"Loading model: {model_id}")
         
         processor = Wav2Vec2Processor.from_pretrained(model_id)
         device = "cuda" if torch.cuda.is_available() else "cpu"
-        print(f"Using device: {device}")
+        logger.info(f"Using device: {device}")
         
         model = Wav2Vec2ForCTC.from_pretrained(model_id).to(device)
 
@@ -642,9 +685,9 @@ def transcribe_wav2vec2(audio_path, model_id="facebook/wav2vec2-large-960h-lv60-
         model.eval()
         
         # Load audio using librosa
-        print(f"Loading audio file: {audio_path}")
+        logger.info(f"Loading audio file: {audio_path}")
         speech_array, sampling_rate = librosa.load(audio_path, sr=16000, mono=True)
-        print(f"Audio loaded: {len(speech_array)/sampling_rate:.2f} seconds")
+        logger.info(f"Audio loaded: {len(speech_array)/sampling_rate:.2f} seconds")
 
         # Process in chunks due to potential GPU memory limitations
         chunk_size = 30 * 16000  # 30 seconds at 16kHz
@@ -658,7 +701,7 @@ def transcribe_wav2vec2(audio_path, model_id="facebook/wav2vec2-large-960h-lv60-
             if len(chunk) < 1600:  # Skip if less than 0.1 seconds
                 continue
                 
-            print(f"Processing chunk {i//chunk_size + 1}")
+            logger.info(f"Processing chunk {i//chunk_size + 1}")
             
             # Process audio with the model
             input_values = processor(
@@ -676,11 +719,11 @@ def transcribe_wav2vec2(audio_path, model_id="facebook/wav2vec2-large-960h-lv60-
             chunk_transcription = processor.batch_decode(predicted_ids)[0]
             
             transcriptions.append(chunk_transcription)
-            print(f"📝 Wav2Vec2: Transcribed chunk {i//chunk_size + 1}")
+            logger.info(f"📝 Wav2Vec2: Transcribed chunk {i//chunk_size + 1}")
 
         end_time = int(time())
         processing_time = end_time - start_time
-        print(f"Total processing time: {processing_time} seconds")
+        logger.info(f"Total processing time: {processing_time} seconds")
 
         # Join all transcriptions
         full_transcription = " ".join(transcriptions)
@@ -689,23 +732,25 @@ def transcribe_wav2vec2(audio_path, model_id="facebook/wav2vec2-large-960h-lv60-
         
         # For this phonetic model, add a note that it's phonetic output
         if "espeak" in model_id:
-            print("Note: This model produces phonetic transcriptions in IPA format")
+            logger.info("Note: This model produces phonetic transcriptions in IPA format")
+        
+        # Extract model name from model_id for the key
+        model_name = model_id.split('/')[-1] if '/' in model_id else model_id
         
         wav2vec2_dict = {
-            'transcription.wav2vec2.text': full_transcription,
-            'transcription.wav2vec2.length': audio_length,
-            'transcription.wav2vec2.init': start_time,
-            'transcription.wav2vec2.exit': end_time,
-            'transcription.wav2vec2.processing_time': processing_time,
-            'transcription.wav2vec2.model': model_id,
-            'transcription.wav2vec2.sampling_rate': 16000,
+            'text': full_transcription,
+            'length': audio_length,
+            'init': start_time,
+            'exit': end_time,
+            'processing_time': processing_time,
+            'sampling_rate': 16000,
         }
         
-        print(wav2vec2_dict)
+        logger.info(f"Wav2Vec2 transcription completed: {model_name}")
         
         # Output preview
-        print("\n🚀 **Wav2Vec2 Transcription Result (First 100 chars):**")
-        print(full_transcription[:100] + "..." if len(full_transcription) > 100 else full_transcription)
+        logger.info("\n🚀 **Wav2Vec2 Transcription Result (First 100 chars):**")
+        logger.info(full_transcription[:100] + "..." if len(full_transcription) > 100 else full_transcription)
         
         # Clean up GPU memory
         del model
@@ -734,10 +779,11 @@ def transcribe_wav2vec2(audio_path, model_id="facebook/wav2vec2-large-960h-lv60-
                 except:
                     pass
 
-        return full_transcription
+        return {model_name: wav2vec2_dict}
         
     except Exception as e:
-        print(f"Error in Wav2Vec2 transcription: {str(e)}")
+        error_msg = f"Error in Wav2Vec2 transcription: {str(e)}"
+        logger.error(error_msg)
         traceback.print_exc()  # Print the full traceback for debugging
         
         # Enhanced cleanup in case of error
@@ -748,111 +794,326 @@ def transcribe_wav2vec2(audio_path, model_id="facebook/wav2vec2-large-960h-lv60-
             torch.cuda.empty_cache()
             torch.cuda.synchronize()
             
-        return f"ERROR: {str(e)}"
-     
-# Process a single audio file with both models
-def process_audio_file(audio_file):
+        return {"error": error_msg}
+    
+def process_audio_file(audio_file, case_id):
+    """
+    Process an audio file and update the database with transcription results
+    
+    Args:
+        audio_file (str): Path to the audio file to process
+        case_id (str): ID of the case in the database
+        
+    Returns:
+        bool: True if processing was successful, False otherwise
+    """
     base_name = os.path.basename(audio_file)
-    print(f"\n==== Processing file: {base_name} ====")
+    logger.info(f"\n==== Processing file: {base_name} for case ID: {case_id} ====")
     
-    # Run hf transcription
-    hf_finetuned_medium_transcribe_result = transcribe_hf_whisper_medium_finetuned(audio_file, "transcribe")
-
-    # Run hf translation
-    hf_finetuned_medium_translate_result = transcribe_hf_whisper_medium_finetuned(audio_file, "translate")
+    # Initialize transcription dictionary to store all results
+    transcription_data = {}
+    translation_data = {}
     
-    # Run whisper transcription
-    openai_large_transcribe_result = transcribe_openai_whisper_large(audio_file, "transcribe")
+    try:
+        # Run hf whisper medium finetuned transcription
+        logger.info("Starting HF Whisper medium finetuned transcription")
+        hf_finetuned_medium_transcribe_result = transcribe_hf_whisper_medium_finetuned(audio_file, "transcribe")
+        if "error" not in hf_finetuned_medium_transcribe_result:
+            transcription_data.update(hf_finetuned_medium_transcribe_result)
+        else:
+            logger.error(f"Error in HF finetuned transcription: {hf_finetuned_medium_transcribe_result['error']}")
 
-    # Run whisper translation
-    openai_large_translate_result = transcribe_openai_whisper_large(audio_file, "translate")
+        # Run hf whisper medium finetuned translation
+        logger.info("Starting HF Whisper medium finetuned translation")
+        hf_finetuned_medium_translate_result = transcribe_hf_whisper_medium_finetuned(audio_file, "translate")
+        if "error" not in hf_finetuned_medium_translate_result:
+            translation_data.update(hf_finetuned_medium_translate_result)
+        else:
+            logger.error(f"Error in HF finetuned translation: {hf_finetuned_medium_translate_result['error']}")
+        
+        # Run openai whisper large transcription
+        logger.info("Starting OpenAI Whisper large transcription")
+        openai_large_transcribe_result = transcribe_openai_whisper_large(audio_file, "transcribe")
+        if "error" not in openai_large_transcribe_result:
+            transcription_data.update(openai_large_transcribe_result)
+        else:
+            logger.error(f"Error in OpenAI Whisper large transcription: {openai_large_transcribe_result['error']}")
 
-    # Run hf whisper base medium transcription
-    hf_base_medium_transcribe_result = transcribe_hf_whisper_base(audio_file, "medium", "transcribe")
+        # Run openai whisper large translation
+        logger.info("Starting OpenAI Whisper large translation")
+        openai_large_translate_result = transcribe_openai_whisper_large(audio_file, "translate")
+        if "error" not in openai_large_translate_result:
+            translation_data.update(openai_large_translate_result)
+        else:
+            logger.error(f"Error in OpenAI Whisper large translation: {openai_large_translate_result['error']}")
 
-    # Run hf whisper base medium translation
-    hf_base_medium_translate_result = transcribe_hf_whisper_base(audio_file, "medium", "translate")
+        # Run hf whisper base medium transcription
+        logger.info("Starting HF Whisper base medium transcription")
+        hf_base_medium_transcribe_result = transcribe_hf_whisper_base(audio_file, "medium", "transcribe")
+        if "error" not in hf_base_medium_transcribe_result:
+            transcription_data.update(hf_base_medium_transcribe_result)
+        else:
+            logger.error(f"Error in HF Whisper base medium transcription: {hf_base_medium_transcribe_result['error']}")
 
-    # Run hf whisper base large-v3 transcription
-    hf_base_large_transcribe_result = transcribe_hf_whisper_base(audio_file, "large-v3", "transcribe")
+        # Run hf whisper base medium translation
+        logger.info("Starting HF Whisper base medium translation")
+        hf_base_medium_translate_result = transcribe_hf_whisper_base(audio_file, "medium", "translate")
+        if "error" not in hf_base_medium_translate_result:
+            translation_data.update(hf_base_medium_translate_result)
+        else:
+            logger.error(f"Error in HF Whisper base medium translation: {hf_base_medium_translate_result['error']}")
 
-    # Run hf whisper base large-v3 translation
-    hf_base_large_translate_result = transcribe_hf_whisper_base(audio_file, "large-v3", "translate")
-
-    # Run wav2vec2 transcription
-    wav2vec2_transcribe_result = transcribe_wav2vec2(audio_file)
+        # Run wav2vec2 transcription (English only)
+        logger.info("Starting Wav2Vec2 large transcription")
+        wav2vec2_transcribe_result = transcribe_wav2vec2(audio_file)
+        if "error" not in wav2vec2_transcribe_result:
+            transcription_data.update(wav2vec2_transcribe_result)
+        else:
+            logger.error(f"Error in Wav2Vec2 transcription: {wav2vec2_transcribe_result['error']}")
+        
+        # Move audio file to done directory
+        # done_audio_path = os.path.join(DONE_DIR, base_name)
+        # try:
+        #     shutil.move(audio_file, done_audio_path)
+        #     logger.info(f"Moved audio file to: {done_audio_path}")
+        # except Exception as e:
+        #     logger.error(f"Error moving audio file: {str(e)}")
+        
+        # Update database with transcription and translation results
+        casedata = locate('casedata')
+        
+        # Update transcription data
+        if transcription_data:
+            logger.info(f"Updating transcription data for case ID: {case_id}")
+            
+            # Combine all text fields into a single field for easier access
+            all_transcription_texts = {}
+            for key, value in transcription_data.items():
+                if key.endswith('.text'):
+                    model_name = key.split('.')[1]
+                    all_transcription_texts[model_name] = value
+            
+            # Create combined transcription data with all_texts field
+            combined_data = transcription_data.copy()
+            combined_data['all_texts'] = all_transcription_texts
+            
+            transcription_update = {
+                "item": "edit",
+                "id": case_id,
+                "edit": {
+                    "transcription": combined_data
+                }
+            }
+            transcription_result = casedata.indexaction(transcription_update)
+            if transcription_result.get('error'):
+                logger.error(f"Error updating transcription data: {transcription_result['error']}")
+            else:
+                logger.info("Successfully updated transcription data")
+        
+        # Update translation data
+        if translation_data:
+            logger.info(f"Updating translation data for case ID: {case_id}")
+            
+            # Combine all text fields into a single field for easier access
+            all_translation_texts = {}
+            for key, value in translation_data.items():
+                if key.endswith('.text'):
+                    model_name = key.split('.')[1]
+                    all_translation_texts[model_name] = value
+            
+            # Create combined translation data with all_texts field
+            combined_translation = translation_data.copy()
+            combined_translation['all_texts'] = all_translation_texts
+            
+            translation_update = {
+                "item": "edit",
+                "id": case_id,
+                "edit": {
+                    "translation": combined_translation
+                }
+            }
+            translation_result = casedata.indexaction(translation_update)
+            if translation_result.get('error'):
+                logger.error(f"Error updating translation data: {translation_result['error']}")
+            else:
+                logger.info("Successfully updated translation data")
+        
+        # Add audit entry for transcription completion
+        audit_update = {
+            "item": "audit",
+            "id": case_id,
+            "audit": {
+                "action": "transcription_completed",
+                "details": f"Automated transcription completed with {len(transcription_data)} models"
+            }
+        }
+        audit_result = casedata.indexaction(audit_update)
+        if audit_result.get('error'):
+            logger.error(f"Error adding audit entry: {audit_result['error']}")
+        else:
+            logger.info("Successfully added audit entry for transcription completion")
+        
+        logger.info(f"Completed processing: {base_name}")
+        logger.info("==== Processing complete ====\n")
+        return True
+        
+    except Exception as e:
+        error_msg = f"Error in process_audio_file: {str(e)}"
+        logger.error(error_msg)
+        traceback.print_exc()
+        
+        # Try to add audit entry for failed transcription
+        try:
+            casedata = locate('casedata')
+            error_update = {
+                "item": "audit",
+                "id": case_id,
+                "audit": {
+                    "action": "transcription_failed",
+                    "details": error_msg[:500]  # Limit error message length
+                }
+            }
+            casedata.indexaction(error_update)
+        except Exception as audit_e:
+            logger.error(f"Error adding audit entry for failure: {str(audit_e)}")
+        
+        return False
     
-    # Save results to text files alongside the audio file in DONE_DIR
-    base_name_no_ext = os.path.splitext(base_name)[0]
+# Find and process pending transcription cases
+def process_pending_transcriptions():
+    """
+    Query the database for one case needing transcription, find its audio file,
+    process it, or mark as "no audio found" if the audio doesn't exist
+    """
+    logger.info("Looking for a pending transcription case...")
     
-    # Move audio file to done directory
-    done_audio_path = os.path.join(DONE_DIR, base_name)
-    shutil.move(audio_file, done_audio_path)
-    
-    # Save transformer result
-    with open(os.path.join(DONE_DIR, f"{base_name_no_ext}_transformer.txt"), 'w') as f:
-       f.write(hf_finetuned_medium_transcribe_result)
+    try:
+        # Import casedata module
+        casedata = locate('casedata')
+        
+        # Query for one case that needs transcription
+        query = {
+            "task": "transcribe",
+            "transcription_only": True,
+            "docs": 1  # Get just one case
+        }
+        
+        result = casedata.indexdata(query)
+        
+        if not result.get('data'):
+            logger.error(f"Error querying database: {result.get('error', 'Unknown error')}")
+            return 0
+        
+        if not result.get('unique_ids') or len(result.get('unique_ids', [])) == 0:
+            logger.info("No pending transcription cases found")
+            return 0
+        
+        # Get the unique_id for the single case
+        unique_id = result.get('unique_ids')[0]
+        logger.info(f"Found case with unique_id: {unique_id}")
+        
+        # Get the case details
+        case_query = {
+            "task": "transcribe",
+            "uniqueid": unique_id
+        }
+        
+        case_result = casedata.indexdata(case_query)
+        
+        if not case_result.get('data') or not case_result.get('meta'):
+            logger.error(f"Could not find case details for unique_id: {unique_id}")
+            return 0
+        
+        case_data = case_result['meta'][0]
+        case_id = case_data.get('id')
+        
+        if not case_id:
+            logger.error(f"No case ID found for unique_id: {unique_id}")
+            return 0
+        
+        logger.info(f"Processing case ID: {case_id}, unique_id: {unique_id}")
+        
+        # Look for audio file with matching unique_id
+        audio_files = []
+        for ext in ['wav', 'mp3', 'ogg', 'flac']:
+            pattern = os.path.join(AUDIO_DIR, f"{unique_id}*.{ext}")
+            audio_files.extend(glob.glob(pattern))
+        
+        if not audio_files:
+            logger.warning(f"No audio file found for unique_id: {unique_id}")
+            
+            # Update the case with "no audio found" status
+            # Important: Must set a non-empty transcription object
+            transcription_update = {
+                "item": "edit",
+                "id": case_id,
+                "edit": {
+                    "transcription": {
+                        "status": "no_audio_found",
+                        "processed_time": int(time()),
+                        "no_audio": True  # Add a clear flag
+                    }
+                }
+            }
+            
+            update_result = casedata.indexaction(transcription_update)
+            if update_result.get('error'):
+                logger.error(f"Failed to update transcription with no_audio_found status: {update_result.get('error')}")
+            else:
+                logger.info(f"Successfully marked case {case_id} as no_audio_found")
+            
+            # Add audit entry
+            audit_update = {
+                "item": "audit",
+                "id": case_id,
+                "audit": {
+                    "action": "transcription_skipped",
+                    "details": "No matching audio file found"
+                }
+            }
+            audit_result = casedata.indexaction(audit_update)
+            if audit_result.get('error'):
+                logger.error(f"Failed to add audit entry: {audit_result.get('error')}")
+            
+            # Return 1 to indicate we processed one case (even though no transcription was done)
+            return 1
+        
+        # Use the first matching audio file
+        audio_file = audio_files[0]
+        logger.info(f"Found audio file: {audio_file}")
+        
+        # Process the audio file
+        success = process_audio_file(audio_file, case_id)
+        
+        return 1 if success else 0
+        
+    except Exception as e:
+        logger.error(f"Error in process_pending_transcriptions: {str(e)}")
+        traceback.print_exc()
+        return 0
 
-    # Save transformer translation
-    with open(os.path.join(DONE_DIR, f"{base_name_no_ext}_transformer_translation.txt"), 'w') as f:
-       f.write(hf_finetuned_medium_translate_result)
-    
-    # Save whisper result
-    with open(os.path.join(DONE_DIR, f"{base_name_no_ext}_whisper.txt"), 'w') as f:
-       f.write(openai_large_transcribe_result)
-    
-    # Save whisper translation
-    with open(os.path.join(DONE_DIR, f"{base_name_no_ext}_whisper_translation.txt"), 'w') as f:
-       f.write(openai_large_translate_result)
-
-    # Save hf whisper base medium result
-    with open(os.path.join(DONE_DIR, f"{base_name_no_ext}_hf_base_medium.txt"), 'w') as f:
-       f.write(hf_base_medium_transcribe_result)
-    
-    # Save hf whisper base medium translation
-    with open(os.path.join(DONE_DIR, f"{base_name_no_ext}_hf_base_medium_translation.txt"), 'w') as f:
-       f.write(hf_base_medium_translate_result)
-
-    # Save hf whisper base large result
-    with open(os.path.join(DONE_DIR, f"{base_name_no_ext}_hf_base_large.txt"), 'w') as f:
-       f.write(hf_base_large_transcribe_result)
-
-    # Save hf whisper base large translation
-    with open(os.path.join(DONE_DIR, f"{base_name_no_ext}_hf_base_large_translation.txt"), 'w') as f:
-       f.write(hf_base_large_translate_result)
-    
-    # Save wav2vec2 result
-    with open(os.path.join(DONE_DIR, f"{base_name_no_ext}_wav2vec2.txt"), 'w') as f:
-        f.write(wav2vec2_transcribe_result)
-    
-    print(f"Completed processing: {base_name}")
-    print(f"File moved to: {done_audio_path}")
-    print("==== Processing complete ====\n")
-
-# Main timer function that checks for audio files
+# Main timer function that checks for pending transcription cases
 def scribe_timer(data=False):
-    print("Starting transcription service...")
+    """
+    Main service loop that looks for cases needing transcription
+    """
+    logger.info("Starting transcription service...")
     ensure_dirs()
     
     try:
         while True:
-            # Look for audio files
-            audio_files = glob.glob(os.path.join(AUDIO_DIR, "*.wav")) + \
-                          glob.glob(os.path.join(AUDIO_DIR, "*.mp3")) + \
-                          glob.glob(os.path.join(AUDIO_DIR, "*.ogg")) + \
-                          glob.glob(os.path.join(AUDIO_DIR, "*.flac"))
+            # Process pending transcription cases
+            processed_count = process_pending_transcriptions()
             
-            if audio_files:
-                print(f"Found {len(audio_files)} audio file(s) to process")
-                # Process only the first file, then wait
-                # process_audio_file(audio_files[0])
-                print("Processed one file. Waiting 30 seconds before checking for more...")
+            if processed_count > 0:
+                logger.info(f"Processed {processed_count} file(s). Waiting 30 seconds before checking for more...")
             else:
-                print("No audio files found. Waiting...")
+                logger.info("No cases processed. Waiting...")
             
             # Sleep before checking again
             sleep(30)
             
     except Exception as e:
-        print(f"Error in scribe_timer: {str(e)}")
+        logger.error(f"Error in scribe_timer: {str(e)}")
+        traceback.print_exc()
         raise e

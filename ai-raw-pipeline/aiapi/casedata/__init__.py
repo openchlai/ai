@@ -21,8 +21,8 @@ from logs import (
     logger)
 
 
-xlate = Blueprint(
-    'translate',
+cases = Blueprint(
+    'casedata',
     __name__,
     template_folder='templates',
     static_folder='static',
@@ -35,13 +35,13 @@ epath = edir + "/__init__.py"
 
 
 """
-curl -X POST "localhost:50001/translate/{create, data, action, stats, index}/item" \
+curl -X POST "localhost:50001/cases/{create, data, action, stats, index}/item" \
 -H "Content-Type: application/json" \
 --data "{}"
 """
-@xlate.route("/create/<filepath>/<filename>", methods=['POST'])
+@cases.route("/create/<filepath>/<filename>", methods=['POST'])
 def create(filepath, filename):
-    logger.debug("""Translate Create""")
+    logger.debug("""Trancases Create""")
 
     try:
 
@@ -57,15 +57,15 @@ def create(filepath, filename):
         return jsonify(data)
 
     except Exception as e:
-        data['error'] = "Error Index-Create Translate-Core {}".format(e)
+        data['error'] = "Error Index-Create Trancases-Core {}".format(e)
         logger.critical(data['error'])
 
     return jsonify(data), 404
 
 
-@xlate.route("/data/<filepath>/<filename>", methods=['POST'])
+@cases.route("/data/<filepath>/<filename>", methods=['POST'])
 def data(filepath, filename):
-    logger.debug("""Translate Data""")
+    logger.debug("""Trancases Data""")
 
     try:
 
@@ -81,15 +81,15 @@ def data(filepath, filename):
         return jsonify(data)
 
     except Exception as e:
-        data['error'] = "Error Index-Data Translate-Core {}".format(e)
+        data['error'] = "Error Index-Data Trancases-Core {}".format(e)
         logger.critical(data['error'])
 
     return jsonify(data), 404
 
 
-@xlate.route("/action/<filepath>/<filename>", methods=['POST'])
+@cases.route("/action/<filepath>/<filename>", methods=['POST'])
 def action(filepath, filename):
-    logger.debug("""Translate Action: """ + filepath)
+    logger.debug("""Trancases Action: """ + filepath)
 
     try:
 
@@ -105,15 +105,15 @@ def action(filepath, filename):
         return jsonify(data)
 
     except Exception as e:
-        data['error'] = "Error Index-Action Translate-Core {}".format(e)
+        data['error'] = "Error Index-Action Trancases-Core {}".format(e)
         logger.critical(data['error'])
 
     return jsonify(data), 404
 
 
-@xlate.route("/stats/<filepath>/<filename>", methods=['POST'])
+@cases.route("/stats/<filepath>/<filename>", methods=['POST'])
 def stats(filepath, filename):
-    logger.debug("""Translate Stats: """ + filepath)
+    logger.debug("""Trancases Stats: """ + filepath)
 
     try:
 
@@ -129,15 +129,15 @@ def stats(filepath, filename):
         return jsonify(data)
 
     except Exception as e:
-        data['error'] = "Error Index-Stats Translate-Core {}".format(e)
+        data['error'] = "Error Index-Stats Trancases-Core {}".format(e)
         logger.critical(data['error'])
 
     return jsonify(data), 404
 
 
-@xlate.route("/reset/<filepath>/<filename>", methods=['POST'])
+@cases.route("/reset/<filepath>/<filename>", methods=['POST'])
 def resets(filepath, filename):
-    logger.debug("""Translate Reset: """ + filepath)
+    logger.debug("""Trancases Reset: """ + filepath)
 
     try:
 
@@ -153,7 +153,7 @@ def resets(filepath, filename):
         return jsonify(data)
 
     except Exception as e:
-        data['error'] = "Error Index-Stats Translate-Core {}".format(e)
+        data['error'] = "Error Index-Stats Trancases-Core {}".format(e)
         logger.critical(data['error'])
 
     return jsonify(data), 404
