@@ -48,6 +48,7 @@ Installation Steps:
 
     * You should see an "active (running)" message if MariaDB is running correctly.
 
+<<<<<<< HEAD
 7. create the sql user account.
 
     ```sudo mysql```
@@ -82,3 +83,46 @@ Installation Steps:
     ```grant delete on tower.session to nginx@localhost;```
 
     ```grant update on tower.chan to nginx@localhost;```
+=======
+7. ## 1. Database Setup
+
+### 1.1 Create User
+Run the following command to create a MySQL user with `unix_socket` authentication:
+```bash
+sudo mysql -e "CREATE USER 'nginx'@'localhost' IDENTIFIED VIA unix_socket;"
+```
+
+### 1.2 Create Database
+Create the database `helpline`:
+```bash
+sudo mysql -e "CREATE DATABASE helpline;"
+```
+
+### 1.3 Import Database Schema
+Import the database schema into the `helpline` database:
+```bash
+sudo mysql helpline < /usr/src/OpenChs/rest_api/uchl.sql
+```
+
+### 1.4 Grant Permissions
+Grant necessary permissions to the `nginx` user:
+```bash
+sudo mysql -e "
+GRANT SELECT, INSERT ON helpline.* TO 'nginx'@'localhost';
+GRANT UPDATE ON helpline.auth TO 'nginx'@'localhost';
+GRANT UPDATE ON helpline.contact TO 'nginx'@'localhost';
+GRANT UPDATE ON helpline.kase TO 'nginx'@'localhost';
+GRANT UPDATE ON helpline.kase_activity TO 'nginx'@'localhost';
+GRANT UPDATE ON helpline.activity TO 'nginx'@'localhost';
+GRANT UPDATE ON helpline.disposition TO 'nginx'@'localhost';
+GRANT DELETE ON helpline.session TO 'nginx'@'localhost';
+GRANT UPDATE ON helpline.chan TO 'nginx'@'localhost';
+FLUSH PRIVILEGES;"
+```
+
+### 1.5 Exit MySQL
+Exit the MySQL prompt:
+```bash
+exit
+```
+>>>>>>> d1d56571d16d5f5602786158425245af41cfa963
