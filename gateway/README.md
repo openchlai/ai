@@ -11,21 +11,73 @@
 
 ## 🔐 Authentication and Authorization
 
-### Token Generation API (Live Environment Only)
+### Email Verification Authentication Flow
 
-To obtain an authentication token, use the following endpoint (available only in the live environment):
+We've implemented a secure email verification system for obtaining authentication tokens. This two-step process ensures that only authorized organizations can access the API.
 
+#### Step 1: Request Email Verification
+
+Send a request to initiate the email verification process:
+
+```bash
+curl -X POST https://backend.bitz-itc.com/api/webhook/webform/auth/request-verification/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "your-company-email@example.com",
+    "organization_name": "Your Organization Name"
+  }'
 ```
-POST /api/webhook/webform/auth/token/
-Content-Type: application/json
-```
 
-**Request Body:**
+**Example Response:**
 ```json
 {
-  "organization_name": "CPMIS System",
-  "organization_email": "admin@cpmis.org"
+  "status": "success",
+  "message": "Verification code sent to provided email",
+  "email": "your-company-email@example.com",
+  "expires_at": "2025-04-24T15:30:45.123456Z"
 }
+```
+
+A 6-digit OTP will be sent to the provided email address. The verification code expires after 10 minutes.
+
+#### Step 2: Verify OTP and Obtain Token
+
+Once you receive the verification code in your email, submit it to obtain your authentication token:
+
+```bash
+curl -X POST https://backend.bitz-itc.com/api/webhook/webform/auth/verify-otp/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "your-company-email@example.com",
+    "otp": "123456",
+    "organization_name": "Your Organization Name"
+  }'
+```
+
+**Example Response:**
+```json
+{
+  "status": "success",
+  "message": "Email verified successfully",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "organization_id": "550e8400-e29b-41d4-a716-446655440000",
+  "expires": "2026-04-24T14:25:30.123456Z"
+}
+```
+
+The JWT token is valid for 1 year from the date of issuance.
+
+### Legacy Token Generation API
+
+For backward compatibility, the direct token generation endpoint is still available (primarily for internal use):
+
+```bash
+curl -X POST https://backend.bitz-itc.com/api/webhook/webform/auth/token/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "organization_name": "CPMIS System",
+    "organization_email": "admin@cpmis.org"
+  }'
 ```
 
 **Example Response:**
@@ -43,11 +95,27 @@ Content-Type: application/json
 
 Use the obtained Bearer Token in the `Authorization` header for subsequent API calls:
 
-```
-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+```bash
+curl -X POST https://backend.bitz-itc.com/api/webhook/webform/ \
+  -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "reporter": {
+      "fname": "Reporting Person"
+    },
+    "gbv_related": false,
+    "case_category_id": "362484",
+    "narrative": "Case description here",
+    "plan": "Initial assessment required",
+    "priority": "2",
+    "status": "1"
+  }'
 ```
 
-⚠️ **Important Note**: The token generation API is only available in the live environment, not in testing or staging environments.
+⚠️ **Important Notes**: 
+- The token is valid for 1 year from issuance
+- Store your token securely and treat it like a password
+- If your organization is deactivated by an administrator, your token will no longer work even if it hasn't expired
 
 ---
 
@@ -246,6 +314,128 @@ Array of alleged perpetrators.
 
 ---
 
+## ✅ Ready-to-Use curl Commands
+
+Below are ready-to-use curl commands with prefilled data for common scenarios. Simply replace the placeholder values with your actual information.
+
+### Create a Basic Case (Minimal Fields)
+
+```bash
+curl -X POST https://backend.bitz-itc.com/api/webhook/webform/ \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "reporter": {
+      "fname": "John Doe"
+    },
+    "gbv_related": false,
+    "case_category_id": "362484",
+    "narrative": "Client reports experiencing harassment at workplace. Needs assistance with reporting and safety planning.",
+    "plan": "Initial assessment and safety planning. Refer to legal aid services.",
+    "priority": "2",
+    "status": "1"
+  }'
+```
+
+### Create a Detailed Case (Physical Abuse)
+
+```bash
+curl -X POST https://backend.bitz-itc.com/api/webhook/webform/ \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "src": "webform",
+    "reporter": {
+      "fname": "Jane Smith",
+      "age": "35",
+      "sex_id": "122",
+      "phone": "0712345678",
+      "email": "jane.smith@example.com",
+      "location_id": "258783"
+    },
+    "clients_case": [
+      {
+        "fname": "Sarah Johnson",
+        "age": "28",
+        "age_t": "0",
+        "sex_id": "122",
+        "phone": "0723456789",
+        "location_id": "258783"
+      }
+    ],
+    "perpetrators_case": [
+      {
+        "fname": "Robert Johnson",
+        "age": "32",
+        "sex_id": "121",
+        "relationship_id": "363104"
+      }
+    ],
+    "gbv_related": true,
+    "case_category_id": "362485",
+    "narrative": "Client reports physical abuse from spouse that has been ongoing for approximately 6 months. Most recent incident occurred yesterday resulting in visible bruising. Client fears for her safety and wants to understand her options.",
+    "plan": "1. Immediate safety assessment and planning\n2. Medical referral for injury documentation\n3. Legal options counseling\n4. Shelter information provided",
+    "priority": "1",
+    "status": "1"
+  }'
+```
+
+### Create a Child Abuse Case
+
+```bash
+curl -X POST https://backend.bitz-itc.com/api/webhook/webform/ \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "src": "webform",
+    "reporter": {
+      "fname": "Teacher Anonymous",
+      "phone": "0734567890"
+    },
+    "clients_case": [
+      {
+        "fname": "Child (Anonymous)",
+        "age": "9",
+        "age_t": "0",
+        "sex_id": "122"
+      }
+    ],
+    "gbv_related": false,
+    "case_category_id": "362487",
+    "narrative": "Teacher reports concerns about potential child abuse. Student has shown behavioral changes, unexplained injuries, and expressed fear of going home. Teacher wants guidance on how to properly report and what services are available.",
+    "plan": "1. Document all observations\n2. Connect with child protection services\n3. Provide guidance on mandatory reporting requirements\n4. Offer resources for child counseling",
+    "priority": "1",
+    "status": "1"
+  }'
+```
+
+### Create a Psychosocial Support Case
+
+```bash
+curl -X POST https://backend.bitz-itc.com/api/webhook/webform/ \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "reporter": {
+      "fname": "Self Referral"
+    },
+    "clients_case": [
+      {
+        "fname": "Self Referral",
+        "age": "42",
+        "age_t": "0",
+        "sex_id": "121"
+      }
+    ],
+    "gbv_related": false,
+    "case_category_id": "362490",
+    "narrative": "Client seeking psychosocial support. Reports experiencing depression and anxiety following job loss and family conflicts. Has expressed feelings of hopelessness and needs counseling resources.",
+    "plan": "1. Initial assessment of mental health needs\n2. Provide immediate emotional support\n3. Refer to community mental health services\n4. Schedule follow-up contact",
+    "priority": "2",
+    "status": "1"
+  }'
+```
+
 ## ✅ Response
 
 ### 📘 Success (201 Created)
@@ -331,3 +521,27 @@ Below is an example of a minimal valid payload containing only the mandatory fie
 ```
 
 These default values can be customized according to your organization's needs and automatically included in your API implementation.
+
+---
+
+## 🛡️ Security and Authentication Troubleshooting
+
+### OTP Email Issues
+
+If you don't receive the verification email:
+1. Check your spam/junk folder
+2. Verify that the email address is correct
+3. Contact support if the issue persists
+
+### Authentication Errors
+
+Common authentication issues and solutions:
+
+| Error | Possible Cause | Solution |
+|-------|----------------|----------|
+| "Invalid verification code" | Typo in OTP entry | Double-check the code from your email |
+| "Verification has expired" | OTP older than 10 minutes | Request a new verification code |
+| "Invalid or expired token" | Token expired or tampered with | Obtain a new token through the verification process |
+| "Organization access has been revoked" | Admin disabled your organization | Contact system administrator |
+
+For persistent authentication issues, please contact support with your organization details.
