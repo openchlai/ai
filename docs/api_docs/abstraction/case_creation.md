@@ -11,21 +11,73 @@
 
 ## 🔐 Authentication and Authorization
 
-### Token Generation API (Live Environment Only)
+### Email Verification Authentication Flow
 
-To obtain an authentication token, use the following endpoint (available only in the live environment):
+We've implemented a secure email verification system for obtaining authentication tokens. This two-step process ensures that only authorized organizations can access the API.
 
+#### Step 1: Request Email Verification
+
+Send a request to initiate the email verification process:
+
+```bash
+curl -X POST http://localhost:8000/api/webhook/webform/auth/request-verification/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "your-company-email@example.com",
+    "organization_name": "Your Organization Name"
+  }'
 ```
-POST /api/webhook/webform/auth/token/
-Content-Type: application/json
-```
 
-**Request Body:**
+**Example Response:**
 ```json
 {
-  "organization_name": "CPMIS System",
-  "organization_email": "admin@cpmis.org"
+  "status": "success",
+  "message": "Verification code sent to provided email",
+  "email": "your-company-email@example.com",
+  "expires_at": "2025-04-24T15:30:45.123456Z"
 }
+```
+
+A 6-digit OTP will be sent to the provided email address. The verification code expires after 10 minutes.
+
+#### Step 2: Verify OTP and Obtain Token
+
+Once you receive the verification code in your email, submit it to obtain your authentication token:
+
+```bash
+curl -X POST http://localhost:8000/api/webhook/webform/auth/verify-otp/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "your-company-email@example.com",
+    "otp": "123456",
+    "organization_name": "Your Organization Name"
+  }'
+```
+
+**Example Response:**
+```json
+{
+  "status": "success",
+  "message": "Email verified successfully",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "organization_id": "550e8400-e29b-41d4-a716-446655440000",
+  "expires": "2026-04-24T14:25:30.123456Z"
+}
+```
+
+The JWT token is valid for 1 year from the date of issuance.
+
+### Legacy Token Generation API
+
+For backward compatibility, the direct token generation endpoint is still available (primarily for internal use):
+
+```bash
+curl -X POST http://localhost:8000/api/webhook/webform/auth/token/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "organization_name": "CPMIS System",
+    "organization_email": "admin@cpmis.org"
+  }'
 ```
 
 **Example Response:**
@@ -43,11 +95,27 @@ Content-Type: application/json
 
 Use the obtained Bearer Token in the `Authorization` header for subsequent API calls:
 
-```
-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+```bash
+curl -X POST http://localhost:8000/api/webhook/webform/ \
+  -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "reporter": {
+      "fname": "Reporting Person"
+    },
+    "gbv_related": false,
+    "case_category_id": "362484",
+    "narrative": "Case description here",
+    "plan": "Initial assessment required",
+    "priority": "2",
+    "status": "1"
+  }'
 ```
 
-⚠️ **Important Note**: The token generation API is only available in the live environment, not in testing or staging environments.
+⚠️ **Important Notes**: 
+- The token is valid for 1 year from issuance
+- Store your token securely and treat it like a password
+- If your organization is deactivated by an administrator, your token will no longer work even if it hasn't expired
 
 ---
 
@@ -331,3 +399,27 @@ Below is an example of a minimal valid payload containing only the mandatory fie
 ```
 
 These default values can be customized according to your organization's needs and automatically included in your API implementation.
+
+---
+
+## 🛡️ Security and Authentication Troubleshooting
+
+### OTP Email Issues
+
+If you don't receive the verification email:
+1. Check your spam/junk folder
+2. Verify that the email address is correct
+3. Contact support if the issue persists
+
+### Authentication Errors
+
+Common authentication issues and solutions:
+
+| Error | Possible Cause | Solution |
+|-------|----------------|----------|
+| "Invalid verification code" | Typo in OTP entry | Double-check the code from your email |
+| "Verification has expired" | OTP older than 10 minutes | Request a new verification code |
+| "Invalid or expired token" | Token expired or tampered with | Obtain a new token through the verification process |
+| "Organization access has been revoked" | Admin disabled your organization | Contact system administrator |
+
+For persistent authentication issues, please contact support with your organization details.
