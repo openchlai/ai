@@ -314,6 +314,128 @@ Array of alleged perpetrators.
 
 ---
 
+## ✅ Ready-to-Use curl Commands
+
+Below are ready-to-use curl commands with prefilled data for common scenarios. Simply replace the placeholder values with your actual information.
+
+### Create a Basic Case (Minimal Fields)
+
+```bash
+curl -X POST https://backend.bitz-itc.com/api/webhook/webform/ \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "reporter": {
+      "fname": "John Doe"
+    },
+    "gbv_related": false,
+    "case_category_id": "362484",
+    "narrative": "Client reports experiencing harassment at workplace. Needs assistance with reporting and safety planning.",
+    "plan": "Initial assessment and safety planning. Refer to legal aid services.",
+    "priority": "2",
+    "status": "1"
+  }'
+```
+
+### Create a Detailed Case (Physical Abuse)
+
+```bash
+curl -X POST https://backend.bitz-itc.com/api/webhook/webform/ \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "src": "webform",
+    "reporter": {
+      "fname": "Jane Smith",
+      "age": "35",
+      "sex_id": "122",
+      "phone": "0712345678",
+      "email": "jane.smith@example.com",
+      "location_id": "258783"
+    },
+    "clients_case": [
+      {
+        "fname": "Sarah Johnson",
+        "age": "28",
+        "age_t": "0",
+        "sex_id": "122",
+        "phone": "0723456789",
+        "location_id": "258783"
+      }
+    ],
+    "perpetrators_case": [
+      {
+        "fname": "Robert Johnson",
+        "age": "32",
+        "sex_id": "121",
+        "relationship_id": "363104"
+      }
+    ],
+    "gbv_related": true,
+    "case_category_id": "362485",
+    "narrative": "Client reports physical abuse from spouse that has been ongoing for approximately 6 months. Most recent incident occurred yesterday resulting in visible bruising. Client fears for her safety and wants to understand her options.",
+    "plan": "1. Immediate safety assessment and planning\n2. Medical referral for injury documentation\n3. Legal options counseling\n4. Shelter information provided",
+    "priority": "1",
+    "status": "1"
+  }'
+```
+
+### Create a Child Abuse Case
+
+```bash
+curl -X POST https://backend.bitz-itc.com/api/webhook/webform/ \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "src": "webform",
+    "reporter": {
+      "fname": "Teacher Anonymous",
+      "phone": "0734567890"
+    },
+    "clients_case": [
+      {
+        "fname": "Child (Anonymous)",
+        "age": "9",
+        "age_t": "0",
+        "sex_id": "122"
+      }
+    ],
+    "gbv_related": false,
+    "case_category_id": "362487",
+    "narrative": "Teacher reports concerns about potential child abuse. Student has shown behavioral changes, unexplained injuries, and expressed fear of going home. Teacher wants guidance on how to properly report and what services are available.",
+    "plan": "1. Document all observations\n2. Connect with child protection services\n3. Provide guidance on mandatory reporting requirements\n4. Offer resources for child counseling",
+    "priority": "1",
+    "status": "1"
+  }'
+```
+
+### Create a Psychosocial Support Case
+
+```bash
+curl -X POST https://backend.bitz-itc.com/api/webhook/webform/ \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "reporter": {
+      "fname": "Self Referral"
+    },
+    "clients_case": [
+      {
+        "fname": "Self Referral",
+        "age": "42",
+        "age_t": "0",
+        "sex_id": "121"
+      }
+    ],
+    "gbv_related": false,
+    "case_category_id": "362490",
+    "narrative": "Client seeking psychosocial support. Reports experiencing depression and anxiety following job loss and family conflicts. Has expressed feelings of hopelessness and needs counseling resources.",
+    "plan": "1. Initial assessment of mental health needs\n2. Provide immediate emotional support\n3. Refer to community mental health services\n4. Schedule follow-up contact",
+    "priority": "2",
+    "status": "1"
+  }'
+```
+
 ## ✅ Response
 
 ### 📘 Success (201 Created)
