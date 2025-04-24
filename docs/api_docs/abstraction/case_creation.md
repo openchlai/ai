@@ -20,7 +20,7 @@ We've implemented a secure email verification system for obtaining authenticatio
 Send a request to initiate the email verification process:
 
 ```bash
-curl -X POST http://localhost:8000/api/webhook/webform/auth/request-verification/ \
+curl -X POST https://backend.bitz-itc.com/api/webhook/webform/auth/request-verification/ \
   -H "Content-Type: application/json" \
   -d '{
     "email": "your-company-email@example.com",
@@ -45,7 +45,7 @@ A 6-digit OTP will be sent to the provided email address. The verification code 
 Once you receive the verification code in your email, submit it to obtain your authentication token:
 
 ```bash
-curl -X POST http://localhost:8000/api/webhook/webform/auth/verify-otp/ \
+curl -X POST https://backend.bitz-itc.com/api/webhook/webform/auth/verify-otp/ \
   -H "Content-Type: application/json" \
   -d '{
     "email": "your-company-email@example.com",
@@ -72,7 +72,7 @@ The JWT token is valid for 1 year from the date of issuance.
 For backward compatibility, the direct token generation endpoint is still available (primarily for internal use):
 
 ```bash
-curl -X POST http://localhost:8000/api/webhook/webform/auth/token/ \
+curl -X POST https://backend.bitz-itc.com/api/webhook/webform/auth/token/ \
   -H "Content-Type: application/json" \
   -d '{
     "organization_name": "CPMIS System",
@@ -96,7 +96,7 @@ curl -X POST http://localhost:8000/api/webhook/webform/auth/token/ \
 Use the obtained Bearer Token in the `Authorization` header for subsequent API calls:
 
 ```bash
-curl -X POST http://localhost:8000/api/webhook/webform/ \
+curl -X POST https://backend.bitz-itc.com/api/webhook/webform/ \
   -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..." \
   -H "Content-Type: application/json" \
   -d '{
