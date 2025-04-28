@@ -1,0 +1,13 @@
+[+] Preprocessing ['test.tsv', 'train.tsv']
+[+] Preprocessing test.tsv
+Previously: 10205 rows
+Now: 6671 rows
+Folder Name + Path ['sw_other_1'] 
+
+Audios in sw_other_1 40000
+[+] Preprocessing train.tsv
+Previously: 26614 rows
+Now: 17140 rows
+Folder Name + Path ['sw_invalidated_0'] 
+
+Audios in sw_invalidated_0 40000

@@ -4,3 +4,5 @@ synthetic_data/casedir/**.png
 aiapi/logs/runtime.log
 aiapi/logs/__pycache__/__init__.cpython-312.pyc
 **.txt
+genderecog/data/
+wav2vec/wav2vec2-swahili-finetuned/
