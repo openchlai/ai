@@ -1,5 +1,15 @@
 # Text Pre-Processing Pipeline for Helpline & Legal Case Data
-Version 1.0 | Designed for NLP Training (NER & Classification)
+Version 1.1 | Designed for NLP Training (NER & Classification)
+
+## Project Structure
+```
+.
+├── Case_Category_Classification/   # Case category classification resources
+│   └── original_case_catagories_data/
+├── README.md                       # This documentation file
+├── stopwords-sw.json               # Swahili stopwords for text processing
+└── synthetic_data/                 # Generated synthetic training data
+```
 
 ## 1. Objectives
 Clean and standardize unstructured helpline call narratives.
@@ -124,7 +134,89 @@ dataset = Dataset.from_dict({"text": processed_texts, "label": labels})
 dataset.save_to_disk("classification_data")  
 ```
 
-## 5. Appendix: Customization Guide
+## 5. Case Category Classification
+
+The `Case_Category_Classification` directory contains resources for categorizing cases according to Kenya's Children Act taxonomy and other relevant legal frameworks:
+
+- Original case categories data for training classification models
+- Annotation guidelines for consistent labeling
+- Pre-processed training data samples
+- Evaluation metrics and benchmarks
+
+Implementation example:
+```python
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+import torch
+
+# Load pre-trained model for case categorization
+tokenizer = AutoTokenizer.from_pretrained("./Case_Category_Classification/model")
+model = AutoModelForSequenceClassification.from_pretrained("./Case_Category_Classification/model")
+
+def classify_case_category(text):
+    inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512)
+    with torch.no_grad():
+        outputs = model(**inputs)
+    
+    predictions = torch.nn.functional.softmax(outputs.logits, dim=-1)
+    return {
+        "category": model.config.id2label[predictions.argmax().item()],
+        "confidence": predictions.max().item()
+    }
+```
+
+## 6. Synthetic Data Generation
+
+The `synthetic_data` directory contains tools and resources for generating synthetic training data:
+
+- Template-based generation for rare case types
+- Privacy-preserving data augmentation
+- Balanced dataset creation for model training
+
+Example usage:
+```python
+from synthetic_data_generator import generate_synthetic_cases
+
+# Generate synthetic cases for under-represented categories
+synthetic_cases = generate_synthetic_cases(
+    category="child_trafficking",
+    count=100,
+    template_file="./synthetic_data/templates/trafficking_template.txt",
+    entities_pool="./synthetic_data/entities/anonymized_entities.json"
+)
+
+# Use synthetic data for model training
+train_data.extend(synthetic_cases)
+```
+
+## 7. Multi-language Support
+
+The pipeline includes support for Swahili text processing:
+
+- `stopwords-sw.json` contains Swahili stopwords for text preprocessing
+- Language detection to apply appropriate processing rules
+- Bilingual entity recognition capabilities
+
+Example usage:
+```python
+import json
+
+# Load Swahili stopwords
+with open("stopwords-sw.json", "r") as f:
+    sw_stopwords = json.load(f)
+
+def process_text_multilingual(text, language="en"):
+    if language == "sw":
+        # Apply Swahili-specific processing
+        tokens = tokenize_swahili(text)
+        tokens = [t for t in tokens if t not in sw_stopwords]
+    else:
+        # Apply English processing
+        tokens = tokenize_english(text)
+    
+    return " ".join(tokens)
+```
+
+## 8. Appendix: Customization Guide
 - Swahili Support: Use spacy.blank("sw") + Swahili Stopwords
 - Legal Terms: Extend abbrev_map with Kenya's Children Act terminology
 - Template Files
