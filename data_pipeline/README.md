@@ -19,7 +19,7 @@ The entire system relies only on open-source tools and models, which will be fin
 | Data Sources | Voice & text data from helplines & historical records | Mozilla Common Voices, Helpline Data, SALT dataset |
 | Data Storage | Store raw audio, transcriptions, translations, and case data | On-premise Storage (Object Storage), PostgreSQL, MySQL |
 | Speech-to-Text | Convert speech into text | OpenAI Whisper, Meta's Wav2Vec |
-| Translation | Convert transcribed text into English | Marian-NMT, OpenNMT |
+| Translation | Convert transcribed text into English | NLLB, OpenAI Whisper |
 | NLP Processing | Text cleaning, feature extraction, and structuring | SpaCy, FastText, Hugging Face Transformers |
 | Case Prediction | Train models to classify case types and severity | BERT, DistilBERT, XLM-R, PyTorch, Scikit-learn |
 | Data Visualization | Generate reports and insights | Custom in-house tool |
@@ -130,13 +130,13 @@ Once audio has been transcribed into text, the next step is to detect the langua
 
 #### Text Translation
 - **Models Used:**
-  - Marian-NMT (Neural Machine Translation, supports African languages)
-  - OpenNMT (customizable, supports multiple pre-trained models)
+  - NLLB (Supports numerous African languages)
+  - OpenAI Whisper (supports text translation and text transcription tasks on a number of languages)
   - Fairseq (Facebook's AI model for multilingual tasks)
 - **Process:**
   1. Receive transcribed text
   2. Identify source language (from previous step)
-  3. Translate text into English using Marian-NMT/OpenNMT
+  3. Translate text into English using NLLB/OpenAI Whisper
   4. Store results (original text, translated text, confidence score)
   5. Perform quality evaluation (BLEU Score, METEOR, ROUGE metrics)
 
@@ -148,7 +148,9 @@ Once audio has been transcribed into text, the next step is to detect the langua
 
 ### Step 4: NLP-Based Data Preprocessing
 
-After transcription and translation, the textual data is preprocessed for machine learning (case prediction).
+Following transcription and translation, the text undergoes preprocessing to prepare it for machine learning tasks, such as case prediction.
+
+📜 **[Pre-Processing Pipeline for Helpline & Legal Case Data](nlp/README.md)** –  Details the text preprocessing steps and methodologies.
 
 #### Data Cleaning
 - **Tools Used:** SpaCy, NLTK, FastText, Regex
@@ -165,7 +167,7 @@ After transcription and translation, the textual data is preprocessed for machin
 #### Feature Engineering
 - **Named Entity Recognition (NER):**
   - Identify key entities (people, locations, organizations)
-  - Tool: SpaCy (pre-trained models + custom fine-tuning)
+  - Tool: HugginFace/SpaCy (pre-trained models + custom fine-tuning)
   - Example: "A worker was mistreated by XYZ Company in Nairobi" → {"ORG": "XYZ Company", "LOC": "Nairobi"}
 
 - **Sentiment Analysis:**
@@ -232,7 +234,7 @@ This step involves training, evaluating, and deploying a machine learning model 
 The reporting module provides real-time monitoring, analytics, and insights into case distributions, model performance, and translation accuracy.
 
 #### Dashboard & Metrics
-- **Tools Used:** Vue 3 + Chart.js, Metabase / Apache Superset, Celery, PostgreSQL
+- **Tools Used:** Vue 3 + Chart.js/Recharts.js, Metabase / Apache Superset, Celery, PostgreSQL
 - **Insights Generated:**
   - Case Distribution Dashboard (number of cases by category)
   - Model Performance Dashboard (accuracy, precision, recall trends)
@@ -258,7 +260,7 @@ The reporting module provides real-time monitoring, analytics, and insights into
 
 ### Performance Enhancements
 - **Parallel Processing:** Celery Workers distribute tasks across multiple nodes
-- **Model Optimization:** ONNX Runtime, model pruning & quantization
+- **Model Optimization:** ONNX Runtime, Parameter Efficient Finetuning (peft & LoRa), model pruning & quantization
 - **Batch Processing:** Translate multiple texts at once to optimize API calls
 - **Processing Modes:** Streaming for high-priority cases, Batch Mode for non-urgent processing
 
@@ -273,11 +275,11 @@ The reporting module provides real-time monitoring, analytics, and insights into
 
 This fully open-source AI pipeline integrates:
 1. Speech-to-Text (Whisper, Vosk, Kaldi)
-2. Translation (Marian-NMT, OpenNMT)
+2. Translation (NLLB, Whisper)
 3. Case Prediction (BERT, PyTorch, Hugging Face)
 4. Automation (Celery for task orchestration)
 5. Data Storage (PostgreSQL, MinIO, SQLite)
-6. Reporting (Vue 3, Chart.js, Metabase, Superset)
+6. Reporting (Vue 3, Chart.js,Rechart.js, Metabase, Superset)
 7. Monitoring (ELK Stack, Prometheus, Celery Alerts)
 
 ### Next Steps & Recommendations
