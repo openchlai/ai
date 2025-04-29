@@ -48,6 +48,42 @@ Installation Steps:
 
     * You should see an "active (running)" message if MariaDB is running correctly.
 
+<<<<<<< HEAD
+7. create the sql user account.
+
+    ```sudo mysql```
+
+    * then on the mysql command you can create a user
+    ```create user nginx@localhost identified via unix_socket;```
+
+    ```create database tower;```
+
+    ```use tower;```
+
+    ```exit```
+
+   ```mysql tower < /usr/src/Sacco_CRM/src/tower_schema.sql```
+
+- Grant Authorization to the Nginx User 
+
+    ```grant select,insert on tower.* to nginx@localhost;```
+
+    ```grant update on tower.auth to nginx@localhost;```
+
+    ```grant update on tower.contact to nginx@localhost;```
+
+    ```grant update on tower.kase to nginx@localhost;```
+
+    ```grant update on tower.kase_activity to nginx@localhost;```
+
+    ```grant update on tower.activity to nginx@localhost;```
+    
+    ```grant update on tower.disposition to nginx@localhost;```
+
+    ```grant delete on tower.session to nginx@localhost;```
+
+    ```grant update on tower.chan to nginx@localhost;```
+=======
 7. ## 1. Database Setup
 
 ### 1.1 Create User
@@ -89,3 +125,4 @@ Exit the MySQL prompt:
 ```bash
 exit
 ```
+>>>>>>> d1d56571d16d5f5602786158425245af41cfa963
