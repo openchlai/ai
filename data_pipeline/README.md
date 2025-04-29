@@ -44,7 +44,7 @@ The entire system relies only on open-source tools and models, which will be fin
   - Transcriptions of audio by people
   - Transcriptions of audio made by STT models
 - **Storage:**
-  - Store in PostgreSQL/SQLite, making it available for model training
+  - Store in MySQL/SQLite, making it available for model training
 
 ### Step 2: Voice Recognition & Transcription
 
@@ -56,11 +56,7 @@ This step focuses on converting audio into text while ensuring data quality, acc
 |-------|-------------|---------------|
 | OpenAI Whisper | High accuracy, multi-language support | General-purpose transcription |
 | Wav2Vec | Learns speech representations from unlabeled audio | Strong performance with limited training data |
-| Vosk | Lightweight, offline ASR | Real-time processing, low latency |
-| Kaldi | Highly customizable, used for ASR research | Large-scale transcription |
 
-- **Primary model:** Whisper (fine-tuned for dialects and accents)
-- **Fallback models:** Vosk/Kaldi (for low-resource or offline cases)
 
 #### Audio Preprocessing Steps
 1. Load Raw Audio Data
@@ -81,8 +77,7 @@ This step focuses on converting audio into text while ensuring data quality, acc
 
 #### Speech-to-Text Conversion Process
 1. Load Preprocessed Audio Chunks
-   - Each chunk is fed into the Whisper/Wav2Vec/Vosk/Kaldi model
-   - Process in parallel to speed up transcription
+   - Each chunk is fed into the Whisper/Wav2Vec model
 2. Convert Speech to Text
    - Each model generates a text output + confidence score
    - If confidence is below threshold (e.g., 80%), reprocess with another model
@@ -90,14 +85,11 @@ This step focuses on converting audio into text while ensuring data quality, acc
    - If audio was chunked, merge back into full text
    - Ensure proper sentence breaks (punctuation, speaker identification)
 4. Store Transcription Results
-   - Transcribed text saved in PostgreSQL
+   - Transcribed text saved in MySQL
    - Metadata stored (file ID, timestamp, language detected, confidence score)
    - Backup stored in object storage for future reference
 
 #### Quality Evaluation & Error Handling
-- **Confidence Score Evaluation:**
-  - Each transcription has a confidence score (0–100%)
-  - If below 80%, transcription is flagged for review or reprocessing
 - **Automated Quality Checks:**
   - Word Error Rate (WER) → Measures transcription accuracy by comparing with a reference transcript
   - Text Coherence Check → Uses NLP to detect gibberish text or incomplete sentences
