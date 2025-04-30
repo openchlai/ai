@@ -40,4 +40,6 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('webhook_handler.urls')),
+    path('', include('emailfeedback.urls')),
+    path('', include('feedback.urls')),
 ]
