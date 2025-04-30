@@ -13,7 +13,7 @@ from .views import (
 
 urlpatterns = [
     # Webhook for WhatsApp verification & message handling
-    # path('webhook/', whatsapp_webhook, name='whatsapp_webhook'),
+    path('webhook/', whatsapp_webhook, name='whatsapp_webhook'),
 
     # URL for sending WhatsApp messages
     path('whatsapp/send/', send_message, name='send_message'),
