@@ -23,30 +23,21 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     
-    - name: Cache pip packages
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('gateway/cfcbe/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-    
-    - name: Change to Django project directory
+    - name: Debug directory structure
       run: |
-        cd gateway/cfcbe
         echo "Current directory: $(pwd)"
-        ls -la
+        find . -name "requirements.txt" -type f
     
     - name: Install dependencies
-      working-directory: gateway/cfcbe
       run: |
         python -m pip install --upgrade pip
+        cd gateway/cfcbe
         pip install -r requirements.txt
-        pip install coverage
+        pip install coverage python-dotenv
     
     - name: Create test .env file
-      working-directory: gateway/cfcbe
       run: |
+        cd gateway/cfcbe
         cat > .env << 'EOL'
         # Django Settings
         DEBUG=True
@@ -98,17 +89,18 @@ jobs:
         EOL
     
     - name: Create test uploads directory
-      working-directory: gateway/cfcbe
-      run: mkdir -p uploads
+      run: |
+        cd gateway/cfcbe
+        mkdir -p uploads
     
     - name: Run Django checks
-      working-directory: gateway/cfcbe
       run: |
+        cd gateway/cfcbe
         python manage.py check
     
     - name: Run tests with coverage
-      working-directory: gateway/cfcbe
       run: |
+        cd gateway/cfcbe
         coverage run manage.py test --verbosity=2
         coverage report
         coverage xml
