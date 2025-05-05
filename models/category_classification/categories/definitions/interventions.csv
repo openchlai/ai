@@ -1,0 +1,33 @@
+No,Intervention,Definition,Legal Source
+1,Adoption,"Permanent placement with legal parent(s) under Part XIV of the Children Act.",Children Act 2022
+2,Committed to CCI’s (Placement to places of safety),"Temporary care in institutions, schools, or hospitals (excluding remand homes).",Children Act 2022, Sec 145(2)
+3,Committed to statutory Institution,"Court-ordered placement in a rehabilitation school.",Children Act 2022, Sec 150(2c)
+4,Professional counseling,"Counseling for the child, parents, or guardians as specified by the Court.",The Children Act, 2022, Sec 135(e)
+5,Family support,"State-provided social security for caregivers.",Constitution of Kenya, 2010, Article 43(3)
+6,Foster care,"Temporary placement with a non-relative caregiver.",The Children Act, 2022, Sec 2
+7,Guardianship,"Court-appointed parental responsibility after a parent’s death.",The Children Act, 2022, Sec 122(1)
+8,Joint parental agreement (PRA),"Unmarried parents agree on shared responsibilities for the child.",The Children Act, 2022, Sec 33(1)
+9,Application for Judicial orders,"Court orders for child protection (e.g., custody, maintenance).",The Children Act, 2022, Sec 39(2)
+10,Legal aid,"Free legal representation or out-of-court settlements.",Legal Aid Act 2016
+11,Child maintenance,"Court-ordered financial support for the child.",Children Act 2022, Sec 2
+12,Placement in school (Enrolment),"Enrollment/re-entry into education facilities.",Operational
+13,Reunification,"Returning a child to biological parents post-foster care.",The Children Act 2022, Sec 2
+14,Reconciliation,"Mediation for family disputes involving children.",The Children Act 2022, Sec 38(m)
+15,Referred to Court/Khadhi,"Formal referral for legal/religious resolution.",Guidelines for Child Protection, 2019
+16,Referred to other Government agencies,"Referral for services (e.g., healthcare, cash assistance).",Guidelines for Child Protection, 2019
+17,Referred to other non-state agencies,"Referral to NGOs for additional support.",Guidelines for Child Protection, 2019
+18,Reintegration,"Permanent transition back to family/community.",National Care Reform Strategy, 2022–2032
+19,Repatriation,"Return to country of origin/citizenship.",National Referral Mechanism for Trafficking
+20,Release to parent(s)/Caregiver(s),"Return to guardians if deemed safe.",The Children Act 2022, Sec 145-7
+21,Rescue and placement,"Emergency removal from abuse to a safe place.",The Children Act, 2022, Sec 38(L)
+22,Supervision and guidance order,"Mentorship to monitor/guide child behavior.",The Children Act 2022
+23,Supervision without court order (Diversion),"Programs diverting children from the justice system.",The Children Act 2022, Sec 2
+24,Written promise,"Child’s commitment to good behavior under supervision.",Operational
+25,Revocation of children’s committal order,"Early release from a holding center.",The Children Act, 2022, Sec 82
+26,Release on expiry of an order,"Release after completing mandated institutional stay.",The Children Act 2022, Sec 83
+27,Release on license,"Temporary release from an institution.",Operational
+28,Committed to a fit person,"Temporary care by a morally fit individual.",The Children Act, Sec 150
+29,Kinship Care,"Formal/informal care by extended family.",Case Management Guidelines, 2019
+30,Supported child-headed Household,"Assistance for sibling-led households.",Case Management Guidelines, 2019
+31,Supported independent living,"Semi-supervised autonomy for older youth.",Case Management Guidelines, 2019
+32,Kafaalah,"Islamic guardianship for deprived children.",The Children Act 2022, Sec 2
