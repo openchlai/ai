@@ -3,7 +3,7 @@
 | Metric | Value |
 |--------|-------|
 | Spelling Correction Accuracy | 92% |
-| Stemming Speed | 179,986 docs/sec |
+| Stemming Speed | 176,784 docs/sec |
 | Vocabulary Size Reduction (Stemming) | 0% |
 
 ## Configuration
