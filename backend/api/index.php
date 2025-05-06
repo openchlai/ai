@@ -810,4 +810,14 @@ if ($rt==203)
 	echo '{ "action":[["notice","async"]] }'; 
 }
 
+// Prevent automatic execution during tests
+if (!defined('PHPUNIT_RUNNING')) {
+    $rt = _request_();
+    if ($rt > 299) rest_uri_response_error($rt);
+    if ($rt == 203) {
+        header("HTTP/1.0 203 Wait");
+        header('Content-Type: application/json');
+        echo '{ "action":[["notice","async"]] }';
+    }
+}
 ?>
