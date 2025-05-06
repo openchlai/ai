@@ -12,6 +12,7 @@ from pathlib import Path
 from importlib import import_module
 import logging
 from datetime import datetime
+import pandas as pd
 
 # Configure project paths
 BASE_DIR = Path(__file__).parent
@@ -45,10 +46,10 @@ class PipelineController:
     def _verify_structure(self):
         """Verify project directory structure"""
         required_dirs = [
-            BASE_DIR / "Case_Category_Classification/original_case_catagories_data",
-            BASE_DIR / "data/Cleaned",
-            BASE_DIR / "data/normalized",
-            BASE_DIR / "benchmarks"
+            # BASE_DIR / "Case_Category_Classification/original_case_catagories_data",
+            BASE_DIR / "data/cleaned",
+            # BASE_DIR / "data/normalized",
+            # BASE_DIR / "benchmarks"
         ]
         
         for directory in required_dirs:
@@ -66,16 +67,16 @@ class PipelineController:
                 logging.info(f"Processing file: {file_path.name}")
                 
                 # Clean data
-                cleaned_data = self.text_cleaner.process(file_path)
+                cleaned_data = self.text_cleaner.clean_dataset(file_path)
                 clean_path = self._save_output(
                     cleaned_data, 
                     file_path, 
-                    "Cleaned", 
+                    "cleaned", 
                     prefix="cleaned_"
                 )
                 
                 # Normalize data
-                normalized_data = self.text_normalizer.process(clean_path)
+                normalized_data = self.text_normalizer.normalize_dataset(clean_path)
                 self._save_output(
                     normalized_data,
                     file_path,
@@ -92,7 +93,7 @@ class PipelineController:
 
     def _get_input_files(self, input_file: str = None):
         """Resolve input file(s) to process"""
-        input_dir = BASE_DIR / "Case_Category_Classification/original_case_catagories_data"
+        input_dir = BASE_DIR / "data/cleaned"
         
         if input_file:
             file_path = Path(input_file)
