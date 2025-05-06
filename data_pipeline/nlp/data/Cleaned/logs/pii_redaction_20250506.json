@@ -1,16 +1,46 @@
 [
   {
-    "timestamp": "2025-05-06T18:37:46.512716",
+    "timestamp": "2025-05-06T19:40:37.543361",
     "column": "resolved ",
     "counts": {
-      "PERSON": 2245,
+      "PERSON": 0,
       "EMAIL_ADDRESS": 0,
-      "PHONE_NUMBER": 135,
-      "LOCATION": 2083,
+      "PHONE_NUMBER": 0,
+      "LOCATION": 0,
       "IP_ADDRESS": 0,
-      "US_SSN": 1,
+      "US_SSN": 0,
       "EMAIL": 0,
-      "PHONE": 115,
+      "PHONE": 17,
+      "SSN": 0
+    }
+  },
+  {
+    "timestamp": "2025-05-06T19:40:50.867239",
+    "column": "resolved ",
+    "counts": {
+      "PERSON": 1,
+      "EMAIL_ADDRESS": 0,
+      "PHONE_NUMBER": 0,
+      "LOCATION": 2,
+      "IP_ADDRESS": 0,
+      "US_SSN": 0,
+      "EMAIL": 0,
+      "PHONE": 17,
+      "SSN": 0
+    }
+  },
+  {
+    "timestamp": "2025-05-06T19:41:04.360918",
+    "column": "resolved ",
+    "counts": {
+      "PERSON": 256,
+      "EMAIL_ADDRESS": 0,
+      "PHONE_NUMBER": 12,
+      "LOCATION": 123,
+      "IP_ADDRESS": 0,
+      "US_SSN": 0,
+      "EMAIL": 0,
+      "PHONE": 19,
       "SSN": 0
     }
   }
