@@ -64,6 +64,34 @@ This report evaluates the translation performance of Whisper Large v3 (speech-to
 | English ↔ Swahili (KE) | 28.9 | 30.6 | +1.7 |
 | English ↔ Ateso | 15.2 | 21.3 | +6.1 |
 
+
+
+```mermaid
+%%{ init: { "theme": "default" } }%%
+graph TD
+    subgraph Metrics
+        B[BLEU]
+        C[COMET]
+    end
+    
+    subgraph Whisper
+        BW[1.68]
+        CW[0.40]
+    end
+    
+    subgraph NLLB
+        BN[1.68]
+        CN[0.44] 
+    end
+    
+    B --> BW & BN
+    C --> CW & CN
+    
+    style Metrics fill:#f9f,stroke:#333,stroke-width:4px
+    style Whisper fill:#bbf,stroke:#333,stroke-width:2px 
+    style NLLB fill:#bfb,stroke:#333,stroke-width:2px
+```
+
 #### Key Insight
 
 - NLLB outperforms Whisper in text translation, especially for low-resource languages (Ateso: +6.1 BLEU)
