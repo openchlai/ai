@@ -1,0 +1,17 @@
+[
+  {
+    "timestamp": "2025-05-06T18:37:46.512716",
+    "column": "resolved ",
+    "counts": {
+      "PERSON": 2245,
+      "EMAIL_ADDRESS": 0,
+      "PHONE_NUMBER": 135,
+      "LOCATION": 2083,
+      "IP_ADDRESS": 0,
+      "US_SSN": 1,
+      "EMAIL": 0,
+      "PHONE": 115,
+      "SSN": 0
+    }
+  }
+]
