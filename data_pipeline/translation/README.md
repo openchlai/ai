@@ -18,14 +18,12 @@ This module processes text that has been transcribed from audio recordings of he
 ## Models and Tools Used
 
 ### Language Detection
-- **FastText**: Pre-trained for 170+ languages with fast inference capability
+
 - **LangID.py**: Machine learning-based classifier for accurate language identification
 - **CLD2/CLD3**: Google's Compact Language Detector as a fallback option
 
 ### Translation Models
-- **Marian-NMT**: Neural Machine Translation engine with good support for African languages
-- **OpenNMT**: Customizable open-source neural machine translation framework
-- **Fairseq**: Facebook's sequence-to-sequence toolkit for neural machine translation
+- **Fairseq NLLB**: Facebook's sequence-to-sequence toolkit for neural machine translation
 
 ### Quality Evaluation
 - **BLEU Score**: Measures translation quality by comparing against reference translations
@@ -43,7 +41,7 @@ This module processes text that has been transcribed from audio recordings of he
 
 ### Translation Process
 1. Select the appropriate translation model based on the detected source language
-2. For African languages, prioritize Marian-NMT with specialized language pairs
+2. For African languages, prioritize NLLB with specialized language pairs
 3. Process text through the neural translation engine
 4. Generate translated English text along with confidence scores
 5. Store both original and translated text in the database
@@ -59,22 +57,29 @@ This module processes text that has been transcribed from audio recordings of he
 
 ### As a Library
 ```python
-from translation import TranslationPipeline
+from translation import translate_file
 
 # Initialize the pipeline
-translator = TranslationPipeline(
-    language_detection_model="fasttext",
-    translation_model="marian-nmt"
-)
+    translate_file(
+        transcription_file,           # Input file path
+        translation_file,             # Output file path
+        src_lang=None,                # None to enable auto-detection (don't need to specify this parameter)
+        tgt_lang="eng_Latn",          # Default target is English
+        max_length=512,               # Max output sequence length
+        auto_detect=True,             # Enable language auto-detection
+        max_chunk_tokens=250,         # Smaller chunk size to prevent repetition issues
+        overlap_tokens=50,            # Add overlap between chunks for better coherence
+        num_beams=4                   # Use beam search for higher quality translations
+    )
+        
 
-# Process a single text
-result = translator.process_text("Mfanyikazi alionyeshwa ukatili na kampuni ya XYZ huko Nairobi")
-print(f"Detected language: {result.detected_language}")
-print(f"Translation: {result.translated_text}")
-print(f"Confidence: {result.confidence_score}")
-
-# Process a batch of texts
-results = translator.process_batch([text1, text2, text3])
+    try:
+        with open(translation_file, 'r', encoding='utf-8') as f:
+            translated_text = f.read()
+    except Exception as e:
+        print(f"Error reading translation file: {e}")
+        translated_text = ""
+    print(f"NLLB Translated text: {translated_text}")
 ```
 
 ### As a Service

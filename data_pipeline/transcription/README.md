@@ -18,8 +18,7 @@ This component is responsible for converting audio recordings into accurate text
 |-------|-------------|---------------|-----------|
 | OpenAI Whisper | High accuracy, transformer-based | General-purpose, multilingual | 100+ languages |
 | Wav2Vec 2.0 | Self-supervised learning approach | Low-resource languages | 50+ languages |
-| Vosk | Lightweight, offline ASR | Edge/offline processing | 20+ languages |
-| Kaldi | Highly customizable framework | Research, specialized domains | Customizable |
+
 
 ### 3.2 Processing Pipeline
 ```
@@ -29,8 +28,8 @@ This component is responsible for converting audio recordings into accurate text
 └───────┬───────┘     └───────┬───────┘     └───────┬───────┘
         │                     │                     │
 ┌───────▼───────┐     ┌───────▼───────┐     ┌───────▼───────┐
-│ Audio Format   │     │ Speech-to-Text │     │ Post-process  │
-│ Preprocessing  │     │    Models      │     │    & QA       │
+│ Audio Format  │     │ Speech-to-Text│     │      NLP      │
+│ Preprocessing │     │    Models     │     │     & QA      │
 └───────────────┘     └───────────────┘     └───────────────┘
 ```
 
@@ -249,7 +248,6 @@ class TranscriptionQA:
 | Spanish | Whisper, Wav2Vec | High | Good performance |
 | French | Whisper, Wav2Vec | High | Good performance |
 | Swahili | Whisper | Medium | Limited training data |
-| Arabic | Whisper | Medium | Dialect variations challenging |
 
 ### 5.2 Language Detection
 ```python
@@ -258,7 +256,7 @@ def detect_language(audio_path):
     Detect the language of speech in audio
     """
     # Load small Whisper model for language identification
-    model = whisper.load_model("tiny")
+    model = whisper.load_model("small")
     
     # Get language prediction
     audio = whisper.load_audio(audio_path)
@@ -369,7 +367,7 @@ def transcribe_with_fallback(audio_path, models=["whisper-medium", "whisper-base
 ```bash
 # Model Configuration
 TRANSCRIPTION_MODEL=whisper-medium
-FALLBACK_MODELS=whisper-base,vosk
+FALLBACK_MODELS=whisper-base
 DEVICE=cuda
 
 # Audio Processing
