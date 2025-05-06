@@ -27,9 +27,10 @@ Our project roadmap outlines the key milestones and planned features for the fut
     
 - **Phase 5: Community Engagement and Continuous Improvement**
 
-Foster an active user community by organizing webinars, conferences, and knowledge sharing sessions.
-Regularly update the system with new features, bug fixes, and security enhancements based on user feedback and emerging industry standards.
-Collaborate with stakeholders, partners, and the open-source community to drive innovation and address evolving needs in the child protection domain.
-Please note that this roadmap is a high-level overview and may be subject to adjustments based on changing priorities, emerging technologies, and user feedback. We are committed to delivering a robust, user-friendly, and impactful system that contributes to the well-being and safety of vulnerable children and victims of gender-based violence.
+    - Foster an active user community by organizing webinars, conferences, and knowledge sharing sessions.
+    - Regularly update the system with new features, bug fixes, and security enhancements based on user feedback and emerging industry standards.
+    - Collaborate with stakeholders, partners, and the open-source community to drive innovation and address evolving needs in the child protection domain.
 
-For more detailed updates and specific feature timelines, please refer to our Roadmap Page on our project website.
+    Please note that this roadmap is a high-level overview and may be subject to adjustments based on changing priorities, emerging technologies, and user feedback. We are committed to delivering a robust, user-friendly, and impactful system that contributes to the well-being and safety of vulnerable children and victims of gender-based violence.
+
+    For more detailed updates and specific feature timelines, please refer to our [Roadmap Page](https://github.com/openchlsystem/OpenCHS-helpline/blob/main/07_Guides/roadmap.md) on our project website.
