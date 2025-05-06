@@ -94,7 +94,7 @@ class TextCleaner:
             ValueError: If file format is not supported
         """
         if input_path.suffix == '.csv':
-            return pd.read_csv(input_path)
+            return pd.read_csv(input_path, on_bad_lines='skip')
         elif input_path.suffix == '.json':
             return pd.read_json(input_path)
         elif input_path.suffix == '.txt':
@@ -124,7 +124,14 @@ class TextCleaner:
         Returns:
             DataFrame with PII information redacted
         """
+        # Make sure all keys in pii_counts match the patterns and standardize to uppercase
         pii_counts = {pii_type: 0 for pii_type in self.config["pii_types"]}
+        
+        # Add regex pattern keys to pii_counts if they're not already included
+        for pattern_key in self.config["regex_patterns"].keys():
+            pattern_key_upper = pattern_key.upper()
+            if pattern_key_upper not in pii_counts:
+                pii_counts[pattern_key_upper] = 0
         
         for col in df.select_dtypes(include=['object']).columns:
             df[col] = df[col].apply(
@@ -144,7 +151,7 @@ class TextCleaner:
             })
             
         return df
-
+    
     def _process_text(self, text: str, pii_counts: Dict) -> str:
         """
         Process individual text items for PII detection and redaction
