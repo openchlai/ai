@@ -19,7 +19,7 @@ LANGUAGES = {
 }
 
 TEST_DATA_PATHS = {
-    "structured": "data/01_swahili_ds/structured.json",
+    "structured": "data/01_swahili_ds/swa_eng.json",
     "unstructured": "data/01_swahili_ds/unstructured.json"
 }
 
