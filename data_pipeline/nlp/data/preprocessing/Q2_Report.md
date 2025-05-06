@@ -26,11 +26,10 @@ This pipeline cleans, de-identifies, and normalizes structured/unstructured text
 
 #### Steps
 
-1. **Remove duplicates** (`deduplicate.py`)  
-2. **Filter noise** (HTML, special characters, non-UTF-8 text) using regex  
-3. **Handle missing values** (impute or drop)  
-4. **Standardize** whitespace and casing  
-5. **Detect and redact PII** using rule-based + ML detection  
+1. **Filter noise** (HTML, special characters, non-UTF-8 text) using regex  
+2. **Handle missing values** (impute or drop)  
+3. **Standardize** whitespace and casing  
+4. **Detect and redact PII** using rule-based + ML detection  
 
 📌 **PII Types Detected:**
 
@@ -49,7 +48,7 @@ This pipeline cleans, de-identifies, and normalizes structured/unstructured text
 |---------------------|------------------------------------|
 | Cleaned datasets    | `data/cleaned/` (CSV/Parquet)      |
 | Cleaning logs       | `logs/preprocessing_logs.csv`      |
-| PII redaction report| `logs/pii_redaction_[date].csv`    |
+| PII redaction report| `logs/pii_redaction_[date].json`    |
 
 📄 **Sample Log Entry:**
 
@@ -89,10 +88,11 @@ timestamp,operation,affected_items
 Reusable code to support ongoing and future text processing pipelines.
 
 ```python
-from preprocessing import TextCleaner, Normalizer
+from text_cleaner import TextCleaner
+from text_normalizer import Normalizer
 
-cleaner = TextCleaner(remove_html=True, fix_encoding=True, redact_pii=True)  
-normalizer = Normalizer(spell_check=True, stemmer="porter")  
+cleaner = TextCleaner()  
+normalizer = Normalizer()  
 
 cleaned_text = cleaner.transform(raw_text)  
 normalized_text = normalizer.transform(cleaned_text)  
@@ -121,26 +121,13 @@ Optional: Mermaid diagrams for visualizing flow (to be added)
 
 ```bash
 pip install -r requirements.txt
-python run_pipeline.py --input_dir ./data/raw
+python pipeline_controller.py
 ```
-
-### Troubleshooting
-
-- Slow processing → Use --batch_size 1000
-- Over-stemming → Switch to lemmatization
-- PII missed → Add custom regex to pii_patterns.yaml
 
 ### 📂 Outputs
 
 | Deliverable | Location/Format |
 |-------------|----------------|
-| Full documentation | docs/pipeline_documentation.md |
-| Interactive demo | notebooks/pipeline_demo.ipynb |
+| Cleaned Results | data/cleaned |
+| Logs | logs|
 
-### 🚧 Challenges and Resolutions
-
-| Challenge | Resolution |
-|-----------|------------|
-| Noisy social media text | Added custom regex filters |
-| Spelling false positives | Adjusted SymSpell edit distance |
-| Incomplete PII detection | Integrated hybrid PII detection (rules + ML) |
