@@ -104,8 +104,10 @@ function _kv ($k, &$op, &$o, &$p)
 		}
 		if ($op=="")
 		{
+			// error_log ("---".json_encode ($o));
 			$k = $vv[3]; // set default and case_activity_add
-			if (isset ($o[$vv[2]]) && strlen ($o[$vv[2]])>0) $k = $vv[4]; 
+			if (isset ($o[$vv[2]]) && strlen ($o[$vv[2]])>0) $k = $vv[4];
+		        if (isset ($p[$vv[2]]) && strlen ($p[$vv[2]])>0) $k = $vv[4];	
 		}
 		if ($op=="@#") return (_val_id ()."-"._rands (9,"num"));
 	}
@@ -480,7 +482,9 @@ function _upd ($u, $suffix, $id, &$o, &$p, $fm=2)
 	
 		$q_ = "INSERT INTO au(aub_id,t,row_id,k,v,v_) VALUES(?,?,?,?,?,?)"; // log change in column // 
 		$argt_ = "ssssss";
-		$argv_ = [$aub_id,$u,$id,$a[$i][0],$v,$p_[$a[$i][0]]];
+		$v_="";
+		if (isset ($p_[$a[$i][0]])) $v_=$p_[$a[$i][0]];
+		$argv_ = [$aub_id,$u,$id,$a[$i][0],$v,$v_];
 		$id_ = qryp ($q_, $argt_, $argv_, 2); 
 		if ($id_==NULL) error_log (" [au](".$u.") ERROR audit trail save failed! ".$k."|".$id);
 
@@ -1218,6 +1222,7 @@ function ctx ($u, $suffix, &$aa, &$av, &$fo, &$join)
 		$aa["f"] .= ","; 
 		ctx_f ($uj[0], $aa, $av, $fo, 1);
 	}
+	//if (isset ($fo["group"])) $aa["f"] .= ',"group":"'.$fo["group"].'"';
 	$aa["f"] .= '}';
 	
 	if (isset ($fo["sort"])) 
@@ -1814,6 +1819,9 @@ function rest_uri_response ($u, $suffix, $id, &$o, &$p, &$aa, $rt)
 			error_log ("[fk] ".$j." : ".$a[$j][0]." = ".$v);
 		}
 	}
+
+	// error_log ("[subs-p] ".json_encode ($p));
+	// error_log ("[subs-o] ".json_encode ($o));
 
 	$n = count ($bb);
 			
