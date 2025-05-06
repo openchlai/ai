@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="bootstrap.php" colors="true">
+    <testsuites>
+        <testsuite name="Application Test Suite">
+            <directory>./tests/</directory>
+        </testsuite>
+    </testsuites>
+    <php>
+        <const name="PHPUNIT_RUNNING" value="true"/>
+        <server name="HTTP_HOST" value="localhost"/>
+        <server name="REMOTE_ADDR" value="127.0.0.1"/>
+    </php>
+</phpunit>
