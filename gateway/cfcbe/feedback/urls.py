@@ -14,4 +14,5 @@ urlpatterns = [
         # Voicenotes API
     path('voicenotes/', VoicenotesListCreateView.as_view(), name='voicenote-list-create'),
     path('voicenotes/<int:pk>/', VoicenotesRetrieveUpdateDestroyView.as_view(), name='voicenote-detail'),
+    
 ]
