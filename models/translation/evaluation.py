@@ -10,18 +10,20 @@ from comet import download_model, load_from_checkpoint
 from collections import defaultdict
 
 # --- Config ---
+
+LANG_PATHS = {
+    "swh": "data/01_swahili_ds/swa_eng.json",
+    "lug": "data/03_luganda_ds/lug_eng.json",
+    "teo": "data/02_ateso_ds/ateso_english.json",
+    "nyn": "data/04_runyankore_ds/nyn_eng.json",}
+
 LANGUAGES = {
-    "lug": {"name": "Luganda", "family": "Bantu"},
-    "sw_KE": {"name": "Swahili (Kenya)", "family": "Bantu"},
-    "sw_TZ": {"name": "Swahili (Tanzania)", "family": "Bantu"},
-    "teo": {"name": "Ateso", "family": "Nilotic"},
-    "nyn": {"name": "Runyankore", "family": "Bantu"},
+    "swh": {"name": "Swahili", "family": "Bantu", "code": "swh_Latn"},
+    "lug": {"name": "Luganda", "family": "Bantu", "code": "lug_Latn"},
+    "teo": {"name": "Ateso", "family": "Nilotic", "code": "teo_Latn"},
+    "nyn": {"name": "Runyankore", "family": "Bantu", "code": "nyn_Latn"},
 }
 
-TEST_DATA_PATHS = {
-    "structured": "data/01_swahili_ds/swa_eng.json",
-    "unstructured": "data/01_swahili_ds/unstructured.json"
-}
 
 # --- Model Loading ---
 def load_whisper_model():
@@ -56,20 +58,26 @@ def calculate_wer(predictions, references):
     return wer_metric.compute(predictions=predictions, references=references) * 100
 
 # --- Data Loading ---
-def load_test_data(file_path):
-    with open(file_path, 'r') as f:
-        raw_data = json.load(f)
+
+def load_all_data():
+    test_data = {}
     
-    organized_data = defaultdict(list)
-    if isinstance(raw_data, list):
-        for item in raw_data:
-            lang = item.get("language", "sw_TZ")
-            organized_data[lang].append({
-                "source": item["source"],
-                "reference": item["reference"]
-            })
-        return organized_data
-    return raw_data
+    for lang, path in LANG_PATHS.items():
+        try:
+            with open(path, 'r') as f:
+                lang_data = json.load(f)
+                
+            test_data[lang] = []
+            for item in lang_data:
+                test_data[lang].append({
+                    "source": item["source"],
+                    "reference": item["reference"]
+                })
+                
+        except Exception as e:
+            print(f"Error loading {lang} data: {str(e)}")
+    
+    return test_data
 
 # --- Whisper Evaluation ---
 def evaluate_whisper(test_data, model, processor):
@@ -132,11 +140,12 @@ def evaluate_nllb(test_data, translator):
                 if not isinstance(source, str):
                     source = str(source)
                 
+                
                 translation = translator(
-                    source, 
-                    src_lang="eng_Latn", 
-                    tgt_lang=f"{lang}_Latn"
-                )[0]["translation_text"]
+                            source,
+                            src_lang=LANGUAGES[lang]["code"],  # e.g. "swh_Latn"
+                            tgt_lang="eng_Latn"  # Always translate to English
+                        )[0]["translation_text"]
                 predictions.append(translation)
             except Exception as e:
                 print(f"NLLB error translating to {lang}: {str(e)}")
@@ -150,16 +159,9 @@ def evaluate_nllb(test_data, translator):
     
     return results
 
-# --- Main Execution ---
 def main():
-    # Load data
-    test_data = {}
-    for data_type, path in TEST_DATA_PATHS.items():
-        try:
-            data = load_test_data(path)
-            test_data.update(data)
-        except Exception as e:
-            print(f"Error loading {path}: {str(e)}")
+    # Load all language data
+    test_data = load_all_data()
     
     if not test_data:
         raise ValueError("No test data loaded")
@@ -168,14 +170,14 @@ def main():
     whisper_model, whisper_processor = load_whisper_model()
     nllb_translator = load_nllb_model()
     
-    # Evaluate
+    # Evaluate 
     print("Evaluating Whisper...")
     whisper_results = evaluate_whisper(test_data, whisper_model, whisper_processor)
     
-    print("\nEvaluating NLLB...")
+    print("Evaluating NLLB...")
     nllb_results = evaluate_nllb(test_data, nllb_translator)
     
-    # Combine and save results
+    #  Combine and save results
     final_results = {
         "Whisper": whisper_results,
         "NLLB": nllb_results
