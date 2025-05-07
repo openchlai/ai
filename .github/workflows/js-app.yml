@@ -1,0 +1,44 @@
+name: Vanilla JS Frontend CI
+
+on:
+  push:
+    paths:
+      - 'frontend/**'
+    branches:
+      - main
+  pull_request:
+    paths:
+      - 'frontend/**'
+    branches:
+      - main
+
+jobs:
+  lint:
+    name: Lint JavaScript Files
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Node.js and ESLint
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y npm
+          npm install -g eslint
+
+      - name: Run ESLint on frontend/**/*.js
+        run: eslint frontend/**/*.js --fix
+
+  test:
+    name: Placeholder for Tests
+    runs-on: ubuntu-latest
+    needs: lint
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run Frontend Tests
+        run: |
+          echo "No unit tests yet — add them to 'tests/' directory and update this step."
