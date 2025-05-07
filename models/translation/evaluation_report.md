@@ -1,10 +1,10 @@
 # Translation Model Evaluation Report
 
-## Comparing Whisper Large (Speech-to-Text) and NLLB (Text-to-Text) for Ugandan Languages
+## Comparing Whisper Large (Speech-to-Text) and NLLB (Text-to-Text) for East African Languages
 
 ## 1. Introduction
 
-This report evaluates the translation performance of Whisper Large v3 (speech-to-text translation) and NLLB-200 (text-to-text translation) across key Ugandan languages, with a focus on:
+This report evaluates the translation performance of Whisper Large v3 (speech-to-text translation) and NLLB-200 (text-to-text translation) across key East African languages, with a focus on:
 
 - Swahili dialect robustness (Tanzanian vs. Kenyan variants)
 - Low-resource language challenges (Ateso, Runyankore-Rukiga)
@@ -59,10 +59,10 @@ This report evaluates the translation performance of Whisper Large v3 (speech-to
 
 | Language Pair | Whisper | NLLB | Δ (NLLB–Whisper) |
 |---------------|---------|------|------------------|
-| English ↔ Luganda | 24.1 | 28.7 | +4.6 |
-| English ↔ Swahili (TZ) | 32.3 | 35.4 | +3.1 |
-| English ↔ Swahili (KE) | 28.9 | 30.6 | +1.7 |
-| English ↔ Ateso | 15.2 | 21.3 | +6.1 |
+| English ↔ Luganda | __ | 28.23 | __ |
+| English ↔ Swahili | __ | 25.86 | __ |
+| English ↔ Runyankore | __ | 4.94 | __ |
+| English ↔ Ateso | __ | 0.48 | __ |
 
 
 
@@ -92,62 +92,55 @@ graph TD
     style NLLB fill:#bfb,stroke:#333,stroke-width:2px
 ```
 
-#### Key Insight
+#### Key Insights
 
-- NLLB outperforms Whisper in text translation, especially for low-resource languages (Ateso: +6.1 BLEU)
-- Whisper struggles with Kenyan Swahili due to Sheng slang
+1. **Swahili (swh)** - With a BLEU score of `25.86`, the translation accuracy is moderate, indicating that the model handles Swahili→English reasonably well. This is likely because Swahili is well-represented in NLLB's training data and is a common language pair with substantial parallel corpora.
+
+2. **Luganda (lug)** - With a BLEU score of `28.23`, Luganda outperforms Swahili in n-gram overlap. This suggests that the model achieves better literal accuracy for Luganda, though it may lack fluency and contextual understanding.
+
+3. **Ateso (teo)** - Ateso performs extremely poorly, with a BLEU score of `0.48`. The model fails completely on Ateso, likely generating random text due to the language not being supported by NLLB-200. This highlights the critical need to further finetune the NLLB model using techniques such as transfer learning so as to accomodate the Ateso language.
+
+4. **Runyankore (nyn)** - Runyankore achieves a BLEU score of `4.94`, reflecting poor surface-level matches. This is likely due to limited training data in NLLB for this language.
 
 ### 4.2 COMET & Human Evaluation
 
 | Model | Language Pair | COMET | Fluency (F/5) | Adequacy (A/5) |
 |-------|---------------|--------|---------------|----------------|
-| Whisper | English → Luganda | 0.58 | 3.7 | 3.5 |
-| NLLB | English → Luganda | 0.64 | 4.1 | 3.9 |
-| Whisper | English → Swahili (KE) | 0.61 | 3.9 | 3.6 |
-| NLLB | English → Swahili (KE) | 0.68 | 4.2 | 4.1 |
+| NLLB | English → Luganda |  0.78 | __ | __ |
+| Whisper | English → Luganda | __ | __ | __ |
+| NLLB | English → Swahili |  0.84 | __ | __ |
+| Whisper | English → Swahili | __ | __ | __ |
+| NLLB | English → Ateso | 0.36 | __ | __ |
+| Whisper | English → Ateso    | __ | __ | __ |
+| NLLB | English → Runyankore | 0.52 | __ | __ |
+| Whisper | English → Runyankore | __ | __ | __ |
+
 
 #### Key Insight
 
-- NLLB scores higher in fluency for Luganda/Swahili
-- Human evaluators noted Whisper's translations often missed cultural context (e.g., "matooke" → "bananas" instead of "plantains")
+1. Human evaluators noted Whisper's translations often missed cultural context (e.g., "matooke" → "bananas" instead of "plantains")
+
+2. **Swahili (swh)** - With a COMET score of `0.84`, the model demonstrates good semantic alignment for Swahili→English translations, indicating that it captures meaning well in addition to surface-level accuracy.
+
+3. **Luganda (lug)** - Luganda achieves a COMET score of `0.78`, slightly lower than Swahili. This suggests that while the model captures literal accuracy, it may miss nuances and exhibit contextual mismatches, leading to less natural fluency.
+
+4. **Ateso (teo)** - Ateso has a COMET score of `0.36`, indicating a complete failure in semantic alignment. This is consistent with the poor BLEU score and highlights the lack of support for Ateso in NLLB-200. However, as Ateso is a Bantu language, some words and phrases overlap with other supported languages like Runyankore and Luganda, which are detected but fail to provide meaningful translations.
+
+5. **Runyankore (nyn)** - Runyankore achieves a COMET score of `0.52`, which is low but suggests partial semantic understanding. This aligns with the BLEU score, reflecting limited training data and poor translation quality.
 
 ### 4.3 Whisper-Specific Metrics (Speech)
 
 | Language | WER (%) | CER (%) | Notes |
 |----------|---------|---------|-------|
-| Luganda | 18.3 | 9.7 | High agglutination challenges |
-| Swahili (TZ) | 12.1 | 6.2 | Clean audio performs best |
-| Ugandan English | 15.9 | 8.4 | Local accents increase WER |
+| Luganda | __ | __ |  |
+| Swahili  | __ | __|  |
+| Ateso  | __ | __ |  |
+| Runyankore | __ | __ |  |
 
-## 5. Visual Summaries
 
-### 5.1 BLEU Score Comparison
+## 5. Key Challenges
 
-```python
-import matplotlib.pyplot as plt
-languages = ["Luganda", "Swahili (TZ)", "Swahili (KE)", "Ateso"]
-whisper_scores = [24.1, 32.3, 28.9, 15.2]
-nllb_scores = [28.7, 35.4, 30.6, 21.3]
-plt.bar(languages, whisper_scores, label="Whisper", alpha=0.7)
-plt.bar(languages, nllb_scores, label="NLLB", alpha=0.7)
-plt.legend()
-plt.title("BLEU Scores: Whisper vs. NLLB")
-plt.ylabel("BLEU Score")
-```
-
-#### Interpretation
-
-NLLB consistently outperforms Whisper in text translation.
-
-### 5.2 Human Evaluation Radar Chart
-
-# Radar Plot: Fluency/Adequacy Comparison
-
-Whisper trails in adequacy for culturally nuanced translations.
-
-## 6. Key Challenges
-
-### 6.1 Language-Specific Issues
+### 5.1 Language-Specific Issues
 
 | Language | Challenge | Example (Error) |
 |----------|-----------|----------------|
@@ -155,7 +148,7 @@ Whisper trails in adequacy for culturally nuanced translations.
 | Swahili (KE) | Sheng slang | "Nimechill" → Untranslated |
 | Ateso | Lack of training data | "Ekirikan" → "Chair" (incorrect) |
 
-### 6.2 Model-Specific Limitations
+### 5.2 Model-Specific Limitations
 
 #### Whisper
 
@@ -167,16 +160,18 @@ Whisper trails in adequacy for culturally nuanced translations.
 - Fails on spoken dialect variations (TZ vs. KE Swahili)
 - Limited named entity preservation (e.g., "Kampala" → "Capital")
 
-## 7. Recommendations
+## 6. Recommendations
 
 ### For Speech Translation
 
 - Use Whisper for transcription → NLLB for translation (hybrid pipeline)
-- Fine-tune Whisper on Ugandan English accents
+- Fine-tune Whisper 
+- Fine-tune NLLB 
 
 ### For Low-Resource Languages
 
 - Augment NLLB with Ateso/Runyankore parallel data from local sources (e.g., Kabod)
+- Use transfer learning to further finetune the NLLB model to accomodate for Ateso
 
 ### Cultural Adaptation
 
