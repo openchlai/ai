@@ -16,8 +16,7 @@ This report evaluates the translation performance of Whisper Large v3 (speech-to
 |----------|----------|-----------------|-------|
 | English (Uganda) | en | Germanic | Baseline/target language |
 | Luganda | lug | Bantu | Dominant in Central Uganda |
-| Swahili (KE) | sw_KE | Bantu | Kenyan slang (e.g., "Sheng") |
-| Swahili (TZ) | sw_TZ | Bantu | Standardized Tanzanian variant |
+| Swahili | sw | Bantu | Dominant language across East Africa |
 | Ateso | teo | Nilotic | Limited parallel corpora |
 | Runyankore | nyn | Bantu | Agglutinative morphology challenges |
 
@@ -27,8 +26,10 @@ This report evaluates the translation performance of Whisper Large v3 (speech-to
 
 #### Structured Text
 
-- Ugandan parliamentary transcripts (Hansard)
+- The Makerere MT Corpus
 - FLORES-200 for Swahili/Luganda
+- The Tatoeba Translation Challenge (v2023-09-26)
+- Masakhane NLP community for Africa
 
 #### Unstructured Text
 

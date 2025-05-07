@@ -1,168 +1,192 @@
-# AI Transcription Service Design Document
+# AIService
 
-## 1. Overview
+## Overview
 
-The **AI Transcription Service** is a background process within a Flask application that automatically detects, transcribes, and organizes audio files. It uses two transcription models:
+AIService is a modular speech-to-text and translation solution that processes audio files automatically. The service monitors a designated input folder, processes audio files, and outputs both transcription and translation results.
 
-- **Fine-tuned Transformer-based Whisper model**
-- **Standard OpenAI Whisper model**
+## Key Features
 
----
+- **Automated Processing**: Background service that polls for new audio files at configurable intervals
+- **Dual Transcription Engines**: 
+  - [Whisper Large v3](https://github.com/openai/whisper) (OpenAI)
+  - [Wav2Vec](https://huggingface.co/facebook/wav2vec2-large-960h) (Facebook/Meta)
+- **Translation Integration**:
+  - [NLLB (No Language Left Behind)](https://github.com/facebookresearch/fairseq/tree/nllb) for high-quality translation of transcripts
+  - Optional Whisper integrated transcription+translation
+- **Organized Output**: Structured storage of originals and processed files
+- **Evaluation Metrics**: Tools for assessing transcription and translation quality
 
-## 2. Objectives
-
-- Automate transcription of audio files dropped into a designated folder
-- Produce comparative outputs from two distinct models
-- Organize and archive original audio and transcription results
-- Provide an API endpoint for manual transcription triggers
-
----
-
-## 3. System Architecture
+## System Architecture
 
 ```mermaid
 graph TD
-    A[User / Data Source<br>Places audio in /audio/] --> B
-    B[AI Transcription Service<br>Flask Background Task<br>Scheduler 30s poll] --> C
-    B --> D
-    C[Fine-tuned Transformer Model<br>Transcribe] --> E
-    D[Standard Whisper Model<br>Transcribe] --> E
-    E[Save outputs to /audio_done<br>.wav<br>_transformer.txt<br>_whisper.txt]
+    A[User / Data Source<br>Places audio in datasets/audio/] --> B
+    B[AIService<br>Background Task<br>File monitoring] --> C
+    C{Transcription Engine} --> |Option 1| D[Whisper Large v3]
+    C --> |Option 2| E[Wav2Vec]
+    D --> F[Transcription Result]
+    E --> F
+    F --> G{Translation Required?}
+    G --> |Yes| H[Translation Engine]
+    G --> |No| J
+    H --> |Option 1| I[NLLB Model]
+    H --> |Option 2| K[Whisper Integrated]
+    I --> J[Save Results to<br>datasets/audio_done]
+    K --> J
+    J --> L[Evaluation Metrics<br>BLEU Score]
 ```
 
----
-
-## 4. How It Works
+## How It Works
 
 1. **Service Execution**
-   - Registered as a background task in the Flask app
-   - Uses a scheduler to run every **30 seconds**
-   - Scans:
+   - Runs as a background task in the Flask application
+   - Regularly scans the input directory for new audio files
+
+2. **Transcription Processing**
+   - Detects supported audio formats (`.wav`, `.mp3`, `.ogg`, `.flac`)
+   - Based on configuration, processes with either:
+     - Whisper Large v3 model
+     - Wav2Vec model
+
+3. **Translation Processing**
+   - After transcription, text is routed to translation:
+     - Primary method: NLLB model receives transcription output
+     - Alternative method: Whisper handles both transcription and translation in one step
+
+4. **Output Management**
+   - Saves transcription and translation results as text files
+   - Moves original audio and output files to the completed directory
+   - Maintains organized structure for evaluation and archiving
+
+## Project Folder Structure
+
+```
+.
+├── config.py                  # Main configuration file
+├── instance
+│   └── config.py              # Instance-specific configuration
+├── run.py                     # Main application entry point
+├── datasets
+│   ├── audio                  # Input audio directory
+│   └── audio_done             # Processed audio directory
+├── transcribe
+│   ├── __init__.py
+│   ├── runscribe.py           # Main transcription engine
+│   ├── solorunscribe.py       # Standalone transcription
+│   └── util_code.py           # Transcription utilities
+├── translate
+│   ├── __init__.py
+│   └── translation.py         # Translation engine
+├── models
+│   ├── __init__.py
+│   ├── metrics                # Evaluation metrics
+│   │   ├── BLEU.py            # BLEU score implementation
+│   ├── casedata.py            # Data models
+├── logs
+│   ├── __init__.py
+│   └── runtime.log            # Application logs
+├── requirements.txt           # Python dependencies
+└── README.md                  # This document
+```
+
+## Core Components
+
+### Transcription Module
+Located in `transcribe/runscribe.py`, this module:
+- Detects audio files in the input directory
+- Processes audio using either Whisper Large v3 or Wav2Vec models
+- Saves transcription results to the output directory
+
+### Translation Module
+Located in `translate/translation.py`, this module:
+- Takes transcribed text as input
+- Translates using NLLB model or Whisper's built-in translation capabilities
+- Saves translation results alongside transcriptions
+
+
+## Usage Instructions
+
+### Adding Audio Files
+Place your audio files (`.wav`, `.mp3`, `.ogg`, `.flac`) in the input directory:
 
 ```bash
-/home/bitz/aidev/datasets/audio/
-```
-
-2. **File Processing**
-   For each supported audio file (`.wav`, `.mp3`, `.ogg`, `.flac`):
-   1. Load file
-   2. Transcribe with the **fine-tuned model**
-   3. Transcribe with the **standard Whisper model**
-   4. Save outputs:
-      - `<filename>_transformer.txt`
-      - `<filename>_whisper.txt`
-   5. Move original and output files to:
-
-```bash
-/home/bitz/aidev/datasets/audio_done/
-```
-
----
-
-## 5. Project Folder Structure
-
-```
-ai_service/
-├── app.py                    # Main Flask application
-├── transcriber/
-│   ├── init.py              # Transcriber module init
-│   ├── whisper_custom.py    # Fine-tuned Transformer model logic
-│   ├── whisper_standard.py  # Standard OpenAI Whisper logic
-│   └── utils.py            # Shared utilities (scanning, moving files)
-├── scheduler/
-│   ├── init.py
-│   └── watcher.py          # Monitors folder and triggers transcription
-├── config/
-│   ├── init.py
-│   └── settings.py         # Configurable paths, intervals, model flags
-├── logs/
-│   └── transcriber.log     # Log file (or symlink to system journal)
-├── requirements.txt        # Python dependencies
-└── README.md              # This document & usage notes
-```
-
----
-
-## 6. Configuration
-
-Edit `ai_service/config/settings.py`:
-
-```python
-# Directory paths
-AUDIO_INPUT_DIR  = "/home/bitz/aidev/datasets/audio/"
-AUDIO_OUTPUT_DIR = "/home/bitz/aidev/datasets/audio_done/"
-
-# Scheduler
-POLLING_INTERVAL = 30            # seconds
-
-# Model settings
-USE_GPU          = True
-CUSTOM_MODEL_PATH = "/path/to/fine­tuned/model"
-```
-
-## 7. Usage Instructions
-
-### Add Audio
-Place your `.wav`, `.mp3`, `.ogg`, or `.flac` files in:
-
-```bash
-/home/bitz/aidev/datasets/audio/
+datasets/audio/
 ```
 
 ### Automatic Processing
-The service polls every 30 seconds and processes new files.
+The service monitors the input directory and automatically processes new files.
 
-### Retrieve Results
-Find originals & transcripts in:
-
-```bash
-/home/bitz/aidev/datasets/audio_done/
-```
-
-## 8. API Endpoint
-
-Trigger transcription manually:
+### Retrieving Results
+Find original files and processed outputs in the output directory:
 
 ```bash
-curl "http://localhost:50001/transcribe/data/casedata" \
-  -H "Content-Type: application/json" \
-  --data '{"task": "transcribe", "docs": 100}'
+datasets/audio_done/
 ```
 
-- task: Action ("transcribe")
-- docs: Number of files to process in one call
+Output files include:
+- Original audio file
+- Transcription text file
+- Translation text file (if translation is enabled)
 
-## 9. Monitoring
+## Monitoring
 
 To follow live logs:
 
 ```bash
-sudo journalctl -u aidev -f
+tail -f logs/runtime.log
 ```
 
-## 10. Troubleshooting
+## Installation & Setup
 
-### Service Status
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. Configure settings in `config.py` or `instance/config.py`
+4. Start the service:
+   ```bash
+   python run.py
+   ```
 
-```bash
-sudo systemctl status aidev
-```
+## Troubleshooting
 
-### Ensure Directories Exist
+### Common Issues
 
-```bash
-mkdir -p ~/aidev/datasets/audio
-mkdir -p ~/aidev/datasets/audio_done
-```
+- **Missing Audio Directory**: Create the input/output directories if they don't exist
+  ```bash
+  mkdir -p datasets/audio
+  mkdir -p datasets/audio_done
+  ```
 
-### Permissions
+- **Model Download Errors**: Ensure internet connection and sufficient disk space
+  ```bash
+  # Check disk space
+  df -h
+  ```
 
-```bash
-sudo chown -R bitz:bitz ~/aidev/datasets
-```
+- **GPU Not Detected**: Verify CUDA installation if using GPU acceleration
+  ```bash
+  # Check CUDA availability
+  python -c "import torch; print(torch.cuda.is_available())"
+  ```
 
-### Restart Service
+- **Service Fails to Start**: Check the logs for error messages
+  ```bash
+  cat logs/runtime.log
+  ```
 
-```bash
-sudo systemctl restart aidev
-```
+### Evaluation and Metrics
+
+The AIService includes evaluation tools to assess transcription and translation quality:
+
+- **BLEU Score**: Located in `models/metrics/BLEU.py`
+- **Reference Files**: Use `models/metrics/reference.txt` and `models/metrics/candidate.txt` for evaluation
+
+## Future Enhancements
+
+- Support for additional audio formats
+- Enhanced batch processing capabilities
+- Integration with additional translation models
+- Web interface for monitoring and management
+- Real-time processing improvements
