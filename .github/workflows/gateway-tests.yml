@@ -2,48 +2,50 @@ name: Django Unit Tests
 
 on:
   push:
-    branches: [ main, develop, justphyl ]
+    branches: [ main, develop ]
+    paths:
+      - 'gateway/cfcbe/**'
   pull_request:
     branches: [ main, develop ]
   workflow_dispatch:  # Allows manual triggering
 
 jobs:
-  test:
+  unit-tests:
+    name: Run Django Tests
     runs-on: ubuntu-latest
-    
     strategy:
       matrix:
         python-version: ['3.10', '3.11']
-    
+   
     steps:
-    - uses: actions/checkout@v4
-    
+    - name: Checkout Code
+      uses: actions/checkout@v4
+   
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-    
-    - name: Show repository structure
+   
+    - name: Display repository structure
       run: |
         echo "Current directory: $(pwd)"
-        echo "Contents of current directory:"
+        echo "Repository root contents:"
         ls -la
-        echo "Locating requirements.txt:"
-        find . -name "requirements.txt"
-    
+        echo "Gateway directory contents:"
+        ls -la gateway || echo "Gateway directory not found"
+        echo "Gateway/cfcbe directory contents:"
+        ls -la gateway/cfcbe || echo "Gateway/cfcbe directory not found"
+   
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        cd gateway/cfcbe || (echo "Directory gateway/cfcbe not found" && exit 1)
-        echo "Current directory after cd: $(pwd)"
-        echo "Contents of current directory:"
-        ls -la
+        cd gateway/cfcbe
         pip install -r requirements.txt
         pip install coverage python-dotenv
-    
+   
     - name: Create test .env file
       run: |
-        cd gateway/cfcbe || (echo "Directory gateway/cfcbe not found" && exit 1)
+        cd gateway/cfcbe
         cat > .env << 'EOL'
         # Django Settings
         DEBUG=True
@@ -93,27 +95,69 @@ jobs:
         # Logging Settings
         LOG_LEVEL=WARNING
         EOL
-    
+   
     - name: Create test uploads directory
       run: |
-        cd gateway/cfcbe || (echo "Directory gateway/cfcbe not found" && exit 1)
+        cd gateway/cfcbe
         mkdir -p uploads
-    
-    - name: Run Django checks
+   
+    - name: Run Django model checks
       run: |
-        cd gateway/cfcbe || (echo "Directory gateway/cfcbe not found" && exit 1)
+        cd gateway/cfcbe
         python manage.py check
-    
+   
     - name: Run tests with coverage
       run: |
-        cd gateway/cfcbe || (echo "Directory gateway/cfcbe not found" && exit 1)
-        coverage run manage.py test --verbosity=2
+        cd gateway/cfcbe
+        coverage run --source='.' manage.py test --verbosity=2
         coverage report
         coverage xml
-    
+   
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
       with:
         file: gateway/cfcbe/coverage.xml
         flags: unittests
         fail_ci_if_error: false
+
+  check-migrations:
+    name: Check Django Migrations
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+   
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+   
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        cd gateway/cfcbe
+        pip install -r requirements.txt
+   
+    - name: Create test .env file
+      run: |
+        cd gateway/cfcbe
+        cat > .env << 'EOL'
+        DEBUG=True
+        SECRET_KEY=django-insecure-test-secret-key-for-github-actions
+        ALLOWED_HOSTS=localhost,127.0.0.1
+        DB_ENGINE=django.db.backends.sqlite3
+        DB_NAME=test_db.sqlite3
+        EOL
+   
+    - name: Check for missing migrations
+      continue-on-error: true
+      run: |
+        cd gateway/cfcbe
+        python manage.py makemigrations --check --dry-run
+        
+    - name: Show migration plan
+      continue-on-error: true
+      run: |
+        cd gateway/cfcbe
+        python manage.py migrate --plan
