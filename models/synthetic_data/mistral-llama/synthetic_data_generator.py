@@ -1,8 +1,19 @@
 import csv
+import os
 import random
 import logging
 from datetime import datetime
 from llama_cpp import Llama
+from huggingface_hub import hf_hub_download
+
+# Download the model to HF cache
+model_path = hf_hub_download(
+    repo_id="TheBloke/Mistral-7B-Instruct-v0.2-GGUF",
+    filename="mistral-7b-instruct-v0.2.Q4_K_M.gguf"
+)
+
+# Now you can use this path in your llama_cpp initialization
+print(f"Model downloaded to: {model_path}")
 
 # Setup logging
 logging.basicConfig(
@@ -11,13 +22,33 @@ logging.basicConfig(
 )
 
 # Load Mistral model
+# Load Mistral model
 logging.info("🔁 Loading Mistral model...")
 try:
+    cuda_available = False
+    try:
+        # Try to get CUDA_HOME environment variable
+        cuda_home = os.environ.get('CUDA_HOME') or os.environ.get('CUDA_PATH')
+        
+        # Check if nvidia-smi exists and can be executed
+        import subprocess
+        result = subprocess.run(['nvidia-smi'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        cuda_available = result.returncode == 0
+        
+        if cuda_available:
+            logging.info("✅ CUDA is available. Using GPU acceleration.")
+        else:
+            logging.warning("⚠️ CUDA is not available. Using CPU only.")
+    except:
+        logging.warning("⚠️ Failed to check CUDA availability. Using CPU only.")
+
+
     llm = Llama(
-        model_path="/Users/mac/models/mistral-7b-instruct-v0.1.Q4_K_M.gguf",
+        model_path=model_path,  # Use the cached model path
         n_ctx=2048,
         n_threads=6,
-        n_gpu_layers=16,
+        n_gpu_layers=-1,
+        n_batch=512,
         verbose=False
     )
     logging.info("✅ Model loaded successfully.")
@@ -143,7 +174,7 @@ def generate_case_records(num_cases):
         client_sex = random.choice(["Male", "Female"])
 
         logging.info(f"📝 Generating case {case_id} for {client_name}, {client_age}yo {client_sex} under '{category['Case_Category']}'...")
-        narrative = generate_narrative(client_name, client_age, client_sex, category["Case_Category"], category["Definition"])
+        narrative = generate_childline_case(client_name, client_age, client_sex, category["Case_Category"], category["Definition"])
 
         case_plan = random.choice([
             "Immediate protection and psychosocial support",
@@ -164,7 +195,7 @@ def generate_case_records(num_cases):
 
 # Generate records
 logging.info("🚀 Starting case generation...")
-records = generate_case_records(1000)
+records = generate_case_records(10)
 logging.info("✅ Case generation completed.")
 
 # Save to CSV
