@@ -1,8 +1,13 @@
 import { defineConfig } from 'vitepress'
 
+
 export default defineConfig({
   title: 'OpenCHS Docs',
   description: 'Child Helpline Case Management System',
+  head: [
+    ['link', { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }]
+  ],  
+  
   themeConfig: {
     nav: [
       { text: 'Home', link: '/' },
@@ -50,5 +55,6 @@ export default defineConfig({
       { icon: 'github', link: 'https://github.com/openchlsystem/OpenCHS-helpline' },
       { icon: 'linkedin', link: 'https://www.linkedin.com/company/bitz-it-consulting/' }
     ]
-  }
+  },
+ 
 })
