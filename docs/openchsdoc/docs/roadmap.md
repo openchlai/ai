@@ -1,4 +1,5 @@
 # Roadmap
+
 Our project roadmap outlines the key milestones and planned features for the future development of our system. It aims to address various aspects, including shift management, business intelligence, and the implementation of an open API. The roadmap is subject to change based on user feedback and evolving requirements. Here are the major milestones:
 
 - **Phase 1: Foundation and Core Functionality**
@@ -33,4 +34,4 @@ Our project roadmap outlines the key milestones and planned features for the fut
 
     Please note that this roadmap is a high-level overview and may be subject to adjustments based on changing priorities, emerging technologies, and user feedback. We are committed to delivering a robust, user-friendly, and impactful system that contributes to the well-being and safety of vulnerable children and victims of gender-based violence.
 
-    For more detailed updates and specific feature timelines, please refer to our [Roadmap Page](https://github.com/openchlsystem/OpenCHS-helpline/blob/main/07_Guides/roadmap.md) on our project website.
+    For more detailed updates and specific feature timelines, please refer to our [Roadmap Page](/guides.md) on our project website.
