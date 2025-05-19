@@ -1,0 +1,319 @@
+{
+    "callCenterQAMetrics": {
+      "metadata": {
+        "center_id": "CC-021",
+        "date_range": "2020-01-01 to 2025-04-15",
+        "total_calls_analyzed": 5782,
+        "total_counselors": 42
+      },
+      "counselors": [
+        {
+          "counselor_id": "C-1042",
+          "name": "Sarah Mwangi",
+          "tenure_months": 18,
+          "calls_analyzed": 135,
+          "overall_score": 89.6,
+          "performance_trend": "improving",
+          "metrics": {
+            "opening_greeting": {
+              "score": 95.2,
+              "details": {
+                "greetings_used": true
+                
+              },
+              "trend": "+3.2"
+            },
+            "listening": {
+              "score": 84.3,
+              "details": {
+                "interruptions_detected": 12,
+                "empathy_score": 85.7,
+                "paraphrasing_score": 78.2,
+                "courtesy_phrases": {
+                  "please_count": 354,
+                  "thank_you_count": 289
+                },
+                "hesitation_markers": 21
+              },
+              "trend": "+2.1"
+            },
+            "proactiveness": {
+              "score": 81.5,
+              "details": {
+                "additional_issues_addressed": 58,
+                "satisfaction_confirmations": 112,
+                "follow_up_commitments_kept": 42
+              },
+              "trend": "+5.7"
+            },
+            "resolution_counselling": {
+              "score": 91.2,
+              "details": {
+                "accuracy_score": 94.3,
+                "language_correctness": 88.9,
+                "supervisor_consultations": 14,
+                "procedure_adherence": 92.7,
+                "explanation_clarity": 89.6
+              },
+              "trend": "+0.8"
+            },
+            "hold_procedures": {
+              "score": 93.4,
+              "details": {
+                "proper_hold_explanations": 74,
+                "holds_without_explanation": 3,
+                "average_hold_time_seconds": 118,
+                "hold_check_ins": 65,
+                "post_hold_courtesy": 70
+              },
+              "trend": "+1.2"
+            },
+            "closing": {
+              "score": 96.8,
+              "details": {
+                "proper_closings": 129,
+                "rushed_closings": 6,
+                "appreciation_expressed": 127
+              },
+              "trend": "+0.4"
+            }
+          },
+          "recent_calls": [
+            {
+              "call_id": "CALL-46293",
+              "timestamp": "2025-04-15T10:42:19Z",
+              "duration_seconds": 487,
+              "caller_sentiment": "positive",
+              "issue_resolved": true,
+              "metric_scores": {
+                "opening_greeting": 100,
+                "listening": 88,
+                "proactiveness": 92,
+                "resolution_counselling": 95,
+                "hold_procedures": 98,
+                "closing": 100
+              },
+              "flags": [],
+              "ai_confidence": 0.94
+            },
+            {
+              "call_id": "CALL-46102",
+              "timestamp": "2025-04-14T14:23:05Z",
+              "duration_seconds": 612,
+              "caller_sentiment": "frustrated",
+              "issue_resolved": true,
+              "metric_scores": {
+                "opening_greeting": 100,
+                "listening": 75,
+                "proactiveness": 80,
+                "resolution_counselling": 92,
+                "hold_procedures": 90,
+                "closing": 95
+              },
+              "flags": ["multiple_interruptions", "missed_empathy_opportunity"],
+              "ai_confidence": 0.89
+            }
+          ]
+        },
+        {
+          "counselor_id": "C-2078",
+          "name": "Michael Mwawasi",
+          "tenure_months": 7,
+          "calls_analyzed": 94,
+          "overall_score": 76.3,
+          "performance_trend": "declining",
+          "metrics": {
+            "opening_greeting": {
+              "score": 90.5,
+              "details": {
+                "greetings_used": true
+              },
+              "trend": "-1.6"
+            },
+            "listening": {
+              "score": 68.7,
+              "details": {
+                "interruptions_detected": 31,
+                "empathy_score": 65.3,
+                "paraphrasing_score": 62.1,
+                "courtesy_phrases": {
+                  "please_count": 127,
+                  "thank_you_count": 103
+                },
+                "hesitation_markers": 48
+              },
+              "trend": "-4.8"
+            },
+            "proactiveness": {
+              "score": 71.2,
+              "details": {
+                "additional_issues_addressed": 17,
+                "satisfaction_confirmations": 63,
+                "follow_up_commitments_kept": 12
+              },
+              "trend": "-2.3"
+            },
+            "resolution_counselling": {
+              "score": 79.5,
+              "details": {
+                "accuracy_score": 84.6,
+                "language_correctness": 72.3,
+                "supervisor_consultations": 27,
+                "procedure_adherence": 80.4,
+                "explanation_clarity": 75.8
+              },
+              "trend": "-3.7"
+            },
+            "hold_procedures": {
+              "score": 80.1,
+              "details": {
+                "proper_hold_explanations": 38,
+                "holds_without_explanation": 12,
+                "average_hold_time_seconds": 187,
+                "hold_check_ins": 24,
+                "post_hold_courtesy": 29
+              },
+              "trend": "-6.2"
+            },
+            "closing": {
+              "score": 91.4,
+              "details": {
+                "proper_closings": 86,
+                "rushed_closings": 8,
+                "appreciation_expressed": 82
+              },
+              "trend": "-1.1"
+            }
+          },
+          "recent_calls": [
+            {
+              "call_id": "CALL-45918",
+              "timestamp": "2025-04-13T09:12:47Z",
+              "duration_seconds": 734,
+              "caller_sentiment": "negative",
+              "issue_resolved": false,
+              "metric_scores": {
+                "opening_greeting": 95,
+                "listening": 60,
+                "proactiveness": 65,
+                "resolution_counselling": 72,
+                "hold_procedures": 70,
+                "closing": 85
+              },
+              "flags": ["excessive_holds", "multiple_interruptions", "low_empathy_score"],
+              "ai_confidence": 0.92
+            }
+          ]
+        },
+        {
+          "counselor_id": "C-1783",
+          "name": "Emily Wairimu",
+          "tenure_months": 24,
+          "calls_analyzed": 142,
+          "overall_score": 94.2,
+          "performance_trend": "stable",
+          "metrics": {
+            "opening_greeting": {
+              "score": 98.7,
+              "details": {
+                "greetings_used": true
+              },
+              "trend": "+0.2"
+            },
+            "listening": {
+              "score": 96.3,
+              "details": {
+                "interruptions_detected": 4,
+                "empathy_score": 60.8,
+                "paraphrasing_score": 94.1,
+                "courtesy_phrases": {
+                  "please_count": 429,
+                  "thank_you_count": 384
+                },
+                "hesitation_markers": 7
+              },
+              "trend": "+0.4"
+            },
+            "proactiveness": {
+              "score": 93.5,
+              "details": {
+                "additional_issues_addressed": 84,
+                "satisfaction_confirmations": 138,
+                "follow_up_commitments_kept": 52
+              },
+              "trend": "-0.3"
+            },
+            "resolution_counselling": {
+              "score": 95.2,
+              "details": {
+                "accuracy_score": 97.8,
+                "language_correctness": 94.5,
+                "supervisor_consultations": 6,
+                "procedure_adherence": 96.4,
+                "explanation_clarity": 93.4
+              },
+              "trend": "+0.1"
+            },
+            "hold_procedures": {
+              "score": 90.1,
+              "details": {
+                "proper_hold_explanations": 64,
+                "holds_without_explanation": 2,
+                "average_hold_time_seconds": 89,
+                "hold_check_ins": 63,
+                "post_hold_courtesy": 61
+              },
+              "trend": "+0.7"
+            },
+            "closing": {
+              "score": 99.1,
+              "details": {
+                "proper_closings": 141,
+                "rushed_closings": 1,
+                "appreciation_expressed": 142
+              },
+              "trend": "+0.0"
+            }
+          },
+          "recent_calls": [
+            {
+              "call_id": "CALL-46275",
+              "timestamp": "2025-04-15T08:37:22Z",
+              "duration_seconds": 528,
+              "caller_sentiment": "very_positive",
+              "issue_resolved": true,
+              "metric_scores": {
+                "opening_greeting": 100,
+                "listening": 97,
+                "proactiveness": 95,
+                "resolution_counselling": 98,
+                "hold_procedures": 92,
+                "closing": 100
+              },
+              "flags": ["low_empathy_score"],
+              "ai_confidence": 0.97
+            },
+            {
+                "call_id": "CALL-20",
+                "timestamp": "2025-04-17T09:00:22Z",
+                "duration_seconds": 528,
+                "caller_sentiment": "negative",
+                "issue_resolved": false,
+                "metric_scores": {
+                  "opening_greeting": 100,
+                  "listening": 81,
+                  "proactiveness": 95,
+                  "resolution_counselling": 98,
+                  "hold_procedures": 80,
+                  "closing": 100
+                },
+                "flags": [],
+                "ai_confidence": 0.90
+              }
+          ]
+        }
+      ]
+      
+    }
+  }
+  
