@@ -1,16 +1,16 @@
 # Installation
 
-- **Centos:** Follow the installation guide for CentOS by [linking to the CentOS installation readme](https://github.com/openchlsystem/OpenCHS-helpline/blob/main/03_Deployment/01_Centos/README.md).
+- **Centos:** Follow the installation guide for CentOS by [linking to the CentOS installation](/centos-install.md).
 
-- **Nginx:** Install Nginx by referring to the [Nginx installation readme](https://github.com/openchlsystem/OpenCHS-helpline/blob/main/03_Deployment/04_NGINX/README.md).
+- **Nginx:** Install Nginx by referring to the [Nginx installation](/nginx.md).
 
-- **PHP:** Set up PHP by following the instructions in the [PHP installation readme](https://github.com/openchlsystem/OpenCHS-helpline/blob/main/03_Deployment/05_PHP/README.md).
+- **PHP:** Set up PHP by following the instructions in the [PHP installation](php.md).
 
 - **JavaScript:** No specific installation steps are required for JavaScript as it is a client-side language.
 
-- **Asterisk:** Install and configure Asterisk by referring to the [Asterisk installation readme](https://github.com/openchlsystem/OpenCHS-helpline/blob/main/03_Deployment/06_ASTERISK/README.md).
+- **Asterisk:** Install and configure Asterisk by referring to the [Asterisk installation](asterisk.md).
 
-- **MySQL:** Set up MySQL by following the instructions in the [MySQL installation readme](https://github.com/openchlsystem/OpenCHS-helpline/blob/main/03_Deployment/03_Mysql/README.md).
+- **MySQL:** Set up MySQL by following the instructions in the [MySQL installation](mysql.md).
 
 Once all the necessary components are installed, you can proceed with the application setup:
 

@@ -17,6 +17,6 @@ We welcome contributions to enhance and improve our project. Whether you're a de
 
     By following these contribution guidelines, we can maintain a high-quality project and foster a vibrant and inclusive community. We appreciate your contributions and look forward to working with you.
 
-    For more information, please refer to our full contribution guide [here](https://github.com/openchlsystem/OpenCHS-helpline/blob/main/07_Guides/contribution.md).
+    For more information, please refer to our full contribution guide [here](/contribution.md).
 
     If you have any questions or need further assistance, please refer to the Support section or contact the project maintainers listed in the Authors section.
