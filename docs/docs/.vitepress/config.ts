@@ -22,6 +22,7 @@ export default defineConfig({
         text: 'Getting Started',
         items: [
           { text: 'Overview', link: '/' },
+          { text: 'AI Powered', link: '/aipowered' },
           { text: 'Installation', link: '/install' },
           { text: 'Usage', link: '/usage' }
         ]
@@ -51,6 +52,11 @@ export default defineConfig({
         ]
       }
     ],
+    footer: {
+      message: 'Released under the MIT License.',
+      copyright: '© 2025 BITZ IT Consulting | OpenCHS Project'
+    },
+    
     socialLinks: [
       { icon: 'github', link: 'https://github.com/openchlsystem/OpenCHS-helpline' },
       { icon: 'linkedin', link: 'https://www.linkedin.com/company/bitz-it-consulting/' }
