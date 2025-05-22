@@ -37,6 +37,8 @@ vendor/
 .env.production.local
 *.pem
 .secret*
+translation_env
+
 
 # Log files and caches
 *.log
