@@ -9,6 +9,7 @@ def translate(text, target_lang="eng_Latn"):
     try:
         # Using the larger 1.3B parameter model instead of distilled 600M
         tokenizer = NllbTokenizer.from_pretrained("facebook/nllb-200-1.3B")
+        tokenizer.src_lang = "eng_Latn"
         model = AutoModelForSeq2SeqLM.from_pretrained("facebook/nllb-200-1.3B")
 
         # Better handling of long texts
