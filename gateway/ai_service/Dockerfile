@@ -8,7 +8,6 @@ ENV PYTHONUNBUFFERED=1
 # Set work directory
 WORKDIR /app
 
-
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     git \
@@ -18,20 +17,26 @@ RUN apt-get update && apt-get install -y \
     libsndfile1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Install spaCy model (we’ll add it later in CMD to avoid caching issues)
-RUN python -m pip install --upgrade pip
+# Upgrade pip, setuptools, wheel first to avoid build failures
+RUN pip install --upgrade pip setuptools wheel
 
-# Install dependencies
+# Increase pip timeout and retries
+RUN mkdir -p ~/.pip && \
+    echo "[global]" > ~/.pip/pip.conf && \
+    echo "timeout = 100" >> ~/.pip/pip.conf && \
+    echo "retries = 10" >> ~/.pip/pip.conf
+
+# Install Python dependencies
 COPY requirements.txt .
-RUN pip install -r requirements.txt
+RUN pip install --default-timeout=100 -r requirements.txt
 
-# Copy project files
+# Copy the rest of the project files
 COPY . .
 
 # Download spaCy language model
 RUN python -m spacy download en_core_web_sm
 
-# Expose port (change to your Django port if different)
+# Expose port
 EXPOSE 8000
 
 # Run Django app
