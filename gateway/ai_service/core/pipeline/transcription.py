@@ -17,7 +17,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Determine device and precision
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+USE_FP16 = DEVICE == "cuda"
 
+logger.info(f"Using device: {DEVICE} with fp16={USE_FP16}")
+
+<<<<<<< HEAD
 def detect_hallucination(text: str, max_repetition_ratio: float = 0.4) -> bool:
     """
     Detect if the transcription contains hallucinations (excessive repetition).
@@ -89,6 +95,13 @@ def load_whisper_model(model_size: str = "large") -> whisper.Whisper:
     except Exception as e:
         logger.error(f"Failed to load Whisper model: {str(e)}")
         raise RuntimeError(f"Could not load Whisper model '{model_size}': {str(e)}")
+=======
+def load_whisper_model():
+    # Use a larger model since you have 16GB VRAM
+    model_size = "large"
+    logger.info(f"Loading Whisper model: {model_size}")
+    return whisper.load_model(model_size, device=DEVICE)
+>>>>>>> d0177b0a62046d55ca3242602dd363d820b6042d
 
 
 class WhisperTranscriber:
@@ -107,11 +120,27 @@ class WhisperTranscriber:
         self.model = None
         self._load_model()
 
+<<<<<<< HEAD
     def _load_model(self):
         """Load the Whisper model with error handling."""
         try:
             self.model = load_whisper_model(self.model_size)
             logger.info("WhisperTranscriber initialized successfully")
+=======
+    def transcribe(self, audio_path: str) -> str:
+        """Transcribe audio using Whisper with optimized GPU settings."""
+        logger.info(f"Starting transcription of {audio_path}")
+        try:
+            result = self.model.transcribe(
+                audio_path,
+                fp16=USE_FP16,
+                temperature=0.2,
+                best_of=3,
+                beam_size=5
+            )
+            logger.info("Transcription completed successfully")
+            return result["text"]
+>>>>>>> d0177b0a62046d55ca3242602dd363d820b6042d
         except Exception as e:
             logger.error(f"Failed to initialize WhisperTranscriber: {str(e)}")
             raise
@@ -327,6 +356,7 @@ class WhisperTranscriber:
             'model_loaded': self.model is not None
         }
 
+<<<<<<< HEAD
 
 # Global transcriber instance
 _global_transcriber: Optional[WhisperTranscriber] = None
@@ -382,3 +412,11 @@ if __name__ == "__main__":
         
     except Exception as e:
         logger.error(f"Example failed: {str(e)}")
+=======
+# Global transcriber instance
+transcriber = WhisperTranscriber()
+
+def transcribe(audio_path: str) -> str:
+    """Global wrapper for audio transcription."""
+    return transcriber.transcribe(audio_path)
+>>>>>>> d0177b0a62046d55ca3242602dd363d820b6042d
