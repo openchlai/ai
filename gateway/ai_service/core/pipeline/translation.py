@@ -8,9 +8,9 @@ def translate(text, target_lang="eng_Latn"):
     logger.info(f"Starting translation to {target_lang}")
     try:
         # Using the larger 1.3B parameter model instead of distilled 600M
-        tokenizer = NllbTokenizer.from_pretrained("facebook/nllb-200-1.3B")
+        tokenizer = NllbTokenizer.from_pretrained("facebook/nllb-200-1.3B", force_download=True)
         tokenizer.src_lang = "eng_Latn"
-        model = AutoModelForSeq2SeqLM.from_pretrained("facebook/nllb-200-1.3B")
+        model = AutoModelForSeq2SeqLM.from_pretrained("facebook/nllb-200-1.3B", force_download=True)
 
         # Better handling of long texts
         max_length = 1024  # Increased from default
