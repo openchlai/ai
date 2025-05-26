@@ -8,5 +8,6 @@ services:
       - "8000:8000"
     volumes:
       - .:/app
+      - /home/bitz/ai_models:/home/bitz/ai_models
     environment:
       - PYTHONUNBUFFERED=1
