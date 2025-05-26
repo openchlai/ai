@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 def load_whisper_model():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     logger.info(f"Using device: {device}")
-    model = whisper.load_model("tiny", device=device)
+    model = whisper.load_model("medium", device=device)
     return model
 
 
