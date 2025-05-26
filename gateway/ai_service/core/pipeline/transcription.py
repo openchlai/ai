@@ -17,9 +17,15 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Determine device and precision
+# Determine device and precision - prioritize GPU
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+if DEVICE == "cpu":
+    logger.warning("GPU not available - falling back to CPU. This will be significantly slower.")
 USE_FP16 = DEVICE == "cuda"
+
+# Force CUDA if available
+if torch.cuda.is_available():
+    torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
 logger.info(f"Using device: {DEVICE} with fp16={USE_FP16}")
 
@@ -373,17 +379,3 @@ def transcribe(audio_path: str, model_size: str = "large", **kwargs) -> str:
     return transcriber.transcribe(audio_path, **kwargs)
 
 
-# Example usage
-if __name__ == "__main__":
-    # Example of how to use the transcriber
-    try:
-        # Method 1: Using the class directly
-        # transcriber = WhisperTranscriber("large")
-        # print("Model info:", transcriber.get_model_info())
-        
-        # Method 2: Using the global function with hallucination mitigation
-        result = transcribe("/home/bitz/transcription_data_set_1/1737216594.179989.wav", max_retries=3)
-        print("Transcription:", result)
-        
-    except Exception as e:
-        logger.error(f"Example failed: {str(e)}")
