@@ -6,12 +6,17 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+# Determine device and precision
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+USE_FP16 = DEVICE == "cuda"
+
+logger.info(f"Using device: {DEVICE} with fp16={USE_FP16}")
 
 def load_whisper_model():
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    logger.info(f"Using device: {device}")
-    model = whisper.load_model("medium", device=device)
-    return model
+    # Use a larger model since you have 16GB VRAM
+    model_size = "large"
+    logger.info(f"Loading Whisper model: {model_size}")
+    return whisper.load_model(model_size, device=DEVICE)
 
 
 class WhisperTranscriber:
@@ -19,15 +24,15 @@ class WhisperTranscriber:
         self.model = load_whisper_model()
 
     def transcribe(self, audio_path: str) -> str:
-        """Transcribe audio using Whisper with tiny model."""
+        """Transcribe audio using Whisper with optimized GPU settings."""
         logger.info(f"Starting transcription of {audio_path}")
         try:
             result = self.model.transcribe(
                 audio_path,
-                fp16=False,  # Using CPU
-                temperature=0.2,  # Less random output
-                best_of=3,  # More stable results
-                beam_size=5  # Better decoding
+                fp16=USE_FP16,
+                temperature=0.2,
+                best_of=3,
+                beam_size=5
             )
             logger.info("Transcription completed successfully")
             return result["text"]
@@ -36,9 +41,9 @@ class WhisperTranscriber:
             raise RuntimeError(f"Transcription failed: {str(e)}")
 
 
-# Create a global instance of the transcriber
+# Global transcriber instance
 transcriber = WhisperTranscriber()
 
 def transcribe(audio_path: str) -> str:
-    """Global function to transcribe audio."""
+    """Global wrapper for audio transcription."""
     return transcriber.transcribe(audio_path)
