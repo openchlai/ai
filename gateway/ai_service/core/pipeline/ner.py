@@ -8,11 +8,10 @@ logger = logging.getLogger(__name__)
 
 # Load the English spaCy model
 try:
-    nlp = spacy.load("en_core_web_sm")
-    logger.info("Loaded spaCy model: en_core_web_sm")
-except OSError:
-    logger.error("spaCy model 'en_core_web_sm' is not installed. Run: python -m spacy download en_core_web_sm")
-    raise
+    nlp = spacy.load("en_core_web_trf")
+    logger.info("Loaded spaCy model: en_core_web_trf")
+except Exception as e:
+    logger.error(f"Failed to load spaCy model: {e}")
 
 def extract_entities(text: str, flat: bool = False) -> Union[Dict[str, List[str]], List[Dict[str, str]]]:
     """
