@@ -6,9 +6,15 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Determine device and precision
+# Determine device and precision - prioritize GPU
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+if DEVICE == "cpu":
+    logger.warning("GPU not available - falling back to CPU. This will be significantly slower.")
 USE_FP16 = DEVICE == "cuda"
+
+# Force CUDA if available
+if torch.cuda.is_available():
+    torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
 logger.info(f"Using device: {DEVICE} with fp16={USE_FP16}")
 
