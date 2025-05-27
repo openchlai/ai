@@ -379,3 +379,17 @@ def transcribe(audio_path: str, model_size: str = "large", **kwargs) -> str:
     return transcriber.transcribe(audio_path, **kwargs)
 
 
+# # Example usage
+# if __name__ == "__main__":
+#     # Example of how to use the transcriber
+#     try:
+#         # Method 1: Using the class directly
+#         # transcriber = WhisperTranscriber("large")
+#         # print("Model info:", transcriber.get_model_info())
+        
+#         # Method 2: Using the global function with hallucination mitigation
+#         result = transcribe("/home/bitz/transcription_data_set_1/1737216594.179989.wav", max_retries=3)
+#         print("Transcription:", result)
+        
+#     except Exception as e:
+#         logger.error(f"Example failed: {str(e)}")
