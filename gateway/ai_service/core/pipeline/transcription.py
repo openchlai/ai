@@ -6,13 +6,17 @@ import re
 from pathlib import Path
 from typing import Optional, Dict, Any
 
+# Create logs directory if it doesn't exist
+log_dir = '/tmp/logs'
+os.makedirs(log_dir, exist_ok=True)
+
 # Configure logging with more detailed format
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler('whisper_transcription.log')
+        logging.FileHandler(os.path.join(log_dir, 'whisper_transcription.log'))
     ]
 )
 logger = logging.getLogger(__name__)
