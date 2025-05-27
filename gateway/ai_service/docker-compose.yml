@@ -8,7 +8,14 @@ services:
       - "8000:8000"
     volumes:
       - .:/app
+      # Mount the new shared directory instead of bitz home
+      - /opt/chl_ai/models:/opt/chl_ai/models
+      # Keep backward compatibility during transition
       - /home/bitz/ai_models:/home/bitz/ai_models
       - /opt/chl_ai/models/ai_models/CLASSIFICATION/case_classifier_model/
     environment:
       - PYTHONUNBUFFERED=1
+      # Add environment variable pointing to new models location
+      - CHL_AI_MODELS=/workspace/models
+      - CHL_AI_DATA=/workspace/data
+    working_dir: /app
