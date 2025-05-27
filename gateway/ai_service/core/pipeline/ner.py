@@ -8,8 +8,8 @@ logger = logging.getLogger(__name__)
 
 # Load the English spaCy model
 try:
-    nlp = spacy.load("en_core_web_trf")
-    logger.info("Loaded spaCy model: en_core_web_trf")
+    nlp = spacy.load("en_core_web_md")
+    logger.info("Loaded spaCy model: en_core_web_md")
 except Exception as e:
     logger.error(f"Failed to load spaCy model: {e}")
 
