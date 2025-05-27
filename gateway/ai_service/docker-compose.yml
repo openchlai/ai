@@ -9,5 +9,6 @@ services:
     volumes:
       - .:/app
       - /home/bitz/ai_models:/home/bitz/ai_models
+      - /opt/chl_ai/models/ai_models/CLASSIFICATION/case_classifier_model/
     environment:
       - PYTHONUNBUFFERED=1
