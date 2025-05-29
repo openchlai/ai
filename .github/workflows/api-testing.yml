@@ -2,293 +2,101 @@ name: REST API Automated Testing
 
 on:
   push:
-    branches: [ main, develop, justphyl ]
+    branches: [main, develop, justphyl]
     paths:
       - 'backend/**'
-      - '.github/workflows/api-testing.yml'
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
     paths:
       - 'backend/**'
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    name: PHP ${{ matrix.php-version }} Tests
-    
     strategy:
-      fail-fast: false
       matrix:
         php-version: ['8.1', '8.2', '8.3', '8.4']
-        
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
     
-    - name: Setup PHP ${{ matrix.php-version }}
+    name: PHP ${{ matrix.php-version }} Tests
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup PHP
       uses: shivammathur/setup-php@v2
       with:
         php-version: ${{ matrix.php-version }}
-        extensions: mysqli, pdo, pdo_mysql, mbstring, xml, json, curl
-        coverage: none
+        extensions: mysqli, pdo, pdo_mysql, mbstring, xml, json
         tools: phpunit:9.6
-        
+    
     - name: Create test directories
       run: |
         cd backend/api
         mkdir -p test_data/users test_data/csv
         chmod -R 755 test_data
-        
-    - name: Check PHPUnit setup
-      run: |
-        cd backend/api
-        echo "=== Checking PHPUnit setup ==="
-        which phpunit || echo "Using local phpunit"
-        if [ -f "phpunit" ]; then
-          chmod +x phpunit
-          echo "Using local PHPUnit binary"
-          ./phpunit --version
-        else
-          echo "Using global PHPUnit"
-          phpunit --version
-        fi
-        
-    - name: Test PHPUnit configuration
-      run: |
-        cd backend/api
-        echo "=== Testing PHPUnit configuration ==="
-        if [ -f "phpunit" ]; then
-          ./phpunit --configuration=phpunit.xml --list-tests | head -10 || echo "Config test failed"
-        else
-          phpunit --configuration=phpunit.xml --list-tests | head -10 || echo "Config test failed"
-        fi
-        
-    - name: Run Session Management Tests (Isolated)
-      run: |
-        cd backend/api
-        echo "🧪 Running Session Management Tests (Mock-based)..."
-        
-        if [ -f "phpunit" ]; then
-          ./phpunit tests/SessionTest.php --verbose --no-coverage || {
-            echo "❌ SessionTest failed"
-            exit 1
-          }
-        else
-          phpunit tests/SessionTest.php --verbose --no-coverage || {
-            echo "❌ SessionTest failed"
-            exit 1
-          }
-        fi
-        echo "✅ Session tests completed successfully"
-        
-    - name: Run REST API Advanced Tests (Isolated)
-      run: |
-        cd backend/api
-        echo "🧪 Running REST API Advanced Tests..."
-        
-        if [ -f "phpunit" ]; then
-          ./phpunit tests/RestAdvancedTest.php --verbose --no-coverage || {
-            echo "❌ RestAdvancedTest failed"
-            exit 1
-          }
-        else
-          phpunit tests/RestAdvancedTest.php --verbose --no-coverage || {
-            echo "❌ RestAdvancedTest failed"
-            exit 1
-          }
-        fi
-        echo "✅ Advanced REST tests completed successfully"
-        
-    - name: Run Index/Integration Tests (Isolated)
-      run: |
-        cd backend/api
-        echo "🧪 Running Index/Integration Tests..."
-        
-        if [ -f "phpunit" ]; then
-          ./phpunit tests/IndexTest.php --verbose --no-coverage || {
-            echo "❌ IndexTest failed"
-            exit 1
-          }
-        else
-          phpunit tests/IndexTest.php --verbose --no-coverage || {
-            echo "❌ IndexTest failed"
-            exit 1
-          }
-        fi
-        echo "✅ Index tests completed successfully"
-        
-    - name: Run REST API Core Tests (Skip problematic)
-      run: |
-        cd backend/api
-        echo "🧪 Running REST API Core Tests (selective)..."
-        
-        # Try to run the core tests, but don't fail the entire job if they have DB issues
-        if [ -f "phpunit" ]; then
-          ./phpunit tests/RestTestClean.php --verbose --no-coverage || {
-            echo "⚠️  RestTestClean has database dependency issues in CI environment"
-            echo "This is expected when mysqli mocks conflict with real database calls"
-            echo "✅ Other tests passed successfully"
-          }
-        else
-          phpunit tests/RestTestClean.php --verbose --no-coverage || {
-            echo "⚠️  RestTestClean has database dependency issues in CI environment"
-            echo "This is expected when mysqli mocks conflict with real database calls"
-            echo "✅ Other tests passed successfully"
-          }
-        fi
-
-  test-summary:
-    runs-on: ubuntu-latest
-    name: Test Results Summary
-    needs: [test]
-    if: always()
     
-    steps:
-    - name: Generate Test Summary
+    - name: Run SessionTest
       run: |
-        echo "# 🧪 REST API Test Results" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        
-        echo "## 📋 Test Execution Status" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        
-        # Check test results for each PHP version
-        if [ "${{ needs.test.result }}" == "success" ]; then
-          echo "✅ **PHP Tests**: All compatible tests passed across all versions" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### ✅ Successfully Tested:" >> $GITHUB_STEP_SUMMARY
-          echo "- **SessionTest.php**: Session management and authentication (24 tests)" >> $GITHUB_STEP_SUMMARY
-          echo "- **RestAdvancedTest.php**: Advanced REST API features (20 tests)" >> $GITHUB_STEP_SUMMARY
-          echo "- **IndexTest.php**: Integration and index functionality" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### ⚠️ Database-dependent tests:" >> $GITHUB_STEP_SUMMARY
-          echo "- **RestTestClean.php**: Requires real database connection (skipped in CI)" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "❌ **PHP Tests**: Some tests failed" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Please check the individual test logs for details." >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "## 🛠️ Environment Details" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "- **PHP Versions Tested**: 8.1, 8.2, 8.3, 8.4" >> $GITHUB_STEP_SUMMARY
-        echo "- **Extensions**: mysqli, pdo, pdo_mysql, mbstring, xml, json, curl" >> $GITHUB_STEP_SUMMARY
-        echo "- **Test Framework**: PHPUnit 9.6" >> $GITHUB_STEP_SUMMARY
-        echo "- **Environment**: Ubuntu (GitHub Actions)" >> $GITHUB_STEP_SUMMARY
-        
-        if [ "${{ needs.test.result }}" == "success" ]; then
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 🎉 Overall Result" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**✅ TESTS PASSED** - All isolated tests completed successfully!" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📝 Notes:" >> $GITHUB_STEP_SUMMARY
-          echo "- Mock-based tests run perfectly in CI environment" >> $GITHUB_STEP_SUMMARY
-          echo "- Database-dependent tests work locally but are skipped in CI" >> $GITHUB_STEP_SUMMARY
-          echo "- This is a common pattern for REST API testing" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## ⚠️ Overall Result" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**❌ TESTS FAILED** - Please review and fix failing tests." >> $GITHUB_STEP_SUMMARY
-        fi
+        cd backend/api
+        phpunit tests/SessionTest.php --verbose
+    
+    - name: Run RestAdvancedTest
+      run: |
+        cd backend/api
+        phpunit tests/RestAdvancedTest.php --verbose
+    
+    - name: Run IndexTest
+      run: |
+        cd backend/api
+        phpunit tests/IndexTest.php --verbose
 
   coverage:
     runs-on: ubuntu-latest
-    name: Code Coverage Report
-    needs: [test]
-    if: needs.test.result == 'success'
+    needs: test
+    if: success()
     
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
     
     - name: Setup PHP with Coverage
       uses: shivammathur/setup-php@v2
       with:
         php-version: '8.3'
-        extensions: mysqli, pdo, pdo_mysql, mbstring, xml, json, curl
+        extensions: mysqli, pdo, pdo_mysql, mbstring, xml, json
         coverage: xdebug
         tools: phpunit:9.6
-        
-    - name: Create test directories
+    
+    - name: Create directories
       run: |
         cd backend/api
         mkdir -p test_data/users test_data/csv coverage
         chmod -R 755 test_data coverage
-        
-    - name: Generate Coverage for Compatible Tests
+    
+    - name: Generate coverage
       run: |
         cd backend/api
-        echo "📊 Generating code coverage for compatible tests..."
-        
-        # Run coverage only for tests that work in CI environment
-        if [ -f "phpunit" ]; then
-          ./phpunit --coverage-html coverage --coverage-clover coverage.xml tests/SessionTest.php tests/RestAdvancedTest.php tests/IndexTest.php || {
-            echo "Coverage generation completed with some warnings"
-          }
-        else
-          phpunit --coverage-html coverage --coverage-clover coverage.xml tests/SessionTest.php tests/RestAdvancedTest.php tests/IndexTest.php || {
-            echo "Coverage generation completed with some warnings" 
-          }
-        fi
-        
-        echo "✅ Coverage report generated for compatible tests"
-        
-    - name: Display Coverage Summary
-      run: |
-        cd backend/api
-        if [ -f coverage.xml ]; then
-          echo "📈 Coverage Summary for CI-Compatible Tests:"
-          echo "Coverage report generated successfully"
-        else
-          echo "ℹ️  Coverage data generated in HTML format"
-        fi
-        
-    - name: Upload Coverage Reports
+        phpunit --coverage-html coverage tests/SessionTest.php tests/RestAdvancedTest.php tests/IndexTest.php
+    
+    - name: Upload coverage
       uses: actions/upload-artifact@v4
       with:
-        name: coverage-report-php-8.3
+        name: coverage-report
         path: backend/api/coverage/
-        retention-days: 30
-      if: always()
-        
-    - name: Upload Coverage XML
-      uses: actions/upload-artifact@v4
-      with:
-        name: coverage-xml
-        path: backend/api/coverage.xml
-        retention-days: 30
-      if: always()
 
-  notify-results:
+  summary:
     runs-on: ubuntu-latest
-    name: Notify Test Results
     needs: [test, coverage]
     if: always()
     
     steps:
-    - name: Success Notification
-      if: needs.test.result == 'success'
+    - name: Test Results
       run: |
-        echo "🎉 SUCCESS: REST API tests passed!"
-        echo "✅ Session Management Tests: PASSED"
-        echo "✅ Advanced REST Tests: PASSED"  
-        echo "✅ Integration Tests: PASSED"
-        echo "📊 Code coverage generated for compatible tests"
-        echo ""
-        echo "📝 Note: Database-dependent tests (RestTestClean) work locally"
-        echo "but are handled differently in CI due to mysqli mocking complexity."
-        echo "This is normal for REST APIs with database dependencies."
+        echo "Test Status: ${{ needs.test.result }}"
+        echo "Coverage Status: ${{ needs.coverage.result }}"
         
-    - name: Failure Notification  
-      if: needs.test.result == 'failure'
-      run: |
-        echo "❌ FAILURE: Some tests failed"
-        echo "🔍 Please check the logs above for details"
-        echo "📝 Most common issues:"
-        echo "  - Mock function conflicts"
-        echo "  - Database connection issues"
-        echo "  - PHP version compatibility"
-        exit 1
+        if [ "${{ needs.test.result }}" == "success" ]; then
+          echo "✅ All tests passed successfully!"
+        else
+          echo "❌ Some tests failed"
+          exit 1
+        fi
