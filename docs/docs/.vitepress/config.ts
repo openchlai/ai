@@ -6,7 +6,9 @@ export default defineConfig({
   description: 'Child Helpline Case Management System',
   head: [
     ['link', { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }]
-  ],  
+  ], 
+  ignoreDeadLinks: true, 
+  srcExclude: ['**/aidocs/**'],
   
   themeConfig: {
     nav: [
