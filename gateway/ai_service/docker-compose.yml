@@ -12,7 +12,10 @@ services:
       - /opt/chl_ai/models:/opt/chl_ai/models
       # Keep backward compatibility during transition
       - /home/bitz/ai_models:/home/bitz/ai_models
+<<<<<<< HEAD
       #- /opt/chl_ai/models/ai_models/CLASSIFICATION/case_classifier_model/
+=======
+>>>>>>> a1bac3cd946f95b094018e08bb7ac842cdda0c99
     environment:
       - PYTHONUNBUFFERED=1
       # Add environment variable pointing to new models location
