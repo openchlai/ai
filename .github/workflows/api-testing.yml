@@ -1,0 +1,287 @@
+name: REST API Automated Testing
+
+on:
+  push:
+    branches: [ main, develop, justphyl ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/api-testing.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: PHP ${{ matrix.php-version }} Tests
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8.1', '8.2', '8.3', '8.4']
+        
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup PHP ${{ matrix.php-version }}
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php-version }}
+        extensions: mysqli, pdo, pdo_mysql, mbstring, xml, json, curl
+        coverage: xdebug
+        tools: phpunit:9.6
+        
+    - name: Validate PHP installation
+      run: |
+        php --version
+        php --modules | grep -E "(mysqli|pdo|mbstring|xml|json)"
+        
+    - name: Check PHPUnit availability
+      run: |
+        cd backend/api
+        if [ -f phpunit ]; then
+          echo "Using local PHPUnit binary"
+          chmod +x phpunit
+          ./phpunit --version
+        else
+          echo "Using global PHPUnit"
+          phpunit --version
+        fi
+        
+    - name: Create test directories
+      run: |
+        cd backend/api
+        mkdir -p test_data/users test_data/csv
+        chmod -R 755 test_data
+        
+    - name: Validate test configuration
+      run: |
+        cd backend/api
+        if [ -f phpunit.xml ]; then
+          echo "✅ PHPUnit configuration found"
+          # Validate XML syntax
+          php -l phpunit.xml || echo "PHPUnit XML validation skipped"
+        else
+          echo "❌ PHPUnit configuration missing"
+          exit 1
+        fi
+        
+        if [ -f bootstrap.php ]; then
+          echo "✅ Bootstrap file found"
+          php -l bootstrap.php
+        else
+          echo "❌ Bootstrap file missing"
+          exit 1
+        fi
+        
+    - name: Run REST API Core Tests
+      run: |
+        cd backend/api
+        echo "🧪 Running REST API Core Tests..."
+        if [ -f phpunit ]; then
+          ./phpunit tests/RestTestClean.php --verbose --colors=always
+        else
+          phpunit tests/RestTestClean.php --verbose --colors=always
+        fi
+        echo "✅ REST API Core Tests completed"
+        
+    - name: Run REST API Advanced Tests  
+      run: |
+        cd backend/api
+        echo "🧪 Running REST API Advanced Tests..."
+        if [ -f phpunit ]; then
+          ./phpunit tests/RestAdvancedTest.php --verbose --colors=always
+        else
+          phpunit tests/RestAdvancedTest.php --verbose --colors=always
+        fi
+        echo "✅ REST API Advanced Tests completed"
+        
+    - name: Run Session Management Tests
+      run: |
+        cd backend/api
+        echo "🧪 Running Session Management Tests..."
+        if [ -f phpunit ]; then
+          ./phpunit tests/SessionTest.php --verbose --colors=always
+        else
+          phpunit tests/SessionTest.php --verbose --colors=always
+        fi
+        echo "✅ Session Management Tests completed"
+        
+    - name: Run Index/Integration Tests
+      run: |
+        cd backend/api
+        echo "🧪 Running Index/Integration Tests..."
+        if [ -f phpunit ]; then
+          ./phpunit tests/IndexTest.php --verbose --colors=always
+        else
+          phpunit tests/IndexTest.php --verbose --colors=always
+        fi
+        echo "✅ Index/Integration Tests completed"
+
+  coverage:
+    runs-on: ubuntu-latest
+    name: Code Coverage Report
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup PHP with Coverage
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.3'
+        extensions: mysqli, pdo, pdo_mysql, mbstring, xml, json, curl
+        coverage: xdebug
+        tools: phpunit:9.6
+        
+    - name: Create test directories
+      run: |
+        cd backend/api
+        mkdir -p test_data/users test_data/csv coverage
+        chmod -R 755 test_data coverage
+        
+    - name: Run All Tests with Coverage
+      run: |
+        cd backend/api
+        echo "📊 Generating code coverage report..."
+        
+        if [ -f phpunit ]; then
+          ./phpunit --coverage-html coverage --coverage-clover coverage.xml --coverage-text --colors=always
+        else
+          phpunit --coverage-html coverage --coverage-clover coverage.xml --coverage-text --colors=always
+        fi
+        
+        echo "✅ Coverage report generated"
+        
+    - name: Display Coverage Summary
+      run: |
+        cd backend/api
+        if [ -f coverage.xml ]; then
+          echo "📈 Coverage Summary:"
+          # Extract coverage percentage from clover XML
+          coverage=$(grep -oP 'statements="[^"]*"' coverage.xml | head -1 | grep -oP '\d+')
+          covered=$(grep -oP 'coveredstatements="[^"]*"' coverage.xml | head -1 | grep -oP '\d+')
+          
+          if [ ! -z "$coverage" ] && [ ! -z "$covered" ] && [ "$coverage" -gt 0 ]; then
+            percentage=$((covered * 100 / coverage))
+            echo "📊 Code Coverage: ${percentage}%"
+            
+            if [ "$percentage" -ge 80 ]; then
+              echo "✅ Excellent coverage (≥80%)"
+            elif [ "$percentage" -ge 60 ]; then
+              echo "⚠️  Good coverage (≥60%)"
+            else
+              echo "❌ Coverage needs improvement (<60%)"
+            fi
+          else
+            echo "ℹ️  Coverage data available in detailed report"
+          fi
+        fi
+        
+    - name: Upload Coverage Reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report-php-8.3
+        path: backend/api/coverage/
+        retention-days: 30
+        
+    - name: Upload Coverage XML
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-xml
+        path: backend/api/coverage.xml
+        retention-days: 30
+
+  test-summary:
+    runs-on: ubuntu-latest
+    name: Test Results Summary
+    needs: [test, coverage]
+    if: always()
+    
+    steps:
+    - name: Generate Test Summary
+      run: |
+        echo "# 🧪 REST API Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        echo "## 📋 Test Execution Status" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Check test results for each PHP version
+        php_versions=("8.1" "8.2" "8.3" "8.4")
+        for version in "${php_versions[@]}"; do
+          if [ "${{ needs.test.result }}" == "success" ]; then
+            echo "✅ **PHP ${version}**: All tests passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **PHP ${version}**: Some tests failed" >> $GITHUB_STEP_SUMMARY
+          fi
+        done
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## 📊 Coverage Report" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [ "${{ needs.coverage.result }}" == "success" ]; then
+          echo "✅ **Code Coverage**: Report generated successfully" >> $GITHUB_STEP_SUMMARY
+          echo "📁 Coverage artifacts uploaded for review" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ **Code Coverage**: Failed to generate report" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## 🔍 Tests Executed" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- **RestTestClean.php**: Core REST API functionality" >> $GITHUB_STEP_SUMMARY
+        echo "- **RestAdvancedTest.php**: Advanced REST API features" >> $GITHUB_STEP_SUMMARY
+        echo "- **SessionTest.php**: Session management and authentication" >> $GITHUB_STEP_SUMMARY
+        echo "- **IndexTest.php**: Integration and index functionality" >> $GITHUB_STEP_SUMMARY
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## 🛠️ Environment Details" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- **PHP Versions Tested**: 8.1, 8.2, 8.3, 8.4" >> $GITHUB_STEP_SUMMARY
+        echo "- **Extensions**: mysqli, pdo, pdo_mysql, mbstring, xml, json, curl" >> $GITHUB_STEP_SUMMARY
+        echo "- **Coverage Tool**: Xdebug" >> $GITHUB_STEP_SUMMARY
+        echo "- **Test Framework**: PHPUnit 9.6" >> $GITHUB_STEP_SUMMARY
+        
+        if [ "${{ needs.test.result }}" == "success" ] && [ "${{ needs.coverage.result }}" == "success" ]; then
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 🎉 Overall Result" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**✅ ALL TESTS PASSED** - Ready for code review and merge!" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## ⚠️ Overall Result" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**❌ TESTS FAILED** - Please review and fix failing tests before merge." >> $GITHUB_STEP_SUMMARY
+        fi
+        
+    - name: Comment on PR (if applicable)
+      if: github.event_name == 'pull_request'
+      run: |
+        echo "This would post a comment on the PR with test results"
+        echo "PR #${{ github.event.number }}: Test execution completed"
+
+  notify-results:
+    runs-on: ubuntu-latest
+    name: Notify Test Results
+    needs: [test, coverage]
+    if: always()
+    
+    steps:
+    - name: Success Notification
+      if: needs.test.result == 'success' && needs.coverage.result == 'success'
+      run: |
+        echo "🎉 SUCCESS: All REST API tests passed!"
+        echo "📊 Code coverage report generated successfully"
+        echo "✅ Ready for next steps"
+        
+    - name: Failure Notification  
+      if: needs.test.result == 'failure' || needs.coverage.result == 'failure'
+      run: |
+        echo "❌ FAILURE: Some tests failed or coverage generation failed"
+        echo "🔍 Please check the logs above for details"
+        echo "📝 Fix the issues and push again to re-run tests"
+        exit 1
