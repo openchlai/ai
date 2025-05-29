@@ -1,0 +1,39 @@
+name: PHP API Unit Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+# Explicit permissions for GITHUB_TOKEN
+permissions:
+  contents: read  # only read access is needed for checking out code
+  packages: none  # explicitly deny other permissions
+  actions: none
+  checks: none
+  deployments: none
+  issues: none
+  pull-requests: none
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        extensions: mbstring, pdo, pdo_mysql, dom
+        coverage: none
+
+    - name: Run PHPUnit tests
+      run: |
+        cd backend/api
+        chmod +x phpunit
+        ./phpunit --configuration phpunit.xml --testdox

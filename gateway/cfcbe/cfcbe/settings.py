@@ -52,11 +52,11 @@ INSTALLED_APPS = [
     # my apps
     'rest_framework',
     'rest_framework_simplejwt',
-    # 'feedback', # webform platform 
+     'feedback', # webform platform 
     
     'corsheaders',
-    # 'emailfeedback', # email platform
-    # 'whatsapp',
+    'emailfeedback', # email platform
+    'whatsapp',
     'django_filters',
     # 'authapp',
 

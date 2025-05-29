@@ -1,0 +1,14 @@
+[run]
+source =
+    emailfeedback
+    feedback
+omit =
+    */tests/*
+    */migrations/*
+    */__init__.py
+    manage.py
+    cfcbe/wsgi.py
+    cfcbe/asgi.py
+
+[report]
+show_missing = true

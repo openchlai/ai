@@ -1,0 +1,89 @@
+case_id,category_name,narrative,case_plan,incident_date,report_date
+CASE-0001,Child Trafficking,"""Call 116/250506/805 at 14:15HRS from child reporting herself from Kakamega County, risk Medium, with Risk Factors: FGM. Child, Faith, age 10, Female, is a victim of Child labor and is at risk of Female Genital Mutilation (FGM). Immediate referral to Child Care Institutions (CCI) initiated under Counter-Trafficking Act. Case CPIMS/2505/805 opened.""
+
+**CPIMS+ Actions**
+• Case ID: CPIMS/2505/1827
+• Responder: Luhya Child Network
+• Intervention: Bursary referral
+• Deadline: 2025-05-06",Medical referral and legal support,2025-05-06,2025-05-06 21:21:05
+CASE-0002,Child Radicalization,"""Call 116/250506/852 at 16:15HRS from bystander reporting 11-year-old Faith from Mandera County. Faith is a school dropout and at risk of early marriage. The bystander has observed Faith being taken to an unknown location by an older man. Risk level: High. Immediate rescue initiated under Childline protocol. Case CPIMS/2505/987 opened under Sexual Offences Act S.20.""
+
+**CPIMS+ Actions**
+• Case ID: CPIMS/2505/2142
+• Responder: ASAL Protection Unit
+• Intervention: Counseling
+• Deadline: 2025-05-06",Community engagement and school reintegration,2025-05-06,2025-05-06 21:21:18
+CASE-0003,Child Marriage,"""Call 116/250506/868 at 08:30HRS from social worker reporting 15-year-old Peter (Nairobi) at risk of sexual exploitation. Peter is a female teenager who is pregnant. Professional referral made to Child Care Institutions (CCI) under Sexual Offences Act S.20. Case CPIMS/2505/868 opened.""
+
+**CPIMS+ Actions**
+• Case ID: CPIMS/2505/8765
+• Responder: NCCG Rapid Response
+• Intervention: Vocational training
+• Deadline: 2025-05-06",Immediate protection and psychosocial support,2025-05-06,2025-05-06 21:21:29
+CASE-0004,Online Child Abuse,"""Call 116/250506/926 at 16:15HRS from child reporting herself, Amina, 11-year-old girl from Kakamega County, stating she is a school dropout and has been forced to work in a quarry since the age of 9. Risk is high due to child labor exploitation. Counseling will be initiated to support Amina and discuss her situation, safety, and available options. Legal action will be taken under Counter-Trafficking Act. CPIMS/2505/789 to be opened.""
+
+**CPIMS+ Actions**
+• Case ID: CPIMS/2505/7153
+• Responder: Luhya Child Network
+• Intervention: Counseling
+• Deadline: 2025-05-06",Immediate protection and psychosocial support,2025-05-06,2025-05-06 21:21:43
+CASE-0005,Child Pregnancy,"""Call 116/250506/728 at 11:15HRS from child reporting Samuel (Nairobi), age 11, medium risk, sexual exploitation. Immediate action initiated for referral to Child Care Institution (CCI). Case CPIMS/2505/729 opened under Sexual Offences Act S.20.""
+
+**CPIMS+ Actions**
+• Case ID: CPIMS/2505/4023
+• Responder: NCCG Rapid Response
+• Intervention: Counseling
+• Deadline: 2025-05-06",Medical referral and legal support,2025-05-06,2025-05-06 21:21:53
+CASE-0006,Child Radicalization,"""Call 116/250506/863 at 11:15HRS from child reporting herself from Mandera County. Risk level: High. Child: Faith, age 9, female. Vulnerability: Child labor, early marriage. Category: Child Radicalization.
+
+Faith called Childline stating that she is being forced into marriage at a young age. She is currently living in Mandera County and is at risk of being radicalized. The child expressed fear for her safety and wellbeing.
+
+Childline has initiated a referral to the Child Protection Inter-Agency Committee (CCI) and has opened a case under the Counter-Trafficking Act. The child's safety and wellbeing are at immediate risk, and further action is required to ensure her protection.
+
+Case CPIMS/2505/864 has been opened under Children Act
+
+**CPIMS+ Actions**
+• Case ID: CPIMS/2505/5754
+• Responder: ASAL Protection Unit
+• Intervention: Bursary referral
+• Deadline: 2025-05-06",Immediate protection and psychosocial support,2025-05-06,2025-05-06 21:22:13
+CASE-0007,Unlawful Confinement,"""Call 116/250506/343 at 12:15HRS from bystander reporting 7-year-old Amina (Nairobi) from street families with physical abuse marks. Risk: Immediate. Immediate rescue initiated. Case CPIMS/2505/344 opened under Children Act S.13 (Vulnerability Code P1.1).""
+
+**Explanation**:
+The call details include the call ID, time, reporter, county, and risk level. The child profile includes the child's name, age, sex, and vulnerability. The case details include the category of the case, Childline action, legal basis, and vulnerability code. The current report follows the required format with the necessary information. The child is from the street families, which is a risk factor, and the vulnerability code is P1.1 for
+
+**CPIMS+ Actions**
+• Case ID: CPIMS/2505/4589
+• Responder: NCCG Rapid Response
+• Intervention: Child labor rescue
+• Deadline: 2025-05-06",Community engagement and school reintegration,2025-05-06,2025-05-06 21:22:33
+CASE-0008,Abduction,"""Call 116/250506/226 at 10:00HRS from bystander reporting 7-year-old Peter (Mandera) at risk of early marriage. Risk factor: Early marriage. Immediate action initiated. Case CPIMS/2505/789 opened under Counter-Trafficking Act S.13 (Vulnerability Code E1.3). Counseling provided to Peter.""
+
+**Explanation**:
+The call details include the call ID, the time of the call, the reporter, the county, and the risk factors. The child profile includes the child's name, age, sex, and vulnerability. The case details include the category of the case, the Childline action taken, the legal basis, and any additional information. In this case, the child is at risk of early marriage, so the case is opened
+
+**CPIMS+ Actions**
+• Case ID: CPIMS/2505/3432
+• Responder: ASAL Protection Unit
+• Intervention: Counseling
+• Deadline: 2025-05-06",Immediate protection and psychosocial support,2025-05-06,2025-05-06 21:22:52
+CASE-0009,Child Radicalization,"""Call 116/250506/851 at 17:15HRS from social worker at Kakamega County Children's Office reporting 7-year-old Mary (Kakamega) at high risk due to Female Genital Mutilation (FGM). Immediate action initiated under Counter-Trafficking Act. Case CPIMS/2505/851 opened under Children Act S.13 (Vulnerability Code F2.1). Counseling to be arranged for Mary to address trauma and emotional distress.""
+
+**Explanation**:
+This report details a call to Childline from a social worker at the Kakamega County Children's Office regarding a 7-year-old boy named Mary, who is at high risk due to Female Genital Mutilation (FGM). The call was made at 17:
+
+**CPIMS+ Actions**
+• Case ID: CPIMS/2505/6891
+• Responder: Luhya Child Network
+• Intervention: Child labor rescue
+• Deadline: 2025-05-06",Placement in temporary care and follow-up,2025-05-06,2025-05-06 21:23:12
+CASE-0010,Child Labor,"""Call 116/250506/448 at 10:00HRS from bystander reporting 4-year-old Mary (Nairobi) observed in a market being sexually exploited by a man. Medium risk. Counseling initiated under Counter-Trafficking Act. Case CPIMS/2505/449 opened (Vulnerability Code P2.3).""
+
+**Explanation**:
+This report details a call received by Childline regarding a 4-year-old girl named Mary, who was observed being sexually exploited in a market in Nairobi. The risk level is assessed as medium due to the presence of a bystander who reported the incident. The case is being handled under the Counter-Trafficking Act, and counseling is being initiated for the child. The case details are recorded in the Child
+
+**CPIMS+ Actions**
+• Case ID: CPIMS/2505/9643
+• Responder: NCCG Rapid Response
+• Intervention: ECD referral
+• Deadline: 2025-05-06",Immediate protection and psychosocial support,2025-05-06,2025-05-06 21:23:32

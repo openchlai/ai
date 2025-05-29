@@ -37,6 +37,8 @@ vendor/
 .env.production.local
 *.pem
 .secret*
+translation_env
+
 
 # Log files and caches
 *.log
@@ -87,3 +89,5 @@ htmlcov/
 .stylelintcache
 .temp/
 
+gateway/ai_service/db.sqlite3
+gateway/ai_service/audio/
