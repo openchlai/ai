@@ -1,13 +1,55 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit bootstrap="bootstrap.php" colors="true">
+<phpunit bootstrap="bootstrap.php" 
+         colors="true"
+         stopOnFailure="false"
+         stopOnError="false"
+         verbose="true">
+    
     <testsuites>
-        <testsuite name="Application Test Suite">
+        <testsuite name="REST API Test Suite">
             <directory>./tests/</directory>
         </testsuite>
+        
+        <testsuite name="Basic REST Tests">
+            <file>./tests/RestTest.php</file>
+        </testsuite>
+        
+        <testsuite name="Advanced REST Tests">
+            <file>./tests/RestAdvancedTest.php</file>
+        </testsuite>
+        
+        <testsuite name="Index Tests">
+            <file>./tests/IndexTest.php</file>
+        </testsuite>
+        
+        <testsuite name="Session Tests">
+            <file>./tests/SessionTest.php</file>
+        </testsuite>
     </testsuites>
+    
     <php>
         <const name="PHPUNIT_RUNNING" value="true"/>
         <server name="HTTP_HOST" value="localhost"/>
         <server name="REMOTE_ADDR" value="127.0.0.1"/>
+        <server name="REQUEST_URI" value="/api/"/>
+        <server name="REQUEST_METHOD" value="GET"/>
+        <server name="CONTENT_TYPE" value="application/json"/>
     </php>
+    
+    <!-- Code Coverage Configuration -->
+    <filter>
+        <whitelist>
+            <directory suffix=".php">../lib/</directory>
+            <exclude>
+                <file>../lib/XLSX.php</file>
+                <file>../lib/XLSXbuf.php</file>
+            </exclude>
+        </whitelist>
+    </filter>
+    
+    <!-- Logging Configuration -->
+    <logging>
+        <log type="coverage-html" target="coverage"/>
+        <log type="coverage-text" target="php://stdout" showUncoveredFiles="false"/>
+    </logging>
 </phpunit>
