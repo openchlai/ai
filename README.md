@@ -51,17 +51,45 @@ Configuration files for deployment and scaling:
 ---
 
 ## 📖 Documentation
-
-- 📜 **[Project Charter](PROJECT_CHARTER.md)** – Defines project objectives.
-- 📚 **[Data Pipeline](DATA_PIPELINE.md)** – Overview of data flow and preprocessing.
-- 🏗 **[Architecture](ARCHITECTURE.md)** – Technical structure of the system.
-- 🔐 **[Security Guide](SECURITY.md)** – Security best practices.
-- 📜 **[Governance](GOVERNANCE.md)** – Project management and leadership.
-- 📋 **[Testing Strategy](TESTING_STRATEGY.md)** – Testing approach for AI models.
-- 🚀 **[Deployment Guide](DEPLOYMENT_GUIDE.md)** – Instructions for deploying the system.
-- 🛣 **[Roadmap](ROADMAP.md)** – Planned project enhancements.
+- 📜 **[Project Charter](project_docs/PROJECT_CHARTER.md)** – Defines project objectives.
+- 📚 **[Data Pipeline](project_docs/DATA_PIPELINE.md)** – Overview of data flow and preprocessing.
+- 🏗 **[Architecture](project_docs/ARCHITECTURE.md)** – Technical structure of the system.
+- 🔐 **[Security Guide](project_docs/SECURITY.md)** – Security best practices.
+- 📜 **[Governance](project_docs/GOVERNANCE.md)** – Project management and leadership.
+- 📋 **[Testing Strategy](project_docs/TESTING_STRATEGY.md)** – Testing approach for AI models.
+- 🚀 **[Deployment Guide](project_docs/DEPLOYMENT_GUIDE.md)** – Instructions for deploying the system.
+- 🛣 **[Roadmap](project_docs/ROADMAP.md)** – Planned project enhancements.
+- 📝 **[API Reference](project_docs/API_REFERENCE.md)** – API documentation and endpoints.
+- 🤝 **[Contributing](project_docs/CONTRIBUTING.md)** – Guidelines for contributors.
+- 📋 **[Code Review Checklist](project_docs/CODE_REVIEW_CHECKLIST.md)** – Standards for code reviews.
+- 🔒 **[Privacy Policy](project_docs/PRIVACY_POLICY.md)** – Data privacy and protection policies.
+- 📋 **[Project Scope](project_docs/Project%20Scope%20Document%20-%20OPENCHSAI.md)** – Detailed project scope.
+- 📦 **[Dependencies](project_docs/DEPENDANCIES.md)** – Project dependencies and requirements.
+- 📜 **[Code of Conduct](project_docs/CODE_OF_CONDUCT.md)** – Community guidelines and standards.
 
 ---
+
+
+## ✅ Quality Assurance (QA) Process
+
+This project follows an open-source QA process across all major components:
+
+- **Frontend (Vue 3)**: Tested using `vitest` and `vue/test-utils`.
+- **Backend (PHP)**: Tested using `PHPUnit`.
+- **AI Services (Python)**: Tested using `pytest` and `unittest`.
+- **JS Utilities**: Tested using `mocha` and `chai`.
+
+See [`TESTING_STRATEGY.md`](./TESTING_STRATEGY.md) and [`docs/Unit_Testing_Guide_Vue_Django.md`](./docs/Unit_Testing_Guide_Vue_Django.md) for setup instructions.
+
+Test automation and CI integration is handled via GitHub Actions.
+
+We maintain user stories and test cases in `docs/stakeholders/user_stories/`.
+
+AI and data science decisions are documented in:
+- [`DATA_PIPELINE.md`](./DATA_PIPELINE.md)
+- [`models/`](./models/)
+- [`ai_service/README.md`](./ai_service/README.md)
+
 
 ## 🚀 Getting Started
 
