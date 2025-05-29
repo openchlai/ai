@@ -1,15 +1,33 @@
 {
-  "name": "vitepress-project",
+  "name": "aidocs",
+  "version": "1.0.0",
+  "description": "AI Documentation Site with DevOps Pipeline",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vitepress dev docs",
     "build": "vitepress build docs",
-    "serve": "vitepress serve docs"
+    "serve": "vitepress serve docs",
+    "preview": "vitepress preview docs",
+    "test": "npm run test:build && npm run test:links && npm run test:health",
+    "test:build": "npm run build",
+    "test:links": "node scripts/test-links.js",
+    "test:health": "node scripts/test-health.js",
+    "lint": "echo 'Running markdown linting...' && markdownlint docs/**/*.md || echo 'No markdownlint found, skipping...'",
+    "lint:fix": "markdownlint docs/**/*.md --fix || echo 'No markdownlint found, skipping...'",
+    "docker:build": "docker build -t aidocs:latest .",
+    "docker:run": "docker run -p 8080:80 aidocs:latest",
+    "k8s:deploy": "kubectl apply -f k8s/",
+    "k8s:delete": "kubectl delete -f k8s/",
+    "k8s:restart": "kubectl rollout restart deployment/aidocs-deployment -n aidocs"
   },
   "devDependencies": {
     "vitepress": "1.6.3",
-    "vue": "^3.5.13"
+    "vue": "^3.5.13",
+    "typescript": "^5.0.0"
+  },
+  "optionalDependencies": {
+    "markdownlint-cli": "^0.37.0"
   },
   "pnpm": {
     "peerDependencyRules": {
@@ -17,5 +35,18 @@
         "@algolia/client-search"
       ]
     }
-  }
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "documentation", 
+    "vitepress", 
+    "kubernetes", 
+    "devops", 
+    "ai",
+    "typescript"
+  ],
+  "author": "Phylis Kamau",
+  "license": "MIT"
 }
