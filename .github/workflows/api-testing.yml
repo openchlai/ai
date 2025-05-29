@@ -13,6 +13,8 @@ on:
 
 jobs:
   test:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     name: PHP ${{ matrix.php-version }} Tests
     
@@ -123,6 +125,8 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
     name: Code Coverage Report
+    permissions:
+      contents: read
     
     steps:
     - name: Checkout code
@@ -197,6 +201,9 @@ jobs:
   test-summary:
     runs-on: ubuntu-latest
     name: Test Results Summary
+    permissions:
+      contents: read
+      pull-requests: write
     needs: [test, coverage]
     if: always()
     
@@ -267,6 +274,9 @@ jobs:
   notify-results:
     runs-on: ubuntu-latest
     name: Notify Test Results
+    permissions:
+      contents: read
+      pull-requests: write
     needs: [test, coverage]
     if: always()
     
