@@ -1,0 +1,22 @@
+[
+  {
+    "source": "Jina langu ni Anna.",
+    "reference": "My name is Anna."
+  },
+  {
+    "source": "Ninaishi jijini Dar es Salaam.",
+    "reference": "I live in Dar es Salaam city."
+  },
+  {
+    "source": "Chakula cha mchana kiko tayari.",
+    "reference": "Lunch is ready."
+  },
+  {
+    "source": "Tafadhali nisaidie kwa mzigo wangu.",
+    "reference": "Please help me with my luggage."
+  },
+  {
+    "source": "Hospitali iko mita mia mbili kutoka hapa.",
+    "reference": "The hospital is two hundred meters from here."
+  }
+]

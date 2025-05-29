@@ -1,0 +1,62 @@
+[
+  {
+    "timestamp": "2025-05-06T20:01:24.058399",
+    "column": "resolved ",
+    "counts": {
+      "PERSON": 0,
+      "EMAIL_ADDRESS": 0,
+      "PHONE_NUMBER": 0,
+      "LOCATION": 0,
+      "IP_ADDRESS": 0,
+      "US_SSN": 0,
+      "EMAIL": 0,
+      "PHONE": 17,
+      "SSN": 0
+    }
+  },
+  {
+    "timestamp": "2025-05-06T20:01:37.352561",
+    "column": "resolved ",
+    "counts": {
+      "PERSON": 1,
+      "EMAIL_ADDRESS": 0,
+      "PHONE_NUMBER": 0,
+      "LOCATION": 2,
+      "IP_ADDRESS": 0,
+      "US_SSN": 0,
+      "EMAIL": 0,
+      "PHONE": 17,
+      "SSN": 0
+    }
+  },
+  {
+    "timestamp": "2025-05-06T20:01:50.827716",
+    "column": "resolved ",
+    "counts": {
+      "PERSON": 256,
+      "EMAIL_ADDRESS": 0,
+      "PHONE_NUMBER": 12,
+      "LOCATION": 123,
+      "IP_ADDRESS": 0,
+      "US_SSN": 0,
+      "EMAIL": 0,
+      "PHONE": 19,
+      "SSN": 0
+    }
+  },
+  {
+    "timestamp": "2025-05-06T20:02:04.165606",
+    "column": "resolved ",
+    "counts": {
+      "PERSON": 0,
+      "EMAIL_ADDRESS": 0,
+      "PHONE_NUMBER": 0,
+      "LOCATION": 0,
+      "IP_ADDRESS": 0,
+      "US_SSN": 0,
+      "EMAIL": 0,
+      "PHONE": 17,
+      "SSN": 0
+    }
+  }
+]
