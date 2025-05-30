@@ -91,3 +91,15 @@ htmlcov/
 
 gateway/ai_service/db.sqlite3
 gateway/ai_service/audio/
+
+
+*.mp3
+*.wav
+*.aac
+*.m4a
+*.ogg
+*.flac
+*.wma
+*.aiff
+*.mid
+*.midi
