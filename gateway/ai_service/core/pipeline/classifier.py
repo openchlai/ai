@@ -50,4 +50,3 @@ def classify_case(narrative: str):
 # result = classify_case(narrative)
 # print(f"Predicted: {result['category']} (Confidence: {result['confidence']*100:.1f}%)")
 
-
