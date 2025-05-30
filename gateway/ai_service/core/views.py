@@ -1,3 +1,4 @@
+# views.py
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, parsers
@@ -5,6 +6,7 @@ from .models import AudioFile
 from .serializers import AudioFileSerializer
 from .pipeline import transcription, translation, ner, classifier, summarizer
 from .utils import highlighter
+from .insights import generate_case_insights  # Import the new function
 import logging
 
 logger = logging.getLogger(__name__)
@@ -24,44 +26,32 @@ class AudioUploadView(APIView):
                 audio_instance.transcript = transcript
                 logger.info("Transcription completed successfully")
                 response_data = {"transcript": transcript}
-                Response(response_data, status=status.HTTP_200_OK)
 
-                # Step 2: Translate
-                # logger.info("Starting translation to eng_Latn")
-                # translated = translation.translate(transcript)
-                # audio_instance.translated_text = translated
-                # logger.info("Translation completed successfully")
-                # response_data["translated_text"] = translated
-                # Response(response_data, status=status.HTTP_200_OK)
+                # Step 2: Generate Insights
+                logger.info("Generating case insights")
+                insights = generate_case_insights(transcript)
+                audio_instance.insights = insights  # Assuming you have a JSONField for insights
+                response_data["insights"] = insights
+                logger.info("Insights generation completed")
 
                 # Step 3: NER (flat list for highlighter)
                 logger.info("Starting named entity recognition")
                 entities = ner.extract_entities(transcript, flat=True)
                 logger.info(f"Extracted {len(entities)} entities.")
                 response_data["entities"] = entities
-                Response(response_data, status=status.HTTP_200_OK)
 
                 # Step 4: Classification
                 logger.info("Starting classification")
                 classification = classifier.classify_case(transcript)
                 response_data["classification"] = classification
-                Response(response_data, status=status.HTTP_200_OK)
 
                 # Step 5: Annotate
                 logger.info("Annotating text with entities")
                 annotated = highlighter.highlight_text(transcript, entities)
                 audio_instance.annotated_text = annotated
                 response_data["annotated_text"] = annotated
-                Response(response_data, status=status.HTTP_200_OK)
 
-                # Step 6: Summarize
-                # logger.info("Generating summary")
-                # summary = summarizer.summarize(transcript)
-                # audio_instance.summary = summary
-                # response_data["summary"] = summary
-                # Response(response_data, status=status.HTTP_200_OK)
-
-                # Save enriched fields
+                # Save all enriched fields
                 audio_instance.save()
 
                 response_data["id"] = audio_instance.id
@@ -70,7 +60,12 @@ class AudioUploadView(APIView):
 
             except Exception as e:
                 logger.error(f"Processing failed: {str(e)}")
-                return Response({"error": "Processing failed", "details": str(e)},
-                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                # Clean up the audio file if processing fails
+                audio_instance.audio.delete()
+                audio_instance.delete()
+                return Response(
+                    {"error": "Processing failed", "details": str(e)},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
