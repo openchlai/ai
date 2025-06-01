@@ -6,7 +6,7 @@ from .models import AudioFile
 from .serializers import AudioFileSerializer
 from .pipeline import transcription, translation, ner, classifier, summarizer
 from .utils import highlighter
-from .insights import generate_case_insights  # Import the new function
+from .pipeline.insights import generate_case_insights  # Import the new function
 import logging
 
 logger = logging.getLogger(__name__)
