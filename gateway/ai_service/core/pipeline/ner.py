@@ -7,11 +7,14 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # Load the English spaCy model
+nlp = None
 try:
-    nlp = spacy.load("en_core_web_md")
-    logger.info("Loaded spaCy model: en_core_web_md")
+    nlp = spacy.load("en_core_web_sm")
+    logger.info("Loaded spaCy model: en_core_web_sm")
 except Exception as e:
-    logger.error(f"Failed to load spaCy model: {e}")
+    logger.error("Failed to load spaCy model: en_core_web_md")
+    logger.exception(e)
+    raise RuntimeError("spaCy model not initialized. Please ensure 'en_core_web_md' is installed.") from e
 
 def extract_entities(text: str, flat: bool = False) -> Union[Dict[str, List[str]], List[Dict[str, str]]]:
     """
@@ -24,6 +27,9 @@ def extract_entities(text: str, flat: bool = False) -> Union[Dict[str, List[str]
     Returns:
         Dict[str, List[str]] or List[Dict[str, str]]
     """
+    if nlp is None:
+        raise RuntimeError("spaCy model not initialized")
+        
     try:
         doc = nlp(text)
         entity_dict: Dict[str, List[str]] = {
