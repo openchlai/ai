@@ -73,54 +73,49 @@ def detect_hallucination(text: str, max_repetition_ratio: float = 0.4) -> bool:
     return False
 
 
-def load_whisper_model(model_size: str = "large") -> whisper.Whisper:
+def load_whisper_model(model_size_or_path: str = "large") -> whisper.Whisper:
     """
-    Load Whisper model with proper device detection and error handling.
+    Load a Whisper model from either a predefined size or a custom path.
     
     Args:
-        model_size: Size of the model to load (tiny, base, small, medium, large)
+        model_size_or_path: Predefined model size (e.g., "tiny", "base") or path to custom model
     
     Returns:
         Loaded Whisper model
     """
-    logger.info(f"Attempting to load Whisper model: {model_size}")
-    
-    # Check CUDA availability and memory
     device = "cuda" if torch.cuda.is_available() else "cpu"
     logger.info(f"Using device: {device}")
-    
+
+    # Show GPU memory if available
     if device == "cuda":
         gpu_memory = torch.cuda.get_device_properties(0).total_memory / 1e9
         logger.info(f"GPU memory available: {gpu_memory:.1f} GB")
-        
-        # Recommend model size based on GPU memory
-        if gpu_memory < 4 and model_size in ["large", "large-v2", "large-v3"]:
-            logger.warning(f"GPU has only {gpu_memory:.1f} GB memory. Consider using 'medium' or smaller model.")
-    
+
     try:
-        model = whisper.load_model(model_size, device=device)
-        logger.info(f"Successfully loaded {model_size} model on {device}")
+        # Check if user passed a path instead of a model name
+        if os.path.exists(model_size_or_path):
+            logger.info(f"Loading custom Whisper model from path: {model_size_or_path}")
+            model = whisper.load_model(model_size_or_path, device=device)
+        else:
+            logger.info(f"Loading Whisper model size: {model_size_or_path}")
+            model = whisper.load_model(model_size_or_path, device=device)
+        
+        logger.info(f"Successfully loaded model: {model_size_or_path}")
         return model
     except Exception as e:
         logger.error(f"Failed to load Whisper model: {str(e)}")
-        raise RuntimeError(f"Could not load Whisper model '{model_size}': {str(e)}")
-
-
+        raise RuntimeError(f"Could not load Whisper model '{model_size_or_path}': {str(e)}")
 class WhisperTranscriber:
-    """Enhanced Whisper transcriber with hallucination detection and mitigation."""
-    
     def __init__(self, model_size: str = "large"):
         """
-        Initialize the transcriber with specified model size.
-        
-        Args:
-            model_size: Whisper model size to use
+        Initialize the transcriber with model size or custom model path.
         """
-        logger.info(f"Initializing WhisperTranscriber with model size: {model_size}")
+        logger.info(f"Initializing WhisperTranscriber with model: {model_size}")
         self.model_size = model_size
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.model = None
         self._load_model()
+
 
     def _load_model(self):
         """Load the Whisper model with error handling."""
@@ -379,7 +374,13 @@ def transcribe(audio_path: str, model_size: str = "large", **kwargs) -> str:
         Transcribed text
     """
     logger.info(f"Global transcribe function called for: {audio_path}")
-    transcriber = get_transcriber(model_size)
+    # transcriber = get_transcriber(model_size)
+    transcriber = WhisperTranscriber(model_size="tiny")
+    
+    # If you want to use a local path enable this 
+    # transcriber = WhisperTranscriber(model_size="/models/whisper-tiny.en")
+
+
     return transcriber.transcribe(audio_path, **kwargs)
 
 
