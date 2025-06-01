@@ -1,7 +1,5 @@
-# models.py
 from django.db import models
-from django.contrib.postgres.fields import JSONField  # For Django < 3.1
-# from django.db.models import JSONField  # For Django >= 3.1
+from django.db.models import JSONField
 
 class AudioFile(models.Model):
     audio = models.FileField(upload_to='audio_files/')
