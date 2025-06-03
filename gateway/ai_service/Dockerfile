@@ -16,7 +16,6 @@ RUN apt-get update && apt-get install -y \
 
 # Create group and user matching host chl_ai group
 # IMPORTANT: Replace 1001 with your actual chl_ai group ID
-# Get it with: getent group chl_ai | cut -d: -f3
 RUN groupadd -g 1001 chl_ai && \
     useradd -u 1000 -g chl_ai -m -s /bin/bash dockeruser
 
@@ -60,5 +59,6 @@ ENV PATH="/home/dockeruser/.local/bin:$PATH"
 # Expose port
 EXPOSE 8000
 
-# Run Django app
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Run Django app with Gunicorn
+# Replace 'your_project_name' with the actual project folder name
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers=4", "--threads=2", "--timeout=300", "your_project_name.wsgi:application"]
