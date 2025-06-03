@@ -4,16 +4,42 @@ from typing import Dict, Any
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+from ..pipeline import summarizer, ner, classifier
 
 logger = logging.getLogger(__name__)
 
 def generate_case_insights(transcript: str) -> Dict[str, Any]:
     """
-    Generate trauma-informed case insights from transcript using Mistral model
+    Generate trauma-informed case insights from transcript using summarization and Mistral model.
     """
-    prompt = f"""You are a trauma-informed social worker conducting an expert case analysis. Analyze the following case details and return a comprehensive JSON response with the following structure:
+    # Step 1: Summarize transcript
+    try:
+        summary = summarizer.summarize(transcript)
+    except Exception as e:
+        logger.error(f"Summarization failed: {e}")
+        summary = transcript[:1000]  # fallback: truncate raw transcript
 
-{{ 
+    # Step 2: NER
+    try:
+        entities = ner.extract_entities(transcript)
+    except Exception as e:
+        logger.error(f"NER failed: {e}")
+        entities = {}
+
+    # Step 3: Classification
+    try:
+        case_classification = classifier.classify_case(transcript)
+    except Exception as e:
+        logger.error(f"Classification failed: {e}")
+        case_classification = {
+            "category": [],
+            "interventions_needed": [],
+            "priority_level": "medium"
+        }
+
+    prompt = f"""You are a trauma-informed social worker conducting an expert case analysis. Analyze the following case summary and entities to generate a comprehensive JSON response with the following structure:
+
+{{
   "case_summary": "Brief 2-3 sentence overview of the case",
   "named_entities": {{
     "persons": [],
@@ -54,36 +80,16 @@ def generate_case_insights(transcript: str) -> Dict[str, Any]:
   "cultural_considerations": []
 }}
 
-Available categories for classification:
-- Labor exploitation
-- Wage theft
-- Workplace abuse
-- Human trafficking
-- Psychological distress
-- Housing insecurity
-- Legal aid needed
-- Medical attention needed
+Case Summary:
+{summary}
 
-Instructions:
-1. Extract ALL named entities (people, organizations, locations, dates, contact info)
-2. Classify the case by category, required interventions, and priority level
-3. Provide detailed safety planning measures
-4. Specify psychosocial support needs with timeframes
-5. List all applicable legal protocols and required documents
-6. Outline medical protocols based on survivor needs
-7. Conduct thorough risk assessment including protective factors
-8. Highlight cultural considerations for service delivery
+Named Entities:
+{json.dumps(entities, indent=2)}
 
-Case Details:
-{transcript}
+Classification:
+{json.dumps(case_classification, indent=2)}
 
-Response Requirements:
-- Be specific, culturally sensitive, and trauma-informed
-- Focus on survivor autonomy and empowerment
-- Reference Tanzanian context where applicable
-- Provide actionable recommendations
-- Use clear, concise language
-- Return ONLY valid JSON (no commentary)
+Context: Respond with JSON only. Avoid additional explanations.
 """
 
     session = requests.Session()
@@ -98,7 +104,7 @@ Response Requirements:
                 'prompt': prompt,
                 'stream': False
             },
-            timeout=60  # Increased from 30 to 60 seconds
+            timeout=60
         )
         response.raise_for_status()
 
@@ -108,12 +114,13 @@ Response Requirements:
             logger.error(f"Invalid response format: {data}")
             raise ValueError("Missing 'response' key in model output")
 
-        # Attempt to parse JSON content
+        # Clean and validate JSON
         try:
             insights = json.loads(data['response'])
-        except json.JSONDecodeError as je:
-            logger.error(f"Model output is not valid JSON: {data['response']}")
-            raise ValueError("Model output is not valid JSON")
+        except json.JSONDecodeError:
+            logger.warning("Trying to sanitize invalid JSON from model...")
+            fixed_response = data['response'].strip().split("```json")[-1].split("```")[0].strip()
+            insights = json.loads(fixed_response)
 
         return insights
 
