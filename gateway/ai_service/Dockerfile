@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     ffmpeg \
     libsndfile1 \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
 # Create group and user matching host chl_ai group
@@ -36,8 +37,8 @@ RUN chown dockeruser:chl_ai /app
 COPY requirements.txt .
 RUN pip install --default-timeout=100 -r requirements.txt
 
-# Download spaCy language model
-RUN python -m spacy download en_core_web_sm
+# Download spaCy medium language model (larger and better than sm)
+RUN python -m spacy download en_core_web_md
 
 # Copy the rest of the project files
 COPY . .
@@ -61,4 +62,4 @@ EXPOSE 8000
 
 # Run Django app with Gunicorn
 # Replace 'your_project_name' with the actual project folder name
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers=4", "--threads=2", "--timeout=300", "your_project_name.wsgi:application"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers=4", "--threads=2", "--timeout=300", "ai_service.wsgi:application"]
