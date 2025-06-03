@@ -14,7 +14,7 @@ services:
                --workers=4
                --threads=2
                --timeout=300
-               your_project_name.wsgi:application
+               ai_service.wsgi:application
     ports:
       - "8000:8000"
     volumes:
