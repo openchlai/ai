@@ -1,4 +1,3 @@
-# views.py
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, parsers
@@ -8,6 +7,7 @@ from .pipeline import transcription, translation, ner, classifier, summarizer
 from .utils import highlighter
 from .pipeline.insights import generate_case_insights  # Import the new function
 import logging
+import traceback
 
 logger = logging.getLogger(__name__)
 
@@ -59,12 +59,17 @@ class AudioUploadView(APIView):
                 return Response(response_data, status=status.HTTP_201_CREATED)
 
             except Exception as e:
-                logger.error(f"Processing failed: {str(e)}")
+                error_details = {
+                    'error_type': type(e).__name__,
+                    'error_message': str(e),
+                    'traceback': traceback.format_exc()
+                }
+                logger.error(f"Processing failed: {error_details}")
                 # Clean up the audio file if processing fails
                 audio_instance.audio.delete()
                 audio_instance.delete()
                 return Response(
-                    {"error": "Processing failed", "details": str(e)},
+                    {"error": "Processing failed", "details": error_details},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
 

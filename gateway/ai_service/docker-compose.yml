@@ -3,18 +3,25 @@ version: '3.9'
 services:
   web:
     build: .
+    runtime: nvidia  # Important for older setups; harmless if unused
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     command: python manage.py runserver 0.0.0.0:8000
     ports:
       - "8000:8000"
     volumes:
       - .:/app
-      # Mount the new shared directory instead of bitz home
       - /opt/chl_ai/models:/opt/chl_ai/models
-      # Keep backward compatibility during transition
       - /home/bitz/ai_models:/home/bitz/ai_models
     environment:
       - PYTHONUNBUFFERED=1
-      # Add environment variable pointing to new models location
       - CHL_AI_MODELS=/workspace/models
       - CHL_AI_DATA=/workspace/data
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     working_dir: /app

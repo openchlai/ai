@@ -375,7 +375,7 @@ def transcribe(audio_path: str, model_size: str = "large", **kwargs) -> str:
     """
     logger.info(f"Global transcribe function called for: {audio_path}")
     # transcriber = get_transcriber(model_size)
-    transcriber = WhisperTranscriber(model_size="tiny")
+    transcriber = WhisperTranscriber(model_size="large")
     
     # If you want to use a local path enable this 
     # transcriber = WhisperTranscriber(model_size="/models/whisper-tiny.en")
