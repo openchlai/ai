@@ -2,31 +2,19 @@ version: '3.9'
 
 services:
   web:
-<<<<<<< HEAD
-    build: .
-    runtime: nvidia  # Important for older setups; harmless if unused
-=======
     build:
       context: .
->>>>>>> 3413d342664c5d861a89271090776e544e138f62
     deploy:
       resources:
         reservations:
           devices:
-<<<<<<< HEAD
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-    command: python manage.py runserver 0.0.0.0:8000
-=======
             - capabilities: [gpu]
     command: >
       gunicorn --bind 0.0.0.0:8000
                --workers=4
                --threads=2
                --timeout=300
-               your_project_name.wsgi:application
->>>>>>> 3413d342664c5d861a89271090776e544e138f62
+               ai_service.wsgi:application
     ports:
       - "8000:8000"
     volumes:
@@ -34,14 +22,6 @@ services:
       - /opt/chl_ai/models:/opt/chl_ai/models
       - /home/bitz/ai_models:/home/bitz/ai_models
     environment:
-<<<<<<< HEAD
-      - PYTHONUNBUFFERED=1
-      - CHL_AI_MODELS=/workspace/models
-      - CHL_AI_DATA=/workspace/data
-      - NVIDIA_VISIBLE_DEVICES=all
-      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
-    working_dir: /app
-=======
       PYTHONUNBUFFERED: 1
       CHL_AI_MODELS: /workspace/models
       CHL_AI_DATA: /workspace/data
@@ -54,4 +34,4 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
->>>>>>> 3413d342664c5d861a89271090776e544e138f62
+
