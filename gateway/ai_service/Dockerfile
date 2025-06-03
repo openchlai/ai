@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     ffmpeg \
     libsndfile1 \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
 # Create group and user matching host chl_ai group
@@ -36,8 +37,8 @@ RUN chown dockeruser:chl_ai /app
 COPY requirements.txt .
 RUN pip install --default-timeout=100 -r requirements.txt
 
-# Download spaCy language model
-RUN python -m spacy download en_core_web_sm
+# Download spaCy medium language model (larger and better than sm)
+RUN python -m spacy download en_core_web_md
 
 # Copy the rest of the project files
 COPY . .
