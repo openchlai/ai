@@ -4,12 +4,17 @@ import torch
 import re
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 model_path = "/opt/chl_ai/models/ai_models/CLASSIFICATION/case_classifier_model/"
 #model_path = "/Users/mac/MODELS/"
 =======
 # model_path = "/opt/chl_ai/models/ai_models/CLASSIFICATION/case_classifier_model/"
 model_path = "/Users/mac/MODELS/"
 >>>>>>> 4bbee45cd1985a92b1118d195a66d44b4fc2c959
+=======
+model_path = "/opt/chl_ai/models/ai_models/CLASSIFICATION/case_classifier_model/"
+# model_path = "/Users/mac/MODELS/"
+>>>>>>> 230195f6c8604346c871661362df240242a2a724
 
 # Load components(model, tokenizer)
 model = AutoModelForSequenceClassification.from_pretrained(model_path)
