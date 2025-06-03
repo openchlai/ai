@@ -86,8 +86,7 @@ class AudioUploadView(APIView):
                 audio_instance.delete()
                 yield json.dumps({"error": "Processing failed", "details": error_details}) + "\n"
 
-<<<<<<< HEAD
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-=======
         return StreamingHttpResponse(process_and_stream(), content_type="application/json")
->>>>>>> 4bbee45cd1985a92b1118d195a66d44b4fc2c959
+
