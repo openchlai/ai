@@ -61,4 +61,4 @@ EXPOSE 8000
 
 # Run Django app with Gunicorn
 # Replace 'your_project_name' with the actual project folder name
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers=4", "--threads=2", "--timeout=300", "your_project_name.wsgi:application"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers=4", "--threads=2", "--timeout=300", "ai_service.wsgi:application"]
