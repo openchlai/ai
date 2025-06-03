@@ -1,11 +1,13 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, parsers
+from django.http import StreamingHttpResponse
 from .models import AudioFile
 from .serializers import AudioFileSerializer
 from .pipeline import transcription, translation, ner, classifier, summarizer
 from .utils import highlighter
-from .pipeline.insights import generate_case_insights  # Import the new function
+from .pipeline.insights import generate_case_insights
+import json
 import logging
 import traceback
 
@@ -16,47 +18,62 @@ class AudioUploadView(APIView):
 
     def post(self, request, format=None):
         serializer = AudioFileSerializer(data=request.data)
-        if serializer.is_valid():
-            audio_instance = serializer.save()
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        audio_instance = serializer.save()
+
+        def process_and_stream():
+            response_data = {"id": audio_instance.id}
 
             try:
                 # Step 1: Transcribe
-                logger.info(f"Starting transcription of {audio_instance.audio.path}")
+                logger.info(f"Transcribing audio: {audio_instance.audio.path}")
                 transcript = transcription.transcribe(audio_instance.audio.path)
                 audio_instance.transcript = transcript
-                logger.info("Transcription completed successfully")
-                response_data = {"transcript": transcript}
+                response_data["transcript"] = transcript
+                yield json.dumps({"step": "transcription", "data": response_data}) + "\n"
 
-                # Step 2: Generate Insights
-                logger.info("Generating case insights")
-                insights = generate_case_insights(transcript)
-                audio_instance.insights = insights  # Assuming you have a JSONField for insights
+                # Step 2: Translate
+                logger.info("Translating transcript")
+                translated_transcript = translation.translate(transcript)
+                response_data["translated_transcript"] = translated_transcript
+                yield json.dumps({"step": "translation", "data": response_data}) + "\n"
+
+                # Step 3: Summarize
+                logger.info("Summarizing translated transcript")
+                summary = summarizer.summarize(translated_transcript)
+                response_data["summary"] = summary
+                yield json.dumps({"step": "summarization", "data": response_data}) + "\n"
+
+                # Step 4: NER on summary
+                logger.info("Extracting named entities from summary")
+                summary_entities = ner.extract_entities(summary, flat=True)
+                response_data["summary_entities"] = summary_entities
+                yield json.dumps({"step": "ner", "data": response_data}) + "\n"
+
+                # Step 5: Classification on summary
+                logger.info("Classifying summarized case")
+                summary_classification = classifier.classify_case(summary)
+                response_data["summary_classification"] = summary_classification
+                yield json.dumps({"step": "classification", "data": response_data}) + "\n"
+
+                # Step 6: Generate Insights using summary
+                logger.info("Generating insights from summary")
+                insights = generate_case_insights(summary)
+                audio_instance.insights = insights
                 response_data["insights"] = insights
-                logger.info("Insights generation completed")
+                yield json.dumps({"step": "insights", "data": response_data}) + "\n"
 
-                # Step 3: NER (flat list for highlighter)
-                logger.info("Starting named entity recognition")
-                entities = ner.extract_entities(transcript, flat=True)
-                logger.info(f"Extracted {len(entities)} entities.")
-                response_data["entities"] = entities
-
-                # Step 4: Classification
-                logger.info("Starting classification")
-                classification = classifier.classify_case(transcript)
-                response_data["classification"] = classification
-
-                # Step 5: Annotate
-                logger.info("Annotating text with entities")
-                annotated = highlighter.highlight_text(transcript, entities)
+                # Step 7: Highlight transcript using summary entities
+                logger.info("Highlighting original transcript")
+                annotated = highlighter.highlight_text(transcript, summary_entities)
                 audio_instance.annotated_text = annotated
                 response_data["annotated_text"] = annotated
+                yield json.dumps({"step": "highlighting", "data": response_data}) + "\n"
 
-                # Save all enriched fields
+                # Save enriched data
                 audio_instance.save()
-
-                response_data["id"] = audio_instance.id
-
-                return Response(response_data, status=status.HTTP_201_CREATED)
 
             except Exception as e:
                 error_details = {
@@ -65,12 +82,8 @@ class AudioUploadView(APIView):
                     'traceback': traceback.format_exc()
                 }
                 logger.error(f"Processing failed: {error_details}")
-                # Clean up the audio file if processing fails
                 audio_instance.audio.delete()
                 audio_instance.delete()
-                return Response(
-                    {"error": "Processing failed", "details": error_details},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
+                yield json.dumps({"error": "Processing failed", "details": error_details}) + "\n"
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return StreamingHttpResponse(process_and_stream(), content_type="application/json")
