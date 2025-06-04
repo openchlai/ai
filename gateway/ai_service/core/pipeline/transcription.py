@@ -72,7 +72,6 @@ def detect_hallucination(text: str, max_repetition_ratio: float = 0.4) -> bool:
     
     return False
 
-
 def load_whisper_model(model_size_or_path: str = "large") -> whisper.Whisper:
     """
     Load a Whisper model from either a predefined size or a custom path.
@@ -105,6 +104,7 @@ def load_whisper_model(model_size_or_path: str = "large") -> whisper.Whisper:
     except Exception as e:
         logger.error(f"Failed to load Whisper model: {str(e)}")
         raise RuntimeError(f"Could not load Whisper model '{model_size_or_path}': {str(e)}")
+
 class WhisperTranscriber:
     def __init__(self, model_size: str = "large"):
         """
@@ -115,7 +115,6 @@ class WhisperTranscriber:
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.model = None
         self._load_model()
-
 
     def _load_model(self):
         """Load the Whisper model with error handling."""
@@ -170,15 +169,13 @@ class WhisperTranscriber:
             'fp16': self.device == "cuda",
             'verbose': False,
             'word_timestamps': False,
-            'condition_on_previous_text': False,  # Important: prevents context carryover
-            'compression_ratio_threshold': 2.0,   # Detect low-quality audio
-            'logprob_threshold': -1.0,            # Filter low-confidence segments
-            'no_speech_threshold': 0.6,           # Better silence detection
+            'condition_on_previous_text': False,
+            'compression_ratio_threshold': 2.0,
+            'logprob_threshold': -1.0,
+            'no_speech_threshold': 0.6,
         }
         
-        # Progressive parameter adjustment for retries
         if attempt == 0:
-            # First attempt: Conservative settings
             params = {
                 **base_params,
                 'temperature': 0.0,
@@ -186,23 +183,21 @@ class WhisperTranscriber:
                 'beam_size': 1,
             }
         elif attempt == 1:
-            # Second attempt: More conservative
             params = {
                 **base_params,
-                'temperature': [0.0, 0.2],  # Multiple temperatures
+                'temperature': [0.0, 0.2],
                 'best_of': 3,
                 'beam_size': 5,
-                'patience': 2.0,            # More patient decoding
+                'patience': 2.0,
             }
         else:
-            # Third attempt: Most conservative
             params = {
                 **base_params,
                 'temperature': [0.0, 0.2, 0.4, 0.6, 0.8],
                 'best_of': 5,
                 'beam_size': 5,
                 'patience': 2.0,
-                'length_penalty': 1.0,     # Prefer appropriate length
+                'length_penalty': 1.0,
             }
         
         logger.info(f"Attempt {attempt + 1} parameters: {params}")
@@ -215,116 +210,74 @@ class WhisperTranscriber:
         Args:
             audio_path: Path to audio file
             max_retries: Maximum number of retry attempts
-            detect_language: Whether to auto-detect language (helps with multilingual audio)
+            detect_language: Whether to auto-detect language
             **kwargs: Additional parameters for whisper.transcribe()
             
         Returns:
             Transcribed text
-            
-        Raises:
-            FileNotFoundError: If audio file doesn't exist
-            RuntimeError: If transcription fails after all retries
         """
         logger.info(f"Starting transcription of: {audio_path}")
         
         try:
-            # Validate input
             validated_path = self._validate_audio_path(audio_path)
             
-            # Check if model is loaded
             if self.model is None:
                 logger.error("Model not loaded. Attempting to reload...")
                 self._load_model()
             
             best_result = None
-            best_score = float('inf')  # Lower is better (hallucination score)
+            best_score = float('inf')
             
             for attempt in range(max_retries):
                 logger.info(f"Transcription attempt {attempt + 1}/{max_retries}")
                 
                 try:
-                    # Get anti-hallucination parameters
                     transcribe_params = self._get_anti_hallucination_params(attempt)
-                    
-                    # Add language detection if enabled
-                    if detect_language and 'language' not in kwargs:
-                        # Let Whisper auto-detect language
-                        pass  # language=None is default
-                    
-                    # Override with user parameters
                     transcribe_params.update(kwargs)
                     
-                    logger.info("Beginning transcription...")
-                    
-                    # Perform transcription
                     result = self.model.transcribe(str(validated_path), **transcribe_params)
-                    
-                    # Extract and analyze text
                     transcribed_text = result["text"].strip()
                     detected_language = result.get("language", "unknown")
                     
-                    logger.info(f"Attempt {attempt + 1} completed")
                     logger.info(f"Detected language: {detected_language}")
                     logger.info(f"Text length: {len(transcribed_text)} characters")
                     
-                    # Check for hallucinations
-                    if detect_hallucination(transcribed_text):
-                        logger.warning(f"Attempt {attempt + 1}: Hallucination detected")
+                    if not detect_hallucination(transcribed_text):
+                        logger.info("Transcription completed successfully without hallucinations")
+                        return transcribed_text
+                    
+                    logger.warning(f"Attempt {attempt + 1}: Hallucination detected")
+                    sentences = re.split(r'[.!?]+', transcribed_text.lower())
+                    sentences = [s.strip() for s in sentences if s.strip()]
+                    
+                    if sentences:
+                        sentence_counts = {}
+                        for sentence in sentences:
+                            sentence_counts[sentence] = sentence_counts.get(sentence, 0) + 1
+                        max_repetitions = max(sentence_counts.values())
+                        hallucination_score = max_repetitions / len(sentences)
                         
-                        # Score this attempt (higher repetition = higher score)
-                        sentences = re.split(r'[.!?]+', transcribed_text.lower())
-                        sentences = [s.strip() for s in sentences if s.strip()]
-                        if sentences:
-                            sentence_counts = {}
-                            for sentence in sentences:
-                                sentence_counts[sentence] = sentence_counts.get(sentence, 0) + 1
-                            max_repetitions = max(sentence_counts.values())
-                            hallucination_score = max_repetitions / len(sentences)
-                        else:
-                            hallucination_score = 1.0
-                        
-                        # Keep track of best attempt so far
                         if hallucination_score < best_score:
                             best_score = hallucination_score
                             best_result = transcribed_text
-                        
-                        if attempt < max_retries - 1:
-                            logger.info(f"Retrying with different parameters...")
-                            continue
-                        else:
-                            logger.warning("All retry attempts completed. Using best result.")
-                            if best_result is not None:
-                                return best_result
-                            else:
-                                return transcribed_text  # Return last attempt if no best result
-                    else:
-                        # Good transcription, return it
-                        logger.info("Transcription completed successfully without hallucinations")
-                        logger.debug(f"Text preview: {transcribed_text[:200]}...")
-                        return transcribed_text
-                        
+                    
+                    if attempt == max_retries - 1:
+                        return best_result if best_result is not None else transcribed_text
+                    
                 except torch.cuda.OutOfMemoryError as e:
                     logger.error(f"GPU out of memory during attempt {attempt + 1}: {str(e)}")
                     if attempt < max_retries - 1:
-                        logger.info("Clearing GPU cache and retrying...")
                         torch.cuda.empty_cache()
                         continue
-                    else:
-                        raise RuntimeError("GPU out of memory. Try using a smaller model or CPU.")
-                        
+                    raise RuntimeError("GPU out of memory. Try using a smaller model or CPU.")
+                    
                 except Exception as e:
                     logger.error(f"Attempt {attempt + 1} failed: {str(e)}")
-                    if attempt < max_retries - 1:
-                        continue
-                    else:
+                    if attempt == max_retries - 1:
                         raise
             
-            # Should not reach here, but just in case
             raise RuntimeError("All transcription attempts failed")
             
-        except FileNotFoundError as e:
-            logger.error(f"File error: {str(e)}")
-            raise
         except Exception as e:
             logger.error(f"Transcription failed: {str(e)}", exc_info=True)
             raise RuntimeError(f"Transcription failed: {str(e)}")
@@ -337,33 +290,9 @@ class WhisperTranscriber:
             'model_loaded': self.model is not None
         }
 
-
-# Global transcriber instance
-_global_transcriber: Optional[WhisperTranscriber] = None
-
-
-def get_transcriber(model_size: str = "large") -> WhisperTranscriber:
+def transcribe_audio(audio_path: str, model_size: str = "large", **kwargs) -> str:
     """
-    Get or create a global transcriber instance.
-    
-    Args:
-        model_size: Model size to use if creating new instance
-        
-    Returns:
-        WhisperTranscriber instance
-    """
-    global _global_transcriber
-    
-    if _global_transcriber is None or _global_transcriber.model_size != model_size:
-        logger.info(f"Creating new global transcriber with model size: {model_size}")
-        _global_transcriber = WhisperTranscriber(model_size)
-    
-    return _global_transcriber
-
-
-def transcribe(audio_path: str, model_size: str = "large", **kwargs) -> str:
-    """
-    Global function to transcribe audio with automatic hallucination mitigation.
+    Transcribe audio with automatic hallucination mitigation.
     
     Args:
         audio_path: Path to audio file
@@ -373,14 +302,6 @@ def transcribe(audio_path: str, model_size: str = "large", **kwargs) -> str:
     Returns:
         Transcribed text
     """
-    logger.info(f"Global transcribe function called for: {audio_path}")
-    # transcriber = get_transcriber(model_size)
+    logger.info(f"Transcribing audio: {audio_path}")
     transcriber = WhisperTranscriber(model_size="tiny")
-    
-    # If you want to use a local path enable this 
-    # transcriber = WhisperTranscriber(model_size="/models/whisper-tiny.en")
-
-
     return transcriber.transcribe(audio_path, **kwargs)
-
-
