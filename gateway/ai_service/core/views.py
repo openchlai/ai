@@ -34,15 +34,15 @@ class AudioUploadView(APIView):
                 response_data["transcript"] = transcript
                 yield json.dumps({"step": "transcription", "data": response_data}) + "\n"
 
-                # Step 2: Translate
-                logger.info("Translating transcript")
-                translated_transcript = translation.translate(transcript)
-                response_data["translated_transcript"] = translated_transcript
-                yield json.dumps({"step": "translation", "data": response_data}) + "\n"
+                # # Step 2: Translate
+                # logger.info("Translating transcript")
+                # translated_transcript = translation.translate(transcript)
+                # response_data["translated_transcript"] = translated_transcript
+                # yield json.dumps({"step": "translation", "data": response_data}) + "\n"
 
                 # Step 3: Summarize
                 logger.info("Summarizing translated transcript")
-                summary = summarizer.summarize(translated_transcript)
+                summary = summarizer.summarize(transcript)
                 response_data["summary"] = summary
                 yield json.dumps({"step": "summarization", "data": response_data}) + "\n"
 

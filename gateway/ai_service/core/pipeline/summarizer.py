@@ -12,12 +12,11 @@ MODEL_NAME = os.getenv("SUMMARIZER_MODEL", "facebook/bart-large-cnn")
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
 
-# Define summarizer pipeline
+# Define summarizer pipeline (no device argument — let accelerate handle it)
 summarizer = pipeline(
     "summarization",
     model=model,
-    tokenizer=tokenizer,
-    device=0 if torch.cuda.is_available() else -1,
+    tokenizer=tokenizer
 )
 
 def chunk_text(text, max_token_length=1024):
