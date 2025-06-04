@@ -11,7 +11,7 @@ services:
             - capabilities: [gpu]
     command: >
       gunicorn --bind 0.0.0.0:8000
-               --workers=4
+               --workers=1
                --threads=2
                --timeout=300
                ai_service.wsgi:application
