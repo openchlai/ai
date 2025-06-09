@@ -34,20 +34,7 @@ murmurhash==1.0.13
 networkx==3.4.2
 numba==0.61.2
 numpy==2.2.6
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+gunicorn==23.2.1
 # nvidia-cublas-cu12==12.6.4.1
 # nvidia-cuda-cupti-cu12==12.6.80
 # nvidia-cuda-nvrtc-cu12==12.6.77
