@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const http = require('http');
+import http from 'http';
 
 /**
  * Health check test for containerized application
