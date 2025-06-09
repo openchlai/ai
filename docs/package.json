@@ -13,6 +13,9 @@
     "test:build": "npm run build",
     "test:links": "node scripts/test-links.js",
     "test:health": "node scripts/test-health.js",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
+    "test:unit:coverage": "vitest run --coverage",
     "lint": "echo 'Running markdown linting...' && markdownlint docs/**/*.md || echo 'No markdownlint found, skipping...'",
     "lint:fix": "markdownlint docs/**/*.md --fix || echo 'No markdownlint found, skipping...'",
     "docker:build": "docker build -t aidocs:latest .",
@@ -22,9 +25,17 @@
     "k8s:restart": "kubectl rollout restart deployment/aidocs-deployment -n aidocs"
   },
   "devDependencies": {
-    "vitepress": "1.6.3",
-    "vue": "^3.5.13",
-    "typescript": "^5.0.0"
+    "@testing-library/jest-dom": "^6.6.3",
+    "@types/node": "^22.15.29",
+    "@vitejs/plugin-vue": "^5.2.4",
+    "@vitest/coverage-v8": "^3.2.1",
+    "@vitest/ui": "^3.2.1",
+    "@vue/test-utils": "^2.4.6",
+    "jsdom": "^26.1.0",
+    "typescript": "^5.8.3",
+    "vitepress": "^1.6.3",
+    "vitest": "^3.2.1",
+    "vue": "^3.5.16"
   },
   "optionalDependencies": {
     "markdownlint-cli": "^0.37.0"
@@ -40,10 +51,10 @@
     "node": ">=18.0.0"
   },
   "keywords": [
-    "documentation", 
-    "vitepress", 
-    "kubernetes", 
-    "devops", 
+    "documentation",
+    "vitepress",
+    "kubernetes",
+    "devops",
     "ai",
     "typescript"
   ],
