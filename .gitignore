@@ -103,3 +103,4 @@ gateway/ai_service/audio/
 *.aiff
 *.mid
 *.midi
+gateway/ai_service/db.sqlite3
