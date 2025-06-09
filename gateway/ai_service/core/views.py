@@ -25,7 +25,6 @@ class AudioUploadView(APIView):
 
         def process_and_stream():
             response_data = {"id": audio_instance.id}
-
             try:
                 # Step 1: Transcribe
                 logger.info(f"Transcribing audio: {audio_instance.audio.path}")
@@ -86,7 +85,7 @@ class AudioUploadView(APIView):
                 audio_instance.delete()
                 yield json.dumps({"error": "Processing failed", "details": error_details}) + "\n"
 
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        return StreamingHttpResponse(process_and_stream(), content_type="application/json")
-
+        return StreamingHttpResponse(
+            process_and_stream(),
+            content_type="application/json"
+        )

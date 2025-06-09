@@ -5,14 +5,13 @@ import torch
 
 warnings.filterwarnings("ignore", category=UserWarning, message=".*has_mps.*")
 
-# Use a more powerful base model for future fine-tuning
 MODEL_NAME = os.getenv("SUMMARIZER_MODEL", "facebook/bart-large-cnn")
 
-# Load model and tokenizer
+# Load tokenizer and model without specifying device
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
 
-# Define summarizer pipeline (no device argument — let accelerate handle it)
+# Create summarizer pipeline (no device argument)
 summarizer = pipeline(
     "summarization",
     model=model,
@@ -20,7 +19,7 @@ summarizer = pipeline(
 )
 
 def chunk_text(text, max_token_length=1024):
-    """Split long text into smaller chunks for summarization."""
+    """Split long text into smaller token-length chunks for summarization."""
     inputs = tokenizer(text, return_tensors="pt", truncation=False)
     input_ids = inputs["input_ids"][0]
     chunks = []
@@ -33,7 +32,10 @@ def chunk_text(text, max_token_length=1024):
     return chunks
 
 def summarize(text, max_chunk_tokens=1024, min_length=30, max_length=150):
-    """Summarize text, chunking it if needed."""
+    """Safely summarize text with optional chunking and fallback error handling."""
+    if not isinstance(text, str) or not text.strip():
+        raise ValueError("Input must be a non-empty string.")
+
     try:
         chunks = chunk_text(text, max_chunk_tokens)
         summaries = []
@@ -49,5 +51,23 @@ def summarize(text, max_chunk_tokens=1024, min_length=30, max_length=150):
 
         return " ".join(summaries)
 
-    except Exception as e:
+    except RuntimeError as e:
+        if "CUDA error: device-side assert triggered" in str(e):
+            # Retry on CPU if CUDA failed (rebuild pipeline without device param)
+            cpu_summarizer = pipeline(
+                "summarization",
+                model=model.cpu(),
+                tokenizer=tokenizer
+            )
+            summaries = []
+            for chunk in chunks:
+                summary = cpu_summarizer(
+                    chunk,
+                    max_length=max_length,
+                    min_length=min_length,
+                    do_sample=False
+                )
+                summaries.append(summary[0]['summary_text'])
+            return " ".join(summaries)
+
         raise RuntimeError(f"Summarization failed: {str(e)}")

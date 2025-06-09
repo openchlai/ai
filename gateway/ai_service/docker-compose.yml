@@ -21,6 +21,7 @@ services:
       - .:/app
       - /opt/chl_ai/models:/opt/chl_ai/models
       - /home/bitz/ai_models:/home/bitz/ai_models
+      - /opt/chl_ai/models/whisper/large-v3.pt:/home/dockeruser/.cache/whisper/large-v3.pt
     environment:
       PYTHONUNBUFFERED: 1
       CHL_AI_MODELS: /workspace/models
