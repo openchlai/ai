@@ -26,16 +26,36 @@ def generate_case_insights(transcript: str) -> Dict[str, Any]:
         logger.error(f"NER failed: {e}")
         entities = {}
 
+
     # Step 3: Classification
     try:
         case_classification = classifier.classify_case(transcript)
     except Exception as e:
         logger.error(f"Classification failed: {e}")
+        #  sensible defaults so the rest of the code doesn't break
         case_classification = {
-            "category": [],
-            "interventions_needed": [],
-            "priority_level": "medium"
+            "main_category": "Unknown",
+            "sub_category": "Unknown",
+            "intervention": "None",
+            "priority": "Low"
         }
+
+    case_classification_dict = (
+        case_classification.to_dict()
+        if hasattr(case_classification, "to_dict")
+        else case_classification  
+    )
+    category = case_classification_dict["main_category"]
+    sub_category = case_classification_dict["sub_category"]
+    intervention = case_classification_dict["intervention"]
+    priority = case_classification_dict["priority"]
+
+    case_classification = {
+        "category": [category, sub_category],
+        "interventions_needed": [intervention],
+        "priority_level": priority
+    }
+
 
     prompt = f"""You are a trauma-informed social worker conducting an expert case analysis. Analyze the following case summary and entities to generate a comprehensive JSON response with the following structure:
 
@@ -49,9 +69,9 @@ def generate_case_insights(transcript: str) -> Dict[str, Any]:
     "contact_information": []
   }},
   "classification": {{
-    "category": ["Select applicable categories"],
-    "interventions_needed": ["List required interventions"],
-    "priority_level": "high/medium/low"
+    "category": {category, sub_category},
+    "interventions_needed": {intervention},
+    "priority_level": "{priority}"
   }},
   "case_management": {{
     "safety_planning": {{
