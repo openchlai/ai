@@ -44,6 +44,10 @@ jobs:
       working-directory: ./docs
       run: npm run test:unit:coverage
       
+    - name: Build documentation (required for link testing)
+      working-directory: ./docs
+      run: npm run build
+      
     - name: Run link validation
       working-directory: ./docs
       run: npm run test:links
@@ -173,6 +177,17 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: docs/package-lock.json
+        
+    - name: Install dependencies
+      working-directory: ./docs
+      run: npm ci
+        
     - name: Run npm audit
       working-directory: ./docs
       run: npm audit --audit-level=high
