@@ -3,7 +3,8 @@
          colors="true"
          stopOnFailure="false"
          stopOnError="false"
-         verbose="true">
+         verbose="true"
+         cacheResultFile=".phpunit.result.cache">
     
     <testsuites>
         <testsuite name="REST API Test Suite">
@@ -11,7 +12,7 @@
         </testsuite>
         
         <testsuite name="Basic REST Tests">
-            <file>./tests/RestTest.php</file>
+            <file>./tests/RestTestClean.php</file>
         </testsuite>
         
         <testsuite name="Advanced REST Tests">
@@ -36,20 +37,31 @@
         <server name="CONTENT_TYPE" value="application/json"/>
     </php>
     
-    <!-- Code Coverage Configuration -->
-    <filter>
-        <whitelist>
+    <!-- Modern Code Coverage Configuration for PHPUnit 9.6+ -->
+    <coverage cacheDirectory=".phpunit.cache/code-coverage"
+              processUncoveredFiles="true">
+        <include>
+            <directory suffix=".php">.</directory>
             <directory suffix=".php">../lib/</directory>
-            <exclude>
-                <file>../lib/XLSX.php</file>
-                <file>../lib/XLSXbuf.php</file>
-            </exclude>
-        </whitelist>
-    </filter>
+        </include>
+        <exclude>
+            <directory>vendor</directory>
+            <directory>tests</directory>
+            <directory>test_data</directory>
+            <file>bootstrap.php</file>
+            <file>phpunit</file>
+            <file>../lib/XLSX.php</file>
+            <file>../lib/XLSXbuf.php</file>
+        </exclude>
+        <report>
+            <clover outputFile="coverage.xml"/>
+            <html outputDirectory="coverage-report"/>
+            <text outputFile="php://stdout" showUncoveredFiles="false"/>
+        </report>
+    </coverage>
     
     <!-- Logging Configuration -->
     <logging>
-        <log type="coverage-html" target="coverage"/>
-        <log type="coverage-text" target="php://stdout" showUncoveredFiles="false"/>
+        <junit outputFile="junit.xml"/>
     </logging>
 </phpunit>
