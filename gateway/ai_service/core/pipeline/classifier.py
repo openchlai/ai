@@ -58,7 +58,6 @@ class MultiTaskDistilBert(DistilBertPreTrainedModel):
         else:
             return (logits_main, logits_sub, logits_interv, logits_priority)
 
-
 def classify_case(narrative):
     model_path = "/opt/chl_ai/models/ai_models/MultiClassifier/"
 
@@ -71,7 +70,6 @@ def classify_case(narrative):
         interventions = json.load(f)
     with open(model_path + "priorities.json") as f:
         priorities = json.load(f)
-
 
     # Load model and tokenizer
     model_path = model_path + './multitask_distilbert'
@@ -87,27 +85,49 @@ def classify_case(narrative):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
 
-    text = narrative.lower().strip()
-    text = re.sub(r'[^a-z0-9\s]', '', text)
-    inputs = tokenizer(
-        text,
-        truncation=True,
-        padding='max_length',
-        max_length=256,
-        return_tensors="pt"
-    ).to(device)
-    with torch.no_grad():
-        logits_main, logits_sub, logits_interv, logits_priority = model(**inputs)
-    preds_main = np.argmax(logits_main.cpu().numpy(), axis=1)[0]
-    preds_sub = np.argmax(logits_sub.cpu().numpy(), axis=1)[0]
-    preds_interv = np.argmax(logits_interv.cpu().numpy(), axis=1)[0]
-    preds_priority = np.argmax(logits_priority.cpu().numpy(), axis=1)[0]
-    return {
-        "main_category": main_categories[preds_main],
-        "sub_category": sub_categories[preds_sub],
-        "intervention": interventions[preds_interv],
-        "priority": priorities[preds_priority]
-    }
+    try:
+        text = narrative.lower().strip()
+        text = re.sub(r'[^a-z0-9\s]', '', text)
+        inputs = tokenizer(
+            text,
+            truncation=True,
+            padding='max_length',
+            max_length=256,
+            return_tensors="pt"
+        ).to(device)
+        
+        with torch.no_grad():
+            logits_main, logits_sub, logits_interv, logits_priority = model(**inputs)
+        
+        preds_main = np.argmax(logits_main.cpu().numpy(), axis=1)[0]
+        preds_sub = np.argmax(logits_sub.cpu().numpy(), axis=1)[0]
+        preds_interv = np.argmax(logits_interv.cpu().numpy(), axis=1)[0]
+        preds_priority = np.argmax(logits_priority.cpu().numpy(), axis=1)[0]
+        
+        # Clean up intermediate tensors
+        del inputs, logits_main, logits_sub, logits_interv, logits_priority
+        
+        return {
+            "main_category": main_categories[preds_main],
+            "sub_category": sub_categories[preds_sub],
+            "intervention": interventions[preds_interv],
+            "priority": priorities[preds_priority]
+        }
+        
+    finally:
+        # CRITICAL: Clean up model and free GPU memory
+        model.cpu()  # Move model to CPU first
+        del model    # Delete model
+        del tokenizer # Delete tokenizer
+        
+        # Force GPU cleanup
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+            torch.cuda.synchronize()
+        
+        import gc
+        gc.collect()
+        print("Classifier GPU memory cleaned up")  # For debugging
 
 # from transformers import AutoTokenizer, AutoModelForSequenceClassification
 # from joblib import load

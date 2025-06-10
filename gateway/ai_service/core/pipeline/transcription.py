@@ -3,8 +3,10 @@ import whisper
 import logging
 import os
 import re
+import gc
 from pathlib import Path
 from typing import Optional, Dict, Any
+from contextlib import contextmanager
 
 # Create logs directory if it doesn't exist
 log_dir = '/tmp/logs'
@@ -27,11 +29,45 @@ if DEVICE == "cpu":
     logger.warning("GPU not available - falling back to CPU. This will be significantly slower.")
 USE_FP16 = DEVICE == "cuda"
 
-# Force CUDA if available
-if torch.cuda.is_available():
-    torch.set_default_tensor_type('torch.cuda.FloatTensor')
-
 logger.info(f"Using device: {DEVICE} with fp16={USE_FP16}")
+
+def cleanup_gpu_memory():
+    """Comprehensive GPU memory cleanup."""
+    if torch.cuda.is_available():
+        # Clear GPU cache
+        torch.cuda.empty_cache()
+        # Force garbage collection
+        gc.collect()
+        # Synchronize GPU operations
+        torch.cuda.synchronize()
+        logger.info("GPU memory cleanup completed")
+
+def get_gpu_memory_usage():
+    """Get current GPU memory usage."""
+    if torch.cuda.is_available():
+        allocated = torch.cuda.memory_allocated() / 1024**3
+        cached = torch.cuda.memory_reserved() / 1024**3
+        return allocated, cached
+    return 0, 0
+
+@contextmanager
+def gpu_memory_manager():
+    """Context manager for GPU memory management."""
+    try:
+        # Log memory before
+        if torch.cuda.is_available():
+            allocated_before, cached_before = get_gpu_memory_usage()
+            logger.info(f"GPU memory before: {allocated_before:.2f}GB allocated, {cached_before:.2f}GB cached")
+        
+        yield
+        
+    finally:
+        # Always cleanup after
+        cleanup_gpu_memory()
+        
+        if torch.cuda.is_available():
+            allocated_after, cached_after = get_gpu_memory_usage()
+            logger.info(f"GPU memory after cleanup: {allocated_after:.2f}GB allocated, {cached_after:.2f}GB cached")
 
 def detect_hallucination(text: str, max_repetition_ratio: float = 0.4) -> bool:
     """
@@ -72,7 +108,6 @@ def detect_hallucination(text: str, max_repetition_ratio: float = 0.4) -> bool:
     
     return False
 
-
 def load_whisper_model(model_size_or_path: str = "large") -> whisper.Whisper:
     """
     Load a Whisper model from either a predefined size or a custom path.
@@ -84,7 +119,7 @@ def load_whisper_model(model_size_or_path: str = "large") -> whisper.Whisper:
         Loaded Whisper model
     """
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    logger.info(f"Using device: {device}")
+    logger.info(f"Loading model on device: {device}")
 
     # Show GPU memory if available
     if device == "cuda":
@@ -105,26 +140,41 @@ def load_whisper_model(model_size_or_path: str = "large") -> whisper.Whisper:
     except Exception as e:
         logger.error(f"Failed to load Whisper model: {str(e)}")
         raise RuntimeError(f"Could not load Whisper model '{model_size_or_path}': {str(e)}")
+
 class WhisperTranscriber:
-    def __init__(self, model_size: str = "large"):
+    def __init__(self, model_size: str = "large", auto_cleanup: bool = True):
         """
         Initialize the transcriber with model size or custom model path.
+        
+        Args:
+            model_size: Model size or path to model
+            auto_cleanup: Whether to automatically cleanup after transcription
         """
         logger.info(f"Initializing WhisperTranscriber with model: {model_size}")
         self.model_size = model_size
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.auto_cleanup = auto_cleanup
         self.model = None
-        self._load_model()
-
 
     def _load_model(self):
         """Load the Whisper model with error handling."""
         try:
             self.model = load_whisper_model(self.model_size)
-            logger.info("WhisperTranscriber initialized successfully")
+            logger.info("WhisperTranscriber model loaded successfully")
         except Exception as e:
-            logger.error(f"Failed to initialize WhisperTranscriber: {str(e)}")
+            logger.error(f"Failed to load WhisperTranscriber model: {str(e)}")
             raise
+
+    def _unload_model(self):
+        """Unload the model and free GPU memory."""
+        if self.model is not None:
+            logger.info("Unloading Whisper model...")
+            # Delete model reference
+            del self.model
+            self.model = None
+            # Force cleanup
+            cleanup_gpu_memory()
+            logger.info("Model unloaded and GPU memory cleaned")
 
     def _validate_audio_path(self, audio_path: str) -> Path:
         """
@@ -228,173 +278,205 @@ class WhisperTranscriber:
         logger.info(f"Starting transcription of: {audio_path}")
         
         try:
-            # Validate input
-            validated_path = self._validate_audio_path(audio_path)
-            
-            # Check if model is loaded
-            if self.model is None:
-                logger.error("Model not loaded. Attempting to reload...")
-                self._load_model()
-            
-            best_result = None
-            best_score = float('inf')  # Lower is better (hallucination score)
-            
-            for attempt in range(max_retries):
-                logger.info(f"Transcription attempt {attempt + 1}/{max_retries}")
+            # Use GPU memory manager context
+            with gpu_memory_manager():
+                # Validate input
+                validated_path = self._validate_audio_path(audio_path)
                 
-                try:
-                    # Get anti-hallucination parameters
-                    transcribe_params = self._get_anti_hallucination_params(attempt)
+                # Load model if not already loaded
+                if self.model is None:
+                    self._load_model()
+                
+                best_result = None
+                best_score = float('inf')  # Lower is better (hallucination score)
+                
+                for attempt in range(max_retries):
+                    logger.info(f"Transcription attempt {attempt + 1}/{max_retries}")
                     
-                    # Add language detection if enabled
-                    if detect_language and 'language' not in kwargs:
-                        # Let Whisper auto-detect language
-                        pass  # language=None is default
-                    
-                    # Override with user parameters
-                    transcribe_params.update(kwargs)
-                    
-                    logger.info("Beginning transcription...")
-                    
-                    # Perform transcription
-                    result = self.model.transcribe(str(validated_path), **transcribe_params)
-                    
-                    # Extract and analyze text
-                    transcribed_text = result["text"].strip()
-                    detected_language = result.get("language", "unknown")
-                    
-                    logger.info(f"Attempt {attempt + 1} completed")
-                    logger.info(f"Detected language: {detected_language}")
-                    logger.info(f"Text length: {len(transcribed_text)} characters")
-                    
-                    # Check for hallucinations
-                    if detect_hallucination(transcribed_text):
-                        logger.warning(f"Attempt {attempt + 1}: Hallucination detected")
+                    try:
+                        # Get anti-hallucination parameters
+                        transcribe_params = self._get_anti_hallucination_params(attempt)
                         
-                        # Score this attempt (higher repetition = higher score)
-                        sentences = re.split(r'[.!?]+', transcribed_text.lower())
-                        sentences = [s.strip() for s in sentences if s.strip()]
-                        if sentences:
-                            sentence_counts = {}
-                            for sentence in sentences:
-                                sentence_counts[sentence] = sentence_counts.get(sentence, 0) + 1
-                            max_repetitions = max(sentence_counts.values())
-                            hallucination_score = max_repetitions / len(sentences)
+                        # Add language detection if enabled
+                        if detect_language and 'language' not in kwargs:
+                            # Let Whisper auto-detect language
+                            pass  # language=None is default
+                        
+                        # Override with user parameters
+                        transcribe_params.update(kwargs)
+                        
+                        logger.info("Beginning transcription...")
+                        
+                        # Perform transcription
+                        result = self.model.transcribe(str(validated_path), **transcribe_params)
+                        
+                        # Extract and analyze text
+                        transcribed_text = result["text"].strip()
+                        detected_language = result.get("language", "unknown")
+                        
+                        logger.info(f"Attempt {attempt + 1} completed")
+                        logger.info(f"Detected language: {detected_language}")
+                        logger.info(f"Text length: {len(transcribed_text)} characters")
+                        
+                        # Check for hallucinations
+                        if detect_hallucination(transcribed_text):
+                            logger.warning(f"Attempt {attempt + 1}: Hallucination detected")
+                            
+                            # Score this attempt (higher repetition = higher score)
+                            sentences = re.split(r'[.!?]+', transcribed_text.lower())
+                            sentences = [s.strip() for s in sentences if s.strip()]
+                            if sentences:
+                                sentence_counts = {}
+                                for sentence in sentences:
+                                    sentence_counts[sentence] = sentence_counts.get(sentence, 0) + 1
+                                max_repetitions = max(sentence_counts.values())
+                                hallucination_score = max_repetitions / len(sentences)
+                            else:
+                                hallucination_score = 1.0
+                            
+                            # Keep track of best attempt so far
+                            if hallucination_score < best_score:
+                                best_score = hallucination_score
+                                best_result = transcribed_text
+                            
+                            if attempt < max_retries - 1:
+                                logger.info(f"Retrying with different parameters...")
+                                continue
+                            else:
+                                logger.warning("All retry attempts completed. Using best result.")
+                                if best_result is not None:
+                                    return best_result
+                                else:
+                                    return transcribed_text  # Return last attempt if no best result
                         else:
-                            hallucination_score = 1.0
-                        
-                        # Keep track of best attempt so far
-                        if hallucination_score < best_score:
-                            best_score = hallucination_score
-                            best_result = transcribed_text
-                        
+                            # Good transcription, return it
+                            logger.info("Transcription completed successfully without hallucinations")
+                            logger.debug(f"Text preview: {transcribed_text[:200]}...")
+                            return transcribed_text
+                            
+                    except torch.cuda.OutOfMemoryError as e:
+                        logger.error(f"GPU out of memory during attempt {attempt + 1}: {str(e)}")
+                        # Force cleanup on OOM
+                        cleanup_gpu_memory()
                         if attempt < max_retries - 1:
-                            logger.info(f"Retrying with different parameters...")
+                            logger.info("Cleared GPU cache, retrying...")
                             continue
                         else:
-                            logger.warning("All retry attempts completed. Using best result.")
-                            if best_result is not None:
-                                return best_result
-                            else:
-                                return transcribed_text  # Return last attempt if no best result
-                    else:
-                        # Good transcription, return it
-                        logger.info("Transcription completed successfully without hallucinations")
-                        logger.debug(f"Text preview: {transcribed_text[:200]}...")
-                        return transcribed_text
-                        
-                except torch.cuda.OutOfMemoryError as e:
-                    logger.error(f"GPU out of memory during attempt {attempt + 1}: {str(e)}")
-                    if attempt < max_retries - 1:
-                        logger.info("Clearing GPU cache and retrying...")
-                        torch.cuda.empty_cache()
-                        continue
-                    else:
-                        raise RuntimeError("GPU out of memory. Try using a smaller model or CPU.")
-                        
-                except Exception as e:
-                    logger.error(f"Attempt {attempt + 1} failed: {str(e)}")
-                    if attempt < max_retries - 1:
-                        continue
-                    else:
-                        raise
-            
-            # Should not reach here, but just in case
-            raise RuntimeError("All transcription attempts failed")
-            
+                            raise RuntimeError("GPU out of memory. Try using a smaller model or CPU.")
+                            
+                    except Exception as e:
+                        logger.error(f"Attempt {attempt + 1} failed: {str(e)}")
+                        if attempt < max_retries - 1:
+                            continue
+                        else:
+                            raise
+                
+                # Should not reach here, but just in case
+                raise RuntimeError("All transcription attempts failed")
+                
         except FileNotFoundError as e:
             logger.error(f"File error: {str(e)}")
             raise
         except Exception as e:
             logger.error(f"Transcription failed: {str(e)}", exc_info=True)
             raise RuntimeError(f"Transcription failed: {str(e)}")
+        finally:
+            # Auto-cleanup if enabled
+            if self.auto_cleanup:
+                self._unload_model()
 
     def get_model_info(self) -> dict:
         """Get information about the loaded model."""
         return {
             'model_size': self.model_size,
             'device': self.device,
-            'model_loaded': self.model is not None
+            'model_loaded': self.model is not None,
+            'auto_cleanup': self.auto_cleanup
         }
 
+    def __del__(self):
+        """Destructor to ensure cleanup."""
+        if hasattr(self, 'model') and self.model is not None:
+            self._unload_model()
 
-# Global transcriber instance
-_global_transcriber: Optional[WhisperTranscriber] = None
 
-
-def get_transcriber(model_size: str = "large") -> WhisperTranscriber:
-    """
-    Get or create a global transcriber instance.
+# Singleton pattern for model management with proper cleanup
+class TranscriberManager:
+    _instance = None
+    _transcriber = None
     
-    Args:
-        model_size: Model size to use if creating new instance
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+    
+    def get_transcriber(self, model_size: str = "large", force_reload: bool = False) -> WhisperTranscriber:
+        """Get transcriber with model management."""
+        if self._transcriber is None or self._transcriber.model_size != model_size or force_reload:
+            # Clean up old transcriber
+            if self._transcriber is not None:
+                self._transcriber._unload_model()
+            
+            logger.info(f"Creating new transcriber with model: {model_size}")
+            self._transcriber = WhisperTranscriber(model_size, auto_cleanup=True)
         
-    Returns:
-        WhisperTranscriber instance
-    """
-    global _global_transcriber
+        return self._transcriber
     
-    if _global_transcriber is None or _global_transcriber.model_size != model_size:
-        logger.info(f"Creating new global transcriber with model size: {model_size}")
-        _global_transcriber = WhisperTranscriber(model_size)
-    
-    return _global_transcriber
+    def cleanup(self):
+        """Force cleanup of all resources."""
+        if self._transcriber is not None:
+            self._transcriber._unload_model()
+            self._transcriber = None
+        cleanup_gpu_memory()
 
 
-def transcribe(audio_path: str, model_size: str = "large", **kwargs) -> str:
+# Global manager instance
+_manager = TranscriberManager()
+
+
+def transcribe(audio_path: str, model_size: str = "large", cleanup_after: bool = True, **kwargs) -> str:
     """
-    Global function to transcribe audio with automatic hallucination mitigation.
+    Global function to transcribe audio with automatic memory management.
     
     Args:
         audio_path: Path to audio file
         model_size: Whisper model size to use
+        cleanup_after: Whether to cleanup GPU memory after transcription
         **kwargs: Additional parameters for transcription
         
     Returns:
         Transcribed text
     """
     logger.info(f"Global transcribe function called for: {audio_path}")
-    # transcriber = get_transcriber(model_size)
-    transcriber = WhisperTranscriber(model_size="large")
     
-    # If you want to use a local path enable this 
-    # transcriber = WhisperTranscriber(model_size="/models/whisper-tiny.en")
+    try:
+        # Use a fresh transcriber instance for each request to ensure cleanup
+        transcriber = WhisperTranscriber(model_size=model_size, auto_cleanup=cleanup_after)
+        result = transcriber.transcribe(audio_path, **kwargs)
+        return result
+    except Exception as e:
+        logger.error(f"Transcription failed: {str(e)}")
+        # Force cleanup on error
+        cleanup_gpu_memory()
+        raise
 
 
-    return transcriber.transcribe(audio_path, **kwargs)
+def force_cleanup():
+    """Force cleanup of all GPU resources."""
+    global _manager
+    _manager.cleanup()
+    logger.info("Forced cleanup completed")
 
 
-# # Example usage
-# if __name__ == "__main__":
-#     # Example of how to use the transcriber
-#     try:
-#         # Method 1: Using the class directly
-#         # transcriber = WhisperTranscriber("large")
-#         # print("Model info:", transcriber.get_model_info())
+# Example usage
+if __name__ == "__main__":
+    # Example of how to use the transcriber with proper cleanup
+    try:
+        result = transcribe("/path/to/audio.wav", model_size="large", max_retries=3)
+        print("Transcription:", result)
         
-#         # Method 2: Using the global function with hallucination mitigation
-#         result = transcribe("/home/bitz/transcription_data_set_1/1737216594.179989.wav", max_retries=3)
-#         print("Transcription:", result)
+        # Force cleanup if needed
+        force_cleanup()
         
-#     except Exception as e:
-#         logger.error(f"Example failed: {str(e)}")
+    except Exception as e:
+        logger.error(f"Example failed: {str(e)}")
