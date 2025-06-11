@@ -15,8 +15,10 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     
     strategy:
+      fail-fast: false
       matrix:
         php-versions: ['8.2', '8.3', '8.4']
     
@@ -38,9 +40,10 @@ jobs:
       uses: shivammathur/setup-php@v2
       with:
         php-version: ${{ matrix.php-versions }}
-        extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_mysql, dom, filter, gd, iconv, json, mbstring, pdo, xdebug
-        ini-values: post_max_size=256M, upload_max_filesize=256M, max_execution_time=300, xdebug.mode=coverage
+        extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_mysql, dom, filter, gd, json
+        ini-values: post_max_size=256M, upload_max_filesize=256M, max_execution_time=300
         coverage: xdebug
+      timeout-minutes: 5
 
     - name: Validate composer.json and composer.lock
       run: |
