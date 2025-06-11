@@ -60,8 +60,10 @@ jobs:
     - name: Install dependencies
       run: |
         cd backend/api
-        # Update composer.lock to match composer.json
-        composer update --no-suggest || composer install --prefer-dist --no-progress
+        # Remove old lock file to avoid version conflicts
+        rm -f composer.lock
+        # Install fresh dependencies based on current PHP version
+        composer install --prefer-dist --no-progress
 
     - name: Setup test database
       run: |
@@ -123,8 +125,10 @@ jobs:
     - name: Install dependencies
       run: |
         cd backend/api
-        # Update composer.lock to match composer.json  
-        composer update --no-suggest || composer install --prefer-dist --no-progress
+        # Remove old lock file to avoid version conflicts
+        rm -f composer.lock
+        # Install fresh dependencies based on current PHP version  
+        composer install --prefer-dist --no-progress
 
     - name: Setup MySQL
       run: |
