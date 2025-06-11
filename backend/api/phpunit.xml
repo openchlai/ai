@@ -4,9 +4,7 @@
          bootstrap="bootstrap.php" 
          colors="true"
          stopOnFailure="false"
-         stopOnError="false"
-         verbose="true"
-         cacheResultFile=".phpunit.result.cache">
+         stopOnError="false">
     
     <testsuites>
         <testsuite name="REST API Test Suite">
@@ -27,6 +25,10 @@
         
         <testsuite name="Session Tests">
             <file>./tests/SessionTest.php</file>
+        </testsuite>
+        
+        <testsuite name="Import Tests">
+            <file>./tests/ImportTest.php</file>
         </testsuite>
     </testsuites>
     
@@ -51,13 +53,7 @@
             <directory>test_data</directory>
             <file>bootstrap.php</file>
             <file>phpunit</file>
-            <file>../lib/XLSX.php</file>
             <file>../lib/XLSXbuf.php</file>
         </exclude>
     </source>
-    
-    <!-- Logging Configuration -->
-    <logging>
-        <junit outputFile="junit.xml"/>
-    </logging>
 </phpunit>
