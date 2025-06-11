@@ -45,7 +45,7 @@ jobs:
 
     - name: Setup database
       run: |
-        mysql -h127.0.0.1 -uroot -proot -e "CREATE DATABASE test_db;"
+        mysql -h127.0.0.1 -uroot -proot -e "CREATE DATABASE IF NOT EXISTS test_db;"
         mysql -h127.0.0.1 -uroot -proot test_db < backend/uchl.sql
 
     - name: Run tests
