@@ -50,7 +50,9 @@ jobs:
 
     - name: Run tests
       working-directory: backend/api
-      run: php vendor/bin/phpunit tests/
+      run: |
+        # Run tests without coverage first to isolate issues
+        php vendor/bin/phpunit tests/ --no-coverage
 
     - name: Run tests with coverage
       working-directory: backend/api
