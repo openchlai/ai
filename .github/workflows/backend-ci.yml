@@ -42,7 +42,7 @@ jobs:
         ini-values: post_max_size=256M, upload_max_filesize=256M, max_execution_time=300, xdebug.mode=coverage
         coverage: xdebug
 
-    - name: Validate composer.json
+    - name: Validate composer.json and composer.lock
       run: |
         cd backend/api
         # Skip strict validation, just check if it's parseable
@@ -60,7 +60,8 @@ jobs:
     - name: Install dependencies
       run: |
         cd backend/api
-        composer install --prefer-dist --no-progress --no-suggest
+        # Update composer.lock to match composer.json
+        composer update --no-suggest || composer install --prefer-dist --no-progress
 
     - name: Setup test database
       run: |
@@ -80,30 +81,97 @@ jobs:
         define('DB_PORT', 3306);
         EOF
 
-    - name: Run PHPUnit tests
+    - name: Run PHPUnit tests with coverage
       run: |
         cd backend/api
-        # Run tests - they should pass regardless of coverage
-        ./phpunit tests/ --configuration phpunit.xml
-        echo "✅ Tests completed successfully!"
-
-    - name: Attempt coverage generation
-      continue-on-error: true
-      run: |
-        cd backend/api
-        echo "Attempting to generate coverage report..."
-        ./phpunit tests/ --configuration phpunit.xml --coverage-text --coverage-clover=coverage.xml --coverage-html=coverage-report || \
-        echo "Coverage generation failed, but tests passed - this is acceptable for now"
+        # Use the local phpunit binary and run with coverage attempt
+        ./phpunit tests/ --configuration phpunit.xml --coverage-text --coverage-clover=coverage.xml --coverage-html=coverage-report 2>/dev/null || \
+        # If coverage fails due to missing driver, run tests without coverage
+        (echo "Coverage generation failed (likely missing Xdebug), running tests without coverage..." && ./phpunit tests/ --configuration phpunit.xml)
 
     - name: Upload coverage reports to Codecov
       if: matrix.php-versions == '8.4' && success()
-      continue-on-error: true
       uses: codecov/codecov-action@v3
       with:
         file: ./backend/api/coverage.xml
         flags: unittests
         name: codecov-umbrella
         fail_ci_if_error: false
+
+  coverage-check:
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.4'
+        extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_mysql, dom, filter, gd, iconv, json, mbstring, pdo, xdebug
+        ini-values: xdebug.mode=coverage
+        coverage: xdebug
+
+    - name: Cache Composer packages
+      uses: actions/cache@v3
+      with:
+        path: backend/api/vendor
+        key: ${{ runner.os }}-php-8.4-composer-${{ hashFiles('**/backend/api/composer.lock') }}
+
+    - name: Install dependencies
+      run: |
+        cd backend/api
+        # Update composer.lock to match composer.json  
+        composer update --no-suggest || composer install --prefer-dist --no-progress
+
+    - name: Setup MySQL
+      run: |
+        sudo systemctl start mysql.service
+        mysql -e "CREATE USER 'testuser'@'localhost' IDENTIFIED BY 'testpass';" -uroot -proot
+        mysql -e "GRANT ALL PRIVILEGES ON *.* TO 'testuser'@'localhost';" -uroot -proot
+        mysql -e "FLUSH PRIVILEGES;" -uroot -proot
+        mysql -e "CREATE DATABASE test_db;" -uroot -proot
+        mysql -uroot -proot test_db < backend/uchl.sql
+
+    - name: Generate coverage report
+      run: |
+        cd backend/api
+        ./phpunit tests/ --configuration phpunit.xml --coverage-html coverage-report --coverage-text --coverage-clover coverage.xml 2>/dev/null || \
+        (echo "Coverage generation failed - Xdebug not available. Tests passed but no coverage data generated." && ./phpunit tests/ --configuration phpunit.xml)
+
+    - name: Check coverage threshold
+      run: |
+        cd backend/api
+        if [ -f coverage.xml ]; then
+          php -r "
+          \$xml = simplexml_load_file('coverage.xml');
+          \$metrics = \$xml->project->metrics;
+          \$lineRate = (float) \$metrics['statements'] > 0 ? 
+                      ((float) \$metrics['coveredstatements'] / (float) \$metrics['statements']) * 100 : 0;
+          echo 'Line Coverage: ' . round(\$lineRate, 2) . '%' . PHP_EOL;
+          
+          if (\$lineRate < 40) {
+              echo 'ERROR: Coverage ' . round(\$lineRate, 2) . '% is below minimum threshold of 40%' . PHP_EOL;
+              exit(1);
+          } else {
+              echo 'SUCCESS: Coverage ' . round(\$lineRate, 2) . '% meets minimum threshold of 40%' . PHP_EOL;
+          }
+          "
+        else
+          echo "Warning: coverage.xml not found. Coverage analysis skipped."
+          echo "Make sure PHPUnit is configured to generate coverage reports."
+          exit 1
+        fi
+
+    - name: Upload coverage reports
+      if: success()
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report
+        path: backend/api/coverage-report/
+        if-no-files-found: warn
 
   security:
     runs-on: ubuntu-latest
@@ -115,7 +183,6 @@ jobs:
       uses: shivammathur/setup-php@v2
       with:
         php-version: '8.4'
-        extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_mysql, dom, filter, gd, iconv, json, mbstring, pdo
 
     - name: Install dependencies
       run: |
@@ -129,7 +196,7 @@ jobs:
 
   deploy-staging:
     runs-on: ubuntu-latest
-    needs: [test, security]
+    needs: [test, coverage-check, security]
     if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
     
     steps:
@@ -143,7 +210,7 @@ jobs:
 
   deploy-production:
     runs-on: ubuntu-latest
-    needs: [test, security]
+    needs: [test, coverage-check, security]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     
     steps:
