@@ -1,5 +1,30 @@
 {
+    "name": "ai/backend-api",
+    "description": "REST API for AI Backend",
+    "type": "project", 
+    "license": "proprietary",
+    "require": {
+        "php": ">=8.2"
+    },
     "require-dev": {
-        "phpunit/phpunit": "^12.1"
-    }
+        "phpunit/phpunit": "^10.5|^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Api\\": "."
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit tests/",
+        "test-coverage": "vendor/bin/phpunit tests/ --coverage-html coverage-report --coverage-text"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true,
+        "platform": {
+            "php": "8.2.0"
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
 }
