@@ -1,16 +1,12 @@
-name: Backend PHP CI
+name: Backend Tests
 
 on:
   push:
     branches: [ main, develop ]
-    paths:
-      - 'backend/**'
-      - '.github/workflows/**'
+    paths: [ 'backend/**' ]
   pull_request:
     branches: [ main, develop ]
-    paths:
-      - 'backend/**'
-      - '.github/workflows/**'
+    paths: [ 'backend/**' ]
 
 jobs:
   test:
@@ -18,9 +14,8 @@ jobs:
     timeout-minutes: 10
     
     strategy:
-      fail-fast: false
       matrix:
-        php-versions: ['8.3', '8.4']
+        php-version: ['8.4']
     
     services:
       mysql:
@@ -33,61 +28,39 @@ jobs:
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-    - name: Setup PHP ${{ matrix.php-versions }}
+    - name: Setup PHP
       uses: shivammathur/setup-php@v2
       with:
-        php-version: ${{ matrix.php-versions }}
-        extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_mysql, dom, filter, gd, json
-        ini-values: post_max_size=256M, upload_max_filesize=256M
+        php-version: ${{ matrix.php-version }}
+        extensions: mbstring, xml, pdo, pdo_mysql, dom, json
         coverage: xdebug
-        tools: composer:v2
-
-    - name: Get composer cache directory
-      id: composer-cache
-      run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
-
-    - name: Cache composer dependencies
-      uses: actions/cache@v3
-      with:
-        path: ${{ steps.composer-cache.outputs.dir }}
-        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-        restore-keys: ${{ runner.os }}-composer-
-
-    - name: Validate composer.json
-      run: |
-        cd backend/api
-        composer validate --no-check-publish
 
     - name: Install dependencies
+      working-directory: backend/api
       run: |
-        cd backend/api
         rm -f composer.lock
-        composer install --prefer-dist --no-progress --optimize-autoloader
+        composer install --no-interaction --prefer-dist
 
-    - name: Setup test database
+    - name: Setup database
       run: |
-        mysql -h 127.0.0.1 -u root -proot -e "CREATE DATABASE IF NOT EXISTS test_db;"
-        mysql -h 127.0.0.1 -u root -proot test_db < backend/uchl.sql
+        mysql -h127.0.0.1 -uroot -proot -e "CREATE DATABASE test_db;"
+        mysql -h127.0.0.1 -uroot -proot test_db < backend/uchl.sql
 
-    - name: Run PHPUnit tests
+    - name: Run tests
+      working-directory: backend/api
+      run: php vendor/bin/phpunit tests/
+
+    - name: Run tests with coverage
+      working-directory: backend/api
       run: |
-        cd backend/api
-        php vendor/bin/phpunit tests/ --configuration phpunit.xml
+        php vendor/bin/phpunit tests/ --coverage-text --coverage-clover=coverage.xml
 
-    - name: Generate coverage report
-      if: matrix.php-versions == '8.4'
-      run: |
-        cd backend/api
-        php vendor/bin/phpunit tests/ --configuration phpunit.xml --coverage-text --coverage-clover=coverage.xml
-
-    - name: Upload coverage to Codecov
-      if: matrix.php-versions == '8.4' && success()
+    - name: Upload coverage
       uses: codecov/codecov-action@v3
       with:
-        file: ./backend/api/coverage.xml
+        file: backend/api/coverage.xml
         fail_ci_if_error: false
 
   security:
@@ -95,47 +68,17 @@ jobs:
     timeout-minutes: 5
     
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
     - name: Setup PHP
       uses: shivammathur/setup-php@v2
       with:
         php-version: '8.4'
-        tools: composer:v2
 
     - name: Install dependencies
-      run: |
-        cd backend/api
-        composer install --prefer-dist --no-dev --optimize-autoloader
+      working-directory: backend/api
+      run: composer install --no-interaction --prefer-dist --no-dev
 
-    - name: Security vulnerabilities check
-      run: |
-        cd backend/api
-        composer audit
-
-  deploy-staging:
-    runs-on: ubuntu-latest
-    needs: [test, security]
-    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Deploy to staging
-      run: |
-        echo "Deploy to staging server would happen here"
-
-  deploy-production:
-    runs-on: ubuntu-latest
-    needs: [test, security]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Deploy to production
-      run: |
-        echo "Deploy to production server would happen here"
+    - name: Security audit
+      working-directory: backend/api
+      run: composer audit
