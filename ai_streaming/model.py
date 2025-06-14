@@ -169,10 +169,11 @@ class Whisper(torch.nn.Module):
 	def __init__(self, dims: ModelDimensions):
 		super().__init__()
 		self.dims = dims
+		self.dtype == torch.float16	# default to gpu
 		self.encoder = AudioEncoder(self.dims.n_mels, self.dims.n_audio_ctx, self.dims.n_audio_state, self.dims.n_audio_head, self.dims.n_audio_layer)
 		self.decoder = TextDecoder(self.dims.n_vocab, self.dims.n_text_ctx, self.dims.n_text_state, self.dims.n_text_head, self.dims.n_text_layer)
-		# all_heads = torch.zeros(self.dims.n_text_layer, self.dims.n_text_head, dtype=torch.bool)
-		# all_heads[self.dims.n_text_layer // 2 :] = True
+		all_heads = torch.zeros(self.dims.n_text_layer, self.dims.n_text_head, dtype=torch.bool)
+		all_heads[self.dims.n_text_layer // 2 :] = True
 		# self.register_buffer("alignment_heads", all_heads.to_sparse(), persistent=False)
 
 	def forward(self, mel: torch.Tensor, tokens: torch.Tensor) -> Dict[str, torch.Tensor]:
