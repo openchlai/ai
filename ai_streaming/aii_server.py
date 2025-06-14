@@ -1,8 +1,8 @@
 import socket
-# import multiprocessing
 import threading	# using threading to enable sharing of one model instance instead of each process loading its own instance
 import os
 import time
+N_SAMPLES = 16000*30
 #from aii import load_model, transcribe
 
 """
@@ -19,12 +19,16 @@ else:
     print("Lock is already held by another thread.")
 """
 
-#model =	load_model() # one model timeshared among clients -- use mutex
+#model, tokenizer, transcribe_options, decode_options = load_model() # one model timeshared among clients -- use mutex
+
+#buf = bytearray(0,0,0,0,0) 
+#transcribe(model, tokenizer, transcribe_options, decode_options, buf) # test outside of sock
 
 def handle_client(conn, addr):
 	print(f"[client] Connection from {addr}")
 	buffer = [bytearray(),bytearray()]
 	b = 0
+	offset = 0
 	try:
 		while True:
 			data = conn.recv(640)  	# 20ms SLIN
@@ -32,10 +36,22 @@ def handle_client(conn, addr):
 				print(f"[client] Connection closed by {addr}")
 				break
 			if b == 1:
-				#buffer[1].extend(data);
-				#if :		# every 2 seconds
-				#	transcribe(model, buffer) 
-				#	buffer[1].reset()
+				buffer[1].extend(data)
+				bn = len(buffer[1])
+				if (bn - offset) >= 80000:			# every 5 seconds
+					print(f"transcribe: {bn//16000} {bn}")
+					if bn > N_SAMPLES:			# truncate if greater than 30 seconds
+						print(f"more than 30 sec ... {bn-N_SAMPLES}")  
+						data[:] = buffer[1][-(bn-N_SAMPLES):]
+						buffer[1][:] = buffer[1][:N_SAMPLES]
+					# transcribe(model, tokenizer, transcribe_options, decode_options, buffer[1]) 
+					offset += 80000
+					if bn >= N_SAMPLES:
+						buffer[1].clear()
+						offset = 0
+					if bn > N_SAMPLES:
+						print(f"repopulate ... {len(data)}")
+						buffer[1].extend(data)
 				continue
 			for index, byte in enumerate(data):
 				if byte == 13:
