@@ -2,8 +2,8 @@ import socket
 import threading	# using threading to enable sharing of one model instance instead of each process loading its own instance
 import os
 import time
-N_SAMPLES = 16000*30
-#from aii import load_model, transcribe
+from mel import N_SAMPLES
+from aii import load_model, transcribe
 
 """
 lock = threading.Lock()
@@ -19,10 +19,14 @@ else:
     print("Lock is already held by another thread.")
 """
 
-#model, tokenizer, transcribe_options, decode_options = load_model() # one model timeshared among clients -- use mutex
+model, tokenizer, transcribe_options, decode_options = load_model() # one model timeshared among clients -- use mutex
 
-#buf = bytearray(0,0,0,0,0) 
-#transcribe(model, tokenizer, transcribe_options, decode_options, buf) # test outside of sock
+buf = bytearray()
+ts0 = time.time()
+out = transcribe(model, tokenizer, transcribe_options, decode_options, buf) # test outside of sock
+ts1 = time.time()
+diff = round(ts1-ts0,2)
+print(f"{diff} | {out['text']}")
 
 def handle_client(conn, addr):
 	print(f"[client] Connection from {addr}")
@@ -44,7 +48,11 @@ def handle_client(conn, addr):
 						print(f"more than 30 sec ... {bn-N_SAMPLES}")  
 						data[:] = buffer[1][-(bn-N_SAMPLES):]
 						buffer[1][:] = buffer[1][:N_SAMPLES]
-					# transcribe(model, tokenizer, transcribe_options, decode_options, buffer[1]) 
+					ts0 = time.time()
+					out = transcribe(model, tokenizer, transcribe_options, decode_options, buffer[1]) 
+					ts1 = time.time()
+					diff = round(ts1 - ts0,2)
+					print(f"{diff} | {out['text']}")
 					offset += 80000
 					if bn >= N_SAMPLES:
 						buffer[1].clear()
