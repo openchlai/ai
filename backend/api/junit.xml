@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests" tests="53" assertions="153" errors="0" warnings="0" failures="0" skipped="0" time="0.741365">
+    <testsuite name="IndexTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\IndexTest.php" tests="8" assertions="14" errors="0" warnings="0" failures="0" skipped="0" time="0.723303">
+      <testcase name="testEnvironment" class="IndexTest" classname="IndexTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\IndexTest.php" line="24" assertions="2" time="0.000084"/>
+      <testcase name="testWallonlyWithExten" class="IndexTest" classname="IndexTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\IndexTest.php" line="33" assertions="2" time="0.105840"/>
+      <testcase name="testDashFunction" class="IndexTest" classname="IndexTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\IndexTest.php" line="122" assertions="1" time="0.091660"/>
+      <testcase name="testAgentFunction" class="IndexTest" classname="IndexTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\IndexTest.php" line="250" assertions="2" time="0.105209"/>
+      <testcase name="testMessageOutFunction" class="IndexTest" classname="IndexTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\IndexTest.php" line="329" assertions="2" time="0.105669"/>
+      <testcase name="testMessageInFunction" class="IndexTest" classname="IndexTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\IndexTest.php" line="396" assertions="1" time="0.119407"/>
+      <testcase name="testHomeFunction" class="IndexTest" classname="IndexTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\IndexTest.php" line="475" assertions="2" time="0.092733"/>
+      <testcase name="testNotifyFunction" class="IndexTest" classname="IndexTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\IndexTest.php" line="552" assertions="2" time="0.102701"/>
+    </testsuite>
+    <testsuite name="RestAdvancedTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\RestAdvancedTest.php" tests="20" assertions="80" errors="0" warnings="0" failures="0" skipped="0" time="0.015602">
+      <testcase name="testValidationFunction" class="RestAdvancedTest" classname="RestAdvancedTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\RestAdvancedTest.php" line="211" assertions="5" time="0.000891"/>
+      <testcase name="testValidationTypes" class="RestAdvancedTest" classname="RestAdvancedTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\RestAdvancedTest.php" line="237" assertions="6" time="0.000118"/>
+      <testcase name="testValidationErrors" class="RestAdvancedTest" classname="RestAdvancedTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\RestAdvancedTest.php" line="263" assertions="4" time="0.000361"/>
+      <testcase name="testTryFunction" class="RestAdvancedTest" classname="RestAdvancedTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\RestAdvancedTest.php" line="288" assertions="2" time="0.001593"/>
+      <testcase name="testComplexFunctionsSafety" class="RestAdvancedTest" classname="RestAdvancedTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\RestAdvancedTest.php" line="307" assertions="3" time="0.000074"/>
+      <testcase name="testParametersFunction" class="RestAdvancedTest" classname="RestAdvancedTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\RestAdvancedTest.php" line="319" assertions="3" time="0.001193"/>
+      <testcase name="testLevelFunction" class="RestAdvancedTest" classname="RestAdvancedTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\RestAdvancedTest.php" line="340" assertions="4" time="0.000750"/>
+      <testcase name="testSqlQueryBuildingFunctions" class="RestAdvancedTest" classname="RestAdvancedTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\RestAdvancedTest.php" line="355" assertions="7" time="0.000296"/>
+      <testcase name="testContextBuildingFunctions" class="RestAdvancedTest" classname="RestAdvancedTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\RestAdvancedTest.php" line="387" assertions="3" time="0.000117"/>
+      <testcase name="testFileUploadSafe" class="RestAdvancedTest" classname="RestAdvancedTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\RestAdvancedTest.php" line="403" assertions="3" time="0.006558"/>
+      <testcase name="testModelOperationsSafe" class="RestAdvancedTest" classname="RestAdvancedTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\RestAdvancedTest.php" line="428" assertions="2" time="0.001479"/>
+      <testcase name="testErrorFunctions" class="RestAdvancedTest" classname="RestAdvancedTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\RestAdvancedTest.php" line="446" assertions="3" time="0.000382"/>
+      <testcase name="testUriParsingSafe" class="RestAdvancedTest" classname="RestAdvancedTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\RestAdvancedTest.php" line="459" assertions="2" time="0.000234"/>
+      <testcase name="testReportFunctionsSafe" class="RestAdvancedTest" classname="RestAdvancedTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\RestAdvancedTest.php" line="476" assertions="1" time="0.000099"/>
+      <testcase name="testAdvancedKvProcessing" class="RestAdvancedTest" classname="RestAdvancedTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\RestAdvancedTest.php" line="491" assertions="4" time="0.000087"/>
+      <testcase name="testComplexValidationScenarios" class="RestAdvancedTest" classname="RestAdvancedTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\RestAdvancedTest.php" line="512" assertions="4" time="0.000432"/>
+      <testcase name="testApplicationPerformance" class="RestAdvancedTest" classname="RestAdvancedTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\RestAdvancedTest.php" line="537" assertions="1" time="0.000458"/>
+      <testcase name="testAdvancedFunctionsExist" class="RestAdvancedTest" classname="RestAdvancedTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\RestAdvancedTest.php" line="555" assertions="18" time="0.000132"/>
+      <testcase name="testEdgeCaseScenarios" class="RestAdvancedTest" classname="RestAdvancedTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\RestAdvancedTest.php" line="569" assertions="2" time="0.000251"/>
+      <testcase name="testDataTypeValidation" class="RestAdvancedTest" classname="RestAdvancedTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\RestAdvancedTest.php" line="588" assertions="3" time="0.000100"/>
+    </testsuite>
+    <testsuite name="SessionTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\SessionTest.php" tests="25" assertions="59" errors="0" warnings="0" failures="0" skipped="0" time="0.002460">
+      <testcase name="testSessionIdExtractionFromBearerToken" class="SessionTest" classname="SessionTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\SessionTest.php" line="54" assertions="1" time="0.000080"/>
+      <testcase name="testSessionIdExtractionWithoutAuth" class="SessionTest" classname="SessionTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\SessionTest.php" line="69" assertions="1" time="0.000057"/>
+      <testcase name="testSessionIdExtractionWithBasicAuth" class="SessionTest" classname="SessionTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\SessionTest.php" line="77" assertions="1" time="0.000053"/>
+      <testcase name="testSessionDataParsing" class="SessionTest" classname="SessionTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\SessionTest.php" line="94" assertions="6" time="0.000058"/>
+      <testcase name="testSessionOutputFormat" class="SessionTest" classname="SessionTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\SessionTest.php" line="120" assertions="1" time="0.000053"/>
+      <testcase name="testOTPGeneration" class="SessionTest" classname="SessionTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\SessionTest.php" line="139" assertions="2" time="0.000069"/>
+      <testcase name="testOTPExpiry" class="SessionTest" classname="SessionTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\SessionTest.php" line="146" assertions="2" time="0.000048"/>
+      <testcase name="testEmailValidation" class="SessionTest" classname="SessionTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\SessionTest.php" line="158" assertions="2" time="0.000835"/>
+      <testcase name="testPasswordValidation" class="SessionTest" classname="SessionTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\SessionTest.php" line="172" assertions="3" time="0.000124"/>
+      <testcase name="testPasswordMatching" class="SessionTest" classname="SessionTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\SessionTest.php" line="182" assertions="2" time="0.000139"/>
+      <testcase name="testPasswordHashing" class="SessionTest" classname="SessionTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\SessionTest.php" line="192" assertions="3" time="0.000187"/>
+      <testcase name="testBasicAuthParsing" class="SessionTest" classname="SessionTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\SessionTest.php" line="208" assertions="2" time="0.000060"/>
+      <testcase name="testLogoutDetection" class="SessionTest" classname="SessionTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\SessionTest.php" line="227" assertions="2" time="0.000041"/>
+      <testcase name="testSessionExistence" class="SessionTest" classname="SessionTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\SessionTest.php" line="236" assertions="2" time="0.000036"/>
+      <testcase name="testAdminRoleCheck" class="SessionTest" classname="SessionTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\SessionTest.php" line="249" assertions="2" time="0.000065"/>
+      <testcase name="testErrorAccumulation" class="SessionTest" classname="SessionTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\SessionTest.php" line="261" assertions="1" time="0.000049"/>
+      <testcase name="testSessionCreationData" class="SessionTest" classname="SessionTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\SessionTest.php" line="290" assertions="4" time="0.000045"/>
+      <testcase name="testSessionSelectQuery" class="SessionTest" classname="SessionTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\SessionTest.php" line="307" assertions="3" time="0.000043"/>
+      <testcase name="testAuthSelectQuery" class="SessionTest" classname="SessionTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\SessionTest.php" line="315" assertions="3" time="0.000036"/>
+      <testcase name="testSessionInsertQuery" class="SessionTest" classname="SessionTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\SessionTest.php" line="323" assertions="2" time="0.000034"/>
+      <testcase name="testOTPResponseFormat" class="SessionTest" classname="SessionTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\SessionTest.php" line="333" assertions="3" time="0.000055"/>
+      <testcase name="testVerifyOTPResponseFormat" class="SessionTest" classname="SessionTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\SessionTest.php" line="343" assertions="3" time="0.000043"/>
+      <testcase name="testPasswordResetResponseFormat" class="SessionTest" classname="SessionTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\SessionTest.php" line="352" assertions="2" time="0.000078"/>
+      <testcase name="testRandomNumberGeneration" class="SessionTest" classname="SessionTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\SessionTest.php" line="363" assertions="2" time="0.000080"/>
+      <testcase name="testTimestampOperations" class="SessionTest" classname="SessionTest" file="C:\Users\SOOQ ELASER\Documents\ai\backend\api\tests\SessionTest.php" line="373" assertions="4" time="0.000092"/>
+    </testsuite>
+  </testsuite>
+</testsuites>
