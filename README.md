@@ -14,12 +14,14 @@ We use an **AI Trainer** to fine-tune our models for transcription, translation,
 🔗 **[AI Trainer](https://aitrainer.bitz-itc.com/)**  
 
 ---
-
 ## Repository Structure
 
 ### **1. Core Components**
+
 #### 📂 `data_pipeline/`
+
 Handles the full data processing workflow:
+
 - **`ingestion/`** – Fetches and prepares raw voice data.
 - **`transcription/`** – Converts speech into text.
 - **`translation/`** – Translates non-English text.
@@ -28,29 +30,37 @@ Handles the full data processing workflow:
 - **`storage/`** – Handles MinIO/S3 data storage.
 
 #### 📂 `models/`
+
 AI models used for voice processing:
+
 - **`voice_recognition/`** – Speech-to-text models.
 - **`translation/`** – AI translation models.
 - **`case_prediction/`** – NLP models for case classification.
 
 #### 📂 `backend/`
+
 Handles API and backend operations:
+
 - **`api/`** – Exposes REST APIs for model access.
 - **`authentication/`** – Manages user roles and security.
 - **`logging/`** – Tracks system events and errors.
 
 #### 📂 `frontend/`
+
 User interface for case management dashboards.
 
 #### 📂 `infrastructure/`
+
 Configuration files for deployment and scaling:
+
 - **`docker/`** – Docker setup.
 - **`k8s/`** – Kubernetes configurations.
 - **`ci_cd/`** – CI/CD pipeline setup.
 
 ---
 
-## 📖 Documentation
+
+
 - 📜 **[Project Charter](Project_docs/PROJECT_CHARTER.md)** – Defines project objectives.
 - 📚 **[Data Pipeline](Project_docs/DATA_PIPELINE.md)** – Overview of data flow and preprocessing.
 - 🏗 **[Architecture](Project_docs/ARCHITECTURE.md)** – Technical structure of the system.
@@ -63,11 +73,11 @@ Configuration files for deployment and scaling:
 - 🤝 **[Contributing](Project_docs/CONTRIBUTING.md)** – Guidelines for contributors.
 - 📋 **[Code Review Checklist](Project_docs/CODE_REVIEW_CHECKLIST.md)** – Standards for code reviews.
 - 🔒 **[Privacy Policy](Project_docs/PRIVACY_POLICY.md)** – Data privacy and protection policies.
-- 📋 **[Project Scope](Project_docs/Project%20Scope%20Document%20-%20OPENCHSAI.md)** – Detailed project scope.
+- 📋 **[Project Scope](Project_docs/Project_Scope_Document_OPENCHSAI.md)** – Detailed project scope.
 - 📦 **[Dependencies](Project_docs/DEPENDANCIES.md)** – Project dependencies and requirements.
 - 📜 **[Code of Conduct](Project_docs/CODE_OF_CONDUCT.md)** – Community guidelines and standards.
 
-
+---
 ## ✅ Quality Assurance (QA) Process
 
 This project follows an open-source QA process across all major components:
