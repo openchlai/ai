@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit bootstrap="bootstrap.php" 
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.5/phpunit.xsd"
+         bootstrap="bootstrap.php" 
          colors="true"
          stopOnFailure="false"
-         stopOnError="false"
-         verbose="true">
+         stopOnError="false">
     
     <testsuites>
         <testsuite name="REST API Test Suite">
@@ -11,7 +12,7 @@
         </testsuite>
         
         <testsuite name="Basic REST Tests">
-            <file>./tests/RestTest.php</file>
+            <file>./tests/RestTestClean.php</file>
         </testsuite>
         
         <testsuite name="Advanced REST Tests">
@@ -25,6 +26,10 @@
         <testsuite name="Session Tests">
             <file>./tests/SessionTest.php</file>
         </testsuite>
+        
+        <testsuite name="Import Tests">
+            <file>./tests/ImportTest.php</file>
+        </testsuite>
     </testsuites>
     
     <php>
@@ -36,20 +41,19 @@
         <server name="CONTENT_TYPE" value="application/json"/>
     </php>
     
-    <!-- Code Coverage Configuration -->
-    <filter>
-        <whitelist>
+    <!-- Modern Code Coverage Configuration for PHPUnit 11+ -->
+    <source>
+        <include>
+            <directory suffix=".php">.</directory>
             <directory suffix=".php">../lib/</directory>
-            <exclude>
-                <file>../lib/XLSX.php</file>
-                <file>../lib/XLSXbuf.php</file>
-            </exclude>
-        </whitelist>
-    </filter>
-    
-    <!-- Logging Configuration -->
-    <logging>
-        <log type="coverage-html" target="coverage"/>
-        <log type="coverage-text" target="php://stdout" showUncoveredFiles="false"/>
-    </logging>
+        </include>
+        <exclude>
+            <directory>vendor</directory>
+            <directory>tests</directory>
+            <directory>test_data</directory>
+            <file>bootstrap.php</file>
+            <file>phpunit</file>
+            <file>../lib/XLSXbuf.php</file>
+        </exclude>
+    </source>
 </phpunit>
