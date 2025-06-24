@@ -1,0 +1,101 @@
+{
+  "test_transcripts": {
+    "workplace_harassment": "Employee John Doe reported harassment by supervisor at XYZ Corp located in downtown Chicago. Incidents started on March 1, 2023. Contact: john.doe@email.com",
+    "wage_dispute": "Maria Garcia has not received wages for 3 weeks totaling $1200. Employer ABC Manufacturing refuses payment claiming financial difficulties.",
+    "housing_emergency": "Family with 2 children evicted from apartment on Oak Street. Need emergency shelter and legal assistance. School district: Lincoln Elementary.",
+    "medical_crisis": "Individual experiencing mental health crisis after workplace accident. Unable to afford treatment, has limited insurance coverage.",
+    "immigration_help": "Client needs assistance with visa application. Has been in country for 4 years, speaks limited English, has documentation ready."
+  },
+  
+  "expected_entities": {
+    "persons": ["John Doe", "Maria Garcia"],
+    "organizations": ["XYZ Corp", "ABC Manufacturing", "Lincoln Elementary"],
+    "locations": ["downtown Chicago", "Oak Street"],
+    "dates": ["March 1, 2023", "3 weeks", "4 years"],
+    "money": ["$1200"],
+    "contact_info": ["john.doe@email.com"]
+  },
+  
+  "classification_categories": [
+    "workplace_abuse",
+    "wage_theft", 
+    "housing_insecurity",
+    "medical_attention_needed",
+    "legal_aid_needed",
+    "psychological_distress",
+    "labor_exploitation",
+    "human_trafficking"
+  ],
+  
+  "insight_templates": {
+    "case_summary_template": "Brief 2-3 sentence overview describing the primary issue and key stakeholders",
+    "priority_levels": ["low", "medium", "high", "critical"],
+    "intervention_types": [
+      "Legal aid",
+      "Medical attention", 
+      "Housing assistance",
+      "Counseling services",
+      "Safety planning",
+      "Documentation support",
+      "Translation services",
+      "Emergency response"
+    ]
+  },
+  
+  "api_test_data": {
+    "valid_upload_request": {
+      "audio_filename": "test_audio.wav",
+      "expected_response_fields": [
+        "id",
+        "transcript", 
+        "insights",
+        "entities",
+        "classification",
+        "annotated_text"
+      ]
+    },
+    
+    "error_scenarios": {
+      "missing_audio": {
+        "request_data": {},
+        "expected_status": 400,
+        "expected_error": "audio field required"
+      },
+      "transcription_failure": {
+        "mock_exception": "Whisper model failed to load",
+        "expected_status": 500,
+        "expected_error": "Processing failed"
+      },
+      "insights_failure": {
+        "mock_exception": "API connection timeout",
+        "expected_status": 500
+      }
+    }
+  },
+  
+  "pipeline_test_data": {
+    "hallucination_examples": {
+      "clean_text": "This is a normal transcription with varied content and no repetition issues.",
+      "repetitive_text": "Thank you for calling. Thank you for calling. Thank you for calling. Thank you for calling.",
+      "edge_case_short": "Short",
+      "edge_case_empty": ""
+    },
+    
+    "translation_pairs": {
+      "en_to_es": {
+        "input": "How can I help you today?",
+        "expected": "¿Cómo puedo ayudarte hoy?"
+      },
+      "en_to_fr": {
+        "input": "Please describe your situation.",
+        "expected": "Veuillez décrire votre situation."
+      }
+    },
+    
+    "summarization_examples": {
+      "long_text": "This is a very long text that contains multiple sentences and paragraphs describing a complex workplace situation. The employee has been experiencing ongoing harassment from their supervisor for several months. The situation has escalated recently with threats and verbal abuse occurring daily. The worker is afraid to report the incidents due to fear of retaliation and job loss. They have documentation of some incidents including emails and witness statements. The worker is seeking legal advice and support to address this serious workplace issue.",
+      "expected_short_summary": "Employee experiencing ongoing harassment from supervisor, has documentation, seeking legal support.",
+      "expected_medium_summary": "Worker reports escalating harassment and threats from supervisor over several months. Has documentation and witness statements but fears retaliation. Seeking legal assistance."
+    }
+  }
+}
