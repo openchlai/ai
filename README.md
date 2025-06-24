@@ -59,7 +59,7 @@ Configuration files for deployment and scaling:
 
 ---
 
-## 📖 Documentation
+
 
 - 📜 **[Project Charter](Project_docs/PROJECT_CHARTER.md)** – Defines project objectives.
 - 📚 **[Data Pipeline](Project_docs/DATA_PIPELINE.md)** – Overview of data flow and preprocessing.
