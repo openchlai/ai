@@ -8,6 +8,8 @@ This Django-based AI service processes an **input audio file** and generates an 
 
 ## 🔁 Pipeline Workflow
 
+
+
 ![AI Service Flow](ai_service/ai_service_flow.png)
 ## 📁 Django Project Structure (Recommended)
 
