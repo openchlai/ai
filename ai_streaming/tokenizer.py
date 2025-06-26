@@ -347,12 +347,15 @@ def get_encoding(name: str = "gpt2", num_languages: int = 99):
         "<|startofprev|>",
         "<|nospeech|>",
         "<|notimestamps|>",
-        *[f"<|{i * 0.02:.2f}|>" for i in range(1501)],
+        *[f"<|{i * 0.02:.2f}|>" for i in range(1501)],  # time tokens
     ]
 
     for token in specials:
         special_tokens[token] = n_vocab
         n_vocab += 1
+
+    # print(f"[encoding] {name} timestamp_tokens:{n_vocab-1501}-{n_vocab} ---------------------------")
+    # print(specials)
 
     return tiktoken.Encoding(
         name=os.path.basename(vocab_path),

@@ -1,4 +1,3 @@
-# aii.py  ----------------------------------------------------
 import time
 import numpy as np
 import torch
@@ -6,7 +5,7 @@ import torch
 from typing import Optional, Union, Tuple, List # , TYPE_CHECKING
 from utils import exact_div #, format_timestamp, get_end, get_writer, make_safe, optional_float, optional_int, str2bool,
 from tokenizer import get_tokenizer, LANGUAGES, TO_LANGUAGE_CODE
-from decoding import DecodingOptions, DecodingResult, decode
+from decoding import DecodingOptions, DecodingResult, DecodingTask
 from mel import log_mel_spectrogram, FRAMES_PER_SECOND, HOP_LENGTH, N_FRAMES, N_SAMPLES, SAMPLE_RATE
 from model import Whisper, ModelDimensions
 
@@ -31,7 +30,7 @@ def new_segment(tokenizer, *, start: float, end: float, tokens: torch.Tensor, re
 			"no_speech_prob": result.no_speech_prob,
 		}
 
-def segments(model, tokenizer, options, all_tokens, tokens, result):
+def segments(model, tokenizer, options, tokens, result):
 	#if no_speech_threshold is not None:    # no voice activity check
 	#	should_skip = result.no_speech_prob > no_speech_threshold
 	#	if (logprob_threshold is not None and result.avg_logprob > logprob_threshold):
@@ -46,15 +45,15 @@ def segments(model, tokenizer, options, all_tokens, tokens, result):
 	segment_size 		= N_FRAMES # min(N_FRAMES, content_frames - seek, seek_clip_end - seek)
 	segment_duration 	= segment_size * HOP_LENGTH / SAMPLE_RATE
 	time_offset 		= float(seek * HOP_LENGTH / SAMPLE_RATE)
-	all_segments 		= []
 	current_segments 	= []
 
 	timestamp_tokens: torch.Tensor = tokens.ge(tokenizer.timestamp_begin)	   # boolean mask of ts tokens
 	single_timestamp_ending = timestamp_tokens[-2:].tolist() == [False, True]  # cmp last 2 items
+
 	consecutive = torch.where(timestamp_tokens[:-1] & timestamp_tokens[1:])[0] # find indices where both true
-	consecutive.add_(1)							   # add 1 inplace to each item
+	consecutive.add_(1)
+
 	if len(consecutive) > 0:
-		# if the output contains two consecutive timestamp tokens
 		slices = consecutive.tolist()
 		if single_timestamp_ending:
 			slices.append(len(tokens))
@@ -71,13 +70,6 @@ def segments(model, tokenizer, options, all_tokens, tokens, result):
 				result=result,))
 			last_slice = current_slice
 
-		#if single_timestamp_ending:
-		#	# single timestamp at the end means no speech after the last timestamp.
-		#	seek += segment_size
-		#else:
-		#	# otherwise, ignore the unfinished segment and seek to the last timestamp
-		#	last_timestamp_pos = (tokens[last_slice - 1].item() - tokenizer.timestamp_begin)
-		#	seek += last_timestamp_pos * input_stride
 	else:
 		duration = segment_duration
 		timestamps = tokens[timestamp_tokens.nonzero().flatten()]
@@ -89,20 +81,9 @@ def segments(model, tokenizer, options, all_tokens, tokens, result):
 		current_segments.append(
 			new_segment(tokenizer, start=time_offset, end=time_offset + duration, tokens=tokens, result=result, ))
 
-		# seek += segment_size
+	return current_segments
 
-	# if a segment is instantaneous or does not contain text, clear it
-	for i, segment in enumerate(current_segments):
-		if segment["start"] == segment["end"] or segment["text"].strip() == "":
-			segment["text"] = ""
-			segment["tokens"] = []
-			segment["words"] = []
-		
-	all_segments.extend([{"id": i, **segment} for i, segment in enumerate(current_segments, start=len(all_segments))])
-	all_tokens.extend([token for segment in current_segments for token in segment["tokens"]])
-	return all_segments
-
-def decode_with_fallback(model, transcription_options, decode_options, segment: torch.Tensor) -> DecodingResult:
+def decode_with_fallback(model, tokenizer, transcription_options, decode_options, mel: torch.Tensor) -> DecodingResult:
 	decode_result = None
 	for t in transcription_options["temperature"]:
 		kwargs = {**decode_options}
@@ -112,7 +93,9 @@ def decode_with_fallback(model, transcription_options, decode_options, segment: 
 		else:		# disable best_of when t == 0
 			kwargs.pop("best_of", None)
 		options = DecodingOptions(**kwargs, temperature=t)
-		decode_result = decode(model, segment, options)
+		# decode_result = {} #decode(model, tokenizer, mel, options)
+		with torch.no_grad():
+			decode_result = DecodingTask(model, tokenizer, options).run(mel)[0]
 		needs_fallback = False
 		if (transcription_options["compression_ratio_threshold"] is not None 
 			and decode_result.compression_ratio > transcription_options["compression_ratio_threshold"]):
@@ -149,18 +132,19 @@ def transcribe(model, tokenizer, options, decode_options, audio: bytearray):
 
 	mel = log_mel_spectrogram(model.device, audio, model.dims.n_mels)
 	mel.to(model.device).to(options["dtype"])
-	result: DecodingResult = decode_with_fallback(model, options, decode_options, mel)
+	mel = mel.unsqueeze(0)		# add batch dimension
+
+	result: DecodingResult = decode_with_fallback(model, tokenizer, options, decode_options, mel)
 	tokens = torch.tensor(result.tokens)
-	all_segments = segments(model, tokenizer, options, all_tokens, tokens, result)
+
+	current_segments = segments(model, tokenizer, options, tokens, result) 		# splits to sentences based on predicted timestamps ?
+	all_tokens = tokens # .extend([token for segment in current_segments for token in segment["tokens"]])
 
 	if not options["condition_on_previous_text"] or result.temperature > 0.5:
 		# do not feed the prompt tokens if a high temperature was used
 		prompt_reset_since = len(all_tokens)
 
-	return dict(
-		text=tokenizer.decode(all_tokens[len(initial_prompt_tokens) :]), 
-		segments=all_segments, 
-		language=decode_options["language"])
+	return current_segments
 
 def load_model():
 	ts0 = time.time()
@@ -176,8 +160,8 @@ def load_model():
 	diff = round(ts1 - ts0,2) 
 
 	print(f"Device: {device}")
-	print(type(checkpoint))
-	print(checkpoint.keys())
+	#print(type(checkpoint))
+	#print(checkpoint.keys())
 	print(dims)
 	print(f"{diff} | model ready -----> {model.num_languages} languages {model.is_multilingual} ")
 
@@ -215,6 +199,6 @@ def load_model():
 		num_languages 	= model.num_languages, 
 		language	= decode_options["language"], 
 		task		= decode_options["task"]
-	) 
+	)
 
 	return model, tokenizer, options, decode_options
