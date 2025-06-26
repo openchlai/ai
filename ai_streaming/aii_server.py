@@ -2,7 +2,7 @@ import socket
 import threading	# using threading to enable sharing of one model instance instead of each process loading its own instance
 import os
 import time
-from mel import N_SAMPLES
+from mel import N_SAMPLES_BYTES
 from aii import load_model, transcribe
 
 """
@@ -21,43 +21,52 @@ else:
 
 model, tokenizer, transcribe_options, decode_options = load_model() # one model timeshared among clients -- use mutex
 
+
 buf = bytearray()
 ts0 = time.time()
 out = transcribe(model, tokenizer, transcribe_options, decode_options, buf) # test outside of sock
 ts1 = time.time()
 diff = round(ts1-ts0,2)
-print(f"{diff} | {out['text']}")
+print(f"{diff} | {out}")
+
 
 def handle_client(conn, addr):
 	print(f"[client] Connection from {addr}")
 	buffer = [bytearray(),bytearray()]
-	b = 0
+	b = 1
 	offset = 0
 	try:
 		while True:
 			data = conn.recv(640)  	# 20ms SLIN
+
 			if not data:
 				print(f"[client] Connection closed by {addr}")
 				break
+
 			if b == 1:
 				buffer[1].extend(data)
 				bn = len(buffer[1])
-				if (bn - offset) >= 80000:			# every 5 seconds
-					print(f"transcribe: {bn//16000} {bn}")
-					if bn > N_SAMPLES:			# truncate if greater than 30 seconds
-						print(f"more than 30 sec ... {bn-N_SAMPLES}")  
-						data[:] = buffer[1][-(bn-N_SAMPLES):]
-						buffer[1][:] = buffer[1][:N_SAMPLES]
+				if (bn - offset) >= 160000:			# every 5 seconds
+					# print(f"transcribe: {bn//32000} {bn}")
+					if bn > N_SAMPLES_BYTES:		# truncate if greater than 30 seconds
+						print(f"more than 30 sec ... {bn-N_SAMPLES_BYTES}")  
+						data[:] = buffer[1][-(bn-N_SAMPLES_BYTES):]
+						buffer[1][:] = buffer[1][:N_SAMPLES_BYTES]
+
 					ts0 = time.time()
 					out = transcribe(model, tokenizer, transcribe_options, decode_options, buffer[1]) 
 					ts1 = time.time()
 					diff = round(ts1 - ts0,2)
-					print(f"{diff} | {out['text']}")
-					offset += 80000
-					if bn >= N_SAMPLES:
+					print(f"{diff:<6} | {bn//32000:<3} {bn} | {out}")
+
+					# todo: append untranscribed speech
+					offset += 160000
+
+					if bn >= N_SAMPLES_BYTES:
 						buffer[1].clear()
 						offset = 0
-					if bn > N_SAMPLES:
+					
+					if bn > N_SAMPLES_BYTES:
 						print(f"repopulate ... {len(data)}")
 						buffer[1].extend(data)
 				continue
@@ -86,4 +95,5 @@ def start_server(host='127.0.0.1', port=8300):
 		p.start()
 
 if __name__ == "__main__":
-	start_server()
+	print("--------------------")
+	#start_server()
