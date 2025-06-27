@@ -1,6 +1,3 @@
-# Usage
-# Fix the empty usage.md file
-@"
 # Usage Guide
 
 ## Getting Started
@@ -13,9 +10,9 @@ This guide will help you get started with the OpenCHS documentation system.
 
 Start the development server:
 
-\`\`\`bash
+``` bash
 npm run dev
-\`\`\`
+```
 
 Visit http://localhost:5173 to view your documentation.
 
@@ -23,31 +20,31 @@ Visit http://localhost:5173 to view your documentation.
 
 Build for production:
 
-\`\`\`bash
+```bash
 npm run build
-\`\`\`
+```
 
 ### Preview Production Build
 
 Preview the built site:
 
-\`\`\`bash
+```bash
 npm run serve
-\`\`\`
+```
 
 ## Docker Usage
 
 ### Build Docker Image
 
-\`\`\`bash
+```bash
 npm run docker:build
-\`\`\`
+```
 
 ### Run Docker Container
 
-\`\`\`bash
+```bash
 npm run docker:run
-\`\`\`
+```
 
 Access at http://localhost:8080
 
@@ -55,39 +52,37 @@ Access at http://localhost:8080
 
 ### Deploy to Cluster
 
-\`\`\`bash
+```bash
 npm run k8s:deploy
-\`\`\`
+```
 
 ### Check Status
 
-\`\`\`bash
+```bash
 kubectl get pods -n aidocs
 kubectl port-forward service/aidocs-service 8080:80 -n aidocs
-\`\`\`
+```
 
 ## Testing
 
 ### Run All Tests
 
-\`\`\`bash
+```bash
 npm test
-\`\`\`
+```
 
 ### Individual Tests
 
-\`\`\`bash
+```bash
 npm run test:build    # Test build process
 npm run test:links    # Validate links
 npm run test:health   # Health checks
-\`\`\`
+```
 
 ## Next Steps
 
 - [Features](/features) - Explore available features
-- [Installation](/install) - Detailed setup instructions
-- [FAQ](/faq) - Common questions and answers
+- [Documentation](/documentation) - Detailed setup instructions
 - [Support](/support) - Get help when needed
-"@ | Out-File -FilePath "docs\usage.md" -Encoding UTF8
+- [FAQ](/faq) - Common questions and answers
 
-Write-Host "✅ Fixed empty usage.md file"
