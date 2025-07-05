@@ -16,7 +16,7 @@ Once all the necessary components are installed, you can proceed with the applic
 
 - Clone the application repository from
 
-    - Step 1: Clone the repository ```  git clone <repository_url> ```
+    - Step 1: Clone the repository ``` git clone <repository_url> ```
 
     - Step 2: Enable sparse checkout  ```  cd <repository_directory> ```
 
