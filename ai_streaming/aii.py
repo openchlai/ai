@@ -15,22 +15,12 @@ from model import Whisper, ModelDimensions
 model_name = "/usr/src/pt/tiny.pt" 
 model_alignment_heads = b"ABzY8bu8Lr0{>%RKn9Fp%m@SkK7Kt=7ytkO"
 
-def new_segment(tokenizer, *, start: float, end: float, tokens: torch.Tensor, result: DecodingResult):
+def new_segment(tokenizer, *, start: float, end: float, tokens: torch.Tensor): # , result: DecodingResult):
 	tokens = tokens.tolist()
 	text_tokens = [token for token in tokens if token < tokenizer.eot]
-	return {
-			# "seek": seek,
-			"start": start,
-			"end": end,
-			"text": tokenizer.decode(text_tokens),
-			"tokens": tokens,
-			"temperature": result.temperature,
-			"avg_logprob": result.avg_logprob,
-			"compression_ratio": result.compression_ratio,
-			"no_speech_prob": result.no_speech_prob,
-		}
+	return { "start": start, "end": end, "text": tokenizer.decode(text_tokens), "tokens": tokens }
 
-def segments(model, tokenizer, options, tokens, result):
+def segments(model, tokenizer, tokens, result):
 	#if no_speech_threshold is not None:    # no voice activity check
 	#	should_skip = result.no_speech_prob > no_speech_threshold
 	#	if (logprob_threshold is not None and result.avg_logprob > logprob_threshold):
@@ -64,10 +54,10 @@ def segments(model, tokenizer, options, tokens, result):
 			start_timestamp_pos = (sliced_tokens[0].item() - tokenizer.timestamp_begin)
 			end_timestamp_pos = (sliced_tokens[-1].item() - tokenizer.timestamp_begin)
 			current_segments.append(
-				new_segment(tokenizer, start=time_offset + start_timestamp_pos * time_precision,
+				new_segment(tokenizer, 
+				start=time_offset + start_timestamp_pos * time_precision,
 				end=time_offset + end_timestamp_pos * time_precision,
-				tokens=sliced_tokens,
-				result=result,))
+				tokens=sliced_tokens,))
 			last_slice = current_slice
 
 	else:
@@ -79,7 +69,7 @@ def segments(model, tokenizer, options, tokens, result):
 			duration = last_timestamp_pos * time_precision
 
 		current_segments.append(
-			new_segment(tokenizer, start=time_offset, end=time_offset + duration, tokens=tokens, result=result, ))
+			new_segment(tokenizer, start=time_offset, end=time_offset + duration, tokens=tokens))
 
 	return current_segments
 
@@ -93,7 +83,6 @@ def decode_with_fallback(model, tokenizer, transcription_options, decode_options
 		else:		# disable best_of when t == 0
 			kwargs.pop("best_of", None)
 		options = DecodingOptions(**kwargs, temperature=t)
-		# decode_result = {} #decode(model, tokenizer, mel, options)
 		with torch.no_grad():
 			decode_result = DecodingTask(model, tokenizer, options).run(mel)[0]
 		needs_fallback = False
@@ -137,7 +126,7 @@ def transcribe(model, tokenizer, options, decode_options, audio: bytearray):
 	result: DecodingResult = decode_with_fallback(model, tokenizer, options, decode_options, mel)
 	tokens = torch.tensor(result.tokens)
 
-	current_segments = segments(model, tokenizer, options, tokens, result) 		# splits to sentences based on predicted timestamps ?
+	current_segments = segments(model, tokenizer, tokens, result) 		# splits to sentences based on predicted timestamps ?
 	all_tokens = tokens # .extend([token for segment in current_segments for token in segment["tokens"]])
 
 	if not options["condition_on_previous_text"] or result.temperature > 0.5:
