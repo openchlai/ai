@@ -239,12 +239,9 @@ class AudioUploadView(APIView):
                             logger.info(torch.cuda.memory_summary())
 
             except Exception as e:
-                error_details = {
-                    'error_type': type(e).__name__,
-                    'error_message': str(e),
-                    'traceback': traceback.format_exc()
-                }
-                logger.error(f"Processing failed: {error_details}")
+                # Log the full error details, including the stack trace, on the server
+                logger.error(f"Processing failed: {type(e).__name__}: {str(e)}")
+                logger.error(traceback.format_exc())
                 
                 # Clean up on error
                 try:
@@ -253,7 +250,8 @@ class AudioUploadView(APIView):
                 except:
                     pass  # Don't let cleanup errors mask the original error
                 
-                yield json.dumps({"error": "Processing failed", "details": error_details}) + "\n"
+                # Return a generic error message to the client
+                yield json.dumps({"error": "Processing failed", "details": "An internal error occurred."}) + "\n"
                 
             finally:
                 # Always cleanup resources when done
