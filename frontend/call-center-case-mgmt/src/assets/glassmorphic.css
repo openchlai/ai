@@ -1,0 +1,58 @@
+/* Global Glassmorphic Styles */
+.glass-card {
+  background: var(--content-bg, rgba(255, 255, 255, 0.10));
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.10);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.20));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: background 0.3s, border 0.3s;
+  color: var(--text-color, #222);
+}
+
+.fine-border {
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.20));
+}
+
+.glass-btn {
+  background: var(--content-bg, rgba(255, 255, 255, 0.10));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.20));
+  border-radius: 10px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-color, #222);
+  transition: background 0.3s, border 0.3s;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.glass-btn:hover {
+  background: var(--accent-hover, rgba(255, 255, 255, 0.20));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.30));
+}
+
+.glass-btn.filled {
+  background: var(--accent-color, #964B00);
+  color: #fff;
+  border: none;
+}
+
+.glass-btn.filled:hover {
+  background: var(--accent-hover, #7a3d00);
+}
+
+/* Support for dark mode */
+[data-theme='dark'] .glass-card,
+[data-theme='dark'] .glass-btn {
+  background: var(--content-bg, rgba(0, 0, 0, 0.30));
+  color: var(--text-color, #fff);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.10));
+}
+
+[data-theme='dark'] .glass-btn.filled {
+  background: var(--accent-color, #964B00);
+  color: #fff;
+} 
