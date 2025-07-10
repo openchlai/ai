@@ -1,0 +1,30 @@
+# config/models.yaml
+
+transcription_model:
+  name: whisper
+  path: /app/models/whisper-base
+  size: base
+
+translation_model:
+  name: nllb-200
+  path: /app/models/nllb-200
+
+summarization_model:
+  name: flan-t5-small
+  path: /app/models/flan-t5-small
+
+ner_model:
+  name: spacy-en-core-web-md
+  path: en_core_web_md  # spaCy models are loaded by name, not path
+
+classifier_model:
+  name: case_classifier
+  path: /app/models/classifier_model
+
+highlight_model:
+  name: simple_highlighter
+  path: null  # if you use a function-based highlighter
+
+insights_generator:
+  name: rules_based
+  path: null  # if it's a rules-based function and doesn't need a model
