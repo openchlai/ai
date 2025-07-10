@@ -216,6 +216,7 @@ class TestClassifier:
                 
                 assert "category" in result
                 assert "confidence" in result
+
     @patch('torch.cuda.is_available')
     def test_classify_case_success(self, mock_cuda, mock_label_encoder, mock_tokenizer, mock_model):
         """Test successful case classification"""
@@ -256,7 +257,3 @@ class TestClassifier:
             assert "confidence" in result
             assert result["category"] == "workplace_abuse"
             assert isinstance(result["confidence"], float)
-
-    @patch('core.pipeline.classifier.model')
-    @patch('core.pipeline.classifier.tokenizer')
-    @patch('core.pipeline.classifier.label_encoder')
