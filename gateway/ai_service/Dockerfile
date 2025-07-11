@@ -44,18 +44,11 @@ RUN python -m spacy download en_core_web_md
 COPY . .
 RUN chown -R dockeruser:chl_ai /app
 
+# Ensure gunicorn is available in the system PATH
+RUN which gunicorn || echo "Gunicorn not found"
+
 # Switch to dockeruser
 USER dockeruser
-
-# Set up user pip config
-RUN mkdir -p /home/dockeruser/.pip && \
-    echo "[global]" > /home/dockeruser/.pip/pip.conf && \
-    echo "timeout = 100" >> /home/dockeruser/.pip/pip.conf && \
-    echo "retries = 10" >> /home/dockeruser/.pip/pip.conf
-
-# Set environment variables for user
-ENV HOME=/home/dockeruser
-ENV PATH="/home/dockeruser/.local/bin:$PATH"
 
 # Expose port
 EXPOSE 8000

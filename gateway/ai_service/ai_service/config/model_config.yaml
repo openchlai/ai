@@ -17,9 +17,10 @@ ner_model:
   name: spacy-en-core-web-md
   path: en_core_web_md  # spaCy models are loaded by name, not path
 
-classifier_model:
-  name: case_classifier
-  path: /app/models/classifier_model
+multitask_distilbert:
+  name: multitask_distilbert
+  path: /app/models/Multiclassifier
+
 
 highlight_model:
   name: simple_highlighter

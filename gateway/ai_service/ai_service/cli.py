@@ -52,4 +52,5 @@ def main():
     subprocess.call(["python", "manage.py", "migrate"])
 
     # Step 4: Start development server
-    print("🚀 S
+    print("🚀 Starting server at http://127.0.0.1:8000")
+    subprocess.call(["python", "manage.py", "runserver"])

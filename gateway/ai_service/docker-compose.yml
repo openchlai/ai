@@ -1,36 +1,47 @@
-version: '3.9'
-
 services:
   web:
     build:
       context: .
     deploy:
-      resources:
-        reservations:
-          devices:
-            - capabilities: [gpu]
+      # resources:
+        # reservations:
+          # devices:
+            # - driver: nvidia  # Explicit driver declaration
+              # capabilities: [gpu]
+
     command: >
       gunicorn --bind 0.0.0.0:8000
                --workers=1
                --threads=2
                --timeout=300
                ai_service.wsgi:application
+
     ports:
       - "8000:8000"
+
     volumes:
       - .:/app
-      - /opt/chl_ai/models:/opt/chl_ai/models
-      - /home/bitz/ai_models:/home/bitz/ai_models
+      - ./models:/app/models
+      # - /opt/chl_ai/models:/opt/chl_ai/models
+      # - /home/bitz/ai_models:/home/bitz/ai_models
+
     environment:
-      PYTHONUNBUFFERED: 1
-      CHL_AI_MODELS: /workspace/models
-      CHL_AI_DATA: /workspace/data
-      NVIDIA_VISIBLE_DEVICES: all
-      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+      PYTHONUNBUFFERED: "1"
+      MODEL_CONFIG_PATH: /app/ai_service/config/models.yaml
+      CHL_AI_MODELS: /opt/chl_ai/models
+      CHL_AI_DATA: /opt/chl_ai/data
+      # NVIDIA_VISIBLE_DEVICES: all
+      # NVIDIA_DRIVER_CAPABILITIES: compute,utility
+
     working_dir: /app
+
     restart: always
+
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
       interval: 30s
       timeout: 10s
       retries: 3
+
+    # runtime: nvidia  # Required to access the GPU
+
