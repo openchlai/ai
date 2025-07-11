@@ -1,18 +1,25 @@
 #!/bin/bash
-set -e  # Exit immediately on error
+set -e  # Exit on any error
 
-echo "🔧 Creating virtual environment..."
+echo "🔧 [1/6] Creating virtual environment..."
 python3 -m venv venv
+
+echo "🐍 [2/6] Activating virtual environment..."
 source venv/bin/activate
 
-echo "📦 Installing Python dependencies..."
+echo "📦 [3/6] Upgrading pip..."
 pip install --upgrade pip
-pip install -r requirements.txt
 
-echo "⬆️ Ensuring spaCy 3.8.0 is installed..."
+echo "📚 [4/6] Installing Python dependencies from requirements.txt..."
+if [ -f "requirements.txt" ]; then
+    pip install -r requirements.txt
+else
+    echo "⚠️  requirements.txt not found. Skipping."
+fi
+
+echo "🧠 [5/6] Installing spaCy 3.8.0 and downloading model..."
 pip install spacy==3.8.0
-
-echo "🧠 Downloading spaCy model: en_core_web_md"
 python -m spacy download en_core_web_md
 
-echo "✅ Setup complete. Activate the venv with 'source venv/bin/activate'"
+echo "✅ [6/6] Setup complete!"
+echo "👉 Run: 'source venv/bin/activate' to activate the virtual environment."
