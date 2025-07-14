@@ -1,19 +1,47 @@
-# Translation
+# Translation Pipeline
 
-This folder contains notebooks for language translation tasks and applications.
+This folder contains notebooks for developing translation models that convert transcribed text into English to support multilingual users.
 
-## Purpose
-- Machine translation systems
-- Language pair translation models
-- Translation quality evaluation
-- Multilingual processing
-- Translation model fine-tuning
+## Pipeline Components
 
-## Typical Notebooks
-- Neural machine translation models
-- Translation model training
-- Language pair processing
-- Translation quality metrics
-- Multilingual translation systems
-- Translation model evaluation
-- Domain-specific translation adaptation
+### language_detection/
+- Automatic language identification
+- Language confidence scoring
+- Multi-language detection
+- Language-specific preprocessing
+
+### model_training/
+- Neural machine translation model training
+- Multilingual model fine-tuning
+- Language-pair specific optimization
+- Training data preparation and augmentation
+
+### model_evaluation/
+- BLEU score calculation
+- ROUGE metrics evaluation
+- Translation quality assessment
+- Human evaluation frameworks
+
+### inference_pipeline/
+- Real-time translation services
+- Batch translation processing
+- API integration for translation
+- Translation confidence scoring
+
+### multilingual_support/
+- Language-specific processing
+- Regional dialect handling
+- Cultural context preservation
+- Domain-specific translation
+
+### quality_assessment/
+- Translation accuracy metrics
+- Fluency evaluation
+- Semantic similarity analysis
+- Error analysis and correction
+
+## Key Technologies
+- Transformers (mBART, T5, MarianMT)
+- Hugging Face Transformers
+- SentencePiece tokenization
+- Language detection libraries
