@@ -1,53 +1,54 @@
+from importlib.resources import files
 import os
-import warnings
-from transformers import pipeline, AutoTokenizer, AutoModelForSeq2SeqLM
 import torch
+import yaml
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
-warnings.filterwarnings("ignore", category=UserWarning, message=".*has_mps.*")
+# === Force CPU inference ===
+device = torch.device("cpu")
 
-# Use a more powerful base model for future fine-tuning
-MODEL_NAME = os.getenv("SUMMARIZER_MODEL", "facebook/bart-large-cnn")
+# === Load model path from config ===
+# === Load model config ===
+try:
+    config_path = os.getenv("MODEL_CONFIG_PATH")
+    if config_path and os.path.exists(config_path):
+        with open(config_path, "r") as f:
+            config = yaml.safe_load(f)
+    else:
+        config_file = files("ai_service").joinpath("config/model_config.yaml")
+        with config_file.open("r") as f:
+            config = yaml.safe_load(f)
+except Exception as e:
+    raise RuntimeError(f"Could not load model config: {e}")
 
-# Load model and tokenizer
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
+# === Get summarization model path ===
+summ_config = config.get("summarization_model", {})
+model_path = os.path.abspath(summ_config.get("path", "/app/models/summarizer_model"))
 
-# Define summarizer pipeline (no device argument — let accelerate handle it)
-summarizer = pipeline(
-    "summarization",
-    model=model,
-    tokenizer=tokenizer
-)
+if not os.path.exists(model_path):
+    raise FileNotFoundError(f"Summarizer model not found at: {model_path}")
 
-def chunk_text(text, max_token_length=1024):
-    """Split long text into smaller chunks for summarization."""
-    inputs = tokenizer(text, return_tensors="pt", truncation=False)
-    input_ids = inputs["input_ids"][0]
-    chunks = []
+# === Load model and tokenizer ===
+tokenizer = AutoTokenizer.from_pretrained(model_path, local_files_only=True)
+model = AutoModelForSeq2SeqLM.from_pretrained(model_path, local_files_only=True)
+model = model.to(device)
 
-    for i in range(0, len(input_ids), max_token_length):
-        chunk_ids = input_ids[i:i + max_token_length]
-        chunk_text = tokenizer.decode(chunk_ids, skip_special_tokens=True)
-        chunks.append(chunk_text)
+# === Summarization function ===
+def summarize(text: str, max_length: int = 128, min_length: int = 30) -> str:
+    if not text.strip():
+        return ""
 
-    return chunks
+    inputs = tokenizer("summarize: " + text, return_tensors="pt", max_length=512, truncation=True)
+    inputs = {k: v.to(device) for k, v in inputs.items()}
 
-def summarize(text, max_chunk_tokens=1024, min_length=30, max_length=150):
-    """Summarize text, chunking it if needed."""
-    try:
-        chunks = chunk_text(text, max_chunk_tokens)
-        summaries = []
+    with torch.no_grad():
+        summary_ids = model.generate(
+            inputs["input_ids"],
+            max_length=max_length,
+            min_length=min_length,
+            length_penalty=2.0,
+            num_beams=4,
+            early_stopping=True
+        )
 
-        for chunk in chunks:
-            summary = summarizer(
-                chunk,
-                max_length=max_length,
-                min_length=min_length,
-                do_sample=False
-            )
-            summaries.append(summary[0]['summary_text'])
-
-        return " ".join(summaries)
-
-    except Exception as e:
-        raise RuntimeError(f"Summarization failed: {str(e)}")
+    return tokenizer.decode(summary_ids[0], skip_special_tokens=True)

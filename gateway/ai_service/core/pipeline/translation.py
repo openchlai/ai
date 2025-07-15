@@ -1,48 +1,63 @@
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+from importlib.resources import files
+import os
+import yaml
 import torch
 import logging
+from transformers import MarianTokenizer, MarianMTModel
 
 logger = logging.getLogger(__name__)
 
-def translate(text, target_lang="eng_Latn"):
-    """Translate text using the NLLB-200 1.3B model with GPU if available, otherwise CPU."""
-    logger.info(f"Starting translation to {target_lang}")
+# === Load model config ===
+try:
+    config_path = os.getenv("MODEL_CONFIG_PATH")
+    if config_path and os.path.exists(config_path):
+        with open(config_path, "r") as f:
+            config = yaml.safe_load(f)
+    else:
+        config_file = files("ai_service").joinpath("config/model_config.yaml")
+        with config_file.open("r") as f:
+            config = yaml.safe_load(f)
+except Exception as e:
+    raise RuntimeError(f"Could not load model config: {e}")
 
-    # Detect device: prefer GPU
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    logger.info(f"Using device: {device}")
+translation_cfg = config["translation_model"]
+model_path = translation_cfg["path"]
+logger.info(f"Loaded translation model config: {translation_cfg}")
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+logger.info(f"Using device: {device}")
+
+try:
+    tokenizer = MarianTokenizer.from_pretrained(model_path)
+    model = MarianMTModel.from_pretrained(model_path)
+    model = model.to(device)
+    logger.info(f"MarianMT model loaded from: {model_path}")
+except Exception as e:
+    logger.error(f"Failed to load MarianMT model from {model_path}: {e}")
+    raise RuntimeError(f"Model load error: {e}")
+
+def translate(text):
+    logger.info("Starting translation with MarianMT")
 
     try:
-        # Load tokenizer and model
-        tokenizer = AutoTokenizer.from_pretrained("facebook/nllb-200-1.3B")
-        tokenizer.src_lang = "eng_Latn"
-        model = AutoModelForSeq2SeqLM.from_pretrained(
-            "facebook/nllb-200-1.3B",
-            torch_dtype=torch.float16 if device.type == "cuda" else torch.float32
-        ).to(device)
-
-        # Tokenize input and move tensors to selected device
-        max_length = 1024
         inputs = tokenizer(
             text,
             return_tensors="pt",
-            truncation=True,
             padding=True,
-            max_length=max_length
+            truncation=True,
+            max_length=256
         ).to(device)
 
-        # Generate translation
-        translated = model.generate(
+        output_tokens = model.generate(
             **inputs,
-            forced_bos_token_id=tokenizer.lang_code_to_id[target_lang],
-            max_length=max_length,
-            num_beams=4
+            max_length=256,
+            num_beams=4,
+            early_stopping=True,
+            num_return_sequences=1
         )
 
-        # Decode and return
-        result = tokenizer.batch_decode(translated, skip_special_tokens=True)[0]
-        logger.info("Translation completed successfully")
-        return result
+        translated_text = tokenizer.decode(output_tokens[0], skip_special_tokens=True)
+        return translated_text
 
     except Exception as e:
         logger.error(f"Translation failed: {str(e)}")

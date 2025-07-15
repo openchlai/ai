@@ -9,8 +9,14 @@ from importlib.resources import files
 from transformers import (
     AutoTokenizer,
     DistilBertPreTrainedModel,
-    DistilBertModel
+    DistilBertModel,
+    logging
 )
+
+# === Suppress warnings and enforce offline mode ===
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+os.environ["TRANSFORMERS_CACHE"] = os.path.abspath("./models/cache")  # Ensure local cache
+logging.set_verbosity_error()
 
 # === Load model config ===
 try:
@@ -26,20 +32,32 @@ except Exception as e:
     raise RuntimeError(f"Could not load model config: {e}")
 
 # === Extract classifier model config ===
-model_config = config.get("classifier_model", {})
-model_path = model_config.get("path")
-if not model_path or not os.path.exists(model_path):
-    raise FileNotFoundError(f"Classifier model path not found: {model_path}")
+model_config = config.get("multitask_distilbert", {})
+model_root_path = os.path.abspath(model_config.get("path", ""))
+base_model_path = os.path.join(model_root_path, "multitask_distilbert")
 
-# === Load label mappings ===
+print(f"Using classifier model path: {base_model_path}")
+if not os.path.exists(base_model_path):
+    raise FileNotFoundError(f"Classifier model path not found: {base_model_path}")
+
+# === Verify required files ===
+required_files = [
+    "config.json", "model.safetensors", "tokenizer.json",
+    "tokenizer_config.json", "vocab.txt", "special_tokens_map.json"
+]
+missing = [f for f in required_files if not os.path.exists(os.path.join(base_model_path, f))]
+if missing:
+    raise FileNotFoundError(f"Missing model files in {base_model_path}: {missing}")
+
+# === Load label mappings from the parent folder ===
 try:
-    with open(os.path.join(model_path, "main_categories.json")) as f:
+    with open(os.path.join(model_root_path, "main_categories.json")) as f:
         main_categories = json.load(f)
-    with open(os.path.join(model_path, "sub_categories.json")) as f:
+    with open(os.path.join(model_root_path, "sub_categories.json")) as f:
         sub_categories = json.load(f)
-    with open(os.path.join(model_path, "interventions.json")) as f:
+    with open(os.path.join(model_root_path, "interventions.json")) as f:
         interventions = json.load(f)
-    with open(os.path.join(model_path, "priorities.json")) as f:
+    with open(os.path.join(model_root_path, "priorities.json")) as f:
         priorities = json.load(f)
 except Exception as e:
     raise RuntimeError(f"Could not load category mapping files: {e}")
@@ -87,14 +105,20 @@ class MultiTaskDistilBert(DistilBertPreTrainedModel):
         return (loss, logits_main, logits_sub, logits_interv, logits_priority) if loss else \
                (logits_main, logits_sub, logits_interv, logits_priority)
 
-# === Load tokenizer and model from local directory ===
-tokenizer = AutoTokenizer.from_pretrained(model_path)
+# === Load tokenizer and model ===
+tokenizer = AutoTokenizer.from_pretrained(
+    base_model_path,
+    local_files_only=True,
+    trust_remote_code=False
+)
 model = MultiTaskDistilBert.from_pretrained(
-    model_path,
+    base_model_path,
     num_main=len(main_categories),
     num_sub=len(sub_categories),
     num_interv=len(interventions),
-    num_priority=len(priorities)
+    num_priority=len(priorities),
+    local_files_only=True,
+    trust_remote_code=False
 )
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -111,7 +135,8 @@ def classify_case(narrative: str):
         padding='max_length',
         max_length=256,
         return_tensors="pt"
-    ).to(device)
+    )
+    inputs = {k: v.to(device) for k, v in inputs.items()}
 
     with torch.no_grad():
         logits_main, logits_sub, logits_interv, logits_priority = model(**inputs)
