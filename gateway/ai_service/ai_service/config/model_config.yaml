@@ -1,17 +1,16 @@
-# config/models.yaml
-
+# model_config.yaml
 transcription_model:
   name: whisper
   path: /app/models/whisper-base
   size: base
 
 translation_model:
-  name: nllb-200
-  path: /app/models/nllb-200
+  name: marianmt
+  path: /app/models/translation_model  # Path to your fine-tuned MarianMT model
 
-summarization_model:
-  name: flan-t5-small
-  path: /app/models/flan-t5-small
+summarizer_model:
+  name: flan-t5-custom
+  path: /app/models/summarizer_model  # ✅ Updated path to your fine-tuned model
 
 ner_model:
   name: spacy-en-core-web-md
@@ -19,8 +18,7 @@ ner_model:
 
 multitask_distilbert:
   name: multitask_distilbert
-  path: /app/models/Multiclassifier
-
+  path: /app/models/Multiclassifier/
 
 highlight_model:
   name: simple_highlighter
