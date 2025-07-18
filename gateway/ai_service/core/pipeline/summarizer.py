@@ -1,54 +1,54 @@
-from importlib.resources import files
-import os
+import logging
 import torch
-import yaml
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+from core.pipeline.model_loader import load_hf_model_and_tokenizer
 
-# === Force CPU inference ===
-device = torch.device("cpu")
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
-# === Load model path from config ===
-# === Load model config ===
+# === Load summarizer model and tokenizer ===
 try:
-    config_path = os.getenv("MODEL_CONFIG_PATH")
-    if config_path and os.path.exists(config_path):
-        with open(config_path, "r") as f:
-            config = yaml.safe_load(f)
-    else:
-        config_file = files("ai_service").joinpath("config/model_config.yaml")
-        with config_file.open("r") as f:
-            config = yaml.safe_load(f)
+    model, tokenizer, device = load_hf_model_and_tokenizer("summarizer_model")
+    logger.info("✅ Summarization model loaded successfully.")
 except Exception as e:
-    raise RuntimeError(f"Could not load model config: {e}")
-
-# === Get summarization model path ===
-summ_config = config.get("summarization_model", {})
-model_path = os.path.abspath(summ_config.get("path", "/app/models/summarizer_model"))
-
-if not os.path.exists(model_path):
-    raise FileNotFoundError(f"Summarizer model not found at: {model_path}")
-
-# === Load model and tokenizer ===
-tokenizer = AutoTokenizer.from_pretrained(model_path, local_files_only=True)
-model = AutoModelForSeq2SeqLM.from_pretrained(model_path, local_files_only=True)
-model = model.to(device)
+    raise RuntimeError(f"Failed to load summarizer model or tokenizer: {e}")
 
 # === Summarization function ===
 def summarize(text: str, max_length: int = 128, min_length: int = 30) -> str:
+    """
+    Summarizes input text using the loaded model.
+    
+    Args:
+        text (str): Input text to summarize.
+        max_length (int): Max length of summary.
+        min_length (int): Min length of summary.
+    
+    Returns:
+        str: The generated summary or error message.
+    """
     if not text.strip():
         return ""
 
-    inputs = tokenizer("summarize: " + text, return_tensors="pt", max_length=512, truncation=True)
-    inputs = {k: v.to(device) for k, v in inputs.items()}
-
-    with torch.no_grad():
-        summary_ids = model.generate(
-            inputs["input_ids"],
-            max_length=max_length,
-            min_length=min_length,
-            length_penalty=2.0,
-            num_beams=4,
-            early_stopping=True
+    try:
+        inputs = tokenizer(
+            "summarize: " + text,
+            return_tensors="pt",
+            max_length=512,
+            truncation=True
         )
+        inputs = {k: v.to(device) for k, v in inputs.items()}
 
-    return tokenizer.decode(summary_ids[0], skip_special_tokens=True)
+        with torch.no_grad():
+            summary_ids = model.generate(
+                inputs["input_ids"],
+                max_length=max_length,
+                min_length=min_length,
+                length_penalty=2.0,
+                num_beams=4,
+                early_stopping=True
+            )
+
+        return tokenizer.decode(summary_ids[0], skip_special_tokens=True)
+
+    except Exception as e:
+        logger.error(f"Summarization failed: {e}")
+        return "[Error generating summary]"

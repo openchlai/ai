@@ -2,8 +2,7 @@
 transcription_model:
   name: whisper
   # whisper tiny
-  path: /app/models/whisper-tiny  # ✅ Full absolute path inside container
-
+  path: tiny
   # path: /app/models/whisper-base
   # path: /app/models/whisper-large-v2
   size: tiny
