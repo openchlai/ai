@@ -1,8 +1,12 @@
 # model_config.yaml
 transcription_model:
   name: whisper
-  path: /app/models/whisper-base
-  size: base
+  # whisper tiny
+  path: /app/models/whisper-tiny  # ✅ Full absolute path inside container
+
+  # path: /app/models/whisper-base
+  # path: /app/models/whisper-large-v2
+  size: tiny
 
 translation_model:
   name: marianmt
@@ -16,9 +20,14 @@ ner_model:
   name: spacy-en-core-web-md
   path: en_core_web_md  # spaCy models are loaded by name, not path
 
+# multitask_distilbert:
+#   name: multitask_distilbert
+#   path: /app/models/Multiclassifier/
+
 multitask_distilbert:
   name: multitask_distilbert
-  path: /app/models/Multiclassifier/
+  path: /app/models/Multiclassifier  # ✅ point to model files
+
 
 highlight_model:
   name: simple_highlighter
