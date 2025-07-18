@@ -683,15 +683,10 @@
     border-color: var(--accent-color) !important;
   }
 
-  .main-content {
+  .main-content, .main-scroll-content {
+    min-height: 100vh;
+    overflow-y: auto;
     flex: 1;
-    margin-left: var(--sidebar-width, 250px);
-    height: 100vh;
-    background-color: var(--background-color);
-    transition: margin-left 0.3s ease, background-color 0.3s;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
   }
 
   .header {
@@ -733,7 +728,6 @@
   }
 
   .main-scroll-content {
-    flex: 1;
     padding: 20px;
     overflow-y: auto;
     overflow-x: hidden;

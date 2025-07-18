@@ -40,11 +40,14 @@ image.png<template>
         </button>
       </div>
 
-      <div class="search-container">
+      <div class="search-container" style="position: relative;">
+        <span class="search-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
         <input 
           v-model="searchQuery"
           class="search-input" 
-          placeholder="Search cases..." 
+          placeholder="Search case by title, assignee, or filer..." 
           type="text"
           @input="handleSearch"
         />
@@ -80,13 +83,12 @@ image.png<template>
             <div class="case-details">
               <div class="case-title">{{ caseItem.title }}</div>
               <div class="case-meta">
-                <div class="case-priority">
-                  <div :class="['priority-dot', caseItem.priority.toLowerCase()]" />
-                  <span>{{ caseItem.priority }} priority</span>
-                </div>
-                <div v-if="selectedCaseId === caseItem.id" class="case-assigned">
-                  <span>{{ caseItem.assignedTo ? `Assigned: ${caseItem.assignedTo}` : 'Unassigned' }}</span>
-                </div>
+                <span class="case-priority">
+                  <span :class="['priority-dot', caseItem.priority.toLowerCase()]" />
+                  {{ caseItem.priority }} priority
+                </span>
+                <span class="case-date">{{ caseItem.date }}</span>
+                <span class="case-assigned">{{ caseItem.assignedTo ? `Assigned: ${caseItem.assignedTo}` : 'Unassigned' }}</span>
               </div>
             </div>
           </div>
@@ -506,34 +508,49 @@ body {
 }
 
 .search-container {
-  margin-bottom: 20px;
+  margin-bottom: 32px;
   flex-shrink: 0;
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
 }
 
 .search-input {
   width: 100%;
-  padding: 12px 20px;
+  padding: 12px 20px 12px 44px;
   border-radius: 30px;
   border: none;
   background-color: var(--content-bg);
   color: var(--text-color);
-  font-size: 14px;
+  font-size: 15px;
   transition: border-color 0.3s, box-shadow 0.3s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  position: relative;
 }
 
 .search-input::placeholder {
   color: var(--text-secondary);
+  font-size: 15px;
+  opacity: 1;
 }
 
-.search-input:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--accent-color);
+.search-icon {
+  position: absolute;
+  left: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  font-size: 18px;
+  pointer-events: none;
+  z-index: 2;
 }
 
 .filter-tabs {
   display: flex;
   gap: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 28px;
+  margin-top: 18px;
   overflow-x: auto;
   padding-bottom: 5px;
   flex-shrink: 0;
@@ -570,12 +587,11 @@ body {
 }
 
 .cases-list {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  max-height: calc(100vh - 140px); /* Adjust 140px as needed for header/filter height */
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  /* Make cards stretch to container width */
+  width: 100%;
 }
 
 .cases-list::-webkit-scrollbar {
@@ -603,129 +619,111 @@ body {
 
 .case-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  cursor: pointer;
+  padding: 18px 32px;
+  border-radius: 18px;
+  transition: all 0.3s ease;
+  position: relative;
   background: var(--content-bg);
   color: var(--text-color);
-  border-radius: 15px;
-  padding: 15px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  transition: background 0.3s, color 0.3s, border 0.3s;
   border: 1.5px solid transparent;
-  cursor: pointer;
   font-size: 15px;
-  margin-bottom: 16px;
-  min-height: 0;
-  gap: 16px;
-  min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
+  margin-bottom: 0;
+  width: 100%;
+  max-width: 900px;
+  min-width: 400px;
+  /* Center cards in container */
+  align-self: center;
 }
+
 .case-item.selected {
-  border: 2px solid var(--accent-color);
-  background: rgba(150,75,0,0.07);
-  box-shadow: 0 2px 8px rgba(150,75,0,0.08);
+  background-color: rgba(255, 59, 48, 0.1);
+  border: 1.5px solid var(--highlight-color);
 }
+
 .case-item:hover {
-  background: rgba(150,75,0,0.04);
+  background-color: rgba(150,75,0,0.04);
+  transform: translateX(5px);
 }
+
 .case-icon {
   width: 40px;
   height: 40px;
-  min-width: 40px;
-  min-height: 40px;
-  max-width: 40px;
-  max-height: 40px;
-  background: var(--accent-color, #964B00);
   border-radius: 50%;
+  background: var(--accent-color);
   display: flex;
   justify-content: center;
   align-items: center;
-  flex-shrink: 0;
   margin-right: 15px;
-  margin-left: 0;
-  border: 2px solid var(--accent-color);
-  box-shadow: none;
-  opacity: 1;
+  color: #fff;
+  flex-shrink: 0;
 }
+
 .case-icon svg {
   width: 18px;
   height: 18px;
   stroke: #fff;
-  opacity: 1;
 }
+
 .case-details {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   justify-content: center;
   width: 100%;
   overflow: hidden;
-  padding-top: 0;
-  word-break: break-word;
-  overflow-wrap: break-word;
 }
+
 .case-title {
-  font-size: 1rem;
+  font-size: 1.08rem;
   font-weight: 700;
-  padding-top: 0;
   margin-bottom: 2px;
-  letter-spacing: 0.01em;
   width: 100%;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .case-meta {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 13px;
+  gap: 18px;
+  font-size: 14px;
   color: var(--text-secondary);
-  width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  word-break: break-word;
-  overflow-wrap: break-word;
-}
-.case-id {
-  font-size: 0.95rem;
-  color: #bbb;
-  margin-bottom: 8px;
-}
-.case-priority {
-  display: flex;
   align-items: center;
-  gap: 8px;
-  font-weight: 700;
-  margin-bottom: 2px;
+  flex-wrap: wrap;
+  width: 100%;
+  min-height: 28px;
+  padding-top: 2px;
+  padding-bottom: 2px;
 }
+
+.case-priority,
+.case-date,
 .case-assigned {
-  display: flex;
-  align-items: center;
-  font-weight: 400;
-  color: #888;
-  margin-top: 2px;
-}
-.case-assigned span {
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  font-size: 12px;
-  width: 100%;
-  white-space: nowrap;
+  flex: 1 1 0;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
 }
+
 .priority-dot {
-  width: 11px;
-  height: 11px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   flex-shrink: 0;
-  border: 1.5px solid #fff;
+  border: 2px solid #fff;
   box-shadow: 0 0 0 2px rgba(0,0,0,0.08);
+  margin-right: 2px;
+  display: inline-block;
+  vertical-align: middle;
 }
+
 .priority-dot.high {
   background-color: var(--high-priority);
 }
@@ -734,6 +732,24 @@ body {
 }
 .priority-dot.low {
   background-color: var(--low-priority);
+}
+
+.case-date {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.case-assigned {
+  font-size: 12px;
+  color: #888;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.case-id {
+  font-size: 0.95rem;
+  color: #bbb;
+  margin-bottom: 8px;
 }
 .case-detail-drawer {
   position: fixed;
@@ -984,23 +1000,22 @@ body.high-contrast .priority-dot.medium { background: #FFA500 !important; }
 body.high-contrast .priority-dot.low { background: #4CAF50 !important; }
 @media (max-width: 900px) {
   .case-item {
-    padding: 20px 18px 22px 18px;
-    gap: 12px;
-  }
-  .case-icon {
-    width: 36px;
-    height: 36px;
-    min-width: 36px;
-    min-height: 36px;
-    max-width: 36px;
-    max-height: 36px;
-    margin-right: 12px;
-  }
-  .case-title {
-    font-size: 1rem;
+    padding: 14px 10px;
+    max-width: 100vw;
+    min-width: 0;
   }
   .case-meta {
-    font-size: 12px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    white-space: normal;
+  }
+  .case-priority,
+  .case-date,
+  .case-assigned {
+    max-width: 100%;
+    width: 100%;
+    display: block;
   }
 }
 @media (max-width: 600px) {
@@ -1023,6 +1038,19 @@ body.high-contrast .priority-dot.low { background: #4CAF50 !important; }
   }
   .case-meta {
     font-size: 11px;
+  }
+  .case-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    white-space: normal;
+  }
+  .case-priority,
+  .case-date,
+  .case-assigned {
+    max-width: 100%;
+    width: 100%;
+    display: block;
   }
 }
 </style>
