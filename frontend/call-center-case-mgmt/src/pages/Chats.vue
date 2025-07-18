@@ -242,6 +242,12 @@ const dummyChats = [
   { id: 503, senderName: 'Winnie Naliaka', platform: 'archive', status: 'Closed', date: 'Yesterday', time: '10:00AM', text: 'No further action needed.' },
   { id: 504, senderName: 'Xavier Kiplangat', platform: 'archive', status: 'Closed', date: 'Yesterday', time: '10:30AM', text: 'All done, thanks.' },
   { id: 505, senderName: 'Yvonne Atieno', platform: 'archive', status: 'Closed', date: 'Yesterday', time: '11:00AM', text: 'Appreciate your support.' },
+  // CFFS Conversations (children and chatbot)
+  { id: 601, senderName: 'Child', platform: 'CFFS', status: 'Active', date: 'Today', time: '10:00AM', text: 'Hello!' },
+  { id: 602, senderName: 'CFFS Chatbot', platform: 'CFFS', status: 'Active', date: 'Today', time: '10:01AM', text: 'Hi there! What is your name?' },
+  { id: 603, senderName: 'Child', platform: 'CFFS', status: 'Active', date: 'Today', time: '10:02AM', text: 'My name is Amina.' },
+  { id: 604, senderName: 'CFFS Chatbot', platform: 'CFFS', status: 'Active', date: 'Today', time: '10:03AM', text: 'How old are you, Amina?' },
+  { id: 605, senderName: 'Child', platform: 'CFFS', status: 'Active', date: 'Today', time: '10:04AM', text: 'I am 10 years old. How are you feeling lately?' },
 ];
 
 // Timeline view: always show all chats grouped by day
@@ -433,6 +439,7 @@ const channelFilters = [
   { id: 'sms', name: 'SMS' },
   { id: 'messenger', name: 'Messenger' },
   { id: 'telegram', name: 'Telegram' },
+  { id: 'CFFS', name: 'CFFS Conversations' },
   { id: 'archive', name: 'Archive' }
 ];
 
