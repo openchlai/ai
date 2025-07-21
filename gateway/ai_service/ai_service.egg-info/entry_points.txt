@@ -1,2 +1,0 @@
-[console_scripts]
-openchs = ai_service.cli:main
