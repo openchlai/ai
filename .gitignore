@@ -89,6 +89,7 @@ htmlcov/
 .temp/
 
 # AI and ML specific
+models/
 gateway/ai_service/models/
 models/translation/translation_env/
 gateway/ai_service/tiny/
