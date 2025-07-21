@@ -39,7 +39,6 @@ vendor/
 .secret*
 translation_env
 
-
 # Log files and caches
 *.log
 npm-debug.log*
@@ -89,10 +88,30 @@ htmlcov/
 .stylelintcache
 .temp/
 
+# AI and ML specific
+gateway/ai_service/models/
+models/translation/translation_env/
+gateway/ai_service/tiny/
 gateway/ai_service/db.sqlite3
 gateway/ai_service/audio/
+gateway/ai_service/audio_files/
+ai-raw-pipeline/synthetic_data/
+ai-raw-pipeline/wav2vec/
+helplinev1/docker/mysql/
+backend/api/
+docs/dist.zip
+docs/docs/training/OPENCHS-PITCHDECK.mp4
 
+# Binary and data files
+*.pt
+*.safetensors
+*.dylib
+*.sql
+*.mp4
+*.zip
+*.json
 
+# Audio files
 *.mp3
 *.wav
 *.aac
