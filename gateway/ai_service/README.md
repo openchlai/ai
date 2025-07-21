@@ -2,19 +2,31 @@
 
 ## Overview
 
+<<<<<<< HEAD
 This Django-based AI service processes **audio files** and generates **insightful, structured summaries** by combining transcription (Whisper), translation (MarianMT), named entity recognition (NER), classification, and summarization. The system supports multilingual voice input and outputs decision-ready summaries with annotations, specifically designed for trauma-informed case management.
+=======
+This Django-based AI service processes an **input audio file** and generates an **insightful, structured summary** by combining transcription (Whisper), translation (NLLB), named entity recognition (NER), classification, and summarization. The system supports multilingual voice input and outputs decision-ready summaries with annotations.
+>>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
 
 ---
 
 ## 🔁 Pipeline Workflow
 
+<<<<<<< HEAD
 ![AI Service Flow](ai_service/ai_service_flow.png)
 
 ## 📁 Django Project Structure (Implemented)
+=======
+
+
+![AI Service Flow](ai_service/ai_service_flow.png)
+## 📁 Django Project Structure (Recommended)
+>>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
 
 ```bash
 ai_service/
 ├── ai_service/                 # Django project config
+<<<<<<< HEAD
 │   ├── settings.py             # Django settings
 │   ├── celery.py               # Celery configuration
 │   ├── cli.py                  # Command line interface
@@ -53,10 +65,29 @@ ai_service/
 ├── install.sh                  # Installation script
 ├── manage.py                   # Django management
 └── requirements.txt            # Python dependencies
+=======
+│   └── settings.py
+├── core/                       # Core app for pipeline logic
+│   ├── models.py               # Store uploaded files and metadata
+│   ├── views.py                # Handle requests & orchestrate pipeline
+│   ├── serializers.py          # DRF serializers
+│   ├── pipeline/               # Core processing logic
+│   │   ├── transcription.py
+│   │   ├── translation.py
+│   │   ├── ner.py
+│   │   ├── classifier.py
+│   │   └── summarizer.py
+│   └── utils/                  # Helper functions
+│       └── highlighter.py
+├── media/                      # Uploaded audio files
+├── manage.py
+└── requirements.txt
+>>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
 ```
 
 ## 🔧 Pipeline Component Descriptions
 
+<<<<<<< HEAD
 ### 1. Transcription (Whisper) ✅ IMPLEMENTED
 - **Library**: OpenAI Whisper (git+https://github.com/openai/whisper.git)
 - **Features**: 
@@ -123,6 +154,34 @@ ai_service/
   - JSON-structured output with safety planning, psychosocial support, legal protocols
 - **Input**: Summary + entities + classification
 - **Output**: Detailed case insights JSON
+=======
+### 1. Transcription (Whisper)
+- Library: openai-whisper or faster-whisper
+- Input: Uploaded audio file
+- Output: Plain text transcript with timestamps
+
+### 2. Translation (NLLB)
+- Library: HuggingFace nllb-200 model
+- Input: Transcript in source language
+- Output: English-translated text
+
+### 3. Named Entity Recognition (NER)
+- Library: spaCy / Transformers
+- Output: Tagged entities (Person, Location, CaseType, etc.)
+
+### 4. Classification
+Models:
+- Case Category (multi-label)
+- Sentiment (positive / neutral / negative)
+- Urgency (low / medium / high)
+
+### 5. Annotation
+- Markup: Uses <mark> or custom spans for entity & category highlights
+
+### 6. Summarization
+- Model: T5 / PEGASUS / GPT
+- Output: 2–3 sentence summary with decisions
+>>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
 
 ## 🧪 Example Input & Output
 
@@ -149,6 +208,7 @@ ai_service/
 }
 ```
 
+<<<<<<< HEAD
 ## 🧰 Django REST Framework API ✅ IMPLEMENTED
 
 || Endpoint | Method | Description |
@@ -194,6 +254,24 @@ curl http://localhost:8000/api/task_status/abc123-def456-ghi789/
     "annotated": "..."
   }
 }
+=======
+## 🧰 Django REST Framework API (Optional)
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| /api/process/ | POST | Accept audio file and return results |
+| /api/status/ | GET | Check pipeline status (async option) |
+
+Example POST /api/process/
+```bash
+curl -F "audio=@voice_note.wav" http://localhost:8000/api/process/
+```
+
+DRF Serializer Snippet
+```python
+class AudioInputSerializer(serializers.Serializer):
+    audio = serializers.FileField()
+>>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
 ```
 
 ## 🛡️ Data Protection
@@ -201,6 +279,7 @@ curl http://localhost:8000/api/task_status/abc123-def456-ghi789/
 - Privacy: GDPR & child protection compliant
 - Redaction: Optional entity masking or redaction before storage/export
 
+<<<<<<< HEAD
 ## 🚀 Deployment Options
 
 ### Option 1: Docker Compose (Recommended) ✅ IMPLEMENTED
@@ -328,3 +407,25 @@ docker stats
 - **System Design**: `docs/audio_pipeline_system_design.md`
 - **Service Status**: `SERVICE_STATUS_CHECK.md`
 - **Pipeline Components**: `core/pipeline/README.md`
+=======
+## ✅ Next Steps
+- [ ] Scaffold Django app & models
+- [ ] Integrate Whisper in transcription.py
+- [ ] Integrate NLLB in translation.py
+- [ ] Add NER, classification, and summarization logic
+- [ ] Expose endpoints via DRF
+- [ ] Implement test suite and async processing (e.g., Celery)
+
+## 📦 Dependencies
+```txt
+Django>=4.2
+djangorestframework
+transformers
+torch
+whisper
+faster-whisper
+fairseq
+spaCy
+scikit-learn
+```
+>>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299

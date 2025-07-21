@@ -3,10 +3,16 @@ import os
 import yaml
 import torch
 import logging
+<<<<<<< HEAD
 import json
 from pathlib import Path
 from importlib.resources import files
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, AutoModelForSequenceClassification
+=======
+from pathlib import Path
+from importlib.resources import files
+from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+>>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
 from core.utils.path_resolver import resolve_model_path
 
 
@@ -44,12 +50,17 @@ def load_hf_model_and_tokenizer(model_key):
     tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
 
     # Custom model handling
+<<<<<<< HEAD
     if model_key in ["classifier_model", "multitask_distilbert"]:
         # For multitask_distilbert, labels are in the same directory as the model
         if model_key == "multitask_distilbert":
             label_path = model_path
         else:
             label_path = resolve_model_path(model_cfg["label_path"])
+=======
+    if model_key == "classifier_model":
+        label_path = resolve_model_path(model_cfg["label_path"])
+>>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
 
         with open(os.path.join(label_path, "main_categories.json")) as f:
             main_categories = json.load(f)
@@ -60,9 +71,18 @@ def load_hf_model_and_tokenizer(model_key):
         with open(os.path.join(label_path, "priorities.json")) as f:
             priorities = json.load(f)
 
+<<<<<<< HEAD
         model = AutoModelForSequenceClassification.from_pretrained(
             model_path,
             num_labels=len(main_categories) + len(sub_categories) + len(interventions) + len(priorities)
+=======
+        model = MultiTaskDistilBert.from_pretrained(
+            model_path,
+            num_main=len(main_categories),
+            num_sub=len(sub_categories),
+            num_interv=len(interventions),
+            num_priority=len(priorities)
+>>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
         ).to(device)
 
         return model, tokenizer, device, {
@@ -74,4 +94,8 @@ def load_hf_model_and_tokenizer(model_key):
 
     # Default HF model class
     model = AutoModelForSeq2SeqLM.from_pretrained(model_path).to(device)
+<<<<<<< HEAD
     return model, tokenizer, device
+=======
+    return model, tokenizer, device
+>>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299

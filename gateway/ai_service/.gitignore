@@ -17,8 +17,11 @@ models/
 dist/
 build/
 *.egg-info/
+<<<<<<< HEAD
 
 # Virtualenv
 venv/
 env/
 myenv/
+=======
+>>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
