@@ -17,3 +17,8 @@ models/
 dist/
 build/
 *.egg-info/
+
+# Virtualenv
+venv/
+env/
+myenv/
