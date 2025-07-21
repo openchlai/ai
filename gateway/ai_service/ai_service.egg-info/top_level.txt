@@ -1,0 +1,4 @@
+ai_service
+core
+fixtures
+tests
