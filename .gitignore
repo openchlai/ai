@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-# Ignore large files
-**/models/
-**/*.sql
-=======
 # OS specific files
 .DS_Store
 .DS_Store?
@@ -44,7 +39,6 @@ vendor/
 .secret*
 translation_env
 
-
 # Log files and caches
 *.log
 npm-debug.log*
@@ -78,6 +72,42 @@ venv.bak/
 .coverage
 htmlcov/
 
+# Node.js specific
+*.node
+*.npm
+*.npmrc
+
+# PHP specific
+*.php~
+*.phps
+composer.phar
+vendor/
+*.phpunit.result.cache
+
+# C# specific
+*.exe
+*.dll
+*.pdb
+*.cache
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# SQL specific
+*.mdf
+*.ldf
+*.ndf
+*.bak
+*.dbmdl
+*.dbproj.schemaview
+*.pfx
+*.publishsettings
+
 # Java specific
 *.class
 *.jar
@@ -97,6 +127,10 @@ htmlcov/
 gateway/ai_service/db.sqlite3
 gateway/ai_service/audio/
 
+# Models
+model/
+models/
+**/models/**
 
 *.mp3
 *.wav
@@ -108,4 +142,3 @@ gateway/ai_service/audio/
 *.aiff
 *.mid
 *.midi
->>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
