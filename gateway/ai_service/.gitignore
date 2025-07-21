@@ -18,10 +18,13 @@ dist/
 build/
 *.egg-info/
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 # Virtualenv
 venv/
 env/
 myenv/
+=======
+>>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
 =======
 >>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299

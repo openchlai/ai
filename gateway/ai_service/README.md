@@ -3,7 +3,11 @@
 ## Overview
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 This Django-based AI service processes **audio files** and generates **insightful, structured summaries** by combining transcription (Whisper), translation (MarianMT), named entity recognition (NER), classification, and summarization. The system supports multilingual voice input and outputs decision-ready summaries with annotations, specifically designed for trauma-informed case management.
+=======
+This Django-based AI service processes an **input audio file** and generates an **insightful, structured summary** by combining transcription (Whisper), translation (NLLB), named entity recognition (NER), classification, and summarization. The system supports multilingual voice input and outputs decision-ready summaries with annotations.
+>>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
 =======
 This Django-based AI service processes an **input audio file** and generates an **insightful, structured summary** by combining transcription (Whisper), translation (NLLB), named entity recognition (NER), classification, and summarization. The system supports multilingual voice input and outputs decision-ready summaries with annotations.
 >>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
@@ -13,19 +17,26 @@ This Django-based AI service processes an **input audio file** and generates an 
 ## 🔁 Pipeline Workflow
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 ![AI Service Flow](ai_service/ai_service_flow.png)
 
 ## 📁 Django Project Structure (Implemented)
 =======
+=======
+>>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
 
 
 ![AI Service Flow](ai_service/ai_service_flow.png)
 ## 📁 Django Project Structure (Recommended)
+<<<<<<< HEAD
+>>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
+=======
 >>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
 
 ```bash
 ai_service/
 ├── ai_service/                 # Django project config
+<<<<<<< HEAD
 <<<<<<< HEAD
 │   ├── settings.py             # Django settings
 │   ├── celery.py               # Celery configuration
@@ -66,6 +77,8 @@ ai_service/
 ├── manage.py                   # Django management
 └── requirements.txt            # Python dependencies
 =======
+=======
+>>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
 │   └── settings.py
 ├── core/                       # Core app for pipeline logic
 │   ├── models.py               # Store uploaded files and metadata
@@ -82,11 +95,15 @@ ai_service/
 ├── media/                      # Uploaded audio files
 ├── manage.py
 └── requirements.txt
+<<<<<<< HEAD
+>>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
+=======
 >>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
 ```
 
 ## 🔧 Pipeline Component Descriptions
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 ### 1. Transcription (Whisper) ✅ IMPLEMENTED
 - **Library**: OpenAI Whisper (git+https://github.com/openai/whisper.git)
@@ -155,6 +172,8 @@ ai_service/
 - **Input**: Summary + entities + classification
 - **Output**: Detailed case insights JSON
 =======
+=======
+>>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
 ### 1. Transcription (Whisper)
 - Library: openai-whisper or faster-whisper
 - Input: Uploaded audio file
@@ -181,6 +200,9 @@ Models:
 ### 6. Summarization
 - Model: T5 / PEGASUS / GPT
 - Output: 2–3 sentence summary with decisions
+<<<<<<< HEAD
+>>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
+=======
 >>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
 
 ## 🧪 Example Input & Output
@@ -208,6 +230,7 @@ Models:
 }
 ```
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 ## 🧰 Django REST Framework API ✅ IMPLEMENTED
 
@@ -255,6 +278,8 @@ curl http://localhost:8000/api/task_status/abc123-def456-ghi789/
   }
 }
 =======
+=======
+>>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
 ## 🧰 Django REST Framework API (Optional)
 
 | Endpoint | Method | Description |
@@ -271,6 +296,9 @@ DRF Serializer Snippet
 ```python
 class AudioInputSerializer(serializers.Serializer):
     audio = serializers.FileField()
+<<<<<<< HEAD
+>>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
+=======
 >>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
 ```
 
@@ -279,6 +307,7 @@ class AudioInputSerializer(serializers.Serializer):
 - Privacy: GDPR & child protection compliant
 - Redaction: Optional entity masking or redaction before storage/export
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 ## 🚀 Deployment Options
 
@@ -408,6 +437,8 @@ docker stats
 - **Service Status**: `SERVICE_STATUS_CHECK.md`
 - **Pipeline Components**: `core/pipeline/README.md`
 =======
+=======
+>>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
 ## ✅ Next Steps
 - [ ] Scaffold Django app & models
 - [ ] Integrate Whisper in transcription.py
@@ -427,5 +458,9 @@ faster-whisper
 fairseq
 spaCy
 scikit-learn
+<<<<<<< HEAD
+```
+>>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
+=======
 ```
 >>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299

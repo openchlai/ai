@@ -8,6 +8,7 @@ from ..pipeline import summarizer, ner, classifier
 
 logger = logging.getLogger(__name__)
 
+<<<<<<< HEAD
 def create_fallback_insights(summary: str, entities: Dict[str, Any], classification: Dict[str, Any]) -> Dict[str, Any]:
     """
     Create fallback insights when external LLM service is unavailable.
@@ -114,6 +115,8 @@ def create_fallback_insights(summary: str, entities: Dict[str, Any], classificat
         "note": "Insights generated using available data. Consider manual review for comprehensive analysis."
     }
 
+=======
+>>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
 def generate_case_insights(transcript: str) -> Dict[str, Any]:
     """
     Generate trauma-informed case insights from transcript using summarization and Mistral model.
@@ -204,7 +207,11 @@ Context: Respond with JSON only. Avoid additional explanations.
 
     try:
         response = session.post(
+<<<<<<< HEAD
             'http://127.0.0.1:11434/api/generate',
+=======
+            'http://192.168.10.6:11434/api/generate',
+>>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
             json={
                 'model': 'mistral',
                 'prompt': prompt,
@@ -230,6 +237,7 @@ Context: Respond with JSON only. Avoid additional explanations.
 
         return insights
 
+<<<<<<< HEAD
     except requests.exceptions.ConnectionError as e:
         logger.warning(f"🔄 Ollama service unavailable, using fallback insights: {e}")
         return create_fallback_insights(summary, entities, case_classification)
@@ -242,3 +250,14 @@ Context: Respond with JSON only. Avoid additional explanations.
     except Exception as e:
         logger.warning(f"⚠️ Failed to generate insights with Ollama, using fallback: {str(e)}")
         return create_fallback_insights(summary, entities, case_classification)
+=======
+    except requests.exceptions.Timeout as e:
+        logger.error(f"Timeout while calling insight service: {e}")
+        raise
+    except requests.exceptions.RequestException as e:
+        logger.error(f"HTTP error while calling insight service: {e}")
+        raise
+    except Exception as e:
+        logger.error(f"Failed to generate insights: {str(e)}", exc_info=True)
+        raise
+>>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
