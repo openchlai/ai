@@ -38,10 +38,6 @@ vendor/
 *.pem
 .secret*
 translation_env
-<<<<<<< HEAD
-=======
-
->>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
 
 # Log files and caches
 *.log
@@ -92,7 +88,6 @@ htmlcov/
 .stylelintcache
 .temp/
 
-<<<<<<< HEAD
 # AI and ML specific
 gateway/ai_service/models/
 models/translation/translation_env/
@@ -117,12 +112,6 @@ docs/docs/training/OPENCHS-PITCHDECK.mp4
 *.json
 
 # Audio files
-=======
-gateway/ai_service/db.sqlite3
-gateway/ai_service/audio/
-
-
->>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
 *.mp3
 *.wav
 *.aac
