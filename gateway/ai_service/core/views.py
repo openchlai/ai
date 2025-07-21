@@ -1,7 +1,4 @@
-<<<<<<< HEAD
 # core/views.py
-=======
->>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, parsers
@@ -42,7 +39,6 @@ class AudioUploadView(APIView):
 
 class TaskStatusView(APIView):
     def get(self, request, task_id):
-<<<<<<< HEAD
         try:
             result = AsyncResult(task_id)
             response = {
@@ -126,20 +122,6 @@ class AudioResultView(APIView):
             return Response({
                 "error": "Failed to retrieve audio file"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-=======
-        result = AsyncResult(task_id)
-        response = {
-            "task_id": task_id,
-            "status": result.status,
-        }
-
-        if result.status == 'SUCCESS':
-            response["result"] = result.result
-        elif result.status == 'FAILURE':
-            response["error"] = str(result.result)
-
-        return Response(response, status=status.HTTP_200_OK)
->>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
 
 
 class HealthView(APIView):
