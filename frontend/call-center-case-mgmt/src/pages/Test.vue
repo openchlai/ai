@@ -1,79 +1,77 @@
-<!-- src/views/CallsView.vue -->
+<!-- src/views/UsersView.vue -->
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useCallStore } from '@/stores/calls';
+import { useUserStore } from '@/stores/users';
 
-const callStore = useCallStore();
-const pivotData = ref([]);
-const pivotColumns = ref([]);
+const userStore = useUserStore();
 
-// Filters
+// Filters for list, CSV, and pivot
 const filters = ref({
   _a: '',
   _c: 20,
-  field: '',
-  value: ''
+  phone: '',
+  email: ''
 });
 
-// Fetch initial calls on mount
+// Pivot report data
+const pivotData = ref([]);
+const pivotColumns = ref([]);
+
+// Load initial user list
 onMounted(() => {
-  callStore.listCalls({ _c: filters.value._c });
+  userStore.listUsers({ _c: filters.value._c });
 });
 
-// Apply filters to main table
-const applyFilters = async () => {
-  const params = {
-    _a: filters.value._a,
-    _c: filters.value._c
-  };
-
-  if (filters.value.field && filters.value.value) {
-    params[filters.value.field] = filters.value.value;
-  }
-
-  await callStore.listCalls(params);
-};
-
-// View call details
-const handleViewCall = async (uniqueid) => {
+// View User details
+const handleViewUser = async (userId) => {
   try {
-    const details = await callStore.viewCall(uniqueid);
+    const details = await userStore.viewUser(userId);
     alert(JSON.stringify(details, null, 2));
   } catch (err) {
-    console.error('Failed to view call:', err.message);
+    console.error('Failed to view user:', err.message);
   }
 };
 
-// Download single call recording
-const handleDownloadRecording = async (uniqueid) => {
+// Create a new user (mock data for demo)
+const handleCreateUser = async () => {
+  const payload = {
+    usn: 'newuser',
+    exten: '8123',
+    photo: '123244554556',
+    fname: 'Jane',
+    lname: 'Doe',
+    phone: '0700000000',
+    email: 'jane.doe@example.com'
+  };
   try {
-    const blob = await callStore.downloadCallRecording(uniqueid, 'wav');
-    const url = window.URL.createObjectURL(new Blob([blob], { type: 'audio/wav' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `${uniqueid}.wav`);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
+    const created = await userStore.createUser(payload);
+    alert('User Created: ' + JSON.stringify(created, null, 2));
+    userStore.listUsers({ _c: filters.value._c });
   } catch (err) {
-    console.error('Download failed:', err.message);
+    console.error('Create failed:', err.message);
   }
 };
 
-// Download CSV with filters
+// Edit a user (mock data for demo)
+const handleEditUser = async (userId) => {
+  const payload = { fname: 'UpdatedName' };
+  try {
+    const updated = await userStore.editUser(userId, payload);
+    alert('User Updated: ' + JSON.stringify(updated, null, 2));
+    userStore.listUsers({ _c: filters.value._c });
+  } catch (err) {
+    console.error('Edit failed:', err.message);
+  }
+};
+
+// Download CSV
 const handleDownloadCSV = async () => {
   try {
-    const params = { _a: filters.value._a, _c: filters.value._c };
-    if (filters.value.field && filters.value.value) {
-      params[filters.value.field] = filters.value.value;
-    }
-
-    const blob = await callStore.downloadCSV(params);
+    const blob = await userStore.downloadCSV(filters.value);
     const url = window.URL.createObjectURL(new Blob([blob], { type: 'text/csv' }));
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', 'calls.csv');
+    link.setAttribute('download', 'users.csv');
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -83,20 +81,14 @@ const handleDownloadCSV = async () => {
   }
 };
 
-// Get pivot report with filters
+// Get Pivot Report
 const handlePivotReport = async () => {
   try {
-    const params = { _a: filters.value._a, _c: filters.value._c };
-    if (filters.value.field && filters.value.value) {
-      params[filters.value.field] = filters.value.value;
-    }
-
-    const data = await callStore.getPivotReport({
-      ...params,
-      xaxis: 'usr',
-      yaxis: 'hangup_status'
+    const data = await userStore.getPivotReport({
+      ...filters.value,
+      xaxis: 'role',
+      yaxis: 'enabled'
     });
-
     if (Array.isArray(data) && data.length > 0) {
       pivotColumns.value = Object.keys(data[0]);
       pivotData.value = data;
@@ -111,53 +103,52 @@ const handlePivotReport = async () => {
 </script>
 
 <template>
-  <section class="calls-view">
-    <h2>Calls List</h2>
+  <section class="users-view">
+    <h2>Users List</h2>
 
     <!-- Filters -->
     <div class="filters">
       <input v-model="filters._a" placeholder="Start position (_a)" />
-      <input v-model.number="filters._c" type="number" placeholder="Max records (_c)" />
-      <input v-model="filters.field" placeholder="Filter field (e.g. hangup_status)" />
-      <input v-model="filters.value" placeholder="Filter value (e.g. answered)" />
-      <button @click="applyFilters">Apply Filters</button>
+      <input v-model.number="filters._c" type="number" placeholder="Count (_c)" />
+      <input v-model="filters.phone" placeholder="Phone" />
+      <input v-model="filters.email" placeholder="Email" />
+      <button @click="userStore.listUsers(filters)">Apply Filters</button>
       <button @click="handleDownloadCSV">Download CSV</button>
       <button @click="handlePivotReport">Get Pivot Report</button>
     </div>
 
-    <p v-if="callStore.loading">Loading…</p>
-    <p v-else-if="callStore.error" class="error">{{ callStore.error }}</p>
+    <!-- Error and Loading states -->
+    <p v-if="userStore.loading">Loading…</p>
+    <p v-else-if="userStore.error" class="error">{{ userStore.error }}</p>
 
+    <!-- Users Table -->
     <div v-else>
-      <h3>Total Calls: {{ callStore.callCount }}</h3>
+      <h3>Total Users: {{ userStore.users.length }}</h3>
 
-      <!-- Calls Table -->
-      <table v-if="callStore.callCount">
+      <table v-if="userStore.users.length">
         <thead>
           <tr>
-            <th v-for="(meta, key) in callStore.calls_k" :key="key">
+            <th v-for="(meta, key) in userStore.users_k" :key="key">
               {{ meta[3] || key }}
             </th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="call in callStore.calls" :key="call[0]">
-            <td v-for="(meta, key) in callStore.calls_k" :key="key">
-              {{ call[parseInt(meta[0])] }}
+          <tr v-for="user in userStore.users" :key="user[0]">
+            <td v-for="(meta, key) in userStore.users_k" :key="key">
+              {{ user[parseInt(meta[0])] }}
             </td>
             <td>
-              <button @click="handleViewCall(call[0])">View</button>
-              <button @click="handleDownloadRecording(call[0])">
-                Download Recording
-              </button>
+              <button @click="handleViewUser(user[0])">View</button>
+              <button @click="handleEditUser(user[0])">Edit</button>
             </td>
           </tr>
         </tbody>
       </table>
 
       <div v-else>
-        <p>No calls available.</p>
+        <p>No users available.</p>
       </div>
 
       <!-- Pivot Table -->
@@ -181,47 +172,28 @@ const handlePivotReport = async () => {
 </template>
 
 <style scoped>
-.calls-view {
+.users-view {
   padding: 1rem;
-  overflow-x: auto;
 }
-
 .filters {
   margin-bottom: 1rem;
 }
-
 .filters input {
-  margin-right: 0.5rem;
-  padding: 4px 8px;
+  margin-right: 8px;
 }
-
 .filters button {
-  margin-right: 0.5rem;
-  padding: 4px 8px;
-  cursor: pointer;
-  background: #4caf50;
-  color: white;
-  border: none;
-  border-radius: 4px;
+  margin-right: 8px;
 }
-
-.filters button:hover {
-  background: #45a049;
-}
-
 table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 8px;
-  font-size: 14px;
 }
-
 th, td {
   border: 1px solid #ccc;
   padding: 6px 8px;
   text-align: left;
 }
-
 button {
   margin-right: 5px;
   padding: 4px 8px;
@@ -231,13 +203,10 @@ button {
   border: none;
   border-radius: 4px;
 }
-
 button:hover {
   background: #45a049;
 }
-
 .error {
   color: #e74c3c;
 }
 </style>
-
