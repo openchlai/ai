@@ -1,82 +1,116 @@
-<!-- src/views/QueueStatusView.vue -->
+<!-- src/views/MessagesView.vue -->
 <script setup>
-import { onMounted, onUnmounted } from 'vue';
-import { useQueueStore } from '@/stores/queue';
+import { onMounted } from 'vue';
+import { useMessagesStore } from '@/stores/messages';
 
-const queueStore = useQueueStore();
+const messagesStore = useMessagesStore();
 
-// Polling interval
-let pollInterval = null;
-
-// Join Queue
-const handleJoin = async () => {
-  try {
-    const res = await queueStore.joinQueue();
-    console.log('Joined queue:', res);
-  } catch (err) {
-    console.error('Join failed:', err.message);
-  }
-};
-
-// Leave Queue
-const handleLeave = async () => {
-  try {
-    const res = await queueStore.leaveQueue();
-    console.log('Left queue:', res);
-  } catch (err) {
-    console.error('Leave failed:', err.message);
-  }
-};
-
-// Poll Queue Status every 10 seconds
-const startPolling = () => {
-  pollInterval = setInterval(async () => {
-    try {
-      await queueStore.pollQueueStatus();
-    } catch (err) {
-      console.error('Polling failed:', err.message);
-    }
-  }, 10000);
-};
-
-onMounted(() => {
-  queueStore.pollQueueStatus(); // Initial poll
-  startPolling();
+// Load all messages on mount
+onMounted(async () => {
+  await messagesStore.fetchAllMessages({ _c: 20 });
+  await messagesStore.fetchWhatsappMessages({ _c: 20 });
+  await messagesStore.fetchSmsMessages({ _c: 20 });
 });
 
-onUnmounted(() => {
-  if (pollInterval) clearInterval(pollInterval);
-});
+// Manual refresh for all
+const refreshAll = async () => {
+  await Promise.all([
+    messagesStore.fetchAllMessages({ _c: 20 }),
+    messagesStore.fetchWhatsappMessages({ _c: 20 }),
+    messagesStore.fetchSmsMessages({ _c: 20 })
+  ]);
+};
 </script>
 
 <template>
-  <section class="queue-status">
-    <h2>Queue Status</h2>
+  <section class="messages-view">
+    <h2>Messages Overview</h2>
+    <button @click="refreshAll">Refresh All</button>
+    <p v-if="messagesStore.loading">Loading…</p>
+    <p v-else-if="messagesStore.error" class="error">{{ messagesStore.error }}</p>
 
-    <p v-if="queueStore.loading">Loading...</p>
-    <p v-else-if="queueStore.error" class="error">{{ queueStore.error }}</p>
+    <div v-else class="tables-wrapper">
+      <!-- All Messages -->
+      <div class="table-section">
+        <h3>All Messages ({{ messagesStore.allMessages.length }})</h3>
+        <table v-if="messagesStore.allMessages.length">
+          <thead>
+            <tr>
+              <th v-for="(value, key) in messagesStore.allMessages[0]" :key="key">{{ key }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(msg, index) in messagesStore.allMessages" :key="index">
+              <td v-for="(value, key) in msg" :key="key">{{ value }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p v-else>No messages found.</p>
+      </div>
 
-    <div v-else>
-      <p><strong>Status:</strong> {{ queueStore.status || 'Unknown' }}</p>
-      <p><strong>Message:</strong> {{ queueStore.message || 'No message' }}</p>
-      <p><small>Last checked: {{ queueStore.lastPoll?.toLocaleTimeString() || 'Never' }}</small></p>
-    </div>
+      <!-- WhatsApp Messages -->
+      <div class="table-section">
+        <h3>WhatsApp Messages ({{ messagesStore.whatsappMessages.length }})</h3>
+        <table v-if="messagesStore.whatsappMessages.length">
+          <thead>
+            <tr>
+              <th v-for="(value, key) in messagesStore.whatsappMessages[0]" :key="key">{{ key }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(msg, index) in messagesStore.whatsappMessages" :key="index">
+              <td v-for="(value, key) in msg" :key="key">{{ value }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p v-else>No WhatsApp messages found.</p>
+      </div>
 
-    <div class="actions">
-      <button @click="handleJoin">Join Queue</button>
-      <button @click="handleLeave">Leave Queue</button>
+      <!-- SMS Messages -->
+      <div class="table-section">
+        <h3>SMS Messages ({{ messagesStore.smsMessages.length }})</h3>
+        <table v-if="messagesStore.smsMessages.length">
+          <thead>
+            <tr>
+              <th v-for="(value, key) in messagesStore.smsMessages[0]" :key="key">{{ key }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(msg, index) in messagesStore.smsMessages" :key="index">
+              <td v-for="(value, key) in msg" :key="key">{{ value }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p v-else>No SMS messages found.</p>
+      </div>
     </div>
   </section>
 </template>
 
 <style scoped>
-.queue-status {
+.messages-view {
   padding: 1rem;
-  max-width: 400px;
 }
-
-.actions button {
-  margin-right: 10px;
+.tables-wrapper {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  margin-top: 1rem;
+}
+.table-section table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+.table-section th, .table-section td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+.error {
+  color: red;
+}
+button {
+  margin-bottom: 1rem;
   padding: 6px 12px;
   background: #4caf50;
   color: white;
@@ -84,12 +118,7 @@ onUnmounted(() => {
   border-radius: 4px;
   cursor: pointer;
 }
-
-.actions button:hover {
+button:hover {
   background: #45a049;
-}
-
-.error {
-  color: red;
 }
 </style>

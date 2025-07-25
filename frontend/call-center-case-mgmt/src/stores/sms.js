@@ -1,6 +1,6 @@
 // src/stores/sms.js
 import { defineStore } from 'pinia';
-import axiosInstance from '@/axiosInstance';
+import axiosInstance from '@/utils/axios'
 
 export const useSMSStore = defineStore('sms', {
   state: () => ({

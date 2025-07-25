@@ -1,6 +1,6 @@
 // src/stores/emails.js
 import { defineStore } from 'pinia';
-import axiosInstance from '@/axiosInstance';
+import axiosInstance from '@/utils/axios'
 
 export const useEmailStore = defineStore('emails', {
   state: () => ({

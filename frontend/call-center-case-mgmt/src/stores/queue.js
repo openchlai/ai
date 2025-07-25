@@ -1,6 +1,6 @@
 // src/stores/queue.js
 import { defineStore } from 'pinia';
-import axiosInstance from '@/axiosInstance';
+import axiosInstance from '@/utils/axios'
 
 export const useQueueStore = defineStore('queue', {
   state: () => ({

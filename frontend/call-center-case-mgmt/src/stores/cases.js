@@ -1,21 +1,21 @@
 import { defineStore } from 'pinia';
-import axiosInstance from '@/utils/axios'
+import axiosInstance from '@/utils/axios';
 
-export const useTicketStore = defineStore('tickets', {
+export const useCaseStore = defineStore('cases', {
   state: () => ({
-    tickets: [],
-    tickets_k: {},
-    ticketCount: 0,
+    cases: [],
+    cases_k: {},
+    caseCount: 0,
     loading: false,
     error: null,
   }),
 
   actions: {
-    // 1. Create Ticket
-    async createTicket(payload) {
+    // 1. Create Case
+    async createCase(payload) {
       try {
         this.loading = true;
-        const { data } = await axiosInstance.post('api/tickets', payload, {
+        const { data } = await axiosInstance.post('api/cases', payload, {
           headers: {
             'X-API-Key': '21mku1hhf5gg4om161jk5fdfbe'
           }
@@ -29,11 +29,11 @@ export const useTicketStore = defineStore('tickets', {
       }
     },
 
-    // 2. Update Ticket
-    async updateTicket(id, payload) {
+    // 2. Update Case
+    async updateCase(id, payload) {
       try {
         this.loading = true;
-        const { data } = await axiosInstance.post(`api/tickets/${id}`, payload, {
+        const { data } = await axiosInstance.post(`api/cases/${id}`, payload, {
           headers: {
             'X-API-Key': '21mku1hhf5gg4om161jk5fdfbe'
           }
@@ -47,11 +47,11 @@ export const useTicketStore = defineStore('tickets', {
       }
     },
 
-    // 3. View Ticket
-    async viewTicket(id) {
+    // 3. View Case
+    async viewCase(id) {
       try {
         this.loading = true;
-        const { data } = await axiosInstance.get(`api/tickets/${id}`, {
+        const { data } = await axiosInstance.get(`api/cases/${id}`, {
           headers: {
             'X-API-Key': '21mku1hhf5gg4om161jk5fdfbe'
           }
@@ -65,20 +65,20 @@ export const useTicketStore = defineStore('tickets', {
       }
     },
 
-    // 4. List Tickets
-    async listTickets(params = {}) {
+    // 4. List Cases
+    async listCases(params = {}) {
       try {
         this.loading = true;
-        const { data } = await axiosInstance.get('api/tickets/', {
+        const { data } = await axiosInstance.get('api/cases/', {
           params,
           headers: {
             'X-API-Key': '21mku1hhf5gg4om161jk5fdfbe'
           }
         });
-        console.log('Tickets data:', data);
-        this.tickets = data.tickets || [];
-        this.tickets_k = data.tickets_k || {};
-        this.ticketCount = data.tickets_nb?.[0]?.[1] || this.tickets.length;
+        console.log('Cases data:', data);
+        this.cases = data.cases || [];
+        this.cases_k = data.cases_k || {};
+        this.caseCount = data.cases_nb?.[0]?.[1] || this.cases.length;
       } catch (err) {
         this.error = err.message;
         throw err;
@@ -90,7 +90,7 @@ export const useTicketStore = defineStore('tickets', {
     // 5. CSV Download
     async downloadCSV(params = {}) {
       try {
-        const response = await axiosInstance.get('api/tickets/', {
+        const response = await axiosInstance.get('api/cases/', {
           params: { ...params, csv: 1 },
           headers: {
             'X-API-Key': '21mku1hhf5gg4om161jk5fdfbe'
@@ -106,7 +106,7 @@ export const useTicketStore = defineStore('tickets', {
     // 6. Pivot Reports
     async getPivotReport(params = {}) {
       try {
-        const { data } = await axiosInstance.get('api/tickets/rpt', {
+        const { data } = await axiosInstance.get('api/cases/rpt', {
           params,
           headers: {
             'X-API-Key': '21mku1hhf5gg4om161jk5fdfbe'
