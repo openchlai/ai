@@ -12,15 +12,34 @@ export const useCallStore = defineStore('callStore', {
     error: null
   }),
 
-  getters: {
-    callCount: (state) => state.calls?.length ?? 0,
+ getters: {
+  callCount: (state) => state.calls?.length ?? 0,
 
-    // Get call by uniqueid
-    getCallById: (state) => (uniqueid) => {
-      const index = parseInt(state.calls_k?.uniqueid?.[0] ?? 0);
-      return state.calls.find(call => call[index] === uniqueid) || null;
-    }
+  // Get call by uniqueid
+  getCallById: (state) => (uniqueid) => {
+    const index = parseInt(state.calls_k?.uniqueid?.[0] ?? 0);
+    return state.calls.find(call => call[index] === uniqueid) || null;
   },
+
+  // Getter to return calls with human-readable Date Hour
+  formattedCalls: (state) => {
+    const dthIndex = parseInt(state.calls_k?.dth?.[0] ?? -1); // index for Date Hour
+    if (dthIndex === -1) return [];
+
+    return state.calls.map(call => {
+      const timestamp = call[dthIndex];
+      let readableDate = '';
+      if (timestamp) {
+        const dateObj = new Date(Number(timestamp) * 1000); // convert seconds to ms
+        readableDate = dateObj.toLocaleString(); // e.g., "7/21/2025, 14:20:00"
+      }
+      return {
+        ...call,
+        readableDate
+      };
+    });
+  }
+},
 
   actions: {
     // 1. List Calls
