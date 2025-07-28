@@ -38,10 +38,7 @@ vendor/
 *.pem
 .secret*
 translation_env
-<<<<<<< HEAD
-=======
-
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
+ai_service/test_env/
 
 # Log files and caches
 *.log
@@ -132,13 +129,11 @@ obj/
 gateway/ai_service/db.sqlite3
 gateway/ai_service/audio/
 
-<<<<<<< HEAD
 # Models
 model/
 models/
 **/models/**
-=======
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
+
 
 *.mp3
 *.wav
