@@ -1,4 +1,3 @@
-# core/consumer.py
 import json
 import logging
 from channels.generic.websocket import AsyncWebsocketConsumer
@@ -8,39 +7,29 @@ from .models import AudioFile
 
 logger = logging.getLogger(__name__)
 
-async def stream_output(self, event):
-    """Handles real-time streamed steps from the Celery task"""
-    await self.send(text_data=json.dumps({
-        "type": "progress_update",
-        **event["data"]
-    }))
-
-
 class AudioProcessingConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         """Handle WebSocket connection"""
         self.task_id = self.scope['url_route']['kwargs']['task_id']
-        # self.task_group_name = f'task_{self.task_id}'
-        self.safe_group = f"task_{self.task_id}" .replace("-", "_")[:95]
-        
-        
+        self.task_group_name = f'task_{self.task_id}'
+        self.safe_group = self.task_group_name.replace("-", "_")[:95]
+
         # Join task group
         await self.channel_layer.group_add(
-            self.task_group_name,
+            self.safe_group,
             self.channel_name
         )
-        
+
         await self.accept()
         logger.info(f"WebSocket connected for task {self.task_id}")
-        
+
         # Send initial status
         await self.send_task_status()
 
     async def disconnect(self, close_code):
         """Handle WebSocket disconnection"""
-        # Leave task group
         await self.channel_layer.group_discard(
-            self.task_group_name,
+            self.safe_group,
             self.channel_name
         )
         logger.info(f"WebSocket disconnected for task {self.task_id}")
@@ -50,7 +39,7 @@ class AudioProcessingConsumer(AsyncWebsocketConsumer):
         try:
             text_data_json = json.loads(text_data)
             message_type = text_data_json.get('type', 'status_request')
-            
+
             if message_type == 'status_request':
                 await self.send_task_status()
             elif message_type == 'result_request':
@@ -66,14 +55,14 @@ class AudioProcessingConsumer(AsyncWebsocketConsumer):
         """Send current task status to WebSocket"""
         try:
             result = AsyncResult(self.task_id)
-            
+
             status_data = {
                 'type': 'task_status',
                 'task_id': self.task_id,
                 'status': result.status,
                 'timestamp': result.date_done.isoformat() if result.date_done else None,
             }
-            
+
             if result.status == 'SUCCESS':
                 status_data.update({
                     'result': result.result,
@@ -112,9 +101,9 @@ class AudioProcessingConsumer(AsyncWebsocketConsumer):
                         'message': 'Task is in progress'
                     })
                 status_data['completed'] = False
-            
+
             await self.send(text_data=json.dumps(status_data))
-            
+
         except Exception as e:
             logger.error(f"Error sending task status: {e}")
             await self.send(text_data=json.dumps({
@@ -140,14 +129,13 @@ class AudioProcessingConsumer(AsyncWebsocketConsumer):
                     'error': 'Audio file not found'
                 }))
                 return
-            
-            # Check if processing is complete
+
             is_processed = bool(
                 audio_file.transcript and 
                 audio_file.insights and 
                 audio_file.summary
             )
-            
+
             result_data = {
                 'type': 'audio_result',
                 'audio_id': audio_id,
@@ -166,9 +154,9 @@ class AudioProcessingConsumer(AsyncWebsocketConsumer):
                 'has_translation': bool(audio_file.translated_text),
                 'has_annotations': bool(audio_file.annotated_text),
             }
-            
+
             await self.send(text_data=json.dumps(result_data))
-            
+
         except Exception as e:
             logger.error(f"Error sending audio result: {e}")
             await self.send(text_data=json.dumps({
@@ -176,7 +164,6 @@ class AudioProcessingConsumer(AsyncWebsocketConsumer):
                 'error': 'Failed to retrieve audio result'
             }))
 
-    # Handler for group messages
     async def task_update(self, event):
         """Handle task update messages from group"""
         await self.send(text_data=json.dumps(event['data']))
@@ -192,5 +179,12 @@ class AudioProcessingConsumer(AsyncWebsocketConsumer):
         """Handle processing completion"""
         await self.send(text_data=json.dumps({
             'type': 'processing_complete',
+            **event['data']
+        }))
+
+    async def stream_output(self, event):
+        """Handle real-time streamed steps from the Celery task"""
+        await self.send(text_data=json.dumps({
+            'type': 'progress_update',
             **event['data']
         }))
