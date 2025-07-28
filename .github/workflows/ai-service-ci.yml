@@ -3,14 +3,10 @@ name: AI Service CI/CD Pipeline
 on:
   push:
     branches: [ main, develop ]
-    paths:
-      - 'ai_service/**'
-      - '.github/workflows/ai-service-ci.yml'
+    paths: [ 'ai_service/**' ]
   pull_request:
     branches: [ main, develop ]
-    paths:
-      - 'ai_service/**'
-      - '.github/workflows/ai-service-ci.yml'
+    paths: [ 'ai_service/**' ]
   workflow_dispatch:
 
 permissions:
