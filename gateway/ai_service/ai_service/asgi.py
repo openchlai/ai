@@ -11,6 +11,7 @@ import os
 
 from django.core.asgi import get_asgi_application
 
+<<<<<<< HEAD
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
 
@@ -31,3 +32,8 @@ application = ProtocolTypeRouter({
         )
     ),
 })
+=======
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ai_service.settings')
+
+application = get_asgi_application()
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1

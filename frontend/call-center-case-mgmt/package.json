@@ -4,9 +4,20 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+<<<<<<< HEAD
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
+=======
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui",
+    "test:watch": "vitest --watch"
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
   },
   "dependencies": {
     "axios": "^1.9.0",
@@ -18,6 +29,15 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.3",
+<<<<<<< HEAD
     "vite": "^6.3.5"
+=======
+    "@vitest/coverage-v8": "^1.6.1",
+    "@vitest/ui": "^1.6.1",
+    "@vue/test-utils": "^2.4.6",
+    "jsdom": "^23.2.0",
+    "vite": "^6.3.5",
+    "vitest": "^1.6.1"
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
   }
 }

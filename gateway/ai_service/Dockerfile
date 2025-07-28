@@ -44,4 +44,8 @@ USER dockeruser
 
 EXPOSE 8000
 
+<<<<<<< HEAD
 CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "ai_service.asgi:application"]
+=======
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers=4", "--threads=2", "--timeout=300", "ai_service.wsgi:application"]
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
