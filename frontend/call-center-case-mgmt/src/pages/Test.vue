@@ -1,79 +1,39 @@
-<!-- src/views/CallsView.vue -->
+<!-- src/views/CasesView.vue -->
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useCallStore } from '@/stores/calls';
+import { useCaseStore } from '@/stores/cases';
 
-const callStore = useCallStore();
-const pivotData = ref([]);
-const pivotColumns = ref([]);
+const caseStore = useCaseStore();
 
-// Filters
+// Filters for listing, CSV and pivot
 const filters = ref({
   _a: '',
   _c: 20,
-  field: '',
-  value: ''
+  category_main: '',
+  status: ''
 });
 
-// Fetch initial calls on mount
+// Pivot data
+const pivotData = ref([]);
+const pivotColumns = ref([]);
+
 onMounted(() => {
-  callStore.listCalls({ _c: filters.value._c });
+  caseStore.listCases({ _c: filters.value._c });
 });
 
-// Apply filters to main table
-const applyFilters = async () => {
-  const params = {
-    _a: filters.value._a,
-    _c: filters.value._c
-  };
-
-  if (filters.value.field && filters.value.value) {
-    params[filters.value.field] = filters.value.value;
-  }
-
-  await callStore.listCalls(params);
-};
-
-// View call details
-const handleViewCall = async (uniqueid) => {
-  try {
-    const details = await callStore.viewCall(uniqueid);
-    alert(JSON.stringify(details, null, 2));
-  } catch (err) {
-    console.error('Failed to view call:', err.message);
-  }
-};
-
-// Download single call recording
-const handleDownloadRecording = async (uniqueid) => {
-  try {
-    const blob = await callStore.downloadCallRecording(uniqueid, 'wav');
-    const url = window.URL.createObjectURL(new Blob([blob], { type: 'audio/wav' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `${uniqueid}.wav`);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
-  } catch (err) {
-    console.error('Download failed:', err.message);
-  }
-};
-
-// Download CSV with filters
+// Download CSV handler
 const handleDownloadCSV = async () => {
   try {
-    const params = { _a: filters.value._a, _c: filters.value._c };
-    if (filters.value.field && filters.value.value) {
-      params[filters.value.field] = filters.value.value;
-    }
-
-    const blob = await callStore.downloadCSV(params);
+    const blob = await caseStore.downloadCSV({ 
+      _a: filters.value._a,
+      _c: filters.value._c,
+      category_main: filters.value.category_main,
+      status: filters.value.status
+    });
     const url = window.URL.createObjectURL(new Blob([blob], { type: 'text/csv' }));
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', 'calls.csv');
+    link.setAttribute('download', 'cases.csv');
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -83,20 +43,17 @@ const handleDownloadCSV = async () => {
   }
 };
 
-// Get pivot report with filters
+// Pivot report handler
 const handlePivotReport = async () => {
   try {
-    const params = { _a: filters.value._a, _c: filters.value._c };
-    if (filters.value.field && filters.value.value) {
-      params[filters.value.field] = filters.value.value;
-    }
-
-    const data = await callStore.getPivotReport({
-      ...params,
-      xaxis: 'usr',
-      yaxis: 'hangup_status'
+    const data = await caseStore.getPivotReport({
+      _a: filters.value._a,
+      _c: filters.value._c,
+      category_main: filters.value.category_main,
+      status: filters.value.status,
+      xaxis: 'status',
+      yaxis: 'priority'
     });
-
     if (Array.isArray(data) && data.length > 0) {
       pivotColumns.value = Object.keys(data[0]);
       pivotData.value = data;
@@ -111,53 +68,46 @@ const handlePivotReport = async () => {
 </script>
 
 <template>
-  <section class="calls-view">
-    <h2>Calls List</h2>
+  <section class="cases-view">
+    <h2>Cases List</h2>
 
     <!-- Filters -->
     <div class="filters">
-      <input v-model="filters._a" placeholder="Start position (_a)" />
-      <input v-model.number="filters._c" type="number" placeholder="Max records (_c)" />
-      <input v-model="filters.field" placeholder="Filter field (e.g. hangup_status)" />
-      <input v-model="filters.value" placeholder="Filter value (e.g. answered)" />
-      <button @click="applyFilters">Apply Filters</button>
+      <input v-model="filters._a" placeholder="Start (_a)" />
+      <input v-model.number="filters._c" type="number" placeholder="Count (_c)" />
+      <input v-model="filters.category_main" placeholder="Category Main" />
+      <input v-model="filters.status" placeholder="Status" />
+      <button @click="caseStore.listCases(filters)">Refresh List</button>
       <button @click="handleDownloadCSV">Download CSV</button>
       <button @click="handlePivotReport">Get Pivot Report</button>
     </div>
 
-    <p v-if="callStore.loading">Loading…</p>
-    <p v-else-if="callStore.error" class="error">{{ callStore.error }}</p>
+    <p v-if="caseStore.loading">Loading…</p>
+    <p v-else-if="caseStore.error" class="error">{{ caseStore.error }}</p>
 
     <div v-else>
-      <h3>Total Calls: {{ callStore.callCount }}</h3>
+      <h3>Total Cases: {{ caseStore.caseCount }}</h3>
 
-      <!-- Calls Table -->
-      <table v-if="callStore.callCount">
+      <!-- Case Table -->
+      <table v-if="caseStore.caseCount">
         <thead>
           <tr>
-            <th v-for="(meta, key) in callStore.calls_k" :key="key">
+            <th v-for="(meta, key) in caseStore.cases_k" :key="key">
               {{ meta[3] || key }}
             </th>
-            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="call in callStore.calls" :key="call[0]">
-            <td v-for="(meta, key) in callStore.calls_k" :key="key">
-              {{ call[parseInt(meta[0])] }}
-            </td>
-            <td>
-              <button @click="handleViewCall(call[0])">View</button>
-              <button @click="handleDownloadRecording(call[0])">
-                Download Recording
-              </button>
+          <tr v-for="item in caseStore.cases" :key="item[0]">
+            <td v-for="(meta, key) in caseStore.cases_k" :key="key">
+              {{ item[parseInt(meta[0])] }}
             </td>
           </tr>
         </tbody>
       </table>
 
       <div v-else>
-        <p>No calls available.</p>
+        <p>No cases available.</p>
       </div>
 
       <!-- Pivot Table -->
@@ -181,32 +131,13 @@ const handlePivotReport = async () => {
 </template>
 
 <style scoped>
-.calls-view {
+.cases-view {
   padding: 1rem;
   overflow-x: auto;
 }
 
 .filters {
   margin-bottom: 1rem;
-}
-
-.filters input {
-  margin-right: 0.5rem;
-  padding: 4px 8px;
-}
-
-.filters button {
-  margin-right: 0.5rem;
-  padding: 4px 8px;
-  cursor: pointer;
-  background: #4caf50;
-  color: white;
-  border: none;
-  border-radius: 4px;
-}
-
-.filters button:hover {
-  background: #45a049;
 }
 
 table {
@@ -240,4 +171,3 @@ button:hover {
   color: #e74c3c;
 }
 </style>
-

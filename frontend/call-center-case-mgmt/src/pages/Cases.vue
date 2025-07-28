@@ -12,137 +12,165 @@ image.png<template>
   />
 
   <!-- Main Content -->
-  <div class="main-content">
-    <div class="cases-container">
-      <div class="header">
-        <div class="header-left">
-          <h1>Cases</h1>
-          <router-link to="/case-creation" class="add-new-case-btn">
-            Add New Case
-          </router-link>
-        </div>
-        <button class="theme-toggle" @click="toggleTheme">
-          <svg v-show="currentTheme === 'dark'" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <svg v-show="currentTheme === 'light'" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <line x1="12" y1="1" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <line x1="12" y1="21" x2="12" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <line x1="1" y1="12" x2="3" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <line x1="21" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <span>{{ currentTheme === 'dark' ? 'Light Mode' : 'Dark Mode' }}</span>
-        </button>
+<div class="main-content">
+  <div class="cases-container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-left">
+        <h1>Cases</h1>
+        <router-link to="/case-creation" class="add-new-case-btn">
+          Add New Case
+        </router-link>
       </div>
+      <button class="theme-toggle" @click="toggleTheme">
+        <svg v-show="currentTheme === 'dark'" width="24" height="24" viewBox="0 0 24 24">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <svg v-show="currentTheme === 'light'" width="24" height="24" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>{{ currentTheme === 'dark' ? 'Light Mode' : 'Dark Mode' }}</span>
+      </button>
+    </div>
 
-      <div class="search-container" style="position: relative;">
-        <span class="search-icon">
-          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        </span>
-        <input 
-          v-model="searchQuery"
-          class="search-input" 
-          placeholder="Search case by title, assignee, or filer..." 
-          type="text"
-          @input="handleSearch"
-        />
-      </div>
+    <!-- Search -->
+    <div class="search-container" style="position: relative;">
+      <span class="search-icon">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </span>
+      <input 
+        v-model="searchQuery"
+        class="search-input" 
+        placeholder="Search by category, assignee, or filer..." 
+        type="text"
+        @input="handleSearch"
+      />
+    </div>
 
-      <div class="filter-tabs">
-        <button 
-          v-for="filter in filters" 
-          :key="filter.id"
-          :class="['filter-tab', { active: activeFilter === filter.id }]"
-          @click="setActiveFilter(filter.id)"
-        >
-          {{ filter.name }}
-        </button>
-      </div>
+    <!-- Filters -->
+    <div class="filter-tabs">
+      <button 
+        v-for="filter in filters" 
+        :key="filter.id"
+        :class="['filter-tab', { active: activeFilter === filter.id }]"
+        @click="setActiveFilter(filter.id)"
+      >
+        {{ filter.name }}
+      </button>
+    </div>
 
-      <div class="cases-container-inner">
-        <div class="cases-list">
-          <h2 class="cases-title">Cases</h2>
-          
-          <div 
-            v-for="caseItem in filteredCases" 
-            :key="caseItem.id"
-            :class="['case-item glass-card fine-border', { selected: selectedCaseId === caseItem.id }]"
-            @click="selectCase(caseItem.id)"
-          >
-            <div class="case-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <div class="case-details">
-              <div class="case-title">{{ caseItem.title }}</div>
-              <div class="case-meta">
-                <span class="case-priority">
-                  <span :class="['priority-dot', caseItem.priority.toLowerCase()]" />
-                  {{ caseItem.priority }} priority
-                </span>
-                <span class="case-date">{{ caseItem.date }}</span>
-                <span class="case-assigned">{{ caseItem.assignedTo ? `Assigned: ${caseItem.assignedTo}` : 'Unassigned' }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
+    <!-- Cases List -->
+    <div class="cases-container-inner">
+      <div class="cases-list">
+        <h2 class="cases-title">Cases</h2>
         
-        <!-- Side Drawer for Case Details -->
-        <div class="case-detail-drawer" v-if="selectedCaseDetails">
-          <div class="case-detail-drawer-header">
-            <div class="case-detail-title">{{ selectedCaseDetails.caseTitle || selectedCaseDetails.title }}</div>
-            <div class="case-detail-id">Case ID: {{ selectedCaseDetails.id }}</div>
-            <button class="close-details" @click="selectedCaseId = null">×</button>
+        <div 
+          v-for="caseItem in filteredCases" 
+          :key="casesStore.cases_k?.id ? caseItem[casesStore.cases_k.id[0]] : caseItem.id"
+          :class="['case-item glass-card fine-border', { selected: selectedCaseId === (casesStore.cases_k?.id ? caseItem[casesStore.cases_k.id[0]] : caseItem.id) }]"
+          @click="selectCase(casesStore.cases_k?.id ? caseItem[casesStore.cases_k.id[0]] : caseItem.id)"
+        >
+          <div class="case-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M9 12L11 14L15 10"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
           </div>
-          <div class="case-detail-content">
-            <div class="detail-item">
-              <div class="detail-label">Case Filer</div>
-              <div class="detail-value">{{ selectedCaseDetails.caseFiler || 'N/A' }}</div>
+          <div class="case-details">
+            <div class="case-title">
+              {{ casesStore.cases_k?.case_category ? caseItem[casesStore.cases_k.case_category[0]] : 'Untitled Case' }}
             </div>
-            
-            <div class="detail-item">
-              <div class="detail-label">Caseer</div>
-              <div class="detail-value">{{ selectedCaseDetails.caseer || 'N/A' }}</div>
+            <div class="case-meta">
+              <span class="case-priority">
+                <span :class="['priority-dot', ((casesStore.cases_k?.priority ? caseItem[casesStore.cases_k.priority[0]] : '') || '').toLowerCase()]" />
+                {{ casesStore.cases_k?.priority ? (caseItem[casesStore.cases_k.priority[0]] || 'Normal') : 'Normal' }} priority
+              </span>
+           <span class="case-date">
+  {{
+    casesStore.cases_k?.dt
+      ? new Date(
+          caseItem[casesStore.cases_k.dt[0]] < 10000000000
+            ? caseItem[casesStore.cases_k.dt[0]] * 1000
+            : caseItem[casesStore.cases_k.dt[0]] * 3600 * 1000
+        ).toLocaleString()
+      : 'No Date'
+  }}
+</span>
+
+
+              <span class="case-assigned">
+                {{ casesStore.cases_k?.assigned_to && caseItem[casesStore.cases_k.assigned_to[0]] ? `Assigned: ${caseItem[casesStore.cases_k.assigned_to[0]]}` : 'Unassigned' }}
+              </span>
             </div>
-            
-            <div class="detail-item">
-              <div class="detail-label">Case Priority</div>
-              <div :class="['detail-value', selectedCaseDetails.priority.toLowerCase()]">{{ selectedCaseDetails.priority }}</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Case Detail Drawer -->
+      <div class="case-detail-drawer" v-if="selectedCaseDetails">
+        <div class="case-detail-drawer-header">
+          <div class="case-detail-title">
+            {{ casesStore.cases_k?.case_category ? selectedCaseDetails[casesStore.cases_k.case_category[0]] : 'Case Details' }}
+          </div>
+          <div class="case-detail-id">
+            Case ID: {{ casesStore.cases_k?.id ? selectedCaseDetails[casesStore.cases_k.id[0]] : '' }}
+          </div>
+          <button class="close-details" @click="selectedCaseId = null">×</button>
+        </div>
+        <div class="case-detail-content">
+          <div class="detail-item">
+            <div class="detail-label">Case Filler</div>
+            <div class="detail-value">{{ casesStore.cases_k?.created_by ? (selectedCaseDetails[casesStore.cases_k.created_by[0]] || 'N/A') : 'N/A' }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Assigned To</div>
+            <div class="detail-value">{{ casesStore.cases_k?.assigned_to ? (selectedCaseDetails[casesStore.cases_k.assigned_to[0]] || 'Unassigned') : 'Unassigned' }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Priority</div>
+            <div :class="['detail-value', ((casesStore.cases_k?.priority ? selectedCaseDetails[casesStore.cases_k.priority[0]] : '') || '').toLowerCase()]">
+              {{ casesStore.cases_k?.priority ? (selectedCaseDetails[casesStore.cases_k.priority[0]] || 'Normal') : 'Normal' }}
             </div>
-            
-            <div class="detail-item">
-              <div class="detail-label">Jurisdiction</div>
-              <div class="detail-value">{{ selectedCaseDetails.jurisdiction || 'N/A' }}</div>
-            </div>
-            
-            <div class="detail-item">
-              <div class="detail-label">Disposition</div>
-              <div :class="['detail-value', { abusive: selectedCaseDetails.disposition === 'Abusive Call' }]">
-                {{ selectedCaseDetails.disposition || 'N/A' }}
-              </div>
-            </div>
-            
-            <div class="detail-item">
-              <div class="detail-label">Date</div>
-              <div class="detail-value">{{ selectedCaseDetails.date || 'N/A' }}</div>
-            </div>
-            
-            <div class="detail-item">
-              <div class="detail-label">Escalated to</div>
-              <div class="detail-value">{{ selectedCaseDetails.escalatedTo || 'N/A' }}</div>
-            </div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Disposition</div>
+            <div class="detail-value">{{ casesStore.cases_k?.disposition ? (selectedCaseDetails[casesStore.cases_k.disposition[0]] || 'N/A') : 'N/A' }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Date</div>
+       <div class="detail-value">
+  {{
+    casesStore.cases_k?.dt
+      ? new Date(
+          selectedCaseDetails[casesStore.cases_k.dt[0]] < 10000000000
+            ? selectedCaseDetails[casesStore.cases_k.dt[0]] * 1000
+            : selectedCaseDetails[casesStore.cases_k.dt[0]] * 3600 * 1000
+        ).toLocaleString()
+      : 'N/A'
+  }}
+</div>
+
+
+
+
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Escalated To</div>
+            <div class="detail-value">{{ casesStore.cases_k?.escalated_to ? (selectedCaseDetails[casesStore.cases_k.escalated_to[0]] || 'N/A') : 'N/A' }}</div>
           </div>
         </div>
       </div>
     </div>
   </div>
+</div>
+
 </div>
 </template>
 
@@ -150,13 +178,21 @@ image.png<template>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import SidePanel from '@/components/SidePanel.vue'
+import { useCaseStore } from '@/stores/cases'
 
+const casesStore = useCaseStore()
 const router = useRouter()
+
+// Load cases on mount
+onMounted(() => {
+  casesStore.listCases()
+  console.log('Cases loaded:', casesStore.raw)
+})
 
 // Reactive state
 const searchQuery = ref('')
 const activeFilter = ref('all')
-const selectedCaseId = ref('123456') // Default to first case
+const selectedCaseId = ref(null)
 const currentTheme = ref(localStorage.getItem('theme') || 'dark')
 
 // SidePanel related state
@@ -176,110 +212,15 @@ const filters = ref([
   { id: 'priority', name: 'Priority' }
 ])
 
-// Sample cases data
-const cases = ref([
-  {
-    id: '123456',
-    title: 'Case #123456-GBV request',
-    priority: 'High',
-    assignedTo: 'Robert Jackson',
-    caseTitle: 'Emergency call',
-    caseFiler: 'Nelson Adega',
-    caseer: 'Mitch Ngugi',
-    jurisdiction: 'Judge- in Court',
-    disposition: 'Abusive Call',
-    date: '15th Aug 2025',
-    escalatedTo: 'Ntaate Kimani'
-  },
-  {
-    id: '789012',
-    title: 'Case #789012 - Assault',
-    priority: 'Medium',
-    assignedTo: 'Sarah Mitchell',
-    caseTitle: 'Assault Case',
-    caseFiler: 'Jane Doe',
-    caseer: 'John Smith',
-    jurisdiction: 'District Court',
-    disposition: 'Under Investigation',
-    date: '14th Aug 2025',
-    escalatedTo: 'Senior Detective'
-  },
-  {
-    id: '345678-1',
-    title: 'Case #345678-In-transit medical support',
-    priority: 'Low',
-    assignedTo: null,
-    caseTitle: 'Medical Support',
-    caseFiler: 'Medical Team',
-    caseer: 'Emergency Services',
-    jurisdiction: 'Emergency Response',
-    disposition: 'Resolved',
-    date: '13th Aug 2025',
-    escalatedTo: 'Hospital Administration'
-  },
-  {
-    id: '901234-1',
-    title: 'Case #901234-battery coordination',
-    priority: 'High',
-    assignedTo: 'Michael Lee',
-    caseTitle: 'Battery Case',
-    caseFiler: 'Police Department',
-    caseer: 'Detective Brown',
-    jurisdiction: 'Criminal Court',
-    disposition: 'Active Investigation',
-    date: '16th Aug 2025',
-    escalatedTo: 'District Attorney'
-  },
-  {
-    id: '345678-2',
-    title: 'Case #345678-In-transit medical support',
-    priority: 'High',
-    assignedTo: 'Michael Lee',
-    caseTitle: 'Medical Emergency',
-    caseFiler: 'Paramedic Team',
-    caseer: 'Emergency Coordinator',
-    jurisdiction: 'Emergency Response',
-    disposition: 'In Progress',
-    date: '16th Aug 2025',
-    escalatedTo: 'Medical Director'
-  },
-  {
-    id: '901234-2',
-    title: 'Case #901234-Transport coordination',
-    priority: 'High',
-    assignedTo: 'Michael Lee',
-    caseTitle: 'Transport Coordination',
-    caseFiler: 'Transport Authority',
-    caseer: 'Logistics Team',
-    jurisdiction: 'Transport Commission',
-    disposition: 'Pending Review',
-    date: '12th Aug 2025',
-    escalatedTo: 'Operations Manager'
-  },
-  {
-    id: '901234-3',
-    title: 'Case #901234-Transport coordination',
-    priority: 'High',
-    assignedTo: 'Michael Lee',
-    caseTitle: 'Transport Emergency',
-    caseFiler: 'Emergency Services',
-    caseer: 'Transport Coordinator',
-    jurisdiction: 'Emergency Response',
-    disposition: 'Active',
-    date: '16th Aug 2025',
-    escalatedTo: 'Emergency Director'
-  }
-])
-
 // Computed properties
 const filteredCases = computed(() => {
-  let filtered = cases.value
+  let filtered = casesStore.cases || []
 
   // Search filter
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     filtered = filtered.filter(c => 
-      c.title.toLowerCase().includes(query) ||
+      (c.title && c.title.toLowerCase().includes(query)) ||
       (c.assignedTo && c.assignedTo.toLowerCase().includes(query)) ||
       (c.caseFiler && c.caseFiler.toLowerCase().includes(query))
     )
@@ -295,8 +236,9 @@ const filteredCases = computed(() => {
     } else if (activeFilter.value === 'priority') {
       filtered = filtered.filter(c => c.priority === 'High')
     } else if (activeFilter.value === 'today') {
-      // Filter for today's cases (simplified for demo)
-      filtered = filtered.filter(c => c.date && c.date.includes('16th Aug 2025'))
+      // Filter for today's cases (example filter)
+      const today = new Date().toLocaleDateString()
+      filtered = filtered.filter(c => c.date && c.date.includes(today))
     }
   }
 
@@ -304,7 +246,10 @@ const filteredCases = computed(() => {
 })
 
 const selectedCaseDetails = computed(() => {
-  return cases.value.find(caseItem => caseItem.id === selectedCaseId.value)
+  if (!casesStore.cases_k?.id) return null
+  return casesStore.cases.find(
+    caseItem => caseItem[casesStore.cases_k.id[0]] === selectedCaseId.value
+  )
 })
 
 // SidePanel event handlers
@@ -321,7 +266,7 @@ const handleSidebarToggle = (collapsed) => {
   console.log('Sidebar toggled:', collapsed)
 }
 
-// Methods
+// Theme methods (unchanged)
 const applyTheme = (theme) => {
   const root = document.documentElement
 
@@ -349,7 +294,7 @@ const applyTheme = (theme) => {
     root.setAttribute('data-theme', 'dark')
   }
 
-  // Set common variables
+  // Common variables
   root.style.setProperty('--accent-color', '#964B00')
   root.style.setProperty('--accent-hover', '#b25900')
   root.style.setProperty('--danger-color', '#ff3b30')
@@ -378,21 +323,19 @@ const selectCase = (caseId) => {
 }
 
 const handleSearch = () => {
-  // The filtering is handled by the computed property 'filteredCases'
+  // Filtering handled by 'filteredCases'
 }
 
 // Lifecycle hooks
 onMounted(() => {
-  // Load saved theme
   const savedTheme = localStorage.getItem('theme')
   if (savedTheme) {
     currentTheme.value = savedTheme
   }
-
-  // Apply theme immediately
   applyTheme(currentTheme.value)
 })
 </script>
+
 
 <style>
 /* Global styles - not scoped */
