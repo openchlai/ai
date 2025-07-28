@@ -3,8 +3,14 @@ name: Frontend CI Pipeline
 on:
   push:
     branches: [main]
+    paths:
+      - 'frontend/**'                    # Only run when frontend changes
+      - '.github/workflows/frontend-ci.yml'  # Or workflow changes
   pull_request:
     branches: [main]
+    paths:
+      - 'frontend/**'                    # Only run when frontend changes  
+      - '.github/workflows/frontend-ci.yml'  # Or workflow changes
 
 jobs:
   build-and-test:
@@ -14,6 +20,8 @@ jobs:
     defaults:
       run:
         working-directory: frontend/call-center-case-mgmt
+
+    # ... rest stays the same
 
     steps:
       - name: ⬇️ Checkout Repository
@@ -43,7 +51,7 @@ jobs:
       - name: 🛠️ Build Frontend App
         run: npm run build
 
-      - name: 📁 Upload production build (optional)
+      - name:  Upload production build (optional)
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build
