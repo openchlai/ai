@@ -4,24 +4,23 @@ from datetime import timedelta
 
 from celery import shared_task
 from celery.utils.log import get_task_logger
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+
 from .pipeline import transcription, translation, summarizer, ner, classifier
 from .pipeline.insights import generate_case_insights
 from .utils import highlighter
 from .models import AudioFile
 
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
-
 logger = get_task_logger(__name__)
 
-
+# ---------------------------------------------------------------------
+# Shared helper: WebSocket streamer
+# ---------------------------------------------------------------------
 def stream_to_frontend(task_id, step, message=None, data=None, progress=None, status="in_progress"):
-    """Helper to send WebSocket messages to the frontend."""
-    safe_group = f"task_{task_id}" .replace("-", "_")[:95]
-    # safe_group = f"task_{task_id}"  # no .replace()
-
+    """Send progress updates to the frontend via WebSockets."""
+    safe_group = f"task_{task_id}".replace("-", "_")[:95]
     channel_layer = get_channel_layer()
-
     async_to_sync(channel_layer.group_send)(
         safe_group,
         {
@@ -32,11 +31,13 @@ def stream_to_frontend(task_id, step, message=None, data=None, progress=None, st
                 "message": message,
                 "progress": progress,
                 "payload": data or {},
-            }
-        }
+            },
+        },
     )
 
-
+# ---------------------------------------------------------------------
+# Main pipeline task (unchanged)
+# ---------------------------------------------------------------------
 @shared_task(bind=True)
 def process_audio_pipeline(self, audio_id, audio_path):
     """Complete audio processing pipeline with logging and live streaming."""
@@ -106,7 +107,7 @@ def process_audio_pipeline(self, audio_id, audio_path):
         annotated = highlighter.highlight_text(transcript, entities)
         stream_to_frontend(task_id, "highlighting", "✅ Highlighting done", progress=95)
 
-        # Save to DB
+        # Save results to DB
         audio.transcript = transcript
         audio.insights = insights
         audio.annotated_text = annotated
@@ -144,3 +145,47 @@ def process_audio_pipeline(self, audio_id, audio_path):
         logger.exception(f"❌ Pipeline failed: {str(e)}")
         stream_to_frontend(task_id, "error", f"❌ Error: {str(e)}", status="error", progress=0)
         raise self.retry(exc=e, countdown=min(10 * (self.request.retries + 1), 60), max_retries=3)
+
+# ---------------------------------------------------------------------
+# Streaming transcription task (new)
+# ---------------------------------------------------------------------
+@shared_task(bind=True, queue="streaming")  # runs on a separate queue
+def process_audio_streaming(self, audio_id, audio_path, options=None):
+    """
+    Runs streaming transcription separately from the main pipeline.
+    """
+    task_id = self.request.id
+    try:
+        stream_to_frontend(task_id, "streaming_start", "🔄 Starting streaming transcription", progress=0)
+        logger.info(f"🎧 Streaming transcription task started: {audio_path}")
+
+        # Import streaming logic dynamically
+        from streaming.model import WhisperModel
+        from streaming.utils import save_stream_result  # if you have this helper
+
+        model = WhisperModel("models/whisper-base")  # adjust path to your model
+        result = model.transcribe(audio_path, **(options or {}))
+
+        # Optionally save using result writer
+        from core.pipeline.whisper_utils.result_writer import get_writer
+        writer = get_writer("json", "logs/whisper")
+        writer(result, audio_path)
+
+        # Update DB
+        audio = AudioFile.objects.get(id=audio_id)
+        audio.transcript = result.get("text", "")
+        audio.save()
+
+        stream_to_frontend(task_id, "streaming_done", "✅ Streaming transcription complete",
+                           progress=100, status="done")
+
+        return {
+            "status": "SUCCESS",
+            "task_id": task_id,
+            "length": len(result.get("text", "")),
+        }
+
+    except Exception as e:
+        logger.exception(f"❌ Streaming task failed: {e}")
+        stream_to_frontend(task_id, "streaming_error", f"Error: {str(e)}", status="error")
+        raise self.retry(exc=e, countdown=15, max_retries=3)

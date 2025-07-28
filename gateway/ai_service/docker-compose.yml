@@ -33,7 +33,25 @@ services:
   celery:
     build:
       context: .
-    command: celery -A ai_service worker --loglevel=info
+    command: celery -A ai_service worker -Q default --loglevel=info
+    volumes:
+      - .:/app
+      - ./models:/app/models
+    environment:
+      PYTHONUNBUFFERED: "1"
+      MODEL_CONFIG_PATH: /app/ai_service/config/model_config.yaml
+      CHL_AI_MODELS: /app/models
+      CHL_AI_DATA: /app/audio_files
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    working_dir: /app
+    depends_on:
+      - redis
+
+  celery_streaming:
+    build:
+      context: .
+    command: celery -A ai_service worker -Q streaming --loglevel=info
     volumes:
       - .:/app
       - ./models:/app/models

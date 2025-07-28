@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     
     # my apps
     'core',  # Your core app for audio processing
+    'streaming',  # Your streaming app for audio streaming
     'rest_framework',  # Django REST Framework for API
     'corsheaders',  # For handling CORS
     'channels',  # Django Channels for WebSocket support
@@ -159,3 +160,21 @@ CELERY_TASK_SERIALIZER = 'json'
 
 # Environment-specific settings
 RUNNING_IN_DOCKER = os.getenv('RUNNING_IN_DOCKER', '0')  # Read from environment
+
+
+from kombu import Queue
+
+# Default queue
+CELERY_TASK_DEFAULT_QUEUE = 'default'
+
+# Define all queues
+CELERY_TASK_QUEUES = (
+    Queue('default'),
+    Queue('streaming'),
+)
+
+# (Optional but safer) Explicit routing rules
+CELERY_TASK_ROUTES = {
+    'core.tasks.process_audio_pipeline': {'queue': 'default'},
+    'core.tasks.process_streaming_audio': {'queue': 'streaming'},
+}
