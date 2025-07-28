@@ -40,6 +40,13 @@ image.png<template>
         </button>
       </div>
 
+<<<<<<< HEAD
+      <div class="search-container">
+        <input 
+          v-model="searchQuery"
+          class="search-input" 
+          placeholder="Search cases..." 
+=======
       <div class="search-container" style="position: relative;">
         <span class="search-icon">
           <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -48,6 +55,7 @@ image.png<template>
           v-model="searchQuery"
           class="search-input" 
           placeholder="Search case by title, assignee, or filer..." 
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
           type="text"
           @input="handleSearch"
         />
@@ -83,12 +91,22 @@ image.png<template>
             <div class="case-details">
               <div class="case-title">{{ caseItem.title }}</div>
               <div class="case-meta">
+<<<<<<< HEAD
+                <div class="case-priority">
+                  <div :class="['priority-dot', caseItem.priority.toLowerCase()]" />
+                  <span>{{ caseItem.priority }} priority</span>
+                </div>
+                <div v-if="selectedCaseId === caseItem.id" class="case-assigned">
+                  <span>{{ caseItem.assignedTo ? `Assigned: ${caseItem.assignedTo}` : 'Unassigned' }}</span>
+                </div>
+=======
                 <span class="case-priority">
                   <span :class="['priority-dot', caseItem.priority.toLowerCase()]" />
                   {{ caseItem.priority }} priority
                 </span>
                 <span class="case-date">{{ caseItem.date }}</span>
                 <span class="case-assigned">{{ caseItem.assignedTo ? `Assigned: ${caseItem.assignedTo}` : 'Unassigned' }}</span>
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
               </div>
             </div>
           </div>
@@ -508,29 +526,50 @@ body {
 }
 
 .search-container {
+<<<<<<< HEAD
+  margin-bottom: 20px;
+  flex-shrink: 0;
+=======
   margin-bottom: 32px;
   flex-shrink: 0;
   margin-top: 18px;
   display: flex;
   align-items: center;
   justify-content: flex-start;
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 }
 
 .search-input {
   width: 100%;
+<<<<<<< HEAD
+  padding: 12px 20px;
+=======
   padding: 12px 20px 12px 44px;
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
   border-radius: 30px;
   border: none;
   background-color: var(--content-bg);
   color: var(--text-color);
+<<<<<<< HEAD
+  font-size: 14px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+=======
   font-size: 15px;
   transition: border-color 0.3s, box-shadow 0.3s;
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
   position: relative;
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 }
 
 .search-input::placeholder {
   color: var(--text-secondary);
+<<<<<<< HEAD
+}
+
+.search-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-color);
+=======
   font-size: 15px;
   opacity: 1;
 }
@@ -544,13 +583,18 @@ body {
   font-size: 18px;
   pointer-events: none;
   z-index: 2;
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 }
 
 .filter-tabs {
   display: flex;
   gap: 10px;
+<<<<<<< HEAD
+  margin-bottom: 20px;
+=======
   margin-bottom: 28px;
   margin-top: 18px;
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
   overflow-x: auto;
   padding-bottom: 5px;
   flex-shrink: 0;
@@ -587,11 +631,20 @@ body {
 }
 
 .cases-list {
+<<<<<<< HEAD
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: calc(100vh - 140px); /* Adjust 140px as needed for header/filter height */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+=======
   display: flex;
   flex-direction: column;
   gap: 12px;
   /* Make cards stretch to container width */
   width: 100%;
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 }
 
 .cases-list::-webkit-scrollbar {
@@ -619,6 +672,52 @@ body {
 
 .case-item {
   display: flex;
+<<<<<<< HEAD
+  align-items: center;
+  background: var(--content-bg);
+  color: var(--text-color);
+  border-radius: 15px;
+  padding: 15px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  transition: background 0.3s, color 0.3s, border 0.3s;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  font-size: 15px;
+  margin-bottom: 16px;
+  min-height: 0;
+  gap: 16px;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+.case-item.selected {
+  border: 2px solid var(--accent-color);
+  background: rgba(150,75,0,0.07);
+  box-shadow: 0 2px 8px rgba(150,75,0,0.08);
+}
+.case-item:hover {
+  background: rgba(150,75,0,0.04);
+}
+.case-icon {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  max-width: 40px;
+  max-height: 40px;
+  background: var(--accent-color, #964B00);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  margin-right: 15px;
+  margin-left: 0;
+  border: 2px solid var(--accent-color);
+  box-shadow: none;
+  opacity: 1;
+}
+=======
   align-items: flex-start;
   cursor: pointer;
   padding: 18px 32px;
@@ -661,17 +760,39 @@ body {
   flex-shrink: 0;
 }
 
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 .case-icon svg {
   width: 18px;
   height: 18px;
   stroke: #fff;
+<<<<<<< HEAD
+  opacity: 1;
+}
+=======
 }
 
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 .case-details {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
+<<<<<<< HEAD
+  gap: 6px;
+  justify-content: center;
+  width: 100%;
+  overflow: hidden;
+  padding-top: 0;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+.case-title {
+  font-size: 1rem;
+  font-weight: 700;
+  padding-top: 0;
+  margin-bottom: 2px;
+  letter-spacing: 0.01em;
+=======
   gap: 4px;
   justify-content: center;
   width: 100%;
@@ -682,11 +803,63 @@ body {
   font-size: 1.08rem;
   font-weight: 700;
   margin-bottom: 2px;
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
   width: 100%;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+<<<<<<< HEAD
+.case-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+.case-id {
+  font-size: 0.95rem;
+  color: #bbb;
+  margin-bottom: 8px;
+}
+.case-priority {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.case-assigned {
+  display: flex;
+  align-items: center;
+  font-weight: 400;
+  color: #888;
+  margin-top: 2px;
+}
+.case-assigned span {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  font-size: 12px;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.priority-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1.5px solid #fff;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.08);
+}
+=======
 
 .case-meta {
   display: flex;
@@ -724,6 +897,7 @@ body {
   vertical-align: middle;
 }
 
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 .priority-dot.high {
   background-color: var(--high-priority);
 }
@@ -733,6 +907,8 @@ body {
 .priority-dot.low {
   background-color: var(--low-priority);
 }
+<<<<<<< HEAD
+=======
 
 .case-date {
   font-size: 12px;
@@ -751,6 +927,7 @@ body {
   color: #bbb;
   margin-bottom: 8px;
 }
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 .case-detail-drawer {
   position: fixed;
   top: 0;
@@ -1000,6 +1177,25 @@ body.high-contrast .priority-dot.medium { background: #FFA500 !important; }
 body.high-contrast .priority-dot.low { background: #4CAF50 !important; }
 @media (max-width: 900px) {
   .case-item {
+<<<<<<< HEAD
+    padding: 20px 18px 22px 18px;
+    gap: 12px;
+  }
+  .case-icon {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    max-width: 36px;
+    max-height: 36px;
+    margin-right: 12px;
+  }
+  .case-title {
+    font-size: 1rem;
+  }
+  .case-meta {
+    font-size: 12px;
+=======
     padding: 14px 10px;
     max-width: 100vw;
     min-width: 0;
@@ -1016,6 +1212,7 @@ body.high-contrast .priority-dot.low { background: #4CAF50 !important; }
     max-width: 100%;
     width: 100%;
     display: block;
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
   }
 }
 @media (max-width: 600px) {
@@ -1039,6 +1236,8 @@ body.high-contrast .priority-dot.low { background: #4CAF50 !important; }
   .case-meta {
     font-size: 11px;
   }
+<<<<<<< HEAD
+=======
   .case-meta {
     flex-direction: column;
     align-items: flex-start;
@@ -1052,5 +1251,6 @@ body.high-contrast .priority-dot.low { background: #4CAF50 !important; }
     width: 100%;
     display: block;
   }
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 }
 </style>

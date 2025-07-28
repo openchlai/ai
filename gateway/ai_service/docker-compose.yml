@@ -5,11 +5,17 @@ services:
     build:
       context: .
     command: >
+<<<<<<< HEAD
+      daphne -b 0.0.0.0 -p 8000
+              --access-log -
+              ai_service.asgi:application
+=======
       gunicorn --bind 0.0.0.0:8000
                --workers=2
                --threads=4
                --timeout=300
                ai_service.wsgi:application
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
     ports:
       - "8000:8000"
     volumes:
@@ -17,7 +23,11 @@ services:
       - ./models:/app/models
     environment:
       PYTHONUNBUFFERED: "1"
+<<<<<<< HEAD
+      MODEL_CONFIG_PATH: /app/ai_service/config/model_config.yaml
+=======
       MODEL_CONFIG_PATH: /app/ai_service/config/models.yaml
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
       CHL_AI_MODELS: /app/models
       CHL_AI_DATA: /app/audio_files
       REDIS_HOST: redis
@@ -41,7 +51,11 @@ services:
       - ./models:/app/models
     environment:
       PYTHONUNBUFFERED: "1"
+<<<<<<< HEAD
+      MODEL_CONFIG_PATH: /app/ai_service/config/model_config.yaml
+=======
       MODEL_CONFIG_PATH: /app/ai_service/config/models.yaml
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
       CHL_AI_MODELS: /app/models
       CHL_AI_DATA: /app/audio_files
       REDIS_HOST: redis

@@ -38,7 +38,10 @@ vendor/
 *.pem
 .secret*
 translation_env
+<<<<<<< HEAD
+=======
 
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 
 # Log files and caches
 *.log
@@ -73,6 +76,43 @@ venv.bak/
 .coverage
 htmlcov/
 
+# Node.js specific
+*.node
+*.npm
+*.npmrc
+
+# PHP specific
+*.php~
+*.phps
+composer.phar
+vendor/
+*.phpunit.result.cache
+
+# C# specific
+*.exe
+*.dll
+*.pdb
+*.cache
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# SQL specific
+*.mdf
+*.ldf
+*.ndf
+*.bak
+*.dbmdl
+*.dbproj.schemaview
+*.pfx
+*.publishsettings
+*.sql
+
 # Java specific
 *.class
 *.jar
@@ -92,6 +132,13 @@ htmlcov/
 gateway/ai_service/db.sqlite3
 gateway/ai_service/audio/
 
+<<<<<<< HEAD
+# Models
+model/
+models/
+**/models/**
+=======
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 
 *.mp3
 *.wav

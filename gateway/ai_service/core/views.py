@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+# core/views.py
+=======
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, parsers
@@ -38,6 +42,91 @@ class AudioUploadView(APIView):
 
 class TaskStatusView(APIView):
     def get(self, request, task_id):
+<<<<<<< HEAD
+        try:
+            result = AsyncResult(task_id)
+            response = {
+                "task_id": task_id,
+                "status": result.status,
+                "timestamp": result.date_done.isoformat() if result.date_done else None,
+            }
+
+            if result.status == 'SUCCESS':
+                response["result"] = result.result
+                response["completed"] = True
+                response["progress"] = 100
+            elif result.status == 'FAILURE':
+                response["error"] = str(result.result)
+                response["completed"] = False
+                response["progress"] = 0
+            elif result.status == 'PENDING':
+                response["message"] = "Task is queued and waiting to start"
+                response["completed"] = False
+                response["progress"] = 0
+            elif result.status == 'RETRY':
+                response["message"] = "Task is retrying after an error"
+                response["completed"] = False
+                response["progress"] = 25
+            elif result.status == 'PROGRESS':
+                # Get task meta information for progress tracking
+                if hasattr(result, 'info') and result.info:
+                    response["meta"] = result.info
+                    response["progress"] = result.info.get('progress', 50)
+                    response["stage"] = result.info.get('stage', 'processing')
+                    response["message"] = f"Processing: {response['stage']}"
+                else:
+                    response["progress"] = 50
+                    response["message"] = "Task is in progress"
+                response["completed"] = False
+
+            return Response(response, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.error(f"Error checking task status for {task_id}: {e}")
+            return Response({
+                "task_id": task_id,
+                "status": "ERROR",
+                "error": "Failed to retrieve task status",
+                "completed": False,
+                "progress": 0
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class AudioResultView(APIView):
+    def get(self, request, audio_id):
+        try:
+            audio_file = AudioFile.objects.get(id=audio_id)
+            serializer = AudioFileSerializer(audio_file)
+            
+            # Check if processing is complete
+            is_processed = bool(
+                audio_file.transcript and 
+                audio_file.insights and 
+                audio_file.summary
+            )
+            
+            response_data = serializer.data
+            response_data.update({
+                "is_processed": is_processed,
+                "has_transcript": bool(audio_file.transcript),
+                "has_insights": bool(audio_file.insights),
+                "has_summary": bool(audio_file.summary),
+                "has_translation": bool(audio_file.translated_text),
+                "has_annotations": bool(audio_file.annotated_text),
+            })
+            
+            return Response(response_data, status=status.HTTP_200_OK)
+            
+        except AudioFile.DoesNotExist:
+            return Response({
+                "error": "Audio file not found"
+            }, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            logger.error(f"Error retrieving audio result for {audio_id}: {e}")
+            return Response({
+                "error": "Failed to retrieve audio file"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+=======
         result = AsyncResult(task_id)
         response = {
             "task_id": task_id,
@@ -50,6 +139,7 @@ class TaskStatusView(APIView):
             response["error"] = str(result.result)
 
         return Response(response, status=status.HTTP_200_OK)
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 
 
 class HealthView(APIView):
