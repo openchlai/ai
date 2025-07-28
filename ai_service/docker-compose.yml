@@ -1,0 +1,93 @@
+services:
+  # Redis for Celery backend
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # Main FastAPI application
+  ai-pipeline:
+    build: .
+    ports:
+      - "8123:8123"
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - DEBUG=true
+      - LOG_LEVEL=INFO
+      - SITE_ID=dev-local
+      - ENABLE_MODEL_LOADING=false  # API server doesn't need models
+      - REDIS_URL=redis://redis:6379/0
+      - REDIS_TASK_DB=1
+      - DOCKER_CONTAINER=true
+    volumes:
+      - ./logs:/app/logs
+      - ./temp:/app/temp
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8123/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Celery worker for processing tasks
+  celery-worker:
+    build: .
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - DEBUG=true
+      - LOG_LEVEL=INFO
+      - ENABLE_MODEL_LOADING=true  # Worker needs models
+      - NUMBA_CACHE_DIR=/tmp/numba_cache  # Writable cache location
+      - NUMBA_DISABLE_JIT=0               # Keep JIT enabled
+      - NUMBA_DISABLE_CACHING=1           # Disable persistent caching 
+      - REDIS_URL=redis://redis:6379/0
+      - REDIS_TASK_DB=1
+      - DOCKER_CONTAINER=true
+    volumes:
+      - ./logs:/app/logs
+      - ./temp:/app/temp
+    command: celery -A app.celery_app worker --loglevel=info -E --pool=solo
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+        limits:
+          memory: 16G
+    healthcheck:
+      test: ["CMD", "celery", "-A", "app.celery_app", "inspect", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Optional: Celery monitoring (Flower)
+  flower:
+    build: .
+    depends_on:
+      - redis
+      - celery-worker
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    ports:
+      - "5555:5555"
+    command: celery -A app.celery_app flower --port=5555
+    restart: unless-stopped
+
+volumes:
+  redis_data:
