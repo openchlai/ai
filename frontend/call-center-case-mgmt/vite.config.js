@@ -17,6 +17,8 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src')
     }
+<<<<<<< HEAD
+=======
   },
   // Testing configuration
   test: {
@@ -56,5 +58,6 @@ export default defineConfig({
       all: true,
       src: ['src']
     }
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
   }
 })

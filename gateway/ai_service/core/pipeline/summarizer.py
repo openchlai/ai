@@ -1,53 +1,54 @@
-import os
-import warnings
-from transformers import pipeline, AutoTokenizer, AutoModelForSeq2SeqLM
+import logging
 import torch
+from core.pipeline.model_loader import load_hf_model_and_tokenizer
 
-warnings.filterwarnings("ignore", category=UserWarning, message=".*has_mps.*")
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
-# Use a more powerful base model for future fine-tuning
-MODEL_NAME = os.getenv("SUMMARIZER_MODEL", "facebook/bart-large-cnn")
+# === Load summarizer model and tokenizer ===
+try:
+    model, tokenizer, device = load_hf_model_and_tokenizer("summarizer_model")
+    logger.info("✅ Summarization model loaded successfully.")
+except Exception as e:
+    raise RuntimeError(f"Failed to load summarizer model or tokenizer: {e}")
 
-# Load model and tokenizer
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
+# === Summarization function ===
+def summarize(text: str, max_length: int = 128, min_length: int = 30) -> str:
+    """
+    Summarizes input text using the loaded model.
+    
+    Args:
+        text (str): Input text to summarize.
+        max_length (int): Max length of summary.
+        min_length (int): Min length of summary.
+    
+    Returns:
+        str: The generated summary or error message.
+    """
+    if not text.strip():
+        return ""
 
-# Define summarizer pipeline (no device argument — let accelerate handle it)
-summarizer = pipeline(
-    "summarization",
-    model=model,
-    tokenizer=tokenizer
-)
-
-def chunk_text(text, max_token_length=1024):
-    """Split long text into smaller chunks for summarization."""
-    inputs = tokenizer(text, return_tensors="pt", truncation=False)
-    input_ids = inputs["input_ids"][0]
-    chunks = []
-
-    for i in range(0, len(input_ids), max_token_length):
-        chunk_ids = input_ids[i:i + max_token_length]
-        chunk_text = tokenizer.decode(chunk_ids, skip_special_tokens=True)
-        chunks.append(chunk_text)
-
-    return chunks
-
-def summarize(text, max_chunk_tokens=1024, min_length=30, max_length=150):
-    """Summarize text, chunking it if needed."""
     try:
-        chunks = chunk_text(text, max_chunk_tokens)
-        summaries = []
+        inputs = tokenizer(
+            "summarize: " + text,
+            return_tensors="pt",
+            max_length=512,
+            truncation=True
+        )
+        inputs = {k: v.to(device) for k, v in inputs.items()}
 
-        for chunk in chunks:
-            summary = summarizer(
-                chunk,
+        with torch.no_grad():
+            summary_ids = model.generate(
+                inputs["input_ids"],
                 max_length=max_length,
                 min_length=min_length,
-                do_sample=False
+                length_penalty=2.0,
+                num_beams=4,
+                early_stopping=True
             )
-            summaries.append(summary[0]['summary_text'])
 
-        return " ".join(summaries)
+        return tokenizer.decode(summary_ids[0], skip_special_tokens=True)
 
     except Exception as e:
-        raise RuntimeError(f"Summarization failed: {str(e)}")
+        logger.error(f"Summarization failed: {e}")
+        return "[Error generating summary]"

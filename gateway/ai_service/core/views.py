@@ -1,89 +1,150 @@
+<<<<<<< HEAD
+# core/views.py
+=======
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, parsers
-from django.http import StreamingHttpResponse
 from .models import AudioFile
 from .serializers import AudioFileSerializer
-from .pipeline import transcription, translation, ner, classifier, summarizer
-from .utils import highlighter
-from .pipeline.insights import generate_case_insights
-import json
+from .tasks import process_audio_pipeline
+from celery.result import AsyncResult
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 import logging
-import traceback
 
 logger = logging.getLogger(__name__)
 
+@method_decorator(csrf_exempt, name='dispatch')
 class AudioUploadView(APIView):
     parser_classes = [parsers.MultiPartParser, parsers.FormParser]
 
     def post(self, request, format=None):
+        # Validate and save uploaded file
         serializer = AudioFileSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         audio_instance = serializer.save()
+        logger.info(f"Audio file uploaded: {audio_instance.audio.path}")
 
-        def process_and_stream():
-            response_data = {"id": audio_instance.id}
+        # Dispatch Celery task
+        task = process_audio_pipeline.delay(audio_instance.id, audio_instance.audio.path)
+        logger.info(f"Task {task.id} started for audio ID {audio_instance.id}")
 
-            try:
-                # Step 1: Transcribe
-                logger.info(f"Transcribing audio: {audio_instance.audio.path}")
-                transcript = transcription.transcribe(audio_instance.audio.path)
-                audio_instance.transcript = transcript
-                response_data["transcript"] = transcript
-                yield json.dumps({"step": "transcription", "data": response_data}) + "\n"
+        return Response({
+            "message": "Audio uploaded and processing started.",
+            "audio_id": audio_instance.id,
+            "task_id": task.id,
+            "status_check_url": f"/api/task_status/{task.id}/"
+        }, status=status.HTTP_202_ACCEPTED)
 
-                # # Step 2: Translate
-                # logger.info("Translating transcript")
-                # translated_transcript = translation.translate(transcript)
-                # response_data["translated_transcript"] = translated_transcript
-                # yield json.dumps({"step": "translation", "data": response_data}) + "\n"
 
-                # Step 3: Summarize
-                logger.info("Summarizing translated transcript")
-                summary = summarizer.summarize(transcript)
-                response_data["summary"] = summary
-                yield json.dumps({"step": "summarization", "data": response_data}) + "\n"
+class TaskStatusView(APIView):
+    def get(self, request, task_id):
+<<<<<<< HEAD
+        try:
+            result = AsyncResult(task_id)
+            response = {
+                "task_id": task_id,
+                "status": result.status,
+                "timestamp": result.date_done.isoformat() if result.date_done else None,
+            }
 
-                # Step 4: NER on summary
-                logger.info("Extracting named entities from summary")
-                summary_entities = ner.extract_entities(summary, flat=True)
-                response_data["summary_entities"] = summary_entities
-                yield json.dumps({"step": "ner", "data": response_data}) + "\n"
+            if result.status == 'SUCCESS':
+                response["result"] = result.result
+                response["completed"] = True
+                response["progress"] = 100
+            elif result.status == 'FAILURE':
+                response["error"] = str(result.result)
+                response["completed"] = False
+                response["progress"] = 0
+            elif result.status == 'PENDING':
+                response["message"] = "Task is queued and waiting to start"
+                response["completed"] = False
+                response["progress"] = 0
+            elif result.status == 'RETRY':
+                response["message"] = "Task is retrying after an error"
+                response["completed"] = False
+                response["progress"] = 25
+            elif result.status == 'PROGRESS':
+                # Get task meta information for progress tracking
+                if hasattr(result, 'info') and result.info:
+                    response["meta"] = result.info
+                    response["progress"] = result.info.get('progress', 50)
+                    response["stage"] = result.info.get('stage', 'processing')
+                    response["message"] = f"Processing: {response['stage']}"
+                else:
+                    response["progress"] = 50
+                    response["message"] = "Task is in progress"
+                response["completed"] = False
 
-                # Step 5: Classification on summary
-                logger.info("Classifying summarized case")
-                summary_classification = classifier.classify_case(summary)
-                response_data["summary_classification"] = summary_classification
-                yield json.dumps({"step": "classification", "data": response_data}) + "\n"
+            return Response(response, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.error(f"Error checking task status for {task_id}: {e}")
+            return Response({
+                "task_id": task_id,
+                "status": "ERROR",
+                "error": "Failed to retrieve task status",
+                "completed": False,
+                "progress": 0
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-                # Step 6: Generate Insights using summary
-                logger.info("Generating insights from summary")
-                insights = generate_case_insights(summary)
-                audio_instance.insights = insights
-                response_data["insights"] = insights
-                yield json.dumps({"step": "insights", "data": response_data}) + "\n"
 
-                # Step 7: Highlight transcript using summary entities
-                logger.info("Highlighting original transcript")
-                annotated = highlighter.highlight_text(transcript, summary_entities)
-                audio_instance.annotated_text = annotated
-                response_data["annotated_text"] = annotated
-                yield json.dumps({"step": "highlighting", "data": response_data}) + "\n"
+class AudioResultView(APIView):
+    def get(self, request, audio_id):
+        try:
+            audio_file = AudioFile.objects.get(id=audio_id)
+            serializer = AudioFileSerializer(audio_file)
+            
+            # Check if processing is complete
+            is_processed = bool(
+                audio_file.transcript and 
+                audio_file.insights and 
+                audio_file.summary
+            )
+            
+            response_data = serializer.data
+            response_data.update({
+                "is_processed": is_processed,
+                "has_transcript": bool(audio_file.transcript),
+                "has_insights": bool(audio_file.insights),
+                "has_summary": bool(audio_file.summary),
+                "has_translation": bool(audio_file.translated_text),
+                "has_annotations": bool(audio_file.annotated_text),
+            })
+            
+            return Response(response_data, status=status.HTTP_200_OK)
+            
+        except AudioFile.DoesNotExist:
+            return Response({
+                "error": "Audio file not found"
+            }, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            logger.error(f"Error retrieving audio result for {audio_id}: {e}")
+            return Response({
+                "error": "Failed to retrieve audio file"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+=======
+        result = AsyncResult(task_id)
+        response = {
+            "task_id": task_id,
+            "status": result.status,
+        }
 
-                # Save enriched data
-                audio_instance.save()
+        if result.status == 'SUCCESS':
+            response["result"] = result.result
+        elif result.status == 'FAILURE':
+            response["error"] = str(result.result)
 
-            except Exception as e:
-                error_details = {
-                    'error_type': type(e).__name__,
-                    'error_message': str(e),
-                    'traceback': traceback.format_exc()
-                }
-                logger.error(f"Processing failed: {error_details}")
-                audio_instance.audio.delete()
-                audio_instance.delete()
-                yield json.dumps({"error": "Processing failed", "details": error_details}) + "\n"
+        return Response(response, status=status.HTTP_200_OK)
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 
-        return StreamingHttpResponse(process_and_stream(), content_type="application/json")
+
+class HealthView(APIView):
+    def get(self, request):
+        return Response({
+            "status": "healthy",
+            "service": "ai_service"
+        }, status=status.HTTP_200_OK)

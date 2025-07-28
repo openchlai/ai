@@ -1,0 +1,38 @@
+# model_config.yaml
+transcription_model:
+  name: whisper
+  # whisper tiny
+  path: /app/models/whisper-tiny  # ✅ Full absolute path inside container
+
+  # path: /app/models/whisper-base
+  # path: /app/models/whisper-large-v2
+  size: tiny
+
+translation_model:
+  name: marianmt
+  path: /app/models/translation_model  # Path to your fine-tuned MarianMT model
+
+summarizer_model:
+  name: flan-t5-custom
+  path: /app/models/summarizer_model  # ✅ Updated path to your fine-tuned model
+
+ner_model:
+  name: spacy-en-core-web-md
+  path: en_core_web_md  # spaCy models are loaded by name, not path
+
+# multitask_distilbert:
+#   name: multitask_distilbert
+#   path: /app/models/Multiclassifier/
+
+multitask_distilbert:
+  name: multitask_distilbert
+  path: /app/models/Multiclassifier  # ✅ point to model files
+
+
+highlight_model:
+  name: simple_highlighter
+  path: null  # if you use a function-based highlighter
+
+insights_generator:
+  name: rules_based
+  path: null  # if it's a rules-based function and doesn't need a model
