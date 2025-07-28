@@ -277,6 +277,23 @@ export default {
     const router = useRouter();
     const route = useRoute();
 
+    // Environment variables
+    const config = {
+      apiBaseUrl: import.meta.env.VITE_API_BASE_URL,
+      apiTimeout: parseInt(import.meta.env.VITE_API_TIMEOUT) || 10000,
+      sipUri: import.meta.env.VITE_SIP_URI,
+      sipPassword: import.meta.env.VITE_SIP_PASSWORD,
+      sipWebsocketUrl: import.meta.env.VITE_SIP_WEBSOCKET_URL,
+      sipCheckWebsocketUrl: import.meta.env.VITE_SIP_CHECK_WEBSOCKET_URL,
+      defaultReturnUrl: import.meta.env.VITE_DEFAULT_RETURN_URL || '/dashboard',
+      otpResendTimer: parseInt(import.meta.env.VITE_OTP_RESEND_TIMER) || 30,
+      successMessageDuration: parseInt(import.meta.env.VITE_SUCCESS_MESSAGE_DURATION) || 3000,
+      mockApiDelay: parseInt(import.meta.env.VITE_MOCK_API_DELAY) || 1000,
+      enableMockApi: import.meta.env.VITE_ENABLE_MOCK_API === 'true',
+      appName: import.meta.env.VITE_APP_NAME,
+      helpUrl: import.meta.env.VITE_HELP_URL
+    };
+
     // Form data
     const contactInfo = ref(''); // This will hold email or phone based on delivery method
     const password = ref('');
@@ -293,17 +310,17 @@ export default {
     const submitted = ref(false);
     const error = ref('');
     const successMessage = ref('');
-    const returnUrl = ref(route.query.returnUrl || '/dashboard');
+    const returnUrl = ref(route.query.returnUrl || config.defaultReturnUrl);
     const resendTimer = ref(0);
     const resendInterval = ref(null);
     const userId = ref('');
     const maskedContact = ref('');
 
-    // SIP Details 
+    // SIP Details - using environment variables
     const sipConnectionDetails = ref({
-      uri: 'sip:6001@54.238.49.155',
-      password: 'securepassword',
-      websocketURL: 'wss://54.238.49.155:8089/ws'
+      uri: config.sipUri,
+      password: config.sipPassword,
+      websocketURL: config.sipWebsocketUrl
     });
 
     // Computed properties
@@ -390,7 +407,7 @@ export default {
     };
 
     const startResendTimer = () => {
-      resendTimer.value = 30;
+      resendTimer.value = config.otpResendTimer;
       resendInterval.value = setInterval(() => {
         resendTimer.value--;
         if (resendTimer.value <= 0) {
@@ -425,22 +442,32 @@ export default {
       }
 
       try {
-        // Mock API call - replace with actual axios call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Simulate successful login
-        const mockResponse = {
-          access_token: 'mock_access_token',
-          refresh_token: 'mock_refresh_token',
-          user: { id: 1, name: 'Test User' },
-          session_id: 'mock_session_id'
-        };
+        if (config.enableMockApi) {
+          // Mock API call - replace with actual axios call
+          await new Promise(resolve => setTimeout(resolve, config.mockApiDelay));
+          
+          // Simulate successful login
+          const mockResponse = {
+            access_token: 'mock_access_token',
+            refresh_token: 'mock_refresh_token',
+            user: { id: 1, name: 'Test User' },
+            session_id: 'mock_session_id'
+          };
 
-        // Store authentication tokens and user data
-        localStorage.setItem('access_token', mockResponse.access_token);
-        localStorage.setItem('refresh_token', mockResponse.refresh_token);
-        localStorage.setItem('user', JSON.stringify(mockResponse.user));
-        localStorage.setItem('session_id', mockResponse.session_id);
+          // Store authentication tokens and user data
+          localStorage.setItem('access_token', mockResponse.access_token);
+          localStorage.setItem('refresh_token', mockResponse.refresh_token);
+          localStorage.setItem('user', JSON.stringify(mockResponse.user));
+          localStorage.setItem('session_id', mockResponse.session_id);
+        } else {
+          // TODO: Replace with actual API call using axiosInstance
+          // const response = await axiosInstance.post(`${config.apiBaseUrl}/login`, {
+          //   contact: contactInfo.value,
+          //   password: password.value,
+          //   loginMethod: 'password'
+          // });
+          // Handle actual response here
+        }
 
         // Store SIP information
         localStorage.setItem('sipConnectionDetails', JSON.stringify({
@@ -481,12 +508,22 @@ export default {
       }
 
       try {
-        // Mock API call - replace with actual axios call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Simulate successful OTP request
-        userId.value = 'mock_user_id';
-        maskedContact.value = maskContactInfo(contactInfo.value);
+        if (config.enableMockApi) {
+          // Mock API call - replace with actual axios call
+          await new Promise(resolve => setTimeout(resolve, config.mockApiDelay));
+          
+          // Simulate successful OTP request
+          userId.value = 'mock_user_id';
+          maskedContact.value = maskContactInfo(contactInfo.value);
+        } else {
+          // TODO: Replace with actual API call using axiosInstance
+          // const response = await axiosInstance.post(`${config.apiBaseUrl}/request-otp`, {
+          //   contact: contactInfo.value,
+          //   deliveryMethod: deliveryMethod.value
+          // });
+          // userId.value = response.data.userId;
+          // maskedContact.value = response.data.maskedContact;
+        }
         
         currentStep.value = 'otp';
         successMessage.value = `OTP sent successfully via ${deliveryMethod.value}!`;
@@ -494,7 +531,7 @@ export default {
 
         setTimeout(() => {
           successMessage.value = '';
-        }, 3000);
+        }, config.successMessageDuration);
       } catch (err) {
         error.value = 'Failed to send OTP. Please try again.';
         console.error('OTP request error:', err);
@@ -510,22 +547,31 @@ export default {
       try {
         const otpCode = otpDigits.value.join('');
         
-        // Mock API call - replace with actual axios call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Simulate successful verification
-        const mockResponse = {
-          access_token: 'mock_access_token',
-          refresh_token: 'mock_refresh_token',
-          user: { id: 1, name: 'Test User' },
-          session_id: 'mock_session_id'
-        };
+        if (config.enableMockApi) {
+          // Mock API call - replace with actual axios call
+          await new Promise(resolve => setTimeout(resolve, config.mockApiDelay));
+          
+          // Simulate successful verification
+          const mockResponse = {
+            access_token: 'mock_access_token',
+            refresh_token: 'mock_refresh_token',
+            user: { id: 1, name: 'Test User' },
+            session_id: 'mock_session_id'
+          };
 
-        // Store authentication tokens and user data
-        localStorage.setItem('access_token', mockResponse.access_token);
-        localStorage.setItem('refresh_token', mockResponse.refresh_token);
-        localStorage.setItem('user', JSON.stringify(mockResponse.user));
-        localStorage.setItem('session_id', mockResponse.session_id);
+          // Store authentication tokens and user data
+          localStorage.setItem('access_token', mockResponse.access_token);
+          localStorage.setItem('refresh_token', mockResponse.refresh_token);
+          localStorage.setItem('user', JSON.stringify(mockResponse.user));
+          localStorage.setItem('session_id', mockResponse.session_id);
+        } else {
+          // TODO: Replace with actual API call using axiosInstance
+          // const response = await axiosInstance.post(`${config.apiBaseUrl}/verify-otp`, {
+          //   userId: userId.value,
+          //   otpCode: otpCode
+          // });
+          // Handle actual response here
+        }
 
         // Store SIP information
         localStorage.setItem('sipConnectionDetails', JSON.stringify({
@@ -577,15 +623,23 @@ export default {
       error.value = '';
 
       try {
-        // Mock API call - replace with actual axios call
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        if (config.enableMockApi) {
+          // Mock API call - replace with actual axios call
+          await new Promise(resolve => setTimeout(resolve, config.mockApiDelay));
+        } else {
+          // TODO: Replace with actual API call using axiosInstance
+          // await axiosInstance.post(`${config.apiBaseUrl}/resend-otp`, {
+          //   userId: userId.value,
+          //   deliveryMethod: deliveryMethod.value
+          // });
+        }
 
         successMessage.value = `OTP resent successfully via ${deliveryMethod.value}!`;
         startResendTimer();
 
         setTimeout(() => {
           successMessage.value = '';
-        }, 3000);
+        }, config.successMessageDuration);
       } catch (err) {
         error.value = 'Failed to resend OTP. Please try again.';
       } finally {
@@ -612,8 +666,12 @@ export default {
     };
 
     const handleHelp = () => {
-      console.log('Help clicked');
-      // TODO: Implement help logic
+      if (config.helpUrl) {
+        window.open(config.helpUrl, '_blank');
+      } else {
+        console.log('Help clicked - Help URL not configured');
+        // TODO: Implement help logic
+      }
     };
 
     // Check for remembered data on component mount
@@ -636,8 +694,10 @@ export default {
       checkRememberedData();
 
       try {
-        const checkWSConnection = new WebSocket("ws://18.179.24.235:8089/ws", "sip");
-        console.log("checking WebSocket Connection", checkWSConnection);
+        if (config.sipCheckWebsocketUrl) {
+          const checkWSConnection = new WebSocket(config.sipCheckWebsocketUrl, "sip");
+          console.log("checking WebSocket Connection", checkWSConnection);
+        }
       } catch (error) {
         console.log("WebSocket connection error:", error);
       }
@@ -680,11 +740,11 @@ export default {
       handleForgotPassword,
       handleHelp,
       sipConnectionDetails,
+      config, // Expose config if needed in template
     };
   }
 };
 </script>
-
 <style>
 @font-face {
   font-family: 'Lequire';
