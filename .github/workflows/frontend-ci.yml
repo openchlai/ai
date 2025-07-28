@@ -76,22 +76,28 @@ jobs:
           echo "📦 Project info:"
           cat package.json | grep -A 10 '"scripts"' || echo "No scripts section found"
 
-      - name: 🧪 Run Tests (Auto-detect)
+      - name: 🧪 Run Tests (Vue/Vitest)
         run: |
-          echo "🔍 Looking for test scripts..."
-          if npm run | grep -q "test:run"; then
-            echo "Running test:run"
-            npm run test:run
-          elif npm run | grep -q "test"; then
-            echo "Running test"
-            npm run test
-          elif npm run | grep -q "vitest"; then
-            echo "Running vitest"
-            npm run vitest
+          echo "🔍 Looking for test files..."
+          if [ -d "src/pages/tests" ] || [ -d "src/utils/tests" ]; then
+            echo "✅ Test directories found:"
+            find src -name "tests" -type d
+            echo "📁 Test files:"
+            find src -name "*.test.*" -o -name "*.spec.*" 2>/dev/null || echo "No test files with standard naming found"
+            
+            # Try to run tests with different methods
+            if npm run | grep -q "test"; then
+              echo "Running npm run test"
+              npm run test
+            elif command -v vitest &> /dev/null; then
+              echo "Running vitest directly"
+              npx vitest run
+            else
+              echo "⚠️ Test framework not configured, but test directories exist"
+              echo "Consider adding a test script to package.json"
+            fi
           else
-            echo "⚠️ No test script found, skipping tests"
-            echo "Available scripts:"
-            npm run
+            echo "⚠️ No test directories found"
           fi
         continue-on-error: true
 
