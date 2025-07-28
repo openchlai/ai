@@ -11,9 +11,15 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Redis settings - defined early so they can be used in CHANNEL_LAYERS
+REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
+REDIS_PORT = os.getenv('REDIS_PORT', '6379')
+REDIS_URL = f'redis://{REDIS_HOST}:{REDIS_PORT}'
 
 
 # Quick-start development settings - unsuitable for production
@@ -42,6 +48,10 @@ INSTALLED_APPS = [
     'core',  # Your core app for audio processing
     'rest_framework',  # Django REST Framework for API
     'corsheaders',  # For handling CORS
+<<<<<<< HEAD
+    'channels',  # Django Channels for WebSocket support
+=======
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 ]
 
 MIDDLEWARE = [
@@ -73,6 +83,20 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'ai_service.wsgi.application'
+<<<<<<< HEAD
+ASGI_APPLICATION = 'ai_service.asgi.application'
+
+# Channels configuration
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [(REDIS_HOST, int(REDIS_PORT))],
+        },
+    },
+}
+=======
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 
 
 # Database
@@ -129,3 +153,26 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 CORS_ALLOW_ALL_ORIGINS = True
+
+
+<<<<<<< HEAD
+=======
+# Redis settings
+REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
+REDIS_PORT = os.getenv('REDIS_PORT', '6379')
+REDIS_URL = f'redis://{REDIS_HOST}:{REDIS_PORT}'
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
+
+# Celery settings
+CELERY_BROKER_URL = f'{REDIS_URL}/0'
+CELERY_RESULT_BACKEND = f'{REDIS_URL}/1'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+
+
+# Environment-specific settings
+<<<<<<< HEAD
+RUNNING_IN_DOCKER = os.getenv('RUNNING_IN_DOCKER', '0')  # Read from environment
+=======
+RUNNING_IN_DOCKER=1  # Set this in your Dockerfile or compose
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1

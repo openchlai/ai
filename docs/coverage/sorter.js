@@ -82,12 +82,19 @@ var addSorting = (function() {
             data = {},
             i,
             val;
+        function sanitize(input) {
+            const div = document.createElement('div');
+            div.appendChild(document.createTextNode(input));
+            return div.innerHTML;
+        }
         for (i = 0; i < tableCols.length; i += 1) {
             colNode = tableCols[i];
             col = cols[i];
             val = colNode.getAttribute('data-value');
             if (col.type === 'number') {
                 val = Number(val);
+            } else if (val) {
+                val = sanitize(val);
             }
             data[col.key] = val;
         }
