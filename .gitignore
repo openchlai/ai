@@ -143,3 +143,18 @@ models/
 *.aiff
 *.mid
 *.midi
+
+
+# Models and checkpoints
+*.ckpt
+*.pth
+*.pt
+*.h5
+*.pkl
+*.joblib
+*.model
+*.pb
+*.onnx
+*.tflite
+*.weights
+*.ckpt.index
