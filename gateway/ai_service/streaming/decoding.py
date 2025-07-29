@@ -7,9 +7,9 @@ import torch.nn.functional as F
 from torch import Tensor
 from torch.distributions import Categorical
 
-from utils import compression_ratio
-from tokenizer import Tokenizer, get_tokenizer
-from mel import CHUNK_LENGTH
+from .utils import compression_ratio
+from .tokenizer import Tokenizer, get_tokenizer
+from .mel import CHUNK_LENGTH
 
 if TYPE_CHECKING:
     from model import Whisper

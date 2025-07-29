@@ -6,8 +6,8 @@ services:
       context: .
     command: >
       daphne -b 0.0.0.0 -p 8000
-              --access-log -
-              ai_service.asgi:application
+             --access-log -
+             ai_service.asgi:application
     ports:
       - "8000:8000"
     volumes:
@@ -47,6 +47,7 @@ services:
     working_dir: /app
     depends_on:
       - redis
+      - web
 
   celery_streaming:
     build:
@@ -62,9 +63,14 @@ services:
       CHL_AI_DATA: /app/audio_files
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      TCP_HOST: 0.0.0.0
+      TCP_PORT: 8300
     working_dir: /app
     depends_on:
       - redis
+      - web
+    ports:
+      - "8300:8300"  # expose if Asterisk connects externally
 
   redis:
     image: redis:7.2-alpine
