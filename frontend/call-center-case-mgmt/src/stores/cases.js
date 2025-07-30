@@ -17,7 +17,8 @@ export const useCaseStore = defineStore('cases', {
         this.loading = true;
         const { data } = await axiosInstance.post('api/cases', payload, {
           headers: {
-            'X-API-Key': '21mku1hhf5gg4om161jk5fdfbe'
+            'X-API-Key': '21mku1hhf5gg4om161jk5fdfbe',
+            'Content-Type': 'application/json'
           }
         });
         return data;

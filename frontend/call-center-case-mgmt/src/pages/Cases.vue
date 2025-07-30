@@ -1,341 +1,485 @@
-image.png<template>
-<div>
-  <!-- SidePanel Component -->
-  <SidePanel 
-    :userRole="userRole"
-    :isInQueue="isInQueue"
-    :isProcessingQueue="isProcessingQueue"
-    :currentCall="currentCall"
-    @toggle-queue="handleQueueToggle"
-    @logout="handleLogout"
-    @sidebar-toggle="handleSidebarToggle"
-  />
+image.png
+<template>
+  <div>
+    <!-- SidePanel Component -->
+    <SidePanel
+      :userRole="userRole"
+      :isInQueue="isInQueue"
+      :isProcessingQueue="isProcessingQueue"
+      :currentCall="currentCall"
+      @toggle-queue="handleQueueToggle"
+      @logout="handleLogout"
+      @sidebar-toggle="handleSidebarToggle"
+    />
 
-  <!-- Main Content -->
-<div class="main-content">
-  <div class="cases-container">
-    <!-- Header -->
-    <div class="header">
-      <div class="header-left">
-        <h1>Cases</h1>
-        <router-link to="/case-creation" class="add-new-case-btn">
-          Add New Case
-        </router-link>
-      </div>
-      <button class="theme-toggle" @click="toggleTheme">
-        <svg v-show="currentTheme === 'dark'" width="24" height="24" viewBox="0 0 24 24">
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <svg v-show="currentTheme === 'light'" width="24" height="24" viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <span>{{ currentTheme === 'dark' ? 'Light Mode' : 'Dark Mode' }}</span>
-      </button>
-    </div>
-
-    <!-- Search -->
-    <div class="search-container" style="position: relative;">
-      <span class="search-icon">
-        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
-          stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-        </svg>
-      </span>
-      <input 
-        v-model="searchQuery"
-        class="search-input" 
-        placeholder="Search by category, assignee, or filer..." 
-        type="text"
-        @input="handleSearch"
-      />
-    </div>
-
-    <!-- Filters -->
-    <div class="filter-tabs">
-      <button 
-        v-for="filter in filters" 
-        :key="filter.id"
-        :class="['filter-tab', { active: activeFilter === filter.id }]"
-        @click="setActiveFilter(filter.id)"
-      >
-        {{ filter.name }}
-      </button>
-    </div>
-
-    <!-- Cases List -->
-    <div class="cases-container-inner">
-      <div class="cases-list">
-        <h2 class="cases-title">Cases</h2>
-        
-        <div 
-          v-for="caseItem in filteredCases" 
-          :key="casesStore.cases_k?.id ? caseItem[casesStore.cases_k.id[0]] : caseItem.id"
-          :class="['case-item glass-card fine-border', { selected: selectedCaseId === (casesStore.cases_k?.id ? caseItem[casesStore.cases_k.id[0]] : caseItem.id) }]"
-          @click="selectCase(casesStore.cases_k?.id ? caseItem[casesStore.cases_k.id[0]] : caseItem.id)"
-        >
-          <div class="case-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M9 12L11 14L15 10"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Main Content -->
+    <div class="main-content">
+      <div class="cases-container">
+        <!-- Header -->
+        <div class="header">
+          <div class="header-left">
+            <h1>Cases</h1>
+            <router-link to="/case-creation" class="add-new-case-btn">
+              Add New Case
+            </router-link>
+          </div>
+          <button class="theme-toggle" @click="toggleTheme">
+            <svg
+              v-show="currentTheme === 'dark'"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
             </svg>
-          </div>
-          <div class="case-details">
-            <div class="case-title">
-              {{ casesStore.cases_k?.case_category ? caseItem[casesStore.cases_k.case_category[0]] : 'Untitled Case' }}
-            </div>
-            <div class="case-meta">
-              <span class="case-priority">
-                <span :class="['priority-dot', ((casesStore.cases_k?.priority ? caseItem[casesStore.cases_k.priority[0]] : '') || '').toLowerCase()]" />
-                {{ casesStore.cases_k?.priority ? (caseItem[casesStore.cases_k.priority[0]] || 'Normal') : 'Normal' }} priority
-              </span>
-           <span class="case-date">
-  {{
-    casesStore.cases_k?.dt
-      ? new Date(
-          caseItem[casesStore.cases_k.dt[0]] < 10000000000
-            ? caseItem[casesStore.cases_k.dt[0]] * 1000
-            : caseItem[casesStore.cases_k.dt[0]] * 3600 * 1000
-        ).toLocaleString()
-      : 'No Date'
-  }}
-</span>
-
-
-              <span class="case-assigned">
-                {{ casesStore.cases_k?.assigned_to && caseItem[casesStore.cases_k.assigned_to[0]] ? `Assigned: ${caseItem[casesStore.cases_k.assigned_to[0]]}` : 'Unassigned' }}
-              </span>
-            </div>
-          </div>
+            <svg
+              v-show="currentTheme === 'light'"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="5"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span>{{
+              currentTheme === "dark" ? "Light Mode" : "Dark Mode"
+            }}</span>
+          </button>
         </div>
-      </div>
-      
-      <!-- Case Detail Drawer -->
-      <div class="case-detail-drawer" v-if="selectedCaseDetails">
-        <div class="case-detail-drawer-header">
-          <div class="case-detail-title">
-            {{ casesStore.cases_k?.case_category ? selectedCaseDetails[casesStore.cases_k.case_category[0]] : 'Case Details' }}
-          </div>
-          <div class="case-detail-id">
-            Case ID: {{ casesStore.cases_k?.id ? selectedCaseDetails[casesStore.cases_k.id[0]] : '' }}
-          </div>
-          <button class="close-details" @click="selectedCaseId = null">×</button>
+
+        <!-- Search -->
+        <div class="search-container" style="position: relative">
+          <span class="search-icon">
+            <svg
+              width="20"
+              height="20"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              viewBox="0 0 24 24"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </span>
+          <input
+            v-model="searchQuery"
+            class="search-input"
+            placeholder="Search by category, assignee, or filer..."
+            type="text"
+            @input="handleSearch"
+          />
         </div>
-        <div class="case-detail-content">
-          <div class="detail-item">
-            <div class="detail-label">Case Filler</div>
-            <div class="detail-value">{{ casesStore.cases_k?.created_by ? (selectedCaseDetails[casesStore.cases_k.created_by[0]] || 'N/A') : 'N/A' }}</div>
-          </div>
-          <div class="detail-item">
-            <div class="detail-label">Assigned To</div>
-            <div class="detail-value">{{ casesStore.cases_k?.assigned_to ? (selectedCaseDetails[casesStore.cases_k.assigned_to[0]] || 'Unassigned') : 'Unassigned' }}</div>
-          </div>
-          <div class="detail-item">
-            <div class="detail-label">Priority</div>
-            <div :class="['detail-value', ((casesStore.cases_k?.priority ? selectedCaseDetails[casesStore.cases_k.priority[0]] : '') || '').toLowerCase()]">
-              {{ casesStore.cases_k?.priority ? (selectedCaseDetails[casesStore.cases_k.priority[0]] || 'Normal') : 'Normal' }}
+
+        <!-- Filters -->
+        <div class="filter-tabs">
+          <button
+            v-for="filter in filters"
+            :key="filter.id"
+            :class="['filter-tab', { active: activeFilter === filter.id }]"
+            @click="setActiveFilter(filter.id)"
+          >
+            {{ filter.name }}
+          </button>
+        </div>
+
+        <!-- Cases List -->
+        <div class="cases-container-inner">
+          <div class="cases-list">
+            <h2 class="cases-title">Cases</h2>
+
+            <div
+              v-for="caseItem in filteredCases"
+              :key="
+                casesStore.cases_k?.id
+                  ? caseItem[casesStore.cases_k.id[0]]
+                  : caseItem.id
+              "
+              :class="[
+                'case-item glass-card fine-border',
+                {
+                  selected:
+                    selectedCaseId ===
+                    (casesStore.cases_k?.id
+                      ? caseItem[casesStore.cases_k.id[0]]
+                      : caseItem.id),
+                },
+              ]"
+              @click="
+                selectCase(
+                  casesStore.cases_k?.id
+                    ? caseItem[casesStore.cases_k.id[0]]
+                    : caseItem.id
+                )
+              "
+            >
+              <div class="case-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M9 12L11 14L15 10"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+              <div class="case-details">
+                <div class="case-title">
+                  {{
+                    casesStore.cases_k?.cat_1
+                      ? caseItem[casesStore.cases_k.cat_1[0]]
+                      : "Untitled Case"
+                  }}
+                </div>
+                <div class="case-meta">
+                  <span class="case-priority">
+                    <span
+                      :class="[
+                        'priority-dot',
+                        (
+                          (casesStore.cases_k?.priority
+                            ? caseItem[casesStore.cases_k.priority[0]]
+                            : '') || ''
+                        ).toLowerCase(),
+                      ]"
+                    />
+                    {{
+                      casesStore.cases_k?.priority
+                        ? caseItem[casesStore.cases_k.priority[0]] || "Normal"
+                        : "Normal"
+                    }}
+                    priority
+                  </span>
+                  <span class="case-date">
+                    {{
+                      casesStore.cases_k?.dt
+                        ? new Date(
+                            caseItem[casesStore.cases_k.dt[0]] < 10000000000
+                              ? caseItem[casesStore.cases_k.dt[0]] * 1000
+                              : caseItem[casesStore.cases_k.dt[0]] * 3600 * 1000
+                          ).toLocaleString()
+                        : "No Date"
+                    }}
+                  </span>
+
+                  <span class="case-assigned">
+                    {{
+                      casesStore.cases_k?.assigned_to &&
+                      caseItem[casesStore.cases_k.assigned_to[0]]
+                        ? `Assigned: ${
+                            caseItem[casesStore.cases_k.assigned_to[0]]
+                          }`
+                        : "Unassigned"
+                    }}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
-          <div class="detail-item">
-            <div class="detail-label">Disposition</div>
-            <div class="detail-value">{{ casesStore.cases_k?.disposition ? (selectedCaseDetails[casesStore.cases_k.disposition[0]] || 'N/A') : 'N/A' }}</div>
-          </div>
-          <div class="detail-item">
-            <div class="detail-label">Date</div>
-       <div class="detail-value">
-  {{
-    casesStore.cases_k?.dt
-      ? new Date(
-          selectedCaseDetails[casesStore.cases_k.dt[0]] < 10000000000
-            ? selectedCaseDetails[casesStore.cases_k.dt[0]] * 1000
-            : selectedCaseDetails[casesStore.cases_k.dt[0]] * 3600 * 1000
-        ).toLocaleString()
-      : 'N/A'
-  }}
-</div>
 
-
-
-
-          </div>
-          <div class="detail-item">
-            <div class="detail-label">Escalated To</div>
-            <div class="detail-value">{{ casesStore.cases_k?.escalated_to ? (selectedCaseDetails[casesStore.cases_k.escalated_to[0]] || 'N/A') : 'N/A' }}</div>
+          <!-- Case Detail Drawer -->
+          <div class="case-detail-drawer" v-if="selectedCaseDetails">
+            <div class="case-detail-drawer-header">
+              <div class="case-detail-title">
+                {{
+                  casesStore.cases_k?.cat_1
+                    ? selectedCaseDetails[casesStore.cases_k.cat_1[0]]
+                    : "Case Details"
+                }}
+              </div>
+              <div class="case-detail-id">
+                Case ID:
+                {{
+                  casesStore.cases_k?.id
+                    ? selectedCaseDetails[casesStore.cases_k.id[0]]
+                    : ""
+                }}
+              </div>
+              <button class="close-details" @click="selectedCaseId = null">
+                ×
+              </button>
+            </div>
+            <div class="case-detail-content">
+              <div class="detail-item">
+                <div class="detail-label">Case Filler</div>
+                <div class="detail-value">
+                  {{
+                    casesStore.cases_k?.created_by
+                      ? selectedCaseDetails[casesStore.cases_k.created_by[0]] ||
+                        "N/A"
+                      : "N/A"
+                  }}
+                </div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Assigned To</div>
+                <div class="detail-value">
+                  {{
+                    casesStore.cases_k?.assigned_to
+                      ? selectedCaseDetails[
+                          casesStore.cases_k.assigned_to[0]
+                        ] || "Unassigned"
+                      : "Unassigned"
+                  }}
+                </div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Priority</div>
+                <div
+                  :class="[
+                    'detail-value',
+                    (
+                      (casesStore.cases_k?.priority
+                        ? selectedCaseDetails[casesStore.cases_k.priority[0]]
+                        : '') || ''
+                    ).toLowerCase(),
+                  ]"
+                >
+                  {{
+                    casesStore.cases_k?.priority
+                      ? selectedCaseDetails[casesStore.cases_k.priority[0]] ||
+                        "Normal"
+                      : "Normal"
+                  }}
+                </div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Disposition</div>
+                <div class="detail-value">
+                  {{
+                    casesStore.cases_k?.disposition
+                      ? selectedCaseDetails[
+                          casesStore.cases_k.disposition[0]
+                        ] || "N/A"
+                      : "N/A"
+                  }}
+                </div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Date</div>
+                <div class="detail-value">
+                  {{
+                    casesStore.cases_k?.dt
+                      ? new Date(
+                          selectedCaseDetails[casesStore.cases_k.dt[0]] <
+                          10000000000
+                            ? selectedCaseDetails[casesStore.cases_k.dt[0]] *
+                              1000
+                            : selectedCaseDetails[casesStore.cases_k.dt[0]] *
+                              3600 *
+                              1000
+                        ).toLocaleString()
+                      : "N/A"
+                  }}
+                </div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Escalated To</div>
+                <div class="detail-value">
+                  {{
+                    casesStore.cases_k?.escalated_to
+                      ? selectedCaseDetails[
+                          casesStore.cases_k.escalated_to[0]
+                        ] || "N/A"
+                      : "N/A"
+                  }}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
-</div>
-
-</div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import SidePanel from '@/components/SidePanel.vue'
-import { useCaseStore } from '@/stores/cases'
+import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import SidePanel from "@/components/SidePanel.vue";
+import { useCaseStore } from "@/stores/cases";
 
-const casesStore = useCaseStore()
-const router = useRouter()
+const casesStore = useCaseStore();
+const router = useRouter();
 
 // Load cases on mount
 onMounted(() => {
-  casesStore.listCases()
-  console.log('Cases loaded:', casesStore.raw)
-})
+  casesStore.listCases();
+  console.log("Cases loaded:", casesStore.raw);
+});
 
 // Reactive state
-const searchQuery = ref('')
-const activeFilter = ref('all')
-const selectedCaseId = ref(null)
-const currentTheme = ref(localStorage.getItem('theme') || 'dark')
+const searchQuery = ref("");
+const activeFilter = ref("all");
+const selectedCaseId = ref(null);
+const currentTheme = ref(localStorage.getItem("theme") || "dark");
 
 // SidePanel related state
-const userRole = ref('super-admin')
-const isInQueue = ref(false)
-const isProcessingQueue = ref(false)
-const currentCall = ref(null)
+const userRole = ref("super-admin");
+const isInQueue = ref(false);
+const isProcessingQueue = ref(false);
+const currentCall = ref(null);
 
 // Filter options
 const filters = ref([
-  { id: 'all', name: 'All' },
-  { id: 'open', name: 'Open', status: 'open' },
-  { id: 'pending', name: 'Pending', status: 'pending' },
-  { id: 'assigned', name: 'Assigned' },
-  { id: 'closed', name: 'Closed', status: 'closed' },
-  { id: 'today', name: 'Today' },
-  { id: 'priority', name: 'Priority' }
-])
+  { id: "all", name: "All" },
+  { id: "open", name: "Open", status: "open" },
+  { id: "pending", name: "Pending", status: "pending" },
+  { id: "assigned", name: "Assigned" },
+  { id: "closed", name: "Closed", status: "closed" },
+  { id: "today", name: "Today" },
+  { id: "priority", name: "Priority" },
+]);
 
 // Computed properties
 const filteredCases = computed(() => {
-  let filtered = casesStore.cases || []
+  let filtered = casesStore.cases || [];
 
   // Search filter
   if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    filtered = filtered.filter(c => 
-      (c.title && c.title.toLowerCase().includes(query)) ||
-      (c.assignedTo && c.assignedTo.toLowerCase().includes(query)) ||
-      (c.caseFiler && c.caseFiler.toLowerCase().includes(query))
-    )
+    const query = searchQuery.value.toLowerCase();
+    filtered = filtered.filter(
+      (c) =>
+        (c.title && c.title.toLowerCase().includes(query)) ||
+        (c.assignedTo && c.assignedTo.toLowerCase().includes(query)) ||
+        (c.caseFiler && c.caseFiler.toLowerCase().includes(query))
+    );
   }
 
   // Status filter
-  if (activeFilter.value !== 'all') {
-    const filterStatus = filters.value.find(f => f.id === activeFilter.value)?.status
+  if (activeFilter.value !== "all") {
+    const filterStatus = filters.value.find(
+      (f) => f.id === activeFilter.value
+    )?.status;
     if (filterStatus) {
-      filtered = filtered.filter(c => c.status === filterStatus)
-    } else if (activeFilter.value === 'assigned') {
-      filtered = filtered.filter(c => c.assignedTo)
-    } else if (activeFilter.value === 'priority') {
-      filtered = filtered.filter(c => c.priority === 'High')
-    } else if (activeFilter.value === 'today') {
+      filtered = filtered.filter((c) => c.status === filterStatus);
+    } else if (activeFilter.value === "assigned") {
+      filtered = filtered.filter((c) => c.assignedTo);
+    } else if (activeFilter.value === "priority") {
+      filtered = filtered.filter((c) => c.priority === "High");
+    } else if (activeFilter.value === "today") {
       // Filter for today's cases (example filter)
-      const today = new Date().toLocaleDateString()
-      filtered = filtered.filter(c => c.date && c.date.includes(today))
+      const today = new Date().toLocaleDateString();
+      filtered = filtered.filter((c) => c.date && c.date.includes(today));
     }
   }
 
-  return filtered
-})
+  return filtered;
+});
 
 const selectedCaseDetails = computed(() => {
-  if (!casesStore.cases_k?.id) return null
+  if (!casesStore.cases_k?.id) return null;
   return casesStore.cases.find(
-    caseItem => caseItem[casesStore.cases_k.id[0]] === selectedCaseId.value
-  )
-})
+    (caseItem) => caseItem[casesStore.cases_k.id[0]] === selectedCaseId.value
+  );
+});
 
 // SidePanel event handlers
 const handleQueueToggle = () => {
-  isInQueue.value = !isInQueue.value
-  console.log('Queue toggled:', isInQueue.value)
-}
+  isInQueue.value = !isInQueue.value;
+  console.log("Queue toggled:", isInQueue.value);
+};
 
 const handleLogout = () => {
-  router.push('/')
-}
+  router.push("/");
+};
 
 const handleSidebarToggle = (collapsed) => {
-  console.log('Sidebar toggled:', collapsed)
-}
+  console.log("Sidebar toggled:", collapsed);
+};
 
 // Theme methods (unchanged)
 const applyTheme = (theme) => {
-  const root = document.documentElement
+  const root = document.documentElement;
 
-  if (theme === 'light') {
-    root.style.setProperty('--background-color', '#f5f5f5')
-    root.style.setProperty('--sidebar-bg', '#ffffff')
-    root.style.setProperty('--content-bg', '#ffffff')
-    root.style.setProperty('--text-color', '#333')
-    root.style.setProperty('--text-secondary', '#666')
-    root.style.setProperty('--border-color', '#ddd')
-    root.style.setProperty('--card-bg', '#ffffff')
-    root.style.setProperty('--header-bg', '#f0f0f0')
-    root.style.setProperty('--input-bg', '#f0f0f0')
-    root.setAttribute('data-theme', 'light')
+  if (theme === "light") {
+    root.style.setProperty("--background-color", "#f5f5f5");
+    root.style.setProperty("--sidebar-bg", "#ffffff");
+    root.style.setProperty("--content-bg", "#ffffff");
+    root.style.setProperty("--text-color", "#333");
+    root.style.setProperty("--text-secondary", "#666");
+    root.style.setProperty("--border-color", "#ddd");
+    root.style.setProperty("--card-bg", "#ffffff");
+    root.style.setProperty("--header-bg", "#f0f0f0");
+    root.style.setProperty("--input-bg", "#f0f0f0");
+    root.setAttribute("data-theme", "light");
   } else {
-    root.style.setProperty('--background-color', '#0a0a0a')
-    root.style.setProperty('--sidebar-bg', '#111')
-    root.style.setProperty('--content-bg', '#222')
-    root.style.setProperty('--text-color', '#fff')
-    root.style.setProperty('--text-secondary', '#aaa')
-    root.style.setProperty('--border-color', '#333')
-    root.style.setProperty('--card-bg', '#222')
-    root.style.setProperty('--header-bg', '#333')
-    root.style.setProperty('--input-bg', '#1a1a1a')
-    root.setAttribute('data-theme', 'dark')
+    root.style.setProperty("--background-color", "#0a0a0a");
+    root.style.setProperty("--sidebar-bg", "#111");
+    root.style.setProperty("--content-bg", "#222");
+    root.style.setProperty("--text-color", "#fff");
+    root.style.setProperty("--text-secondary", "#aaa");
+    root.style.setProperty("--border-color", "#333");
+    root.style.setProperty("--card-bg", "#222");
+    root.style.setProperty("--header-bg", "#333");
+    root.style.setProperty("--input-bg", "#1a1a1a");
+    root.setAttribute("data-theme", "dark");
   }
 
   // Common variables
-  root.style.setProperty('--accent-color', '#964B00')
-  root.style.setProperty('--accent-hover', '#b25900')
-  root.style.setProperty('--danger-color', '#ff3b30')
-  root.style.setProperty('--success-color', '#4CAF50')
-  root.style.setProperty('--pending-color', '#FFA500')
-  root.style.setProperty('--unassigned-color', '#808080')
-  root.style.setProperty('--highlight-color', '#ff3b30')
-  root.style.setProperty('--high-priority', '#ff3b30')
-  root.style.setProperty('--medium-priority', '#FFA500')
-  root.style.setProperty('--low-priority', '#4CAF50')
-}
+  root.style.setProperty("--accent-color", "#964B00");
+  root.style.setProperty("--accent-hover", "#b25900");
+  root.style.setProperty("--danger-color", "#ff3b30");
+  root.style.setProperty("--success-color", "#4CAF50");
+  root.style.setProperty("--pending-color", "#FFA500");
+  root.style.setProperty("--unassigned-color", "#808080");
+  root.style.setProperty("--highlight-color", "#ff3b30");
+  root.style.setProperty("--high-priority", "#ff3b30");
+  root.style.setProperty("--medium-priority", "#FFA500");
+  root.style.setProperty("--low-priority", "#4CAF50");
+};
 
 const toggleTheme = () => {
-  const newTheme = currentTheme.value === 'dark' ? 'light' : 'dark'
-  localStorage.setItem('theme', newTheme)
-  currentTheme.value = newTheme
-  applyTheme(newTheme)
-}
+  const newTheme = currentTheme.value === "dark" ? "light" : "dark";
+  localStorage.setItem("theme", newTheme);
+  currentTheme.value = newTheme;
+  applyTheme(newTheme);
+};
 
 const setActiveFilter = (filterId) => {
-  activeFilter.value = filterId
-}
+  activeFilter.value = filterId;
+};
 
 const selectCase = (caseId) => {
-  selectedCaseId.value = caseId
-}
+  selectedCaseId.value = caseId;
+};
 
 const handleSearch = () => {
   // Filtering handled by 'filteredCases'
-}
+};
 
 // Lifecycle hooks
 onMounted(() => {
-  const savedTheme = localStorage.getItem('theme')
+  const savedTheme = localStorage.getItem("theme");
   if (savedTheme) {
-    currentTheme.value = savedTheme
+    currentTheme.value = savedTheme;
   }
-  applyTheme(currentTheme.value)
-})
+  applyTheme(currentTheme.value);
+});
 </script>
-
 
 <style>
 /* Global styles - not scoped */
@@ -343,7 +487,7 @@ onMounted(() => {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 body {
@@ -468,7 +612,7 @@ body {
   color: var(--text-color);
   font-size: 15px;
   transition: border-color 0.3s, box-shadow 0.3s;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   position: relative;
 }
 
@@ -570,7 +714,7 @@ body {
   position: relative;
   background: var(--content-bg);
   color: var(--text-color);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   border: 1.5px solid transparent;
   font-size: 15px;
   margin-bottom: 0;
@@ -587,7 +731,7 @@ body {
 }
 
 .case-item:hover {
-  background-color: rgba(150,75,0,0.04);
+  background-color: rgba(150, 75, 0, 0.04);
   transform: translateX(5px);
 }
 
@@ -661,7 +805,7 @@ body {
   border-radius: 50%;
   flex-shrink: 0;
   border: 2px solid #fff;
-  box-shadow: 0 0 0 2px rgba(0,0,0,0.08);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
   margin-right: 2px;
   display: inline-block;
   vertical-align: middle;
@@ -701,19 +845,25 @@ body {
   height: 100vh;
   width: 400px;
   max-width: 100vw;
-  background: rgba(34,34,34,0.98);
-  box-shadow: -4px 0 24px rgba(0,0,0,0.18);
+  background: rgba(34, 34, 34, 0.98);
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.18);
   border-top-left-radius: 18px;
   border-bottom-left-radius: 18px;
   z-index: 1002;
   display: flex;
   flex-direction: column;
   padding: 0 0 0 0;
-  animation: slideInDrawer 0.25s cubic-bezier(0.4,0,0.2,1);
+  animation: slideInDrawer 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 @keyframes slideInDrawer {
-  from { right: -400px; opacity: 0; }
-  to { right: 0; opacity: 1; }
+  from {
+    right: -400px;
+    opacity: 0;
+  }
+  to {
+    right: 0;
+    opacity: 1;
+  }
 }
 .case-detail-drawer-header {
   padding: 32px 24px 0 24px;
@@ -738,7 +888,7 @@ body {
   right: 16px;
   width: 40px;
   height: 40px;
-  background: rgba(0,0,0,0.06);
+  background: rgba(0, 0, 0, 0.06);
   border: none;
   color: #222;
   font-size: 2.1rem;
@@ -752,7 +902,7 @@ body {
   transition: background 0.2s, color 0.2s;
 }
 [data-theme="dark"] .case-detail-drawer .close-details {
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
   color: #fff;
 }
 .case-detail-drawer .case-detail-content {
@@ -766,12 +916,12 @@ body {
   max-height: calc(100vh - 100px);
 }
 .case-detail-drawer .detail-item {
-  background: rgba(255,255,255,0.07);
+  background: rgba(255, 255, 255, 0.07);
   border-radius: 14px;
   padding: 16px 18px;
   margin-bottom: 0;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -789,10 +939,21 @@ body {
   font-weight: 600;
   letter-spacing: 0.01em;
 }
-.case-detail-drawer .detail-value.high { color: #ff3b30; font-weight: 700; }
-.case-detail-drawer .detail-value.medium { color: #FFA500; font-weight: 700; }
-.case-detail-drawer .detail-value.low { color: #4CAF50; font-weight: 700; }
-.case-detail-drawer .detail-value.abusive { color: #ff3b30; }
+.case-detail-drawer .detail-value.high {
+  color: #ff3b30;
+  font-weight: 700;
+}
+.case-detail-drawer .detail-value.medium {
+  color: #ffa500;
+  font-weight: 700;
+}
+.case-detail-drawer .detail-value.low {
+  color: #4caf50;
+  font-weight: 700;
+}
+.case-detail-drawer .detail-value.abusive {
+  color: #ff3b30;
+}
 /* Responsive styles */
 @media (max-width: 1024px) {
   .cases-container-inner {
@@ -810,13 +971,13 @@ body {
     margin-left: 0;
     padding: 15px;
   }
-  
+
   .header {
     flex-direction: column;
     align-items: flex-start;
     gap: 15px;
   }
-  
+
   .header-left {
     width: 100%;
     justify-content: space-between;
@@ -842,11 +1003,11 @@ body {
   padding-top: 8px;
 }
 :root {
-  --drawer-bg-dark: rgba(34,34,34,0.98);
+  --drawer-bg-dark: rgba(34, 34, 34, 0.98);
   --drawer-bg-light: #fff;
-  --drawer-card-bg-dark: rgba(255,255,255,0.07);
+  --drawer-card-bg-dark: rgba(255, 255, 255, 0.07);
   --drawer-card-bg-light: #f5f5f5;
-  --drawer-card-border-dark: 1px solid rgba(255,255,255,0.08);
+  --drawer-card-border-dark: 1px solid rgba(255, 255, 255, 0.08);
   --drawer-card-border-light: 1px solid #e0e0e0;
   --drawer-title-dark: #fff;
   --drawer-title-light: #222;
@@ -855,11 +1016,11 @@ body {
   --drawer-value-dark: #fff;
   --drawer-value-light: #222;
   --drawer-value-high: #ff3b30;
-  --drawer-value-medium: #FFA500;
-  --drawer-value-low: #4CAF50;
+  --drawer-value-medium: #ffa500;
+  --drawer-value-low: #4caf50;
   --priority-dot-border-dark: #fff;
   --priority-dot-border-light: #fff;
-  --priority-dot-shadow: 0 0 0 2px rgba(0,0,0,0.08);
+  --priority-dot-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
 }
 [data-theme="light"] .case-detail-drawer {
   background: var(--drawer-bg-light);
@@ -925,7 +1086,7 @@ body {
 }
 [data-theme="dark"] .case-item.selected {
   border: 2px solid var(--accent-color);
-  background: rgba(150,75,0,0.08);
+  background: rgba(150, 75, 0, 0.08);
 }
 body.high-contrast .case-detail-drawer,
 body.high-contrast .case-detail-drawer .detail-item,
@@ -938,9 +1099,15 @@ body.high-contrast .priority-dot {
   color: #fff !important;
   border-color: #fff !important;
 }
-body.high-contrast .priority-dot.high { background: #ff3b30 !important; }
-body.high-contrast .priority-dot.medium { background: #FFA500 !important; }
-body.high-contrast .priority-dot.low { background: #4CAF50 !important; }
+body.high-contrast .priority-dot.high {
+  background: #ff3b30 !important;
+}
+body.high-contrast .priority-dot.medium {
+  background: #ffa500 !important;
+}
+body.high-contrast .priority-dot.low {
+  background: #4caf50 !important;
+}
 @media (max-width: 900px) {
   .case-item {
     padding: 14px 10px;
