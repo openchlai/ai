@@ -2169,85 +2169,118 @@ onMounted(async () => {
 
    
   const submitCase = async () => {
+    
+const casePayload = {
+  src: "ceemis",
+  src_uid: "ceemis-d0a0fca3-1753869019",
+  src_address: "256701234567", // from formData
+  src_uid2: "walkin-100-1743763537",
+  src_usr: "ceemis",
+  src_vector: "2",
+  src_callid: "44dea031-f268-4ed6-af7b-9231dc3c1b29",
+  src_ts: "1753869019.836215",
+  reporter_nickname: "ceemis_user",
+  case_category: "COMPLAINT", // no category mapping
+  case_category_id: "362484", // formData.step4.category || 
 
-  const casePayload = {
-    src: "ceemis",
-    src_uid: "ceemis-" + Date.now(), // Example unique ID
-    src_address: formData.step2.phone || "+256000000000",
-    src_uid2: "walkin-" + Math.floor(Math.random() * 1000) + "-" + Date.now(),
-    src_usr: "ceemis",
-    src_vector: "2",
-    src_callid: crypto.randomUUID?.() || Date.now().toString(),
-    src_ts: `${Date.now() / 1000}`,
-    reporter_nickname: formData.step2.nickname || "anonymous",
-    case_category: formData.step3.case_category || "GENERAL",
-    case_category_id: formData.step3.case_category_id || "",
-    narrative: formData.step3.narrative,
-    complaint_text: formData.step3.complaint_text || null,
-    complaint_image: null,
-    complaint_audio: null,
-    complaint_video: null,
-    message_id_ref: "",
-    session_id: crypto.randomUUID?.() || "session-" + Date.now(),
-    plan: formData.step4.plan || "---",
-    priority: formData.step4.priority || "1",
-    status: formData.step4.status || "1",
-    escalated_to_id: formData.step4.escalated_to_id || "0",
-    gbv_related: formData.step4.gbv_related || "0",
+  narrative: formData.step3.narrative || "", // from formData
 
-    reporters_uuid: {
-      fname: formData.step2.name,
-      age_t: formData.step2.age_t || "0",
-      age: formData.step2.age || "",
-      dob: formData.step2.dob || "",
-      age_group_id: formData.step2.age_group_id || "",
-      location_id: formData.step2.location_id || "",
-      sex_id: formData.step2.sex_id || "",
-      landmark: formData.step2.landmark || "",
-      nationality_id: formData.step2.nationality_id || "",
-      national_id_type_id: formData.step2.national_id_type_id || "1",
-      national_id: formData.step2.national_id || "",
-      lang_id: formData.step2.lang_id || "",
-      tribe_id: formData.step2.tribe_id || "",
-      phone: formData.step2.phone || "",
-      phone2: formData.step2.phone2 || "",
-      email: formData.step2.email || "",
+  complaint_text: null, // not in form
+  complaint_image: null, // not in form
+  complaint_audio: null, // not in form
+  complaint_video: null, // not in form
+  message_id_ref: "", // not in form
+  session_id: "d47e3704-1dbb-45f1-82c8-9a8902005a60",
+  plan: formData.step3.casePlan || "---", // from formData
+  priority:  "1", //  formData not converted to priority (formData.step4.priority || "1")
+  status: "1", // formData.step4.status || 
+  escalated_to_id:  "0", // (formData.step4.escalatedTo ||)
+  gbv_related: formData.step3.isGBVRelated ? "1" : "0", // from formData
+
+  reporters_uuid: {
+    fname: formData.step2.name || "", // from formData
+    age_t: "0", // not in form
+    age: formData.step2.age || "", // from formData
+    dob: "", // not in form
+    age_group_id: "", // not in form
+    location_id:  "258783", // from formData formData.step2.location ||
+    sex_id: formData.step2.gender || "", // from formData
+    landmark: "", // not in form
+    nationality_id: "", // not in form
+    national_id_type_id: "1", // from formData
+    national_id: formData.step2.idNumber || "C7845123", // from formData
+    lang_id: "", // not in form
+    tribe_id: "", // not in form
+    phone: formData.step2.phone || "256701234567", // from formData
+    phone2: formData.step2.altPhone || "", // from formData
+    email: formData.step2.email || "", // from formData
+    ".id": ""
+  },
+
+  clients_case: [
+    {
+      fname: formData.step2.name || "", // from formData
+      age_t: "0", // not in form
+      age: formData.step2.age || "", // from formData
+      dob: "", // not in form
+      age_group_id: "", // not in form
+      location_id: formData.step2.location || "258783", // from formData
+      sex_id: formData.step2.gender || "", // from formData
+      landmark: "", // not in form
+      nationality_id: "", // not in form
+      national_id_type_id:  "1",  //  formData not converted to id (formData.step2.idType ||)
+      national_id: formData.step2.idNumber || "C7845123", // from formData
+      lang_id: "", // not in form
+      tribe_id: "", // not in form
+      phone: formData.step2.phone || "256701234567", // from formData
+      phone2: formData.step2.altPhone || "", // from formData
+      email: formData.step2.email || "", // from formData
       ".id": ""
-    },
+    }
+  ],
 
-    clients_case: [
-      {
-        fname: formData.step2.name,
-        age_t: formData.step2.age_t || "0",
-        age: formData.step2.age || "",
-        dob: formData.step2.dob || "",
-        age_group_id: formData.step2.age_group_id || "",
-        location_id: formData.step2.location_id || "",
-        sex_id: formData.step2.sex_id || "",
-        landmark: formData.step2.landmark || "",
-        nationality_id: formData.step2.nationality_id || "",
-        national_id_type_id: formData.step2.national_id_type_id || "1",
-        national_id: formData.step2.national_id || "",
-        lang_id: formData.step2.lang_id || "",
-        tribe_id: formData.step2.tribe_id || "",
-        phone: formData.step2.phone || "",
-        phone2: formData.step2.phone2 || "",
-        email: formData.step2.email || "",
-        ".id": ""
-      }
-    ],
+  perpetrators_case: [
+    {
+      fname: "Sarah Ahmed", // not from form
+      age_t: "0",
+      age: "",
+      dob: "",
+      age_group_id: "",
+      age_group: "",
+      location_id: "258783",
+      sex_id: "",
+      sex: "",
+      landmark: "",
+      nationality_id: "",
+      national_id_type_id: "2",
+      national_id: "EMP789456",
+      lang_id: "",
+      tribe_id: "",
+      phone: "",
+      phone2: "",
+      email: "",
+      relationship_id: "",
+      relationship: "Employer",
+      shareshome_id: "",
+      health_id: "",
+      employment_id: "1",
+      marital_id: "",
+      guardian_fullname: "",
+      notes: "Employer in Housemaid sector",
+      ".id": ""
+    }
+  ],
 
-    perpetrators_case: formData.step3.perpetrators || [],
+  attachments_case: [], // not in form
+  services: [] //  formData.step4.servicesOffered ||
+};
 
-    attachments_case: formData.step3.attachments || [],
-    services: formData.step4.services || [],
-  };
 
   try {
     console.log('Case created:', casePayload);
-    await casesStore .createCase(casePayload); // Store method
+    await casesStore.createCase(casePayload); // Store method
     alert("Case created successfully!");
-    router.push("/cases");
+    //router.push("/cases");
   } catch (error) {
     console.error("Failed to create case:", error);
     alert("An error occurred while creating the case.");

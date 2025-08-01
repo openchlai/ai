@@ -1,173 +1,124 @@
-<!-- src/views/CasesView.vue -->
+<!-- src/views/MessagesView.vue -->
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useCaseStore } from '@/stores/cases';
+import { onMounted } from 'vue';
+import { useMessagesStore } from '@/stores/messages';
 
-const caseStore = useCaseStore();
+const messagesStore = useMessagesStore();
 
-// Filters for listing, CSV and pivot
-const filters = ref({
-  _a: '',
-  _c: 20,
-  category_main: '',
-  status: ''
+// Load all messages on mount
+onMounted(async () => {
+  await messagesStore.fetchAllMessages({ _c: 20 });
+  await messagesStore.fetchWhatsappMessages({ _c: 20 });
+  await messagesStore.fetchSmsMessages({ _c: 20 });
 });
 
-// Pivot data
-const pivotData = ref([]);
-const pivotColumns = ref([]);
-
-onMounted(() => {
-  caseStore.listCases({ _c: filters.value._c });
-});
-
-// Download CSV handler
-const handleDownloadCSV = async () => {
-  try {
-    const blob = await caseStore.downloadCSV({ 
-      _a: filters.value._a,
-      _c: filters.value._c,
-      category_main: filters.value.category_main,
-      status: filters.value.status
-    });
-    const url = window.URL.createObjectURL(new Blob([blob], { type: 'text/csv' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', 'cases.csv');
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
-  } catch (err) {
-    console.error('CSV Download failed:', err.message);
-  }
-};
-
-// Pivot report handler
-const handlePivotReport = async () => {
-  try {
-    const data = await caseStore.getPivotReport({
-      _a: filters.value._a,
-      _c: filters.value._c,
-      category_main: filters.value.category_main,
-      status: filters.value.status,
-      xaxis: 'status',
-      yaxis: 'priority'
-    });
-    if (Array.isArray(data) && data.length > 0) {
-      pivotColumns.value = Object.keys(data[0]);
-      pivotData.value = data;
-    } else {
-      pivotColumns.value = [];
-      pivotData.value = [];
-    }
-  } catch (err) {
-    console.error('Pivot report fetch failed:', err.message);
-  }
+// Manual refresh for all
+const refreshAll = async () => {
+  await Promise.all([
+    messagesStore.fetchAllMessages({ _c: 20 }),
+    messagesStore.fetchWhatsappMessages({ _c: 20 }),
+    messagesStore.fetchSmsMessages({ _c: 20 })
+  ]);
 };
 </script>
 
 <template>
-  <section class="cases-view">
-    <h2>Cases List</h2>
+  <section class="messages-view">
+    <h2>Messages Overview</h2>
+    <button @click="refreshAll">Refresh All</button>
+    <p v-if="messagesStore.loading">Loading…</p>
+    <p v-else-if="messagesStore.error" class="error">{{ messagesStore.error }}</p>
 
-    <!-- Filters -->
-    <div class="filters">
-      <input v-model="filters._a" placeholder="Start (_a)" />
-      <input v-model.number="filters._c" type="number" placeholder="Count (_c)" />
-      <input v-model="filters.category_main" placeholder="Category Main" />
-      <input v-model="filters.status" placeholder="Status" />
-      <button @click="caseStore.listCases(filters)">Refresh List</button>
-      <button @click="handleDownloadCSV">Download CSV</button>
-      <button @click="handlePivotReport">Get Pivot Report</button>
-    </div>
-
-    <p v-if="caseStore.loading">Loading…</p>
-    <p v-else-if="caseStore.error" class="error">{{ caseStore.error }}</p>
-
-    <div v-else>
-      <h3>Total Cases: {{ caseStore.caseCount }}</h3>
-
-      <!-- Case Table -->
-      <table v-if="caseStore.caseCount">
-        <thead>
-          <tr>
-            <th v-for="(meta, key) in caseStore.cases_k" :key="key">
-              {{ meta[3] || key }}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in caseStore.cases" :key="item[0]">
-            <td v-for="(meta, key) in caseStore.cases_k" :key="key">
-              {{ item[parseInt(meta[0])] }}
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div v-else>
-        <p>No cases available.</p>
-      </div>
-
-      <!-- Pivot Table -->
-      <div v-if="pivotData.length" class="pivot-section">
-        <h3>Pivot Report</h3>
-        <table>
+    <div v-else class="tables-wrapper">
+      <!-- All Messages -->
+      <div class="table-section">
+        <h3>All Messages ({{ messagesStore.allMessages.length }})</h3>
+        <table v-if="messagesStore.allMessages.length">
           <thead>
             <tr>
-              <th v-for="col in pivotColumns" :key="col">{{ col }}</th>
+              <th v-for="(value, key) in messagesStore.allMessages[0]" :key="key">{{ key }}</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(row, idx) in pivotData" :key="idx">
-              <td v-for="col in pivotColumns" :key="col">{{ row[col] }}</td>
+            <tr v-for="(msg, index) in messagesStore.allMessages" :key="index">
+              <td v-for="(value, key) in msg" :key="key">{{ value }}</td>
             </tr>
           </tbody>
         </table>
+        <p v-else>No messages found.</p>
+      </div>
+
+      <!-- WhatsApp Messages -->
+      <div class="table-section">
+        <h3>WhatsApp Messages ({{ messagesStore.whatsappMessages.length }})</h3>
+        <table v-if="messagesStore.whatsappMessages.length">
+          <thead>
+            <tr>
+              <th v-for="(value, key) in messagesStore.whatsappMessages[0]" :key="key">{{ key }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(msg, index) in messagesStore.whatsappMessages" :key="index">
+              <td v-for="(value, key) in msg" :key="key">{{ value }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p v-else>No WhatsApp messages found.</p>
+      </div>
+
+      <!-- SMS Messages -->
+      <div class="table-section">
+        <h3>SMS Messages ({{ messagesStore.smsMessages.length }})</h3>
+        <table v-if="messagesStore.smsMessages.length">
+          <thead>
+            <tr>
+              <th v-for="(value, key) in messagesStore.smsMessages[0]" :key="key">{{ key }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(msg, index) in messagesStore.smsMessages" :key="index">
+              <td v-for="(value, key) in msg" :key="key">{{ value }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p v-else>No SMS messages found.</p>
       </div>
     </div>
   </section>
 </template>
 
 <style scoped>
-.cases-view {
+.messages-view {
   padding: 1rem;
-  overflow-x: auto;
 }
-
-.filters {
-  margin-bottom: 1rem;
+.tables-wrapper {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  margin-top: 1rem;
 }
-
-table {
+.table-section table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 8px;
-  font-size: 14px;
+  margin-top: 0.5rem;
 }
-
-th, td {
-  border: 1px solid #ccc;
-  padding: 6px 8px;
-  text-align: left;
+.table-section th, .table-section td {
+  border: 1px solid #ddd;
+  padding: 8px;
 }
-
+.error {
+  color: red;
+}
 button {
-  margin-right: 5px;
-  padding: 4px 8px;
-  cursor: pointer;
+  margin-bottom: 1rem;
+  padding: 6px 12px;
   background: #4caf50;
   color: white;
   border: none;
   border-radius: 4px;
+  cursor: pointer;
 }
-
 button:hover {
   background: #45a049;
-}
-
-.error {
-  color: #e74c3c;
 }
 </style>
