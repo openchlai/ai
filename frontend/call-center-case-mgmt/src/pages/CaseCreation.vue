@@ -2280,7 +2280,7 @@ const casePayload = {
     console.log('Case created:', casePayload);
     await casesStore.createCase(casePayload); // Store method
     alert("Case created successfully!");
-    //router.push("/cases");
+    router.push("/cases");
   } catch (error) {
     console.error("Failed to create case:", error);
     alert("An error occurred while creating the case.");

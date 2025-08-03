@@ -37,12 +37,23 @@
               </button>
             </div>
           </div>
-          <!-- Channel Filters as View Tabs -->
-          <div class="channel-filters" role="tablist" aria-label="Chat Channels">
-            <div v-for="platform in channelFilters" :key="platform.id" :class="['channel-pill', { active: activePlatform === platform.id }]" @click="setActivePlatform(platform.id)" role="tab" :aria-selected="activePlatform === platform.id" tabindex="0">
-              {{ platform.name }}
-            </div>
-          </div>
+         
+         
+<!-- Channel Filters as View Tabs -->
+<div class="channel-filters" role="tablist" aria-label="Chat Channels">
+  <div
+    v-for="platform in channelFilters"
+    :key="platform.id"
+    :class="['channel-pill', { active: activePlatform === platform.id }]"
+    @click="setActivePlatform(platform.id)"
+    role="tab"
+    :aria-selected="activePlatform === platform.id"
+    tabindex="0"
+  >
+    {{ platform.name }}
+  </div>
+</div>
+
           <!-- Search and Toggle Row -->
           <div class="search-and-toggle-row">
             <div class="search-container">
@@ -63,111 +74,180 @@
               <div class="view-toggle-pill" :class="{ active: activeView === 'table' }" @click="activeView = 'table'" role="tab" :aria-selected="activeView === 'table'" tabindex="0">Table View</div>
             </div>
           </div>
-          <!-- Timeline View -->
-          <div class="view-container" v-show="activeView === 'timeline'">
-            <div v-if="groupedMessagesByDayWithDummy['Today'].length === 0 && groupedMessagesByDayWithDummy['Yesterday'].length === 0" class="no-chats">No chats to display.</div>
-            <div class="time-section" v-for="(group, label) in groupedMessagesByDayWithDummy" :key="label">
-              <h2 class="time-section-title">{{ label }}</h2>
-              <div class="call-list">
-                <div v-for="message in group" :key="message.id" :class="['call-item', 'glass-card', 'fine-border', { selected: selectedMessageId === message.id }]" @click="openChatPanel(message)">
-                  <div class="call-icon">
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-                    </svg>
-                  </div>
-                  <div class="call-details">
-                    <div class="call-type">{{ message.senderName }} ({{ getPlatformShortName(message.platform) }})</div>
-                    <div class="call-time">{{ message.time }}</div>
-                    <div class="call-meta">
-                      <span class="case-link">{{ message.text }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+   <!-- Timeline View -->
+<div class="view-container" v-show="activeView === 'timeline'">
+  <div v-if="Object.keys(groupedMessagesByDate).length === 0" class="no-chats">
+    No chats to display.
+  </div>
+
+  <div
+    class="time-section"
+    v-for="(group, label) in groupedMessagesByDate"
+    :key="label"
+  >
+    <h2 class="time-section-title">{{ label }}</h2>
+
+    <div class="call-list">
+      <div
+        v-for="message in group"
+        :key="message[messagesStore.pmessages_k.id[0]]"
+        :class="['call-item', 'glass-card', 'fine-border', { selected: selectedMessageId === message[messagesStore.pmessages_k.id[0]] }]"
+        @click="openChatPanel(message)"
+      >
+        <div class="call-icon">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+          </svg>
+        </div>
+
+        <div class="call-details">
+          <div class="call-type">
+  {{ message[messagesStore.pmessages_k.created_by[0]] }}
+  ({{ message[messagesStore.pmessages_k.src[0]] }})
+</div>
+          <div class="call-time">
+            {{
+              message[messagesStore.pmessages_k.dth[0]]
+                ? new Date(message[messagesStore.pmessages_k.dth[0]] * 1000).toLocaleString()
+                : 'N/A'
+            }}
           </div>
-          <!-- Table View -->
-          <div class="view-container" v-show="activeView === 'table'">
-            <div v-if="filteredChats.length > 0" class="calls-table-container">
-              <table class="calls-table">
-                <thead>
-                  <tr>
-                    <th>Contact</th>
-                    <th>Platform</th>
-                    <th>Last Message</th>
-                    <th>Time</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="contact in filteredChats" :key="contact.id">
-                    <td>{{ contact.senderName }}</td>
-                    <td>{{ getPlatformShortName(contact.platform) }}</td>
-                    <td>{{ contact.text }}</td>
-                    <td>{{ contact.time }}</td>
-                    <td><span :class="['status-badge', contact.status]">{{ contact.status }}</span></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <tbody v-else>
-              <tr><td colspan="5" class="no-chats">No chats to display.</td></tr>
-            </tbody>
+          <div class="call-meta">
+            <span class="case-link">
+              {{ message[messagesStore.pmessages_k.src_msg[0]] }}
+            </span>
           </div>
         </div>
       </div>
-      <!-- Chat Details Panel (Side Drawer) -->
-      <div class="chat-details-panel" :class="{ active: showChatPanel }">
-        <div class="chat-details-header">
-          <div class="chat-details-avatar">
-            <div class="avatar-circle" :style="{ background: getAvatarColor(selectedMessage?.senderName || '') }">
-              {{ selectedMessage?.senderName?.charAt(0) || '?' }}
-            </div>
-            <div class="chat-details-title">
-              <span class="contact-name">{{ selectedMessage?.senderName || 'Chat Details' }}</span>
-              <span class="chat-channel-badge">{{ getPlatformShortName(selectedMessage?.platform) }}</span>
-              <span class="chat-status">{{ selectedMessage?.status || 'Active' }}</span>
-            </div>
-          </div>
-          <div class="chat-header-actions">
-            <button class="end-chat-btn" @click="endChat" title="End Chat (Archive)">
-              <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-            <button class="close-details" @click="closeChatPanel" aria-label="Close chat panel">×</button>
-          </div>
-        </div>
-        <div class="chat-details-actions">
-          <button class="chat-action-btn view" @click="viewCase" title="View Case">
-            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/></svg>
-          </button>
-          <button class="chat-action-btn link" @click="linkToCase" title="Link to Case">
-            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 1 7 7l-3 3a5 5 0 0 1-7-7l1-1"/><path d="M14 11a5 5 0 0 0-7-7l-3 3a5 5 0 0 0 7 7l1-1"/></svg>
-          </button>
-          <button class="chat-action-btn create" @click="createCase" title="Create Case">
-            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12h6"/><path d="M12 9v6"/></svg>
-          </button>
-          <button class="chat-action-btn reporter" @click="editReporter" title="Add/Edit Reporter">
-            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M5.5 21a8.38 8.38 0 0 1 13 0"/></svg>
-          </button>
-          <button class="chat-action-btn archive" @click="archiveChat" title="Archive">
-            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M3 7h18"/></svg>
-          </button>
-        </div>
-        <div class="chat-details-content">
-          <div class="chat-thread whatsapp-style">
-            <div v-for="msg in simulatedChatThread" :key="msg.id" :class="['chat-bubble', msg.sender === 'counsellor' ? 'sent' : 'received']">
-              <div class="bubble-text">{{ msg.text }}</div>
-              <div class="bubble-time">{{ msg.time }}</div>
-            </div>
-          </div>
-          <div class="message-input-area chat-panel-input">
-            <div class="input-container">
-              <input v-model="newMessageText" type="text" class="message-input" placeholder="Type a message..." @keypress.enter="sendMessage" />
-              <button v-if="newMessageText.trim()" class="send-btn" @click="sendMessage" title="Send">Send</button>
-            </div>
-          </div>
-        </div>
+    </div>
+  </div>
+</div>
+
+         <!-- Table View -->
+<div class="view-container" v-show="activeView === 'table'">
+  <div v-if="messagesStore.pmessages.length > 0" class="calls-table-container">
+    <table class="calls-table">
+      <thead>
+        <tr>
+          <th>{{ messagesStore.pmessages_k?.contacts?.[3] || 'Contact' }}</th>
+          <th>{{ messagesStore.pmessages_k?.src?.[3] || 'Platform' }}</th>
+          <th>{{ messagesStore.pmessages_k?.src_msg?.[3] || 'Last Message' }}</th>
+          <th>{{ messagesStore.pmessages_k?.dth?.[3] || 'Time' }}</th>
+          <th>{{ messagesStore.pmessages_k?.src_status?.[3] || 'Status' }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+  v-for="message in messagesStore.pmessages"
+  :key="message[messagesStore.pmessages_k.id[0]]"
+>
+
+          <td>{{ message[messagesStore.pmessages_k.contacts[0]] }}</td>
+          <td>{{ message[messagesStore.pmessages_k.src[0]] }}</td>
+          <td>{{ message[messagesStore.pmessages_k.src_msg[0]] }}</td>
+          <td>
+            {{
+              message[messagesStore.pmessages_k.dth[0]]
+                ? new Date(message[messagesStore.pmessages_k.dth[0]] * 1000).toLocaleString()
+                : 'N/A'
+            }}
+          </td>
+          <td>
+            <span
+              :class="['status-badge', message[messagesStore.pmessages_k.src_status[0]]]">
+              {{ message[messagesStore.pmessages_k.src_status[0]] }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div v-else class="no-chats">
+    No chats to display.
+  </div>
+</div>
+</div></div>
+     <!-- Chat Details Panel (Side Drawer) -->
+<div class="chat-details-panel" :class="{ active: showChatPanel }">
+  <div class="chat-details-header">
+    <div class="chat-details-avatar">
+      <div
+        class="avatar-circle"
+        :style="{ background: getAvatarColor(selectedMessage?.[messagesStore.pmessages_k.created_by[0]] || '') }"
+      >
+        {{ selectedMessage?.[messagesStore.pmessages_k.created_by[0]]?.charAt(0) || '?' }}
       </div>
+      <div class="chat-details-title">
+        <span class="contact-name">
+          {{ selectedMessage?.[messagesStore.pmessages_k.contacts[0]] || 'Chat Details' }}
+        </span>
+        <span class="chat-channel-badge">
+          {{ selectedMessage?.[messagesStore.pmessages_k.src[0]] }}
+        </span>
+        <span class="chat-status">
+          {{ selectedMessage?.[messagesStore.pmessages_k.src_status[0]] || 'Active' }}
+        </span>
+      </div>
+    </div>
+    <div class="chat-header-actions">
+      <button class="end-chat-btn" @click="endChat" title="End Chat (Archive)">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <button class="close-details" @click="closeChatPanel" aria-label="Close chat panel">×</button>
+    </div>
+  </div>
+
+  <div class="chat-details-actions">
+    <button class="chat-action-btn view" @click="viewCase" title="View Case">
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/></svg>
+    </button>
+    <button class="chat-action-btn link" @click="linkToCase" title="Link to Case">
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 1 7 7l-3 3a5 5 0 0 1-7-7l1-1"/><path d="M14 11a5 5 0 0 0-7-7l-3 3a5 5 0 0 0 7 7l1-1"/></svg>
+    </button>
+    <button class="chat-action-btn create" @click="createCase" title="Create Case">
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12h6"/><path d="M12 9v6"/></svg>
+    </button>
+    <button class="chat-action-btn reporter" @click="editReporter" title="Add/Edit Reporter">
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M5.5 21a8.38 8.38 0 0 1 13 0"/></svg>
+    </button>
+    <button class="chat-action-btn archive" @click="archiveChat" title="Archive">
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M3 7h18"/></svg>
+    </button>
+  </div>
+
+  <div class="chat-details-content">
+    <div class="chat-thread whatsapp-style">
+      <div
+        v-for="msg in simulatedChatThread"
+        :key="msg.id"
+        :class="['chat-bubble', msg.sender === 'counsellor' ? 'sent' : 'received']"
+      >
+        <div class="bubble-text">{{ msg.text }}</div>
+        <div class="bubble-time">{{ msg.time }}</div>
+      </div>
+    </div>
+
+    <div class="message-input-area chat-panel-input">
+      <div class="input-container">
+        <input
+          v-model="newMessageText"
+          type="text"
+          class="message-input"
+          placeholder="Type a message..."
+          @keypress.enter="sendMessage"
+        />
+        <button
+          v-if="newMessageText.trim()"
+          class="send-btn"
+          @click="sendMessage"
+          title="Send"
+        >Send</button>
+      </div>
+    </div>
+  </div>
+</div>
+
     </div>
   </div>
 </template>
@@ -177,11 +257,13 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import SidePanel from '@/components/SidePanel.vue'
 import { applyTheme } from '@/utils/theme.js'
+import { useMessagesStore } from '@/stores/messages'
+import { isToday, isYesterday, format } from 'date-fns'
 
+const messagesStore = useMessagesStore()
 const router = useRouter()
-const isSidebarCollapsed = ref(false)
 
-// Reactive state
+const isSidebarCollapsed = ref(false)
 const searchQuery = ref('')
 const activePlatform = ref('all')
 const newMessageText = ref('')
@@ -192,16 +274,12 @@ const showCallModal = ref(false)
 const callStatus = ref('Calling...')
 const isMuted = ref(false)
 
-// SidePanel related state
 const userRole = ref('super-admin')
 const isInQueue = ref(false)
 const isProcessingQueue = ref(false)
 const currentCall = ref(null)
-
-// Refs
 const messagesArea = ref(null)
 
-// Platform definitions
 const platforms = ref([
   { id: 'whatsapp', name: 'WhatsApp' },
   { id: 'sms', name: 'SMS' },
@@ -210,86 +288,51 @@ const platforms = ref([
   { id: 'past', name: 'Archive' }
 ])
 
-// Dummy chat records for each channel
-const dummyChats = [
-  // WhatsApp
-  { id: 101, senderName: 'Alice Mwangi', platform: 'whatsapp', status: 'Active', date: 'Today', time: '09:00AM', text: 'Hi, I need help with my case.' },
-  { id: 102, senderName: 'Brian Otieno', platform: 'whatsapp', status: 'Active', date: 'Today', time: '09:30AM', text: 'Can I get an update on my report?' },
-  { id: 103, senderName: 'Cynthia Wanjiku', platform: 'whatsapp', status: 'Pending', date: 'Yesterday', time: '10:00AM', text: 'Thank you for your assistance.' },
-  { id: 104, senderName: 'David Kimani', platform: 'whatsapp', status: 'Active', date: 'Today', time: '10:45AM', text: 'Is my case being processed?' },
-  { id: 105, senderName: 'Esther Njeri', platform: 'whatsapp', status: 'Closed', date: 'Yesterday', time: '11:15AM', text: 'My issue was resolved, thanks.' },
-  // SMS
-  { id: 201, senderName: 'Faith Ouma', platform: 'sms', status: 'Active', date: 'Today', time: '09:10AM', text: 'I have a new concern.' },
-  { id: 202, senderName: 'George Kariuki', platform: 'sms', status: 'Pending', date: 'Yesterday', time: '10:20AM', text: 'Please call me back.' },
-  { id: 203, senderName: 'Helen Achieng', platform: 'sms', status: 'Active', date: 'Today', time: '11:00AM', text: 'How do I follow up?' },
-  { id: 204, senderName: 'Isaac Mutua', platform: 'sms', status: 'Closed', date: 'Yesterday', time: '11:30AM', text: 'Thank you for your support.' },
-  { id: 205, senderName: 'Janet Waweru', platform: 'sms', status: 'Active', date: 'Today', time: '12:00PM', text: 'I need urgent help.' },
-  // Messenger
-  { id: 301, senderName: 'Kevin Maina', platform: 'messenger', status: 'Active', date: 'Today', time: '09:20AM', text: 'Can I get more information?' },
-  { id: 302, senderName: 'Lydia Chebet', platform: 'messenger', status: 'Pending', date: 'Yesterday', time: '10:40AM', text: 'I am waiting for a response.' },
-  { id: 303, senderName: 'Martin Otieno', platform: 'messenger', status: 'Active', date: 'Today', time: '12:15PM', text: 'Please update me.' },
-  { id: 304, senderName: 'Nancy Wambui', platform: 'messenger', status: 'Closed', date: 'Yesterday', time: '01:00PM', text: 'Case closed, thank you.' },
-  { id: 305, senderName: 'Oscar Kiptoo', platform: 'messenger', status: 'Active', date: 'Today', time: '01:30PM', text: 'I have a question.' },
-  // Telegram
-  { id: 401, senderName: 'Pauline Njeri', platform: 'telegram', status: 'Active', date: 'Today', time: '09:50AM', text: 'How do I escalate my case?' },
-  { id: 402, senderName: 'Quincy Mwenda', platform: 'telegram', status: 'Pending', date: 'Yesterday', time: '11:10AM', text: 'Still waiting for feedback.' },
-  { id: 403, senderName: 'Ruth Muthoni', platform: 'telegram', status: 'Active', date: 'Today', time: '12:45PM', text: 'Can I speak to an agent?' },
-  { id: 404, senderName: 'Samuel Karanja', platform: 'telegram', status: 'Closed', date: 'Yesterday', time: '01:20PM', text: 'Issue resolved.' },
-  { id: 405, senderName: 'Terry Wainaina', platform: 'telegram', status: 'Active', date: 'Today', time: '02:00PM', text: 'I need more details.' },
-  // Archive
-  { id: 501, senderName: 'Ursula Mwende', platform: 'archive', status: 'Closed', date: 'Yesterday', time: '09:00AM', text: 'Thank you for your help.' },
-  { id: 502, senderName: 'Victor Ochieng', platform: 'archive', status: 'Closed', date: 'Yesterday', time: '09:30AM', text: 'Case archived.' },
-  { id: 503, senderName: 'Winnie Naliaka', platform: 'archive', status: 'Closed', date: 'Yesterday', time: '10:00AM', text: 'No further action needed.' },
-  { id: 504, senderName: 'Xavier Kiplangat', platform: 'archive', status: 'Closed', date: 'Yesterday', time: '10:30AM', text: 'All done, thanks.' },
-  { id: 505, senderName: 'Yvonne Atieno', platform: 'archive', status: 'Closed', date: 'Yesterday', time: '11:00AM', text: 'Appreciate your support.' },
-  // CFFS Conversations (children and chatbot)
-  { id: 601, senderName: 'Child', platform: 'cffs', status: 'Active', date: 'Today', time: '10:00AM', text: 'Hello!' },
-  { id: 602, senderName: 'CFFS Chatbot', platform: 'cffs', status: 'Active', date: 'Today', time: '10:01AM', text: 'Hi there! What is your name?' },
-  { id: 603, senderName: 'Child', platform: 'cffs', status: 'Active', date: 'Today', time: '10:02AM', text: 'My name is Amina.' },
-  { id: 604, senderName: 'CFFS Chatbot', platform: 'cffs', status: 'Active', date: 'Today', time: '10:03AM', text: 'How old are you, Amina?' },
-  { id: 605, senderName: 'Child', platform: 'cffs', status: 'Active', date: 'Today', time: '10:04AM', text: 'I am 10 years old. How are you feeling lately?' },
-];
+// Use real messages from the store
+// const filteredMessages = computed(() => {
+//   if (activePlatform.value === 'all') return messagesStore.pmessages
+//   return messagesStore.pmessages.filter(msg => msg[messagesStore.pmessages_k.find(k => k[3] === 'platform')?.[0]] === activePlatform.value)
+// })
 
-// Timeline view: always show all chats grouped by day
-const groupedMessagesByDayWithDummy = computed(() => {
+const groupedMessagesByDate = computed(() => {
+  const messages = messagesStore.pmessages;
+  const timeKey = messagesStore.pmessages_k?.dth?.[0];
+
+  if (!Array.isArray(messages) || timeKey === undefined) return {};
+
   const groups = {};
-  filteredChats.value.forEach(chat => {
-    const day = chat.date;
-    if (!groups[day]) groups[day] = [];
-    groups[day].push(chat);
-  });
-  return {
-    'Today': groups['Today'] || [],
-    'Yesterday': groups['Yesterday'] || []
-  };
+  for (const msg of messages) {
+    const timestamp = msg[timeKey];
+    const date = new Date(timestamp * 1000).toLocaleDateString(); // e.g. "8/3/2025"
+    if (!groups[date]) groups[date] = [];
+    groups[date].push(msg);
+  }
+console.log('Grouped Messages:', groups);
+  return groups;
 });
 
-// Helper functions
+
+
 const getPlatformUnreadCount = (platformId) => {
-  // Dummy implementation: count active chats for the platform
-  return dummyChats.filter(chat => chat.platform === platformId && chat.status.toLowerCase() === 'active').length;
+  const platformKey = messagesStore.pmessages_k.find(k => k[3] === 'platform')?.[0]
+  const statusKey = messagesStore.pmessages_k.find(k => k[3] === 'status')?.[0]
+  return messagesStore.pmessages.filter(msg =>
+    msg[platformKey] === platformId &&
+    String(msg[statusKey]).toLowerCase() === 'active'
+  ).length
 }
 
-// Fix getPlatformShortName to be robust:
-const getPlatformShortName = (platform) => {
-  if (!platform || typeof platform !== 'string') return '';
-  const key = platform.toLowerCase();
-  const shortNames = {
-    whatsapp: 'WA',
-    sms: 'SMS',
-    messenger: 'MSG',
-    telegram: 'TG',
-    cffs: 'CFFS'
-  };
-  return shortNames[key] || key.toUpperCase();
-};
+// function getPlatformShortName(platform) {
+//   const map = {
+//     whatsapp: 'WA', safepal: 'SP', email: 'EM',
+//     walkin: 'WI', ai: 'AI', call: 'Call'
+//   }
+//   return map[platform] || 'Other'
+// }
 
 const getAvatarColor = (name) => {
-  const colors = [
-    '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
-    '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9'
-  ]
-  const index = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+  const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9']
+  const index = name?.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) || 0
   return colors[index % colors.length]
 }
 
@@ -301,20 +344,9 @@ const getRiskLevelClass = (riskLevel) => {
   return ''
 }
 
-// SidePanel event handlers
-const handleQueueToggle = () => {
-  isInQueue.value = !isInQueue.value
-}
-
-const handleLogout = () => {
-  router.push('/')
-}
-
-const handleSidebarToggle = (collapsed) => {
-  isSidebarCollapsed.value = collapsed
-}
-
-// Methods
+const handleQueueToggle = () => isInQueue.value = !isInQueue.value
+const handleLogout = () => router.push('/')
+const handleSidebarToggle = (collapsed) => isSidebarCollapsed.value = collapsed
 const toggleTheme = () => {
   const newTheme = currentTheme.value === 'dark' ? 'light' : 'dark'
   localStorage.setItem('theme', newTheme)
@@ -322,97 +354,18 @@ const toggleTheme = () => {
   applyTheme(newTheme)
 }
 
-const setActivePlatform = (platformId) => {
-  activePlatform.value = platformId
-  searchQuery.value = ''
-}
 
-const selectContact = (contactId) => {
-  selectedMessageId.value = contactId;
-  // No unread count to clear in dummy data
-  nextTick(() => {
-    scrollToBottom();
-  });
-}
 
-const deselectContact = () => {
-  selectedMessageId.value = null
-  showContactInfo.value = false
-}
+function setActivePlatform(id) {
+  activePlatform.value = id
 
-const toggleContactInfo = () => {
-  showContactInfo.value = !showContactInfo.value
-}
-
-const endChat = () => {
-  if (selectedMessage) {
-    const chat = dummyChats.find(c => c.id === selectedMessage.id);
-    if (chat) {
-      chat.status = 'Closed';
-      chat.platform = 'archive';
-    }
-  }
-  closeChatPanel();
-}
-
-const cancelEndChat = () => {
-  showEndChatModal.value = false
-}
-
-const sendMessage = () => {
-  if (newMessageText.value.trim() !== '' && selectedMessageId.value !== null) {
-    // Find the chat in dummyChats
-    const chat = dummyChats.find(c => c.id === selectedMessageId.value);
-    if (chat && chat.status.toLowerCase() === 'active') {
-      // For demo, just update the selectedMessageThread
-      selectedMessageThread.value.push({
-        id: selectedMessageThread.value.length + 1,
-        text: newMessageText.value,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        sender: 'me'
-      });
-      newMessageText.value = '';
-      nextTick(() => {
-        scrollToBottom();
-      });
-    }
+  if (id === 'all') {
+    messagesStore.fetchAllMessages()
+  } else {
+    messagesStore.fetchMessagesBySource(id)
   }
 }
 
-const scrollToBottom = () => {
-  if (messagesArea.value) {
-    messagesArea.value.scrollTop = messagesArea.value.scrollHeight
-  }
-}
-
-const clearSearch = () => {
-  searchQuery.value = ''
-}
-
-const handleSearch = () => {
-  // Filtering handled by computed property
-}
-
-const handleTyping = () => {
-  // Handle typing indicator
-}
-
-// Placeholder methods
-const showNewChatModal = () => console.log('Show new chat modal')
-const showAttachmentMenu = () => console.log('Show attachment menu')
-const startVoiceMessage = () => console.log('Start voice message')
-const viewFullProfile = () => console.log('View full profile')
-
-// Lifecycle
-onMounted(() => {
-  const savedTheme = localStorage.getItem('theme') || 'dark'
-    currentTheme.value = savedTheme
-  applyTheme(savedTheme)
-})
-
-const queueStatus = computed(() => {
-  return isInQueue ? 'In Queue' : 'Not in queue'
-})
 
 const showChatPanel = ref(false)
 const selectedMessageId = ref(null)
@@ -422,7 +375,6 @@ const selectedMessageThread = ref([])
 function openChatPanel(message) {
   selectedMessageId.value = message.id
   selectedMessage.value = message
-  // Dummy thread for now, could be replaced with real data
   selectedMessageThread.value = [
     { id: 1, text: message.text, time: message.time },
     { id: 2, text: 'This is a reply.', time: '10:35 AM' }
@@ -436,30 +388,66 @@ function closeChatPanel() {
   selectedMessageThread.value = []
 }
 
-// In script, define channelFilters with an 'All' option:
+function selectContact(contactId) {
+  selectedMessageId.value = contactId
+  nextTick(scrollToBottom)
+}
+function deselectContact() {
+  selectedMessageId.value = null
+  showContactInfo.value = false
+}
+const toggleContactInfo = () => showContactInfo.value = !showContactInfo.value
+const endChat = () => closeChatPanel()
+const cancelEndChat = () => showEndChatModal.value = false
+
+const sendMessage = () => {
+  if (newMessageText.value.trim() !== '' && selectedMessageId.value !== null) {
+    selectedMessageThread.value.push({
+      id: selectedMessageThread.value.length + 1,
+      text: newMessageText.value,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      sender: 'me'
+    })
+    newMessageText.value = ''
+    nextTick(scrollToBottom)
+  }
+}
+const scrollToBottom = () => {
+  if (messagesArea.value) messagesArea.value.scrollTop = messagesArea.value.scrollHeight
+}
+
+const clearSearch = () => searchQuery.value = ''
+const handleSearch = () => {}
+const handleTyping = () => {}
+
+const showNewChatModal = () => console.log('Show new chat modal')
+const showAttachmentMenu = () => console.log('Show attachment menu')
+const startVoiceMessage = () => console.log('Start voice message')
+const viewFullProfile = () => console.log('View full profile')
+
+onMounted(() => {
+  const savedTheme = localStorage.getItem('theme') || 'dark'
+  currentTheme.value = savedTheme
+  applyTheme(savedTheme)
+  messagesStore.fetchAllMessages()
+})
+
+const queueStatus = computed(() => isInQueue.value ? 'In Queue' : 'Not in queue')
+
 const channelFilters = [
   { id: 'all', name: 'All' },
   { id: 'whatsapp', name: 'WhatsApp' },
-  { id: 'sms', name: 'SMS' },
-  { id: 'messenger', name: 'Messenger' },
-  { id: 'telegram', name: 'Telegram' },
-  { id: 'cffs', name: 'CFFS Conversations' },
-  { id: 'archive', name: 'Archive' }
-];
+  { id: 'safepal', name: 'SafePal' },
+  { id: 'email', name: 'Email' },
+  { id: 'walkin', name: 'Walk-In' },
+  { id: 'ai', name: 'AI' },
+  { id: 'call', name: 'Call' }
+]
 
-// For table view, filter by activePlatform unless 'all'
-const filteredChats = computed(() => {
-  if (activePlatform.value === 'all') return dummyChats;
-  return dummyChats.filter(chat => chat.platform === activePlatform.value);
-});
+const activeView = ref('timeline')
 
-// Set timeline as the default view on load
-const activeView = ref('timeline');
-
-// In <script setup>, add dummy functions for actions:
-function linkToCase() { alert('Link to Case (dummy)'); }
+function linkToCase() { alert('Link to Case (dummy)') }
 function createCase() {
-  // Navigate to case creation with chat data
   router.push({
     path: '/case-creation',
     query: {
@@ -467,12 +455,11 @@ function createCase() {
       platform: selectedMessage?.platform,
       chatId: selectedMessage?.id
     }
-  });
+  })
 }
-function archiveChat() { alert('Archive Chat (dummy)'); }
-function editReporter() { alert('Add/Edit Reporter (dummy)'); }
+function archiveChat() { alert('Archive Chat (dummy)') }
+function editReporter() { alert('Add/Edit Reporter (dummy)') }
 
-// In <script setup>, add a simulated chat thread:
 const simulatedChatThread = computed(() => [
   { id: 1, sender: 'user', text: selectedMessage?.text || 'Hi, I need help with my case.', time: selectedMessage?.time || '09:00AM' },
   { id: 2, sender: 'counsellor', text: 'Hello, how can I assist you today?', time: '09:01AM' },
@@ -481,18 +468,17 @@ const simulatedChatThread = computed(() => [
   { id: 5, sender: 'user', text: 'Thank you!', time: '09:04AM' },
   { id: 6, sender: 'counsellor', text: 'You are welcome!', time: '09:05AM' },
   ...selectedMessageThread.value
-]);
+])
 
-// In <script setup>, update viewCase and createCase to navigate to real pages:
 function viewCase() {
-  // If selectedMessage has a caseId, navigate to /cases/:id, else alert
   if (selectedMessage?.caseId) {
-    router.push(`/cases/${selectedMessage.caseId}`);
+    router.push(`/cases/${selectedMessage.caseId}`)
   } else {
-    alert('No case linked to this chat.');
+    alert('No case linked to this chat.')
   }
 }
 </script>
+
 
 <style>
   /* Root theme variables and resets */
