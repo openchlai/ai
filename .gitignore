@@ -137,7 +137,6 @@ models/
 *.wav
 *.aac
 *.m4a
-*.ogg
 *.flac
 *.wma
 *.aiff

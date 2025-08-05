@@ -1,0 +1,21 @@
+# requirements/production.txt
+# Production-specific packages
+-r base.txt
+
+# Production server (add one of these)
+# gunicorn==21.2.0
+# uWSGI==2.0.23
+
+# Production monitoring and logging (add as needed)
+# sentry-sdk==1.45.0
+# django-storages==1.14.2  # for S3/cloud storage
+# whitenoise==6.6.0  # for static files
+
+# Security enhancements (add as needed)
+# django-security==0.17.0
+
+---
+
+# requirements.txt (for backward compatibility)
+# This file can import from the appropriate environment
+-r requirements/base.txt
