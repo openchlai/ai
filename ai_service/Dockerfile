@@ -3,9 +3,17 @@ FROM python:3.11-slim
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies (including curl for health checks)
+# Install system dependencies (including curl for health checks and audio libraries)
 RUN apt-get update && apt-get install -y \
     curl \
+    build-essential \
+    gcc \
+    portaudio19-dev \
+    python3-dev \
+    ffmpeg \
+    libsndfile1 \
+    libsox-fmt-all \
+    sox \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user

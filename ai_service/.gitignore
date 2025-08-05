@@ -54,4 +54,4 @@ db.sqlite3
 
 # Logs
 *.log
-models/
+/models/

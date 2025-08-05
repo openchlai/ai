@@ -9,6 +9,7 @@ from app.core.celery_monitor import celery_monitor
 from ..core.resource_manager import resource_manager
 from ..core.request_queue import request_queue
 from ..models.model_loader import model_loader
+from ..core.resource_manager import unified_resource_manager
 from ..config.settings import settings
 
 logger = logging.getLogger(__name__)
@@ -117,20 +118,6 @@ async def system_capabilities():
     """Get ML system capabilities"""
     return model_loader.get_system_capabilities()
 
-@router.get("/resources")
-async def resources_health():
-    """Get detailed resource status"""
-    gpu_info = resource_manager.get_gpu_info()
-    system_info = resource_manager.get_system_info()
-    queue_status = request_queue.get_queue_status()
-    
-    return {
-        "timestamp": datetime.now().isoformat(),
-        "gpu": gpu_info,
-        "system": system_info,
-        "queue": queue_status
-    }
-
 @router.get("/celery/status")
 async def get_celery_status():
     """Check Celery worker and event monitoring status with proper health logic"""
@@ -224,3 +211,34 @@ async def get_celery_status():
             "critical": "Core functionality impaired - immediate attention needed"
         }
     }
+    
+@router.get("/resources")
+async def resources_health():
+    """Get detailed resource utilization status"""
+    try:
+        # Use the unified resource manager
+        from ..core.resource_manager import unified_resource_manager
+        
+        resource_status = unified_resource_manager.get_resource_status()
+        gpu_info = unified_resource_manager.get_gpu_info()
+        system_info = unified_resource_manager.get_system_info()
+        
+        return {
+            "status": "healthy",
+            "timestamp": datetime.now().isoformat(),
+            "streaming_enabled": getattr(settings, 'enable_streaming', False),
+            "resource_utilization": resource_status,
+            "gpu_info": gpu_info,
+            "system_info": system_info,
+            "configuration": {
+                "max_streaming_slots": getattr(settings, 'max_streaming_slots', 2),
+                "max_batch_slots": getattr(settings, 'max_batch_slots', 1),
+                "streaming_port": getattr(settings, 'streaming_port', 8300)
+            }
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }

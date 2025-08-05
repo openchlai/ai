@@ -14,6 +14,7 @@ from ..tasks.audio_tasks import process_audio_task, process_audio_quick_task
 from ..celery_app import celery_app
 from ..core.celery_monitor import celery_monitor
 from ..config.settings import redis_task_client
+from ..core.streaming import audio_streaming
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/audio", tags=["audio"])
@@ -554,3 +555,117 @@ async def process_audio_streaming(
            status_code=500, 
            detail=f"Failed to start audio processing: {str(e)}"
        )
+
+@router.post("/process-stream-realtime")
+async def process_audio_realtime_streaming(
+    audio: UploadFile = File(...),
+    language: Optional[str] = Form(None),
+    include_translation: bool = Form(True),
+    include_insights: bool = Form(True)
+):
+    """
+    Process audio with REAL-TIME Redis pub/sub streaming
+    Streams partial results as they're generated (transcription chunks, etc.)
+    """
+    
+    # Validate audio file
+    if not audio.filename:
+        raise HTTPException(status_code=400, detail="No audio file provided")
+    
+    allowed_formats = [".wav", ".mp3", ".flac", ".m4a", ".ogg", ".webm"]
+    file_extension = os.path.splitext(audio.filename)[1].lower()
+    if file_extension not in allowed_formats:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported audio format: {file_extension}. Supported: {allowed_formats}"
+        )
+    
+    max_size = 100 * 1024 * 1024  # 100MB
+    audio_bytes = await audio.read()
+    if len(audio_bytes) > max_size:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File too large: {len(audio_bytes)/1024/1024:.1f}MB. Max: {max_size/1024/1024}MB"
+        )
+    
+    try:
+        # Submit task to Celery
+        task = process_audio_task.delay(
+            audio_bytes=audio_bytes,
+            filename=audio.filename,
+            language=language,
+            include_translation=include_translation,
+            include_insights=include_insights
+        )
+        task_id = task.id
+        
+        logger.info(f"🎙️ Started real-time Redis stream for task {task_id} - {audio.filename}")
+        
+        async def redis_event_stream():
+            """Stream real-time updates from Redis pub/sub"""
+            
+            # Send initial task submission
+            initial_update = {
+                "task_id": task_id,
+                "status": "submitted",
+                "message": "Audio processing task submitted",
+                "filename": audio.filename,
+                "file_size_mb": round(len(audio_bytes) / (1024 * 1024), 2),
+                "estimated_time": "15-60 seconds",
+                "streaming_type": "redis_pubsub",
+                "timestamp": datetime.now().isoformat()
+            }
+            yield f"data: {json.dumps(initial_update)}\n\n"
+            
+            # Subscribe to Redis updates for this task
+            try:
+                async for update in audio_streaming.subscribe_to_task(task_id, timeout=600):
+                    # Stream each update as it arrives
+                    yield f"data: {json.dumps(update)}\n\n"
+                    
+                    # Break on completion
+                    if update.get("step") in ["completed", "failed", "cancelled", "timeout"]:
+                        logger.info(f"🏁 Redis stream ended for task {task_id}: {update.get('step')}")
+                        break
+            
+            except Exception as e:
+                logger.error(f"❌ Redis streaming error for task {task_id}: {e}")
+                error_update = {
+                    "task_id": task_id,
+                    "status": "stream_error",
+                    "error": str(e),
+                    "message": "Redis streaming connection error",
+                    "timestamp": datetime.now().isoformat()
+                }
+                yield f"data: {json.dumps(error_update)}\n\n"
+            
+            # Final cleanup message
+            cleanup_update = {
+                "task_id": task_id,
+                "status": "stream_closed",
+                "message": "Real-time stream ended",
+                "timestamp": datetime.now().isoformat()
+            }
+            yield f"data: {json.dumps(cleanup_update)}\n\n"
+            
+            logger.info(f"🔚 Redis stream cleanup completed for task {task_id}")
+        
+        return StreamingResponse(
+            redis_event_stream(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",  # Disable nginx buffering
+                "Access-Control-Allow-Origin": "*",  # Enable CORS for SSE
+                "Access-Control-Allow-Headers": "Cache-Control",
+                "X-Stream-Type": "redis-pubsub",  # Indicate streaming type
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"❌ Real-time audio processing failed for {audio.filename}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to start real-time audio processing: {str(e)}"
+        )
