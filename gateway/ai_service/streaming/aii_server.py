@@ -1,3 +1,4 @@
+from core.utils.path_resolver import resolve_model_path
 import whisper
 import torch
 import logging
@@ -38,7 +39,7 @@ def initialize_whisper_components() -> Tuple[Any, Any, Dict, Dict]:
         
         config = load_model_config()
         model_size = config["transcription_model"]["size"]
-        model_path = Path(config["transcription_model"]["path"])
+        model_path = Path(resolve_model_path(config["transcription_model"]["path"]))
         
         # Ensure model directory exists
         model_path.mkdir(parents=True, exist_ok=True)

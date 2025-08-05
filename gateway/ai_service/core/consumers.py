@@ -7,7 +7,7 @@ from .models import AudioFile
 
 logger = logging.getLogger(__name__)
 
-class AudioProcessingConsumer(AsyncWebsocketConsumer):
+class AudioConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         """Handle WebSocket connection"""
         self.task_id = self.scope['url_route']['kwargs']['task_id']
