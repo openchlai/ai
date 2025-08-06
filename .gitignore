@@ -125,7 +125,7 @@ obj/
 .eslintcache
 .stylelintcache
 .temp/
-
+temp*/
 gateway/ai_service/db.sqlite3
 gateway/ai_service/audio/
 
@@ -133,7 +133,6 @@ gateway/ai_service/audio/
 model/
 models/
 **/models/**
-
 
 *.mp3
 *.wav

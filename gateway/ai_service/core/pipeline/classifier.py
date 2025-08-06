@@ -3,7 +3,6 @@
 import re
 import torch
 import numpy as np
-<<<<<<< HEAD
 import json
 import logging
 from pathlib import Path
@@ -172,10 +171,6 @@ def classify_case(narrative: str) -> dict:
 # Legacy function for backwards compatibility
 def classify_case_with_params(narrative, model, tokenizer, device, label_maps):
     """Legacy function that takes all parameters directly"""
-=======
-
-def classify_case(narrative, model, tokenizer, device, label_maps):
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
     text = narrative.lower().strip()
     text = re.sub(r'[^a-z0-9\s]', '', text)
 
