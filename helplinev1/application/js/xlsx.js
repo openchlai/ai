@@ -159,12 +159,12 @@ XLSX.esc = function (v)
 {
 	// XML UTF-8: #x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD] | [#x10000-#x10FFFF]
 	// but we use fast version
-	v = v.replace(/&/g, '&amp;');
-	v = v.replace(/</g, '&lt;'); 
-	v = v.replace(/>/g, '&gt;'); 
-	v = v.replace(/\x00/g, '');
-	v = v.replace(/\x03/g, '');
-	v = v.replace(/\x0B/g, '');
+	v = v.replace ('&','&amp;')
+	v = v.replace ('<', '&lt;'); 
+	v = v.replace ('>', '&gt;'); 
+	v = v.replace ("\x00", '');
+	v = v.replace ("\x03", '');
+	v = v.replace ("\x0B", '');
 	return v;
 }
 
