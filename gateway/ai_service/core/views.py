@@ -79,7 +79,7 @@ class TaskStatusView(APIView):
                     response["message"] = "Task is in progress"
                 response["completed"] = False
 
-            return Response(response, status=status.HTTP_200_OK)
+            return Response(response, status=status.HTTP_404_NOT_FOUND)
             
         except Exception as e:
             logger.error(f"Error checking task status for {task_id}: {e}")
