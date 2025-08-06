@@ -21,7 +21,7 @@ services:
   # PHP-FPM Backend API
   php-api:
     build:
-      context: ./php
+      context: ./docker/php
       dockerfile: docker/php/Dockerfile
     container_name: helpline-php-api
     volumes:
@@ -44,7 +44,7 @@ services:
   # Nginx Web Server
   nginx:
     build:
-      context: ./nginx
+      context: ./docker/nginx
       dockerfile: docker/nginx/Dockerfile
     container_name: helpline-nginx
     ports:
