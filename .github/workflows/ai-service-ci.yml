@@ -34,5 +34,5 @@ jobs:
         working-directory: ai_service
         run: |
           pytest tests --maxfail=5 --disable-warnings -v || \
-          echo "Fallback to running test_*.py files" && \
+          echo "Fallback to test scripts" && \
           python test_runner.py || python test_progressive_system.py || python test_agent_connectivity.py
