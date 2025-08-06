@@ -48,7 +48,7 @@ jobs:
       - name: Run Docker Compose
         working-directory: helplinev1
         run: |
-          docker-compose up -d
+          docker compose up -d
 
       - name: Wait for app to be ready
         run: sleep 20  # Allow containers to settle
