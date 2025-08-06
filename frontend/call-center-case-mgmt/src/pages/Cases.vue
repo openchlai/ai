@@ -357,7 +357,7 @@ const filters = ref([
 // Computed properties
 const filteredCases = computed(() => {
   let filtered = casesStore.cases || [];
-
+ 
   // Search filter
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();

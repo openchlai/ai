@@ -1837,7 +1837,7 @@ const callsStore = useCallStore();
 onMounted(async () => {
   try {
     console.log("Fetching calls...");
-    await callsStore.listCalls(); // assuming you have this action in your store
+    await callsStore.listCalls(); 
     console.log("Calls fetched:", callsStore.calls);
   } catch (err) {
     console.error("Error fetching calls:", err);

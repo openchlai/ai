@@ -1,89 +1,173 @@
+<!-- src/views/CasesView.vue -->
+<script setup>
+import { ref, onMounted } from 'vue';
+import { useCaseStore } from '@/stores/cases';
+
+const caseStore = useCaseStore();
+
+// Filters for listing, CSV and pivot
+const filters = ref({
+  _a: '',
+  _c: 20,
+  category_main: '',
+  status: ''
+});
+
+// Pivot data
+const pivotData = ref([]);
+const pivotColumns = ref([]);
+
+onMounted(() => {
+  caseStore.listCases({ _c: filters.value._c });
+});
+
+// Download CSV handler
+const handleDownloadCSV = async () => {
+  try {
+    const blob = await caseStore.downloadCSV({ 
+      _a: filters.value._a,
+      _c: filters.value._c,
+      category_main: filters.value.category_main,
+      status: filters.value.status
+    });
+    const url = window.URL.createObjectURL(new Blob([blob], { type: 'text/csv' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'cases.csv');
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error('CSV Download failed:', err.message);
+  }
+};
+
+// Pivot report handler
+const handlePivotReport = async () => {
+  try {
+    const data = await caseStore.getPivotReport({
+      _a: filters.value._a,
+      _c: filters.value._c,
+      category_main: filters.value.category_main,
+      status: filters.value.status,
+      xaxis: 'status',
+      yaxis: 'priority'
+    });
+    if (Array.isArray(data) && data.length > 0) {
+      pivotColumns.value = Object.keys(data[0]);
+      pivotData.value = data;
+    } else {
+      pivotColumns.value = [];
+      pivotData.value = [];
+    }
+  } catch (err) {
+    console.error('Pivot report fetch failed:', err.message);
+  }
+};
+</script>
+
 <template>
-  <div class="tables-wrapper">
-    <!-- Filter Buttons -->
-    <div class="filter-buttons">
-      <button @click="showAllMessages">All</button>
-      <button @click="filterBySource('whatsapp')">WhatsApp</button>
-      <button @click="filterBySource('email')">Email</button>
-      <button @click="filterBySource('safepal')">Safepal</button>
-      <button @click="filterBySource('walkin')">Walk-In</button>
-      <button @click="filterBySource('ai')">AI</button>
-      <button @click="filterBySource('call')">Call</button>
+  <section class="cases-view">
+    <h2>Cases List</h2>
+
+    <!-- Filters -->
+    <div class="filters">
+      <input v-model="filters._a" placeholder="Start (_a)" />
+      <input v-model.number="filters._c" type="number" placeholder="Count (_c)" />
+      <input v-model="filters.category_main" placeholder="Category Main" />
+      <input v-model="filters.status" placeholder="Status" />
+      <button @click="caseStore.listCases(filters)">Refresh List</button>
+      <button @click="handleDownloadCSV">Download CSV</button>
+      <button @click="handlePivotReport">Get Pivot Report</button>
     </div>
 
-    <!-- Messages Table -->
-    <div class="table-section">
-      <h3>Messages ({{ messagesStore.pmessages.length }})</h3>
+    <p v-if="caseStore.loading">Loading…</p>
+    <p v-else-if="caseStore.error" class="error">{{ caseStore.error }}</p>
 
-      <table v-if="messagesStore.pmessages.length">
+    <div v-else>
+      <h3>Total Cases: {{ caseStore.caseCount }}</h3>
+
+      <!-- Case Table -->
+      <table v-if="caseStore.caseCount">
         <thead>
           <tr>
-            <th v-for="(meta, key) in messagesStore.pmessages_k" :key="key">
+            <th v-for="(meta, key) in caseStore.cases_k" :key="key">
               {{ meta[3] || key }}
             </th>
-            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="message in messagesStore.pmessages" :key="message[0]">
-            <td v-for="(meta, key) in messagesStore.pmessages_k" :key="key">
-              {{ message[meta[0]] }}
-            </td>
-            <td>
-              <button @click="handleView(message[0])">View</button>
+          <tr v-for="item in caseStore.cases" :key="item[0]">
+            <td v-for="(meta, key) in caseStore.cases_k" :key="key">
+              {{ item[parseInt(meta[0])] }}
             </td>
           </tr>
         </tbody>
       </table>
 
-      <p v-else>No messages found.</p>
+      <div v-else>
+        <p>No cases available.</p>
+      </div>
+
+      <!-- Pivot Table -->
+      <div v-if="pivotData.length" class="pivot-section">
+        <h3>Pivot Report</h3>
+        <table>
+          <thead>
+            <tr>
+              <th v-for="col in pivotColumns" :key="col">{{ col }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(row, idx) in pivotData" :key="idx">
+              <td v-for="col in pivotColumns" :key="col">{{ row[col] }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
-  </div>
+  </section>
 </template>
 
-<script setup>
-import { onMounted } from 'vue'
-import { useMessagesStore } from '@/stores/messages'
-
-const messagesStore = useMessagesStore()
-
-onMounted(() => {
-  messagesStore.fetchAllMessages()
-})
-
-const showAllMessages = () => {
-  messagesStore.fetchAllMessages()
-}
-
-const filterBySource = (src) => {
-  messagesStore.fetchMessagesBySource(src)
-}
-
-const handleView = (id) => {
-  console.log('View message with ID:', id)
-}
-</script>
-
 <style scoped>
-.tables-wrapper {
+.cases-view {
   padding: 1rem;
+  overflow-x: auto;
 }
-.filter-buttons {
+
+.filters {
   margin-bottom: 1rem;
 }
-.filter-buttons button {
-  margin-right: 0.5rem;
-  padding: 0.4rem 0.8rem;
-  cursor: pointer;
-}
-.table-section table {
+
+table {
   width: 100%;
   border-collapse: collapse;
+  margin-top: 8px;
+  font-size: 14px;
 }
-.table-section th,
-.table-section td {
+
+th, td {
   border: 1px solid #ccc;
-  padding: 0.5rem;
+  padding: 6px 8px;
   text-align: left;
+}
+
+button {
+  margin-right: 5px;
+  padding: 4px 8px;
+  cursor: pointer;
+  background: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+}
+
+button:hover {
+  background: #45a049;
+}
+
+.error {
+  color: #e74c3c;
 }
 </style>

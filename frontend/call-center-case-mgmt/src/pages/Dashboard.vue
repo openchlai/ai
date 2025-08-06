@@ -235,22 +235,46 @@
         </div>
 
         <!-- Recent Calls -->
-        <div class="recent-calls">
-          <div class="section-header">
-            <div class="section-title">Recent Calls</div>
-            <button class="view-all" @click="navigateToCalls">View All</button>
+  
+  <div class="recent-calls">
+    <div class="section-header">
+      <div class="section-title">Recent Calls</div>
+      <button class="view-all" @click="navigateToCalls">View All</button>
+    </div>
+
+    <div class="call-list">
+      <div
+        v-for="(call, index) in casesStore.cases.slice(0, 5)"
+        :key="call[casesStore.cases_k?.id?.[0]] || index"
+        class="call-item glass-card fine-border"
+      >
+       
+        <div class="call-details">
+          <div class="call-type">
+            {{ call[casesStore.cases_k?.case_category?.[0]] || "N/A" }}
           </div>
 
-          <div class="call-list">
-            <div v-for="call in recentCalls" :key="call.id" class="call-item">
-              <div class="call-details">
-                <div class="call-type">{{ call.type }}</div>
-                <div class="call-time">{{ call.time }}</div>
-              </div>
-              <div class="call-status" :class="call.statusClass">{{ call.status }}</div>
-            </div>
+          <div class="call-time">
+            {{
+              casesStore.cases_k?.dt
+                        ? new Date(
+                            call[casesStore.cases_k.dt[0]] < 10000000000
+                              ? call[casesStore.cases_k.dt[0]] * 1000
+                              : call[casesStore.cases_k.dt[0]] * 3600 * 1000
+                          ).toLocaleString()
+                        : "No Date"
+            }}
           </div>
+
+         <div class="call-status"
+  :style="{ backgroundColor: getStatusColor(call[casesStore.cases_k.status[0]]) }"
+>
+  Status: {{ getStatusLabel(call[casesStore.cases_k.status[0]]) }}
+</div>
         </div>
+      </div>
+    </div>
+  </div>
 
         <!-- Enhanced Chart Container -->
         <div class="chart-container">
@@ -380,7 +404,31 @@
   import { useRoute, useRouter } from 'vue-router'
   import SidePanel from '@/components/SidePanel.vue'
   import { joinQueue } from '@/utils/sipClient.js'
+  import { useCaseStore } from '@/stores/cases'
 
+const casesStore = useCaseStore()
+
+onMounted(async () => {
+  await casesStore.listCases({ src: 'call' }) // fetch only call-based cases
+  console.log('Loaded cases:', casesStore.cases)
+})
+
+const statusMap = {
+  0: { label: 'None', color: '#ffffff' },
+  1: { label: 'Ongoing', color: '#ffa500' },
+  2: { label: 'Closed', color: '#4eb151' },
+  3: { label: 'Escalated', color: '#ff0000' }
+}
+
+function getStatusLabel(statusCode) {
+  const status = statusMap[Number(statusCode)];
+  return status ? status.label : 'Unknown';
+}
+
+function getStatusColor(statusCode) {
+  const status = statusMap[Number(statusCode)];
+  return status ? status.color : '#ccc';
+}
   // Reactive state
   const route = useRoute()
   const router = useRouter()
