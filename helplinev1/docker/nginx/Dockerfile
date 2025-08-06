@@ -8,6 +8,7 @@ RUN rm /etc/nginx/conf.d/default.conf
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY helpline.conf /etc/nginx/conf.d/helpline.conf
 
+
 # Create necessary directories
 RUN mkdir -p /var/www/html/helpline
 

@@ -36,6 +36,7 @@ WORKDIR /var/www/html
 # Copy PHP configuration
 COPY php.ini /usr/local/etc/php/conf.d/custom.ini
 
+
 # Create data directory and set permissions
 RUN mkdir -p /var/www/html/helpline/data && \
     chown -R www-data:www-data /var/www/html
