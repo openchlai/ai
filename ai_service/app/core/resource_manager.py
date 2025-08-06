@@ -1,313 +1,252 @@
 import asyncio
-import logging
-import psutil
-from typing import Dict, Any, Optional
-from datetime import datetime, timedelta
 import time
-import sys
-import gc
+import logging
+from typing import Dict, Optional, Set
+from enum import Enum
+from dataclasses import dataclass
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-# Optional torch import - gracefully handle if not available
-try:
-    import torch
-    TORCH_AVAILABLE = True
-except ImportError:
-    TORCH_AVAILABLE = False
-    logger.warning("PyTorch not available - GPU monitoring disabled")
+class ProcessingMode(Enum):
+    STREAMING = "streaming"
+    BATCH = "batch"
 
-class GPUResourceManager:
-    """Enhanced GPU resource manager with intelligent memory management"""
+@dataclass
+class ResourceRequest:
+    request_id: str
+    mode: ProcessingMode
+    timestamp: datetime
+    estimated_duration: float = 0.0
+
+class UnifiedResourceManager:
+    """
+    Extended resource manager supporting both streaming and batch processing modes
+    with intelligent resource allocation and monitoring.
+    """
     
-    def __init__(self, max_concurrent: int = 1, memory_threshold: float = 0.9):
-        self.max_concurrent = max_concurrent
-        self.memory_threshold = memory_threshold  # GPU memory usage threshold
-        self.gpu_semaphore = asyncio.Semaphore(max_concurrent)
-        self.active_requests: Dict[str, Dict] = {}
-        self.request_counter = 0
-        self.start_time = datetime.now()
-        self.memory_stats = {"peak_usage": 0, "cleanups_performed": 0}
+    def __init__(self, max_streaming_slots: int = 2, max_batch_slots: int = 1):
+        # Separate semaphores for different processing types
+        self.streaming_semaphore = asyncio.Semaphore(max_streaming_slots)
+        self.batch_semaphore = asyncio.Semaphore(max_batch_slots)
         
-        logger.info(f"Enhanced GPU Resource Manager initialized with max_concurrent={max_concurrent}")
-        logger.info(f"Memory threshold set to {memory_threshold*100}%")
+        # Active request tracking
+        self.active_requests: Dict[str, ResourceRequest] = {}
+        self.streaming_requests: Set[str] = set()
+        self.batch_requests: Set[str] = set()
         
-        if not TORCH_AVAILABLE:
-            logger.info("Running in CPU-only mode (PyTorch not available)")
-    
-    async def acquire_gpu(self, request_id: str) -> bool:
-        """Acquire GPU access with enhanced memory management"""
-        logger.info(f"Request {request_id} requesting GPU access")
+        # Configuration
+        self.max_streaming_slots = max_streaming_slots
+        self.max_batch_slots = max_batch_slots
+        
+        # Metrics
+        self.total_streaming_requests = 0
+        self.total_batch_requests = 0
+        self.streaming_wait_times = []
+        self.batch_wait_times = []
+        
+        logger.info(f"🔧 Unified Resource Manager initialized: "
+                   f"{max_streaming_slots} streaming slots, {max_batch_slots} batch slots")
+
+    async def acquire_streaming_gpu(self, request_id: str, estimated_duration: float = 5.0) -> bool:
+        """
+        Acquire GPU resources for streaming processing (lighter weight, faster turnaround)
+        """
+        start_time = time.time()
+        request = ResourceRequest(
+            request_id=request_id,
+            mode=ProcessingMode.STREAMING,
+            timestamp=datetime.now(),
+            estimated_duration=estimated_duration
+        )
         
         try:
-            # Check memory before acquisition
-            await self._ensure_memory_available()
+            logger.info(f"🎙️ [{request_id}] Requesting streaming GPU access...")
             
-            # Record request start
-            self.active_requests[request_id] = {
-                "start_time": datetime.now(),
-                "status": "waiting",
-                "memory_before": self._get_gpu_memory_usage()
-            }
+            # Check if we have available streaming slots
+            available_slots = self.streaming_semaphore._value
+            if available_slots == 0:
+                logger.warning(f"⏳ [{request_id}] Streaming queue full, waiting...")
             
-            # Wait for GPU access
-            await self.gpu_semaphore.acquire()
+            # Acquire semaphore (this will wait if no slots available)
+            await self.streaming_semaphore.acquire()
             
-            # Update status and record memory after acquisition
-            self.active_requests[request_id]["status"] = "processing"
-            self.active_requests[request_id]["gpu_acquired_time"] = datetime.now()
-            self.active_requests[request_id]["memory_after_acquire"] = self._get_gpu_memory_usage()
+            # Track the request
+            self.active_requests[request_id] = request
+            self.streaming_requests.add(request_id)
+            self.total_streaming_requests += 1
             
-            # Update peak memory tracking
-            current_memory = self._get_gpu_memory_usage()
-            if current_memory > self.memory_stats["peak_usage"]:
-                self.memory_stats["peak_usage"] = current_memory
+            wait_time = time.time() - start_time
+            self.streaming_wait_times.append(wait_time)
             
-            logger.info(f"Request {request_id} acquired GPU access (Memory: {current_memory:.1f}%)")
+            logger.info(f"✅ [{request_id}] Streaming GPU acquired in {wait_time:.2f}s "
+                       f"({len(self.streaming_requests)}/{self.max_streaming_slots} slots used)")
+            
             return True
             
         except Exception as e:
-            logger.error(f"Failed to acquire GPU for request {request_id}: {e}")
-            if request_id in self.active_requests:
-                del self.active_requests[request_id]
+            logger.error(f"❌ [{request_id}] Failed to acquire streaming GPU: {e}")
             return False
-    
-    def release_gpu(self, request_id: str):
-        """Release GPU access with memory cleanup"""
+
+    async def acquire_batch_gpu(self, request_id: str, estimated_duration: float = 60.0) -> bool:
+        """
+        Acquire GPU resources for batch processing (full pipeline, longer duration)
+        """
+        start_time = time.time()
+        request = ResourceRequest(
+            request_id=request_id,
+            mode=ProcessingMode.BATCH,
+            timestamp=datetime.now(),
+            estimated_duration=estimated_duration
+        )
+        
         try:
-            # Perform memory cleanup before releasing
-            self._cleanup_gpu_memory()
+            logger.info(f"📦 [{request_id}] Requesting batch GPU access...")
             
-            self.gpu_semaphore.release()
+            # Check queue status
+            available_slots = self.batch_semaphore._value
+            if available_slots == 0:
+                logger.warning(f"⏳ [{request_id}] Batch queue full, waiting...")
+                # Estimate wait time based on active requests
+                active_batch_requests = [r for r in self.active_requests.values() 
+                                       if r.mode == ProcessingMode.BATCH]
+                if active_batch_requests:
+                    estimated_wait = min(r.estimated_duration for r in active_batch_requests)
+                    logger.info(f"⏳ [{request_id}] Estimated wait time: {estimated_wait:.1f}s")
             
-            if request_id in self.active_requests:
-                processing_time = datetime.now() - self.active_requests[request_id]["gpu_acquired_time"]
-                memory_after_release = self._get_gpu_memory_usage()
-                
-                logger.info(f"Request {request_id} released GPU after {processing_time.total_seconds():.2f}s "
-                           f"(Memory after cleanup: {memory_after_release:.1f}%)")
-                
-                # Store processing statistics for monitoring
-                self.active_requests[request_id]["memory_after_release"] = memory_after_release
-                self.active_requests[request_id]["processing_time"] = processing_time.total_seconds()
-                
-                del self.active_requests[request_id]
+            # Acquire semaphore
+            await self.batch_semaphore.acquire()
+            
+            # Track the request
+            self.active_requests[request_id] = request
+            self.batch_requests.add(request_id)
+            self.total_batch_requests += 1
+            
+            wait_time = time.time() - start_time
+            self.batch_wait_times.append(wait_time)
+            
+            logger.info(f"✅ [{request_id}] Batch GPU acquired in {wait_time:.2f}s "
+                       f"({len(self.batch_requests)}/{self.max_batch_slots} slots used)")
+            
+            return True
             
         except Exception as e:
-            logger.error(f"Error releasing GPU for request {request_id}: {e}")
-    
-    async def _ensure_memory_available(self):
-        """Ensure sufficient GPU memory is available"""
-        if not TORCH_AVAILABLE:
-            return
-        
-        max_attempts = 3
-        for attempt in range(max_attempts):
-            current_usage = self._get_gpu_memory_usage()
-            
-            if current_usage < self.memory_threshold:
-                return  # Memory is available
-            
-            logger.warning(f"GPU memory usage high ({current_usage:.1f}%), performing cleanup (attempt {attempt + 1})")
-            
-            # Aggressive memory cleanup
-            self._cleanup_gpu_memory()
-            await asyncio.sleep(1)  # Give cleanup time to take effect
-            
-            # Check again
-            new_usage = self._get_gpu_memory_usage()
-            if new_usage < current_usage:
-                logger.info(f"Memory cleanup reduced usage from {current_usage:.1f}% to {new_usage:.1f}%")
-                self.memory_stats["cleanups_performed"] += 1
-            
-            if new_usage < self.memory_threshold:
-                return
-        
-        logger.warning(f"Could not free sufficient GPU memory after {max_attempts} attempts")
-    
-    def _cleanup_gpu_memory(self):
-        """Perform comprehensive GPU memory cleanup"""
-        if not TORCH_AVAILABLE:
-            return
-        
+            logger.error(f"❌ [{request_id}] Failed to acquire batch GPU: {e}")
+            return False
+
+    def release_streaming_gpu(self, request_id: str):
+        """Release streaming GPU resources"""
         try:
-            # Clear GPU cache
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-                torch.cuda.synchronize()  # Ensure all operations complete
-            
-            # Force garbage collection
-            gc.collect()
-            
-            # Additional cleanup for potential memory leaks
-            if hasattr(torch.cuda, 'reset_max_memory_allocated'):
-                torch.cuda.reset_max_memory_allocated()
-            
+            if request_id in self.streaming_requests:
+                self.streaming_requests.remove(request_id)
+                self.active_requests.pop(request_id, None)
+                self.streaming_semaphore.release()
+                
+                logger.info(f"🔓 [{request_id}] Streaming GPU released "
+                           f"({len(self.streaming_requests)}/{self.max_streaming_slots} slots used)")
+            else:
+                logger.warning(f"⚠️ [{request_id}] Attempted to release non-existent streaming GPU")
+                
         except Exception as e:
-            logger.warning(f"GPU memory cleanup failed: {e}")
-    
-    def _get_gpu_memory_usage(self) -> float:
-        """Get current GPU memory usage as percentage"""
-        if not TORCH_AVAILABLE or not torch.cuda.is_available():
-            return 0.0
-        
+            logger.error(f"❌ [{request_id}] Error releasing streaming GPU: {e}")
+
+    def release_batch_gpu(self, request_id: str):
+        """Release batch GPU resources"""
         try:
-            allocated = torch.cuda.memory_allocated(0)
-            total = torch.cuda.get_device_properties(0).total_memory
-            return (allocated / total) * 100
-        except Exception:
-            return 0.0
-    
-    def get_gpu_info(self) -> Dict[str, Any]:
-        """Get enhanced GPU status with memory analysis"""
-        gpu_info = {
-            "torch_available": TORCH_AVAILABLE,
-            "gpu_available": False,
-            "gpu_count": 0,
-            "active_requests": len(self.active_requests),
-            "max_concurrent": self.max_concurrent,
-            "requests_in_queue": max(0, len(self.active_requests) - self.max_concurrent),
-            "memory_management": {
-                "threshold_percent": self.memory_threshold * 100,
-                "peak_usage_percent": self.memory_stats["peak_usage"],
-                "cleanups_performed": self.memory_stats["cleanups_performed"]
+            if request_id in self.batch_requests:
+                self.batch_requests.remove(request_id)
+                self.active_requests.pop(request_id, None)
+                self.batch_semaphore.release()
+                
+                logger.info(f"🔓 [{request_id}] Batch GPU released "
+                           f"({len(self.batch_requests)}/{self.max_batch_slots} slots used)")
+            else:
+                logger.warning(f"⚠️ [{request_id}] Attempted to release non-existent batch GPU")
+                
+        except Exception as e:
+            logger.error(f"❌ [{request_id}] Error releasing batch GPU: {e}")
+
+    def get_resource_status(self) -> Dict:
+        """Get current resource utilization status"""
+        return {
+            "streaming": {
+                "active_requests": len(self.streaming_requests),
+                "max_slots": self.max_streaming_slots,
+                "available_slots": self.streaming_semaphore._value,
+                "utilization_pct": (len(self.streaming_requests) / self.max_streaming_slots) * 100,
+                "total_processed": self.total_streaming_requests,
+                "avg_wait_time": sum(self.streaming_wait_times[-10:]) / len(self.streaming_wait_times[-10:]) if self.streaming_wait_times else 0
+            },
+            "batch": {
+                "active_requests": len(self.batch_requests),
+                "max_slots": self.max_batch_slots,
+                "available_slots": self.batch_semaphore._value,
+                "utilization_pct": (len(self.batch_requests) / self.max_batch_slots) * 100,
+                "total_processed": self.total_batch_requests,
+                "avg_wait_time": sum(self.batch_wait_times[-10:]) / len(self.batch_wait_times[-10:]) if self.batch_wait_times else 0
+            },
+            "active_request_ids": {
+                "streaming": list(self.streaming_requests),
+                "batch": list(self.batch_requests)
             }
         }
-        
-        if TORCH_AVAILABLE:
-            try:
-                gpu_info.update({
-                    "gpu_available": torch.cuda.is_available(),
-                    "gpu_count": torch.cuda.device_count(),
-                })
-                
-                if torch.cuda.is_available():
-                    current_memory_usage = self._get_gpu_memory_usage()
-                    
-                    gpu_info.update({
-                        "gpu_memory_total": torch.cuda.get_device_properties(0).total_memory,
-                        "gpu_memory_allocated": torch.cuda.memory_allocated(0),
-                        "gpu_memory_cached": torch.cuda.memory_reserved(0),
-                        "gpu_memory_usage_percent": round(current_memory_usage, 2),
-                        "gpu_name": torch.cuda.get_device_name(0),
-                        "memory_status": (
-                            "critical" if current_memory_usage > 90 else
-                            "high" if current_memory_usage > 75 else
-                            "normal"
-                        )
-                    })
-            except Exception as e:
-                logger.warning(f"Could not get GPU info: {e}")
-                gpu_info["gpu_error"] = str(e)
-        else:
-            gpu_info["gpu_note"] = "PyTorch not installed - GPU monitoring unavailable"
-        
-        return gpu_info
-    
-    def get_system_info(self) -> Dict[str, Any]:
-        """Get enhanced system resource information"""
-        memory = psutil.virtual_memory()
-        
-        return {
-            "cpu_percent": psutil.cpu_percent(interval=1),
-            "memory_percent": memory.percent,
-            "memory_available_gb": round(memory.available / (1024**3), 2),
-            "memory_total_gb": round(memory.total / (1024**3), 2),
-            "memory_used_gb": round(memory.used / (1024**3), 2),
-            "disk_usage_percent": psutil.disk_usage('/').percent,
-            "uptime_seconds": (datetime.now() - self.start_time).total_seconds(),
-            "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
-            "platform": sys.platform,
-            "load_average": psutil.getloadavg() if hasattr(psutil, 'getloadavg') else None,
-            "process_count": len(psutil.pids())
-        }
-    
-    def get_memory_recommendations(self) -> Dict[str, Any]:
-        """Get memory optimization recommendations"""
-        gpu_info = self.get_gpu_info()
-        system_info = self.get_system_info()
-        
-        recommendations = {
-            "gpu_recommendations": [],
-            "system_recommendations": [],
-            "priority": "normal"
-        }
-        
-        # GPU recommendations
-        if gpu_info.get("gpu_available", False):
-            memory_usage = gpu_info.get("gpu_memory_usage_percent", 0)
-            
-            if memory_usage > 90:
-                recommendations["gpu_recommendations"].extend([
-                    "immediate_memory_cleanup_needed",
-                    "consider_reducing_batch_sizes",
-                    "enable_aggressive_memory_management"
-                ])
-                recommendations["priority"] = "critical"
-            elif memory_usage > 75:
-                recommendations["gpu_recommendations"].extend([
-                    "monitor_memory_usage_closely",
-                    "consider_model_optimization"
-                ])
-                recommendations["priority"] = "high"
-            
-            cleanup_ratio = self.memory_stats["cleanups_performed"] / max(1, len(self.active_requests) + self.memory_stats["cleanups_performed"])
-            if cleanup_ratio > 0.3:
-                recommendations["gpu_recommendations"].append("frequent_cleanups_detected_investigate_memory_leaks")
-        
-        # System recommendations
-        if system_info["memory_percent"] > 90:
-            recommendations["system_recommendations"].extend([
-                "system_memory_critical",
-                "restart_service_recommended"
-            ])
-            recommendations["priority"] = "critical"
-        elif system_info["memory_percent"] > 80:
-            recommendations["system_recommendations"].append("monitor_system_memory")
-        
-        return recommendations
-    
-    async def perform_health_check(self) -> Dict[str, Any]:
-        """Perform comprehensive health check"""
-        health_status = {
-            "timestamp": datetime.now().isoformat(),
-            "overall_status": "healthy",
-            "issues": [],
-            "warnings": []
-        }
-        
-        # Check GPU health
-        gpu_info = self.get_gpu_info()
-        if gpu_info.get("gpu_available", False):
-            memory_usage = gpu_info.get("gpu_memory_usage_percent", 0)
-            if memory_usage > 95:
-                health_status["issues"].append("gpu_memory_critical")
-                health_status["overall_status"] = "unhealthy"
-            elif memory_usage > 85:
-                health_status["warnings"].append("gpu_memory_high")
-                if health_status["overall_status"] == "healthy":
-                    health_status["overall_status"] = "degraded"
-        
-        # Check system health
-        system_info = self.get_system_info()
-        if system_info["memory_percent"] > 95:
-            health_status["issues"].append("system_memory_critical")
-            health_status["overall_status"] = "unhealthy"
-        elif system_info["memory_percent"] > 85:
-            health_status["warnings"].append("system_memory_high")
-            if health_status["overall_status"] == "healthy":
-                health_status["overall_status"] = "degraded"
-        
-        # Check queue health
-        if len(self.active_requests) > self.max_concurrent * 3:
-            health_status["warnings"].append("high_queue_length")
-            if health_status["overall_status"] == "healthy":
-                health_status["overall_status"] = "degraded"
-        
-        # Add recommendations
-        health_status["recommendations"] = self.get_memory_recommendations()
-        
-        return health_status
 
-# Global resource manager instance with enhanced capabilities
-resource_manager = GPUResourceManager(max_concurrent=1, memory_threshold=0.85)
+    # Legacy methods for backward compatibility
+    async def acquire_gpu(self, request_id: str) -> bool:
+        """Legacy method - defaults to batch processing"""
+        return await self.acquire_batch_gpu(request_id)
+    
+    def release_gpu(self, request_id: str):
+        """Legacy method - tries to release from both pools"""
+        if request_id in self.batch_requests:
+            self.release_batch_gpu(request_id)
+        elif request_id in self.streaming_requests:
+            self.release_streaming_gpu(request_id)
+        else:
+            logger.warning(f"⚠️ [{request_id}] Request not found in any resource pool")
+    
+    def get_gpu_info(self):
+        """Get GPU information - backward compatibility method"""
+        try:
+            import torch
+            if torch.cuda.is_available():
+                return {
+                    "gpu_available": True,
+                    "gpu_count": torch.cuda.device_count(),
+                    "current_device": torch.cuda.current_device(),
+                    "device_name": torch.cuda.get_device_name(),
+                    "memory_allocated": torch.cuda.memory_allocated(),
+                    "memory_reserved": torch.cuda.memory_reserved(),
+                    "memory_available": torch.cuda.get_device_properties(0).total_memory
+                }
+            else:
+                return {
+                    "gpu_available": False,
+                    "message": "CUDA not available"
+                }
+        except ImportError:
+            return {
+                "gpu_available": False,
+                "message": "PyTorch not available"
+            }
+
+    def get_system_info(self):
+        """Get system information - backward compatibility method"""
+        import psutil
+        import platform
+        
+        memory = psutil.virtual_memory()
+        return {
+            "platform": platform.platform(),
+            "cpu_count": psutil.cpu_count(),
+            "memory_total": memory.total,
+            "memory_available": memory.available,
+            "memory_percent": memory.percent,
+            "disk_usage": psutil.disk_usage('/').percent
+        }
+
+# Create a global instance
+unified_resource_manager = UnifiedResourceManager()
+
+# Maintain backward compatibility
+resource_manager = unified_resource_manager

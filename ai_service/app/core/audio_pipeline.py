@@ -21,7 +21,7 @@ class AudioPipelineService:
     
     def check_pipeline_readiness(self) -> Dict[str, Any]:
         """Check if all required models are ready"""
-        required_models = ["whisper", "ner", "classifier_model", "translator", "summarizer"]
+        required_models = ["whisper", "ner", "classifier_model", "translator", "summarizer","all_qa_distilbert_v1"]
         model_status = {}
         all_ready = True
         
@@ -132,6 +132,8 @@ class AudioPipelineService:
             audio_bytes: bytes, 
             filename: str,
             language: Optional[str] = None,
+            qa_threshold: Optional[int] = None,
+            return_raw: Optional[bool] = False,
             include_translation: bool = True,
             include_insights: bool = True
         ) -> Dict[str, Any]:
@@ -294,11 +296,37 @@ class AudioPipelineService:
                             "error": str(e)
                         }
                 
+
+                async def run_qa_model():
+                    step_start = datetime.now()
+                    try:
+                        qa_model = model_loader.get('all_qa_distilbert_v1')
+
+                        # qa_scores = qa_model.predict(nlp_text)                        
+                        qa_scores = qa_model.predict(nlp_text, qa_threshold, return_raw)
+                        return {
+                            "result":qa_scores,
+                            "duration": (datetime.now() - step_start).total_seconds(),
+                            "status": "completed",
+                            "strategy": "chunked" if nlp_text_length > 1200 else "single_pass",
+                            "confidence": qa_scores.get("confidence", 0) if qa_scores else 0,
+                            "aggregation_applied": nlp_text_length > 1200
+                        }
+                    except Exception as e:
+                        logger.error(f"❌ [{request_id}] QA Scoring failed: {e}")
+                        return {
+                            "result": {},
+                            "duration": (datetime.now() - step_start).total_seconds(),
+                            "status": "failed",
+                            "error": str(e)
+                        }
+
                 # Run all NLP tasks in parallel with enhanced error handling
-                ner_task, classifier_task, summary_task = await asyncio.gather(
+                ner_task, classifier_task, summary_task , qa_scoring_task = await asyncio.gather(
                     run_ner(),
                     run_classifier(), 
                     run_summarization(),
+                    run_qa_model(),
                     return_exceptions=True
                 )
                 
@@ -306,7 +334,13 @@ class AudioPipelineService:
                 entities = ner_task.get("result", {}) if isinstance(ner_task, dict) else {}
                 classification = classifier_task.get("result", {}) if isinstance(classifier_task, dict) else {}
                 summary = summary_task.get("result", "") if isinstance(summary_task, dict) else ""
-                
+                qa_scores = qa_scoring_task.get("result", "") if isinstance(qa_scoring_task, dict) else ""
+                logger.info(f" QA Scores: {qa_scores}")
+
+                # Log task results
+                logger.info(f"🔍 [{request_id}] NER result: {entities}"
+                            f" | Classifier result: {classification} | Summary length: {len(summary)}"
+                            f" | QA Scores: {qa_scores}")
                 # Enhanced processing steps logging
                 processing_steps.update({
                     "ner": {
@@ -334,11 +368,22 @@ class AudioPipelineService:
                         "compression_ratio": summary_task.get("compression_ratio", 0),
                         "text_source": nlp_source,
                         "error": summary_task.get("error") if summary_task.get("status") == "failed" else None
+                    },
+                    "qa_scorring":{
+                        "duration": qa_scoring_task.get("duration", 0),
+                        "status": qa_scoring_task.get("status", "failed"),
+                        "strategy": qa_scoring_task.get("strategy", "unknown"),
+                        "text_source": nlp_source,
+                        "error": qa_scoring_task.get("error") if qa_scoring_task.get("status") == "failed" else None
+
+
                     }
+                    
+                    
                 })
                 
                 # Calculate successful processing ratio
-                successful_steps = sum(1 for step in [ner_task, classifier_task, summary_task] 
+                successful_steps = sum(1 for step in [ner_task, classifier_task, summary_task, qa_scoring_task] 
                                     if isinstance(step, dict) and step.get("status") == "completed")
                 processing_success_rate = (successful_steps / 3) * 100
                 
@@ -352,8 +397,8 @@ class AudioPipelineService:
                     step_start = datetime.now()
                     
                     try:
-                        insights = self._generate_enhanced_insights(
-                            transcript, translation, entities, classification, summary, processing_steps
+                        insights = self._generate_insights(
+                            transcript, translation, entities, classification, summary, qa_scores, processing_steps
                         )
                         processing_steps["insights"] = {
                             "duration": (datetime.now() - step_start).total_seconds(),
@@ -404,11 +449,12 @@ class AudioPipelineService:
                     "entities": entities,
                     "classification": classification,
                     "summary": summary,
+                    "qa_scores": qa_scores,
                     "insights": insights if include_insights else None,
                     "processing_steps": processing_steps,
                     "pipeline_info": {
                         "total_time": total_processing_time,
-                        "models_used": ["whisper"] + (["translator"] if include_translation else []) + ["ner", "classifier", "summarizer"],
+                        "models_used": ["whisper"] + (["translator"] if include_translation else []) + ["ner", "classifier", "summarizer", "qa_scorer"],
                         "text_flow": f"transcript → {nlp_source} → chunked_nlp_models",
                         "chunking_enabled": True,
                         "fallback_strategies_available": True,
@@ -425,7 +471,7 @@ class AudioPipelineService:
                 raise RuntimeError(f"Audio pipeline processing failed: {str(e)}") 
         
     def _generate_insights(self, transcript: str, translation: Optional[str], 
-                          entities: Dict, classification: Dict, summary: str) -> Dict[str, Any]:
+                          entities: Dict, classification: Dict, summary: str, qa_scores: Dict, processing_steps: Dict = None) -> Dict[str, Any]:
         """Generate case insights from all processed data"""
         
         # Extract key information
@@ -470,6 +516,10 @@ class AudioPipelineService:
                 "locations": locations[:3],
                 "organizations": organizations[:3],
                 "key_dates": dates[:3]
+            },
+            "qa_analysis": {
+                "qa_scores": qa_scores,
+                "processing_info": processing_steps.get("qa_scoring", {}) if processing_steps else {}
             }
         }
         

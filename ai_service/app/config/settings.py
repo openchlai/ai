@@ -39,6 +39,21 @@ class Settings(BaseSettings):
     # Redis Configuration
     redis_url: str = "redis://localhost:6379/0"
     redis_task_db: int = 1
+    redis_streaming_db: int = 2
+    redis_streaming_channel_prefix: str = "ai_streaming"
+    
+    enable_streaming: bool = False
+    max_streaming_slots: int = 2
+    max_batch_slots: int = 1  
+    streaming_port: int = 8300
+    streaming_host: str = "0.0.0.0"
+    
+    # Whisper Model Configuration
+    whisper_streaming_model: str = "base"
+    whisper_batch_model: str = "large-v3"
+    
+    # Agent Notification Configuration
+    asterisk_server_ip: str = "192.168.8.13"
     
     # Docker detection
     docker_container: bool = False
@@ -76,17 +91,25 @@ settings = Settings()
 redis_client = None
 redis_task_client = None
 
+def get_redis_url():
+    """Get Redis URL with Docker detection"""
+    if os.getenv("DOCKER_CONTAINER") or os.path.exists("/.dockerenv"):
+        return os.getenv("REDIS_URL", "redis://redis:6379/0")
+    else:
+        return os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
 def initialize_redis():
     """Initialize Redis connections - called explicitly when needed"""
     global redis_client, redis_task_client
     
     try:
-        redis_client = redis.from_url(settings.redis_url)
-        redis_task_client = redis.from_url(f"{settings.redis_url.rsplit('/', 1)[0]}/{settings.redis_task_db}")
+        redis_url = get_redis_url()
+        redis_client = redis.from_url(redis_url)
+        redis_task_client = redis.from_url(f"{redis_url.rsplit('/', 1)[0]}/{settings.redis_task_db}")
         
         # Test connection
         redis_client.ping()
-        print(f"✅ Redis connected: {settings.redis_url}")
+        print(f"✅ Redis connected: {redis_url}")
         return True
         
     except Exception as e:
