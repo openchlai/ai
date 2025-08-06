@@ -1,0 +1,190 @@
+name: AI Data Management
+
+on:
+  push:
+    paths:
+      - 'data/**'
+      - '.github/workflows/data-management.yml'
+  schedule:
+    # Run data validation weekly on Saturdays at 3 AM UTC
+    - cron: '0 3 * * 6'
+  workflow_dispatch:
+    inputs:
+      data_action:
+        description: 'Data management action'
+        required: true
+        default: 'validate'
+        type: choice
+        options:
+          - validate
+          - preprocess
+          - augment
+          - backup
+
+env:
+  PYTHON_VERSION: '3.11'
+  WORKING_DIRECTORY: ./callcenter-ai/ai_service
+  S3_BUCKET: 's3://callcenter-ai-data-prod'
+
+defaults:
+  run:
+    working-directory: ./callcenter-ai/ai_service
+
+jobs:
+  # Data Validation
+  validate-data:
+    name: Validate Datasets
+    runs-on: ubuntu-latest
+    if: github.event.inputs.data_action == 'validate' || github.event.schedule
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas pyarrow great_expectations awscli
+
+      - name: Download datasets from S3
+        run: |
+          echo "📥 Downloading datasets for validation..."
+          mkdir -p data/raw
+          # aws s3 sync ${{ env.S3_BUCKET }}/raw data/raw
+          echo "Sample data file" > data/raw/sample.csv
+
+      - name: Run data validation with Great Expectations
+        run: |
+          echo "🔍 Running data validation..."
+          # great_expectations checkpoint run my_data_checkpoint
+          echo "Data validation completed (mocked)"
+
+      - name: Generate validation report
+        run: |
+          echo "📊 Generating data validation report..."
+          # great_expectations docs build
+          mkdir -p data/reports
+          echo "Data validation report content" > data/reports/validation_report.html
+
+      - name: Upload validation report
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-validation-report
+          path: data/reports/validation_report.html
+          retention-days: 30
+
+  # Data Preprocessing
+  preprocess-data:
+    name: Preprocess Datasets
+    runs-on: ubuntu-latest
+    if: github.event.inputs.data_action == 'preprocess'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas scikit-learn numpy librosa
+
+      - name: Run preprocessing scripts
+        run: |
+          echo "🔄 Preprocessing raw data..."
+          mkdir -p data/processed
+          python -c "
+          import pandas as pd
+          data = {'feature1': [1, 2, 3], 'feature2': [4, 5, 6]}
+          df = pd.DataFrame(data)
+          df.to_csv('data/processed/processed_data.csv', index=False)
+          print('Preprocessing completed')
+          "
+
+      - name: Version and store processed data
+        run: |
+          echo "📦 Versioning processed data..."
+          # Use DVC or similar to version data
+          # dvc add data/processed/processed_data.csv
+          echo "Data versioned (mocked)"
+
+      - name: Upload processed data
+        uses: actions/upload-artifact@v4
+        with:
+          name: processed-data
+          path: data/processed/
+          retention-days: 60
+
+  # Data Augmentation
+  augment-data:
+    name: Augment Datasets
+    runs-on: ubuntu-latest
+    if: github.event.inputs.data_action == 'augment'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas numpy scikit-learn
+
+      - name: Run data augmentation
+        run: |
+          echo "✨ Augmenting data..."
+          mkdir -p data/augmented
+          python -c "
+          import pandas as pd
+          data = {'feature1': [1, 2, 3], 'feature2': [4, 5, 6]}
+          df = pd.DataFrame(data)
+          df_augmented = df * 2
+          df_augmented.to_csv('data/augmented/augmented_data.csv', index=False)
+          print('Data augmentation completed')
+          "
+
+      - name: Upload augmented data
+        uses: actions/upload-artifact@v4
+        with:
+          name: augmented-data
+          path: data/augmented/
+          retention-days: 60
+
+  # Data Backup
+  backup-data:
+    name: Backup Datasets to S3
+    runs-on: ubuntu-latest
+    if: github.event.inputs.data_action == 'backup' || github.event.schedule
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Backup raw data
+        run: |
+          echo "📦 Backing up raw data..."
+          # aws s3 sync data/raw/ ${{ env.S3_BUCKET }}/raw-backups/$(date +%Y-%m-%d)
+          echo "Raw data backup completed (mocked)"
+
+      - name: Backup processed data
+        run: |
+          echo "📦 Backing up processed data..."
+          # aws s3 sync data/processed/ ${{ env.S3_BUCKET }}/processed-backups/$(date +%Y-%m-%d)
+          echo "Processed data backup completed (mocked)"
