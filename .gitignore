@@ -38,6 +38,7 @@ vendor/
 *.pem
 .secret*
 translation_env
+ai_service/test_env/
 
 # Log files and caches
 *.log

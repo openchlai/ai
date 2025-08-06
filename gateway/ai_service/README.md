@@ -2,42 +2,19 @@
 
 ## Overview
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 This Django-based AI service processes **audio files** and generates **insightful, structured summaries** by combining transcription (Whisper), translation (MarianMT), named entity recognition (NER), classification, and summarization. The system supports multilingual voice input and outputs decision-ready summaries with annotations, specifically designed for trauma-informed case management.
-=======
-This Django-based AI service processes an **input audio file** and generates an **insightful, structured summary** by combining transcription (Whisper), translation (NLLB), named entity recognition (NER), classification, and summarization. The system supports multilingual voice input and outputs decision-ready summaries with annotations.
->>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
-=======
-This Django-based AI service processes an **input audio file** and generates an **insightful, structured summary** by combining transcription (Whisper), translation (NLLB), named entity recognition (NER), classification, and summarization. The system supports multilingual voice input and outputs decision-ready summaries with annotations.
->>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
 
 ---
 
 ## 🔁 Pipeline Workflow
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 ![AI Service Flow](ai_service/ai_service_flow.png)
 
 ## 📁 Django Project Structure (Implemented)
-=======
-=======
->>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
-
-
-![AI Service Flow](ai_service/ai_service_flow.png)
-## 📁 Django Project Structure (Recommended)
-<<<<<<< HEAD
->>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
-=======
->>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
 
 ```bash
 ai_service/
 ├── ai_service/                 # Django project config
-<<<<<<< HEAD
-<<<<<<< HEAD
 │   ├── settings.py             # Django settings
 │   ├── celery.py               # Celery configuration
 │   ├── cli.py                  # Command line interface
@@ -63,6 +40,7 @@ ai_service/
 │       ├── highlighter.py      # Text highlighting
 │       ├── path_resolver.py    # Path resolution
 │       └── env.py              # Environment utilities
+├── streaming/                  # Streaming app for real-time processing
 ├── tests/                      # Comprehensive test suite
 │   ├── core/                   # Core functionality tests
 │   └── pipeline/               # Pipeline component tests
@@ -76,35 +54,10 @@ ai_service/
 ├── install.sh                  # Installation script
 ├── manage.py                   # Django management
 └── requirements.txt            # Python dependencies
-=======
-=======
->>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
-│   └── settings.py
-├── core/                       # Core app for pipeline logic
-│   ├── models.py               # Store uploaded files and metadata
-│   ├── views.py                # Handle requests & orchestrate pipeline
-│   ├── serializers.py          # DRF serializers
-│   ├── pipeline/               # Core processing logic
-│   │   ├── transcription.py
-│   │   ├── translation.py
-│   │   ├── ner.py
-│   │   ├── classifier.py
-│   │   └── summarizer.py
-│   └── utils/                  # Helper functions
-│       └── highlighter.py
-├── media/                      # Uploaded audio files
-├── manage.py
-└── requirements.txt
-<<<<<<< HEAD
->>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
-=======
->>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
 ```
 
 ## 🔧 Pipeline Component Descriptions
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 ### 1. Transcription (Whisper) ✅ IMPLEMENTED
 - **Library**: OpenAI Whisper (git+https://github.com/openai/whisper.git)
 - **Features**: 
@@ -171,39 +124,6 @@ ai_service/
   - JSON-structured output with safety planning, psychosocial support, legal protocols
 - **Input**: Summary + entities + classification
 - **Output**: Detailed case insights JSON
-=======
-=======
->>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
-### 1. Transcription (Whisper)
-- Library: openai-whisper or faster-whisper
-- Input: Uploaded audio file
-- Output: Plain text transcript with timestamps
-
-### 2. Translation (NLLB)
-- Library: HuggingFace nllb-200 model
-- Input: Transcript in source language
-- Output: English-translated text
-
-### 3. Named Entity Recognition (NER)
-- Library: spaCy / Transformers
-- Output: Tagged entities (Person, Location, CaseType, etc.)
-
-### 4. Classification
-Models:
-- Case Category (multi-label)
-- Sentiment (positive / neutral / negative)
-- Urgency (low / medium / high)
-
-### 5. Annotation
-- Markup: Uses <mark> or custom spans for entity & category highlights
-
-### 6. Summarization
-- Model: T5 / PEGASUS / GPT
-- Output: 2–3 sentence summary with decisions
-<<<<<<< HEAD
->>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
-=======
->>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
 
 ## 🧪 Example Input & Output
 
@@ -230,15 +150,13 @@ Models:
 }
 ```
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 ## 🧰 Django REST Framework API ✅ IMPLEMENTED
 
-|| Endpoint | Method | Description |
-||----------|--------|-------------|
-|| `/api/upload/` | POST | Upload audio file and start async processing |
-|| `/api/task_status/<task_id>/` | GET | Check Celery task status |
-|| `/health/` | GET | Health check endpoint |
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/upload/` | POST | Upload audio file and start async processing |
+| `/api/task_status/<task_id>/` | GET | Check Celery task status |
+| `/health/` | GET | Health check endpoint |
 
 ### Example Usage
 
@@ -277,29 +195,6 @@ curl http://localhost:8000/api/task_status/abc123-def456-ghi789/
     "annotated": "..."
   }
 }
-=======
-=======
->>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
-## 🧰 Django REST Framework API (Optional)
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| /api/process/ | POST | Accept audio file and return results |
-| /api/status/ | GET | Check pipeline status (async option) |
-
-Example POST /api/process/
-```bash
-curl -F "audio=@voice_note.wav" http://localhost:8000/api/process/
-```
-
-DRF Serializer Snippet
-```python
-class AudioInputSerializer(serializers.Serializer):
-    audio = serializers.FileField()
-<<<<<<< HEAD
->>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
-=======
->>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
 ```
 
 ## 🛡️ Data Protection
@@ -307,8 +202,6 @@ class AudioInputSerializer(serializers.Serializer):
 - Privacy: GDPR & child protection compliant
 - Redaction: Optional entity masking or redaction before storage/export
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 ## 🚀 Deployment Options
 
 ### Option 1: Docker Compose (Recommended) ✅ IMPLEMENTED
@@ -326,6 +219,7 @@ docker compose ps
 **Services:**
 - **web**: Django application (port 8000)
 - **celery**: Background task processing
+- **celery_streaming**: Streaming task processing
 - **redis**: Message broker and cache
 
 ### Option 2: Manual Installation
@@ -343,20 +237,13 @@ python manage.py migrate
 python manage.py runserver
 ```
 
-### Option 3: CLI Tool ✅ IMPLEMENTED
-```bash
-# Install and run via CLI
-pip install -e .
-openchs  # Starts the service automatically
-```
-
 ## 📋 Implementation Status
 
 ### ✅ **COMPLETED**
-- [x] Django project structure
+- [x] Django project structure with ASGI support
 - [x] Database models (AudioFile with JSON insights)
 - [x] REST API endpoints with async processing
-- [x] Celery task queue integration
+- [x] Celery task queue integration with streaming support
 - [x] Whisper transcription with hallucination detection
 - [x] MarianMT translation pipeline
 - [x] spaCy NER with auto-model download
@@ -365,21 +252,18 @@ openchs  # Starts the service automatically
 - [x] Trauma-informed insights generation
 - [x] Text annotation and highlighting
 - [x] Docker deployment configuration
-- [x] Comprehensive test suite
-- [x] WebSocket client for live audio
-- [x] Installation scripts and CLI
-- [x] Model configuration management
+- [x] WebSocket support via Django Channels
+- [x] Streaming audio processing capabilities
 - [x] Health check endpoints
-- [x] Service monitoring scripts
+- [x] Comprehensive error handling
 
 ### 🛠️ **IN PROGRESS**
 - [ ] Performance optimization
-- [ ] Enhanced error handling
-- [ ] Additional model configurations
+- [ ] Enhanced streaming protocols
 - [ ] Advanced audio preprocessing
 
 ### 🗓️ **PLANNED**
-- [ ] Real-time streaming support
+- [ ] Real-time WebSocket streaming interface
 - [ ] Multi-language model support
 - [ ] Advanced analytics dashboard
 - [ ] Integration with external case management systems
@@ -388,6 +272,8 @@ openchs  # Starts the service automatically
 ```txt
 Django==5.2.1
 djangorestframework==3.16.0
+channels==4.1.0
+channels-redis==4.2.0
 celery==5.5.3
 redis==6.2.0
 openai-whisper @ git+https://github.com/openai/whisper.git
@@ -396,13 +282,14 @@ torch==2.2.2
 spacy==3.8.0
 en_core_web_md @ https://github.com/explosion/spacy-models/releases/...
 scikit-learn==1.6.1
-psycopg2-binary==2.9.10
+daphne==4.1.2
 gunicorn==20.1.0
 django-cors-headers==4.7.0
 PyYAML==6.0.2
 pydub==0.25.1
 websockets==15.0.1
 requests==2.32.3
+kombu==5.3.0
 ```
 
 ## 📊 Monitoring & Health Checks
@@ -434,33 +321,5 @@ docker stats
 ## 📝 Additional Documentation
 
 - **System Design**: `docs/audio_pipeline_system_design.md`
-- **Service Status**: `SERVICE_STATUS_CHECK.md`
+- **Streaming Guide**: `STREAMING_GUIDE.md`
 - **Pipeline Components**: `core/pipeline/README.md`
-=======
-=======
->>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
-## ✅ Next Steps
-- [ ] Scaffold Django app & models
-- [ ] Integrate Whisper in transcription.py
-- [ ] Integrate NLLB in translation.py
-- [ ] Add NER, classification, and summarization logic
-- [ ] Expose endpoints via DRF
-- [ ] Implement test suite and async processing (e.g., Celery)
-
-## 📦 Dependencies
-```txt
-Django>=4.2
-djangorestframework
-transformers
-torch
-whisper
-faster-whisper
-fairseq
-spaCy
-scikit-learn
-<<<<<<< HEAD
-```
->>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299
-=======
-```
->>>>>>> 94764d3335752e5b86366a5dff43db0766aa9299

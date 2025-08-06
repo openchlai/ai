@@ -12,6 +12,7 @@
     />
 
     <!-- Main Content -->
+<<<<<<< HEAD
     <div class="main-content">
       <div class="calls-container" :class="{ 'chat-panel-open': showChatPanel }">
         <div class="header">
@@ -44,12 +45,51 @@
           </div>
         <!-- Search and Toggle Row -->
         <div class="search-and-toggle-row">
+=======
+    <div class="main-content chat-main-layout">
+      <div class="chat-list-section">
+        <div class="calls-container" :class="{ 'chat-panel-open': showChatPanel }">
+          <div class="header">
+            <h1 class="page-title">All Chats</h1>
+            <div class="header-actions">
+              <button class="theme-toggle" @click="toggleTheme" id="theme-toggle">
+                <svg v-if="currentTheme === 'dark'" id="moon-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <svg v-else id="sun-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <line x1="12" y1="1" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <line x1="12" y1="21" x2="12" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <line x1="1" y1="12" x2="3" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <line x1="21" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span id="theme-text">{{ currentTheme === 'dark' ? 'Light Mode' : 'Dark Mode' }}</span>
+              </button>
+            </div>
+          </div>
+          <!-- Channel Filters as View Tabs -->
+          <div class="channel-filters" role="tablist" aria-label="Chat Channels">
+            <div v-for="platform in channelFilters" :key="platform.id" :class="['channel-pill', { active: activePlatform === platform.id }]" @click="setActivePlatform(platform.id)" role="tab" :aria-selected="activePlatform === platform.id" tabindex="0">
+              {{ platform.name }}
+            </div>
+          </div>
+          <!-- Search and Toggle Row -->
+          <div class="search-and-toggle-row">
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
             <div class="search-container">
               <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
                 <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
                 <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2"/>
               </svg>
+<<<<<<< HEAD
           <input v-model="searchQuery" type="text" class="search-input" placeholder="Search conversations..." @input="handleSearch" />
+=======
+              <input v-model="searchQuery" type="text" class="search-input" placeholder="Search conversations..." @input="handleSearch" />
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
               <button v-if="searchQuery" class="search-clear" @click="clearSearch">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                   <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
@@ -57,6 +97,7 @@
                 </svg>
               </button>
             </div>
+<<<<<<< HEAD
           <div class="view-toggle-pills" role="tablist" aria-label="View Mode">
             <div class="view-toggle-pill" :class="{ active: activeView === 'timeline' }" @click="activeView = 'timeline'" role="tab" :aria-selected="activeView === 'timeline'" tabindex="0">Timeline</div>
             <div class="view-toggle-pill" :class="{ active: activeView === 'table' }" @click="activeView = 'table'" role="tab" :aria-selected="activeView === 'table'" tabindex="0">Table View</div>
@@ -168,6 +209,118 @@
             </div>
           </div>
         </div>
+=======
+            <div class="view-toggle-pills" role="tablist" aria-label="View Mode">
+              <div class="view-toggle-pill" :class="{ active: activeView === 'timeline' }" @click="activeView = 'timeline'" role="tab" :aria-selected="activeView === 'timeline'" tabindex="0">Timeline</div>
+              <div class="view-toggle-pill" :class="{ active: activeView === 'table' }" @click="activeView = 'table'" role="tab" :aria-selected="activeView === 'table'" tabindex="0">Table View</div>
+            </div>
+          </div>
+          <!-- Timeline View -->
+          <div class="view-container" v-show="activeView === 'timeline'">
+            <div v-if="groupedMessagesByDayWithDummy['Today'].length === 0 && groupedMessagesByDayWithDummy['Yesterday'].length === 0" class="no-chats">No chats to display.</div>
+            <div class="time-section" v-for="(group, label) in groupedMessagesByDayWithDummy" :key="label">
+              <h2 class="time-section-title">{{ label }}</h2>
+              <div class="call-list">
+                <div v-for="message in group" :key="message.id" :class="['call-item', 'glass-card', 'fine-border', { selected: selectedMessageId === message.id }]" @click="openChatPanel(message)">
+                  <div class="call-icon">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                  </div>
+                  <div class="call-details">
+                    <div class="call-type">{{ message.senderName }} ({{ getPlatformShortName(message.platform) }})</div>
+                    <div class="call-time">{{ message.time }}</div>
+                    <div class="call-meta">
+                      <span class="case-link">{{ message.text }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Table View -->
+          <div class="view-container" v-show="activeView === 'table'">
+            <div v-if="filteredChats.length > 0" class="calls-table-container">
+              <table class="calls-table">
+                <thead>
+                  <tr>
+                    <th>Contact</th>
+                    <th>Platform</th>
+                    <th>Last Message</th>
+                    <th>Time</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="contact in filteredChats" :key="contact.id">
+                    <td>{{ contact.senderName }}</td>
+                    <td>{{ getPlatformShortName(contact.platform) }}</td>
+                    <td>{{ contact.text }}</td>
+                    <td>{{ contact.time }}</td>
+                    <td><span :class="['status-badge', contact.status]">{{ contact.status }}</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <tbody v-else>
+              <tr><td colspan="5" class="no-chats">No chats to display.</td></tr>
+            </tbody>
+          </div>
+        </div>
+      </div>
+      <!-- Chat Details Panel (Side Drawer) -->
+      <div class="chat-details-panel" :class="{ active: showChatPanel }">
+        <div class="chat-details-header">
+          <div class="chat-details-avatar">
+            <div class="avatar-circle" :style="{ background: getAvatarColor(selectedMessage?.senderName || '') }">
+              {{ selectedMessage?.senderName?.charAt(0) || '?' }}
+            </div>
+            <div class="chat-details-title">
+              <span class="contact-name">{{ selectedMessage?.senderName || 'Chat Details' }}</span>
+              <span class="chat-channel-badge">{{ getPlatformShortName(selectedMessage?.platform) }}</span>
+              <span class="chat-status">{{ selectedMessage?.status || 'Active' }}</span>
+            </div>
+          </div>
+          <div class="chat-header-actions">
+            <button class="end-chat-btn" @click="endChat" title="End Chat (Archive)">
+              <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <button class="close-details" @click="closeChatPanel" aria-label="Close chat panel">×</button>
+          </div>
+        </div>
+        <div class="chat-details-actions">
+          <button class="chat-action-btn view" @click="viewCase" title="View Case">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/></svg>
+          </button>
+          <button class="chat-action-btn link" @click="linkToCase" title="Link to Case">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 1 7 7l-3 3a5 5 0 0 1-7-7l1-1"/><path d="M14 11a5 5 0 0 0-7-7l-3 3a5 5 0 0 0 7 7l1-1"/></svg>
+          </button>
+          <button class="chat-action-btn create" @click="createCase" title="Create Case">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12h6"/><path d="M12 9v6"/></svg>
+          </button>
+          <button class="chat-action-btn reporter" @click="editReporter" title="Add/Edit Reporter">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M5.5 21a8.38 8.38 0 0 1 13 0"/></svg>
+          </button>
+          <button class="chat-action-btn archive" @click="archiveChat" title="Archive">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M3 7h18"/></svg>
+          </button>
+        </div>
+        <div class="chat-details-content">
+          <div class="chat-thread whatsapp-style">
+            <div v-for="msg in simulatedChatThread" :key="msg.id" :class="['chat-bubble', msg.sender === 'counsellor' ? 'sent' : 'received']">
+              <div class="bubble-text">{{ msg.text }}</div>
+              <div class="bubble-time">{{ msg.time }}</div>
+            </div>
+          </div>
+          <div class="message-input-area chat-panel-input">
+            <div class="input-container">
+              <input v-model="newMessageText" type="text" class="message-input" placeholder="Type a message..." @keypress.enter="sendMessage" />
+              <button v-if="newMessageText.trim()" class="send-btn" @click="sendMessage" title="Send">Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
     </div>
   </div>
 </template>
@@ -242,6 +395,15 @@ const dummyChats = [
   { id: 503, senderName: 'Winnie Naliaka', platform: 'archive', status: 'Closed', date: 'Yesterday', time: '10:00AM', text: 'No further action needed.' },
   { id: 504, senderName: 'Xavier Kiplangat', platform: 'archive', status: 'Closed', date: 'Yesterday', time: '10:30AM', text: 'All done, thanks.' },
   { id: 505, senderName: 'Yvonne Atieno', platform: 'archive', status: 'Closed', date: 'Yesterday', time: '11:00AM', text: 'Appreciate your support.' },
+<<<<<<< HEAD
+=======
+  // CFFS Conversations (children and chatbot)
+  { id: 601, senderName: 'Child', platform: 'cffs', status: 'Active', date: 'Today', time: '10:00AM', text: 'Hello!' },
+  { id: 602, senderName: 'CFFS Chatbot', platform: 'cffs', status: 'Active', date: 'Today', time: '10:01AM', text: 'Hi there! What is your name?' },
+  { id: 603, senderName: 'Child', platform: 'cffs', status: 'Active', date: 'Today', time: '10:02AM', text: 'My name is Amina.' },
+  { id: 604, senderName: 'CFFS Chatbot', platform: 'cffs', status: 'Active', date: 'Today', time: '10:03AM', text: 'How old are you, Amina?' },
+  { id: 605, senderName: 'Child', platform: 'cffs', status: 'Active', date: 'Today', time: '10:04AM', text: 'I am 10 years old. How are you feeling lately?' },
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 ];
 
 // Timeline view: always show all chats grouped by day
@@ -264,15 +426,30 @@ const getPlatformUnreadCount = (platformId) => {
   return dummyChats.filter(chat => chat.platform === platformId && chat.status.toLowerCase() === 'active').length;
 }
 
+<<<<<<< HEAD
 const getPlatformShortName = (platform) => {
+=======
+// Fix getPlatformShortName to be robust:
+const getPlatformShortName = (platform) => {
+  if (!platform || typeof platform !== 'string') return '';
+  const key = platform.toLowerCase();
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
   const shortNames = {
     whatsapp: 'WA',
     sms: 'SMS',
     messenger: 'MSG',
+<<<<<<< HEAD
     telegram: 'TG'
   }
   return shortNames[platform] || platform.toUpperCase()
 }
+=======
+    telegram: 'TG',
+    cffs: 'CFFS'
+  };
+  return shortNames[key] || key.toUpperCase();
+};
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 
 const getAvatarColor = (name) => {
   const colors = [
@@ -433,6 +610,10 @@ const channelFilters = [
   { id: 'sms', name: 'SMS' },
   { id: 'messenger', name: 'Messenger' },
   { id: 'telegram', name: 'Telegram' },
+<<<<<<< HEAD
+=======
+  { id: 'cffs', name: 'CFFS Conversations' },
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
   { id: 'archive', name: 'Archive' }
 ];
 
@@ -800,7 +981,11 @@ function viewCase() {
     background: var(--accent-color);
   }
 
+<<<<<<< HEAD
   /* Chat Details Panel (see previous code for details) */
+=======
+  /* Chat Details Panel (Side Drawer) */
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
   .chat-details-panel {
     position: fixed;
     top: 0;
@@ -1320,4 +1505,56 @@ function viewCase() {
 .end-chat-btn:hover {
   background: #b71c1c;
 }
+<<<<<<< HEAD
+=======
+
+.chat-main-layout {
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+  position: relative;
+}
+
+.chat-list-section {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+}
+
+.chat-details-panel {
+  width: 400px;
+  max-width: 100vw;
+  position: fixed;
+  right: 0;
+  top: 0;
+  height: 100vh;
+  background: var(--content-bg);
+  box-shadow: -4px 0 24px rgba(0,0,0,0.18);
+  border-top-left-radius: 18px;
+  border-bottom-left-radius: 18px;
+  z-index: 1002;
+  display: none;
+  flex-direction: column;
+  transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+
+.chat-details-panel.active {
+  display: flex;
+}
+
+@media (max-width: 900px) {
+  .chat-main-layout {
+    flex-direction: column;
+  }
+  .chat-details-panel {
+    width: 100vw;
+    border-radius: 0;
+    left: 0;
+    right: 0;
+    position: fixed;
+    top: 0;
+    z-index: 1002;
+  }
+}
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 </style>
