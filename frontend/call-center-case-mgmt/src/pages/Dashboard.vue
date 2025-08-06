@@ -731,10 +731,22 @@ function getStatusColor(statusCode) {
     border-color: var(--accent-color) !important;
   }
 
+<<<<<<< HEAD
+  .main-content {
+    flex: 1;
+    margin-left: var(--sidebar-width, 250px);
+    height: 100vh;
+    background-color: var(--background-color);
+    transition: margin-left 0.3s ease, background-color 0.3s;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+=======
   .main-content, .main-scroll-content {
     min-height: 100vh;
     overflow-y: auto;
     flex: 1;
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
   }
 
   .header {
@@ -776,6 +788,10 @@ function getStatusColor(statusCode) {
   }
 
   .main-scroll-content {
+<<<<<<< HEAD
+    flex: 1;
+=======
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
     padding: 20px;
     overflow-y: auto;
     overflow-x: hidden;

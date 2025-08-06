@@ -161,7 +161,7 @@ XLSX.esc = function (v)
 	// but we use fast version
 	v = v.replace ('&','&amp;')
 	v = v.replace ('<', '&lt;'); 
-	v = v.replace ('>', '&gt;'); 
+	v = v.replace(/>/g, '&gt;'); 
 	v = v.replace ("\x00", '');
 	v = v.replace ("\x03", '');
 	v = v.replace ("\x0B", '');

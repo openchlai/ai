@@ -13,6 +13,11 @@ blis==0.7.11
 catalogue==2.0.10
 celery==5.5.3
 certifi==2025.4.26
+<<<<<<< HEAD
+channels==4.0.0
+channels-redis==4.1.0
+=======
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 charset-normalizer==3.4.2
 click==8.1.8
 click-didyoumean==0.3.1
@@ -21,6 +26,10 @@ click-repl==0.3.0
 cloudpathlib==0.21.1
 confection==0.1.5
 cymem==2.0.11
+<<<<<<< HEAD
+daphne==4.0.0
+=======
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 datasets==2.14.4
 dill==0.3.7
 Django==5.2.1
@@ -65,6 +74,10 @@ pillow==11.2.1
 preshed==3.0.9
 prompt_toolkit==3.0.51
 propcache==0.3.1
+<<<<<<< HEAD
+psutil==6.1.1
+=======
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 psycopg2-binary==2.9.10
 pyarrow==20.0.0
 pybind11==2.13.6

@@ -5,11 +5,9 @@ services:
     build:
       context: .
     command: >
-      gunicorn --bind 0.0.0.0:8000
-               --workers=2
-               --threads=4
-               --timeout=300
-               ai_service.wsgi:application
+      daphne -b 0.0.0.0 -p 8000
+              --access-log -
+              ai_service.asgi:application
     ports:
       - "8000:8000"
     volumes:
@@ -17,7 +15,7 @@ services:
       - ./models:/app/models
     environment:
       PYTHONUNBUFFERED: "1"
-      MODEL_CONFIG_PATH: /app/ai_service/config/models.yaml
+      MODEL_CONFIG_PATH: /app/ai_service/config/model_config.yaml
       CHL_AI_MODELS: /app/models
       CHL_AI_DATA: /app/audio_files
       REDIS_HOST: redis
@@ -35,13 +33,13 @@ services:
   celery:
     build:
       context: .
-    command: celery -A ai_service worker --loglevel=info
+    command: celery -A ai_service worker -Q default --loglevel=info
     volumes:
       - .:/app
       - ./models:/app/models
     environment:
       PYTHONUNBUFFERED: "1"
-      MODEL_CONFIG_PATH: /app/ai_service/config/models.yaml
+      MODEL_CONFIG_PATH: /app/ai_service/config/model_config.yaml
       CHL_AI_MODELS: /app/models
       CHL_AI_DATA: /app/audio_files
       REDIS_HOST: redis
@@ -49,6 +47,30 @@ services:
     working_dir: /app
     depends_on:
       - redis
+      - web
+
+  celery_streaming:
+    build:
+      context: .
+    command: celery -A ai_service worker -Q streaming --loglevel=info
+    volumes:
+      - .:/app
+      - ./models:/app/models
+    environment:
+      PYTHONUNBUFFERED: "1"
+      MODEL_CONFIG_PATH: /app/ai_service/config/model_config.yaml
+      CHL_AI_MODELS: /app/models
+      CHL_AI_DATA: /app/audio_files
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      TCP_HOST: 0.0.0.0
+      TCP_PORT: 8300
+    working_dir: /app
+    depends_on:
+      - redis
+      - web
+    ports:
+      - "8300:8300"  # expose if Asterisk connects externally
 
   redis:
     image: redis:7.2-alpine
