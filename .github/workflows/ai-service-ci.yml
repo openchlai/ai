@@ -24,6 +24,11 @@ jobs:
         with:
           python-version: 3.10
 
+      - name: 🔧 Install system dependencies (portaudio for PyAudio)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y portaudio19-dev
+
       - name: 📦 Install dependencies
         working-directory: ai_service
         run: |
