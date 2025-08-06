@@ -75,9 +75,9 @@ class TestActiveCallsEndpoint:
     @pytest.mark.asyncio
     async def test_get_active_calls_success(self, client, mock_call_session_manager, mock_call_session):
         """Test successful retrieval of active calls"""
-        # Mock multiple active sessions
+        # Mock multiple active sessions with async return
         sessions = [mock_call_session, mock_call_session]
-        mock_call_session_manager.get_all_active_sessions.return_value = sessions
+        mock_call_session_manager.get_all_active_sessions = AsyncMock(return_value=sessions)
         
         response = client.get("/api/v1/calls/active")
         
@@ -92,7 +92,7 @@ class TestActiveCallsEndpoint:
     @pytest.mark.asyncio
     async def test_get_active_calls_empty(self, client, mock_call_session_manager):
         """Test retrieval when no active calls exist"""
-        mock_call_session_manager.get_all_active_sessions.return_value = []
+        mock_call_session_manager.get_all_active_sessions = AsyncMock(return_value=[])
         
         response = client.get("/api/v1/calls/active")
         
@@ -117,7 +117,7 @@ class TestActiveCallsEndpoint:
         """Test handling of large number of active calls"""
         # Create many mock sessions
         sessions = [mock_call_session for _ in range(100)]
-        mock_call_session_manager.get_all_active_sessions.return_value = sessions
+        mock_call_session_manager.get_all_active_sessions = AsyncMock(return_value=sessions)
         
         response = client.get("/api/v1/calls/active")
         
@@ -139,7 +139,7 @@ class TestCallStatsEndpoint:
             "success_rate": 0.96,
             "error_rate": 0.04
         }
-        mock_call_session_manager.get_session_stats.return_value = mock_stats
+        mock_call_session_manager.get_session_stats = AsyncMock(return_value=mock_stats)
         
         response = client.get("/api/v1/calls/stats")
         
@@ -162,7 +162,7 @@ class TestCallStatsEndpoint:
             "success_rate": 0.0,
             "error_rate": 0.0
         }
-        mock_call_session_manager.get_session_stats.return_value = mock_stats
+        mock_call_session_manager.get_session_stats = AsyncMock(return_value=mock_stats)
         
         response = client.get("/api/v1/calls/stats")
         
@@ -188,7 +188,7 @@ class TestSpecificCallEndpoint:
     @pytest.mark.asyncio
     async def test_get_call_session_success(self, client, mock_call_session_manager, mock_call_session):
         """Test successful retrieval of specific call session"""
-        mock_call_session_manager.get_session.return_value = mock_call_session
+        mock_call_session_manager.get_session = AsyncMock(return_value=mock_call_session)
         
         response = client.get("/api/v1/calls/test_call_001")
         

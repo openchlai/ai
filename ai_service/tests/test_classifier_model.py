@@ -99,7 +99,7 @@ def test_classify_chunked(mock_classifier_model):
         SimpleNamespace(text="Chunk 2", token_count=60),
     ]
     
-    with patch("app.models.classifier_model.text_chunker.chunk_text", return_value=fake_chunks), \
+    with patch("app.core.text_chunker.text_chunker.chunk_text", return_value=fake_chunks), \
          patch.object(mock_classifier_model, "_classify_single", return_value={
              "main_category": "violence",
              "sub_category": "physical_abuse",
@@ -143,8 +143,8 @@ def test_aggregate_classification_results(mock_classifier_model):
 
 def test_estimate_classification_time(mock_classifier_model):
     fake_chunks = [MagicMock(), MagicMock()]
-    with patch("app.models.classifier_model.text_chunker.chunk_text", return_value=fake_chunks), \
-         patch("app.models.classifier_model.text_chunker.estimate_processing_time", return_value=1.2):
+    with patch("app.core.text_chunker.text_chunker.chunk_text", return_value=fake_chunks), \
+         patch("app.core.text_chunker.text_chunker.estimate_processing_time", return_value=1.2):
         mock_classifier_model.tokenizer.encode.return_value = [1] * 300
         result = mock_classifier_model.estimate_classification_time("Long test text")
         assert result > 0
