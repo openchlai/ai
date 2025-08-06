@@ -11,9 +11,15 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Redis settings - defined early so they can be used in CHANNEL_LAYERS
+REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
+REDIS_PORT = os.getenv('REDIS_PORT', '6379')
+REDIS_URL = f'redis://{REDIS_HOST}:{REDIS_PORT}'
 
 
 # Quick-start development settings - unsuitable for production
@@ -40,8 +46,10 @@ INSTALLED_APPS = [
     
     # my apps
     'core',  # Your core app for audio processing
+    'streaming',  # Your streaming app for audio streaming
     'rest_framework',  # Django REST Framework for API
     'corsheaders',  # For handling CORS
+    'channels',  # Django Channels for WebSocket support
 ]
 
 MIDDLEWARE = [
@@ -73,6 +81,17 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'ai_service.wsgi.application'
+ASGI_APPLICATION = 'ai_service.asgi.application'
+
+# Channels configuration
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [(REDIS_HOST, int(REDIS_PORT))],
+        },
+    },
+}
 
 
 # Database
@@ -129,3 +148,33 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 CORS_ALLOW_ALL_ORIGINS = True
+
+
+
+# Celery settings
+CELERY_BROKER_URL = f'{REDIS_URL}/0'
+CELERY_RESULT_BACKEND = f'{REDIS_URL}/1'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+
+
+# Environment-specific settings
+RUNNING_IN_DOCKER = os.getenv('RUNNING_IN_DOCKER', '0')  # Read from environment
+
+
+from kombu import Queue
+
+# Default queue
+CELERY_TASK_DEFAULT_QUEUE = 'default'
+
+# Define all queues
+CELERY_TASK_QUEUES = (
+    Queue('default'),
+    Queue('streaming'),
+)
+
+# (Optional but safer) Explicit routing rules
+CELERY_TASK_ROUTES = {
+    'core.tasks.process_audio_pipeline': {'queue': 'default'},
+    'core.tasks.process_streaming_audio': {'queue': 'streaming'},
+}
