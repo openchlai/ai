@@ -46,12 +46,10 @@ INSTALLED_APPS = [
     
     # my apps
     'core',  # Your core app for audio processing
+    'streaming',  # Your streaming app for audio streaming
     'rest_framework',  # Django REST Framework for API
     'corsheaders',  # For handling CORS
-<<<<<<< HEAD
     'channels',  # Django Channels for WebSocket support
-=======
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 ]
 
 MIDDLEWARE = [
@@ -83,7 +81,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'ai_service.wsgi.application'
-<<<<<<< HEAD
 ASGI_APPLICATION = 'ai_service.asgi.application'
 
 # Channels configuration
@@ -95,8 +92,6 @@ CHANNEL_LAYERS = {
         },
     },
 }
-=======
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 
 
 # Database
@@ -154,25 +149,28 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOW_ALL_ORIGINS = True
 
-
-<<<<<<< HEAD
-=======
-# Redis settings
-REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
-REDIS_PORT = os.getenv('REDIS_PORT', '6379')
-REDIS_URL = f'redis://{REDIS_HOST}:{REDIS_PORT}'
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
-
 # Celery settings
 CELERY_BROKER_URL = f'{REDIS_URL}/0'
 CELERY_RESULT_BACKEND = f'{REDIS_URL}/1'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 
-
 # Environment-specific settings
-<<<<<<< HEAD
 RUNNING_IN_DOCKER = os.getenv('RUNNING_IN_DOCKER', '0')  # Read from environment
-=======
-RUNNING_IN_DOCKER=1  # Set this in your Dockerfile or compose
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
+
+from kombu import Queue
+
+# Default queue
+CELERY_TASK_DEFAULT_QUEUE = 'default'
+
+# Define all queues
+CELERY_TASK_QUEUES = (
+    Queue('default'),
+    Queue('streaming'),
+)
+
+# (Optional but safer) Explicit routing rules
+CELERY_TASK_ROUTES = {
+    'core.tasks.process_audio_pipeline': {'queue': 'default'},
+    'core.tasks.process_streaming_audio': {'queue': 'streaming'},
+}

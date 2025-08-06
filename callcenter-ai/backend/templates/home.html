@@ -1,0 +1,15 @@
+<!-- templates/home.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Murima - {{ request.tenant.name }}</title>
+</head>
+<body>
+    <h1>Welcome to {{ request.tenant.name }}</h1>
+    <p>Available endpoints:</p>
+    <ul>
+        <li><a href="/api/v1/">/api/v1/</a> - API endpoints</li>
+        <li><a href="/admin/">/admin/</a> - Admin interface</li>
+    </ul>
+</body>
+</html>

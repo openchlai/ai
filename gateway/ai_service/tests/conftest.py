@@ -172,6 +172,9 @@ def mock_logger():
 
 
 # Global settings override
+from django.test import TestCase as DjangoTestCase
+
+# Global settings override
 @override_settings(
     DATABASES={
         'default': {
@@ -183,6 +186,6 @@ def mock_logger():
     USE_TZ=True,
     SECRET_KEY='test-secret-key',
 )
-class TestCase:
-    """Base test case with common settings"""
+class TestCase(DjangoTestCase):
+    """Base test case with common settings""" 
     pass
