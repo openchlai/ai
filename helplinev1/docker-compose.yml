@@ -22,7 +22,7 @@ services:
   php-api:
     build:
       context: ./docker/php
-      dockerfile: docker/php/Dockerfile
+      dockerfile: Dockerfile
     container_name: helpline-php-api
     volumes:
       - ./application:/var/www/html/helpline
@@ -45,7 +45,7 @@ services:
   nginx:
     build:
       context: ./docker/nginx
-      dockerfile: docker/nginx/Dockerfile
+      dockerfile: Dockerfile
     container_name: helpline-nginx
     ports:
       - "8087:80"
