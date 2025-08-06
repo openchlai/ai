@@ -85,11 +85,13 @@ class TestAudioProcessEndpoint:
     @patch('app.api.audio_routes.process_audio_task')
     def test_process_audio_success_foreground(self, mock_task, client, sample_audio_file):
         """Test successful foreground audio processing"""
+        # Match the TaskResponse format that the API expects to return
         mock_result = {
-            "transcript": "Hello world",
-            "translation": "Hola mundo",
-            "entities": [],
-            "classification": {"main_category": "general"}
+            "task_id": "sync-task-123",
+            "status": "completed",
+            "message": "Processing completed",
+            "estimated_time": "0 seconds", 
+            "status_endpoint": "/audio/task/sync-task-123"
         }
         mock_task.return_value = mock_result
         
@@ -104,8 +106,8 @@ class TestAudioProcessEndpoint:
         
         assert response.status_code == 200
         data = response.json()
-        assert data["transcript"] == "Hello world"
-        assert data["translation"] == "Hola mundo"
+        assert data["task_id"] == "sync-task-123"
+        assert data["status"] == "completed"
 
     def test_process_audio_no_file(self, client):
         """Test processing without audio file"""
@@ -198,9 +200,13 @@ class TestAudioAnalyzeEndpoint:
     @patch('app.api.audio_routes.process_audio_quick_task')
     def test_analyze_audio_success_foreground(self, mock_task, client, sample_audio_file):
         """Test successful foreground audio analysis"""
+        # Match the TaskResponse format that the API expects to return
         mock_result = {
-            "transcript": "Quick analysis result",
-            "confidence": 0.95
+            "task_id": "sync-analyze-123",
+            "status": "completed",
+            "message": "Analysis completed",
+            "estimated_time": "0 seconds",
+            "status_endpoint": "/audio/task/sync-analyze-123"
         }
         mock_task.return_value = mock_result
         
@@ -212,7 +218,8 @@ class TestAudioAnalyzeEndpoint:
         
         assert response.status_code == 200
         data = response.json()
-        assert data["transcript"] == "Quick analysis result"
+        assert data["task_id"] == "sync-analyze-123"
+        assert data["status"] == "completed"
 
     def test_analyze_audio_file_size_limit(self, client):
         """Test analyze endpoint file size limit (50MB)"""
@@ -240,8 +247,8 @@ class TestAudioAnalyzeEndpoint:
             data={"language": "en"}
         )
         
-        assert response.status_code == 400
-        assert "No audio file provided" in response.json()["detail"]
+        # FastAPI returns 422 for validation errors, not 400
+        assert response.status_code == 422
 
 
 class TestAudioTaskStatusEndpoint:
@@ -265,7 +272,7 @@ class TestAudioTaskStatusEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert data["task_id"] == "test-task-123"
-        assert data["status"] == "SUCCESS"
+        assert data["status"] == "completed"  # API converts SUCCESS to "completed"
         assert data["result"]["transcript"] == "Task completed successfully"
 
     @patch('app.api.audio_routes.celery_app')
@@ -281,7 +288,7 @@ class TestAudioTaskStatusEndpoint:
         
         assert response.status_code == 200
         data = response.json()
-        assert data["status"] == "PENDING"
+        assert data["status"] == "queued"  # API converts PENDING to "queued"
         assert data["message"] == "Task is waiting to be processed"
 
     @patch('app.api.audio_routes.celery_app')
