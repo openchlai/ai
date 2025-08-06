@@ -1,0 +1,52 @@
+{
+"case_summary": "Friend reported a case of potential psychological distress and possible labor exploitation due to mistreatment by the girl's father, with potential suicidal tendencies.",
+"named_entities": 
+{ 
+	"persons": ["girl", "friend", "father"],    
+	"organizations": ["Human Rights Commission"],    
+	"locations": ["home"],
+	"dates": [],    
+	"contact_information": ["Mr. Mugisha"]  
+},
+"classification": 
+{    
+	"category": ["Psychological distress", "Labor exploitation"],
+	"interventions_needed": ["Immediate psychological support, Legal aid, Long-term counseling, Safe housing"],
+	"priority_level": "high"  
+},  
+"case_management": 
+{    
+	"safety_planning": 
+	{      
+		"immediate_actions": ["Ensure the girl's immediate safety and wellbeing by facilitating hospital discharge and arranging for emergency shelter"],      
+		"long_term_measures": ["Provide ongoing safety planning to help the girl develop strategies to manage potential future crises"]   
+	},    
+	"psychosocial_support": 
+	{      
+		"short_term": ["Immediate crisis intervention, Suicide risk assessment and management", "Psychological counseling"],      
+		"long_term": ["Long-term psychological therapy, Support groups for survivors of abuse"]    
+	},    
+	"legal_protocols": 
+	{      
+		"applicable_laws": ["Child Rights Act, 2009", "Prevention and Prohibition of Trafficking in Persons (TIP) Act, 2016"],
+		"required_documents": ["Police report", "Medical records", "Testimonies from the girl and friends"],      
+		"authorities_to_contact": ["Local Police Station", "Child Welfare Department", "Office of the Ombudsman"]    
+	},    
+	"medical_protocols": 
+	{   
+		"immediate_needs": ["Hospital treatment for injuries", "Mental health care"],      
+		"follow_up_care": ["Regular psychiatric checkups", "Physical rehabilitation as needed"]    
+	}  
+},  
+"risk_assessment": 
+{    
+	"red_flags": ["History of suicidal tendencies", "Threats or physical violence from the father"],
+	"potential_barriers": ["Father's influence and control over communication", "Lack of trust in authorities due to bribery allegations"],
+	"protective_factors": ["Strong friendship support network", "Access to a potential ally (Mr. Mugisha)"]  
+},  
+"cultural_considerations": 
+[    
+	"Culturally sensitive approach should be adopted, considering the Tanzanian context and customs.",    
+	"Empowerment of the survivor should be emphasized throughout the process to promote self-determination and independence."
+]
+}
