@@ -16,19 +16,7 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    services:
-      mysql:
-        image: mysql:5.7
-        env:
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: helpline
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
+    
 
     steps:
       - name: Checkout code
@@ -48,7 +36,7 @@ jobs:
       - name: Run Docker Compose
         working-directory: helplinev1
         run: |
-          docker-compose up -d
+          docker compose up -d
 
       - name: Wait for app to be ready
         run: sleep 20  # Allow containers to settle
