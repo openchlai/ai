@@ -61,7 +61,6 @@ Configuration files for deployment and scaling:
 
 ##  Documentation
 
-<<<<<<< HEAD
 -  [**Project Charter**](aidocs/projectcharter.md) – Defines project objectives.
 -  [**Data Pipeline**](aidocs/datapipeline.md) – Overview of data flow and preprocessing.
 -  [**Architecture**](aidocs/architecture.md) – Technical structure of the system.
@@ -70,16 +69,6 @@ Configuration files for deployment and scaling:
 -  [**Testing Strategy**](aidocs/testingstrategy.md) – Testing approach for AI models.
 -  [**Deployment Guide**](aidocs/deploymentguide.md) – Instructions for deploying the system.
 -  [**Roadmap**](aidocs/roadmap.md) – Planned project enhancements.
-=======
--  [**Project Charter**](/aidocs/projectcharter) – Defines project objectives.
--  [**Data Pipeline**](/aidocs/datapipeline) – Overview of data flow and preprocessing.
--  [**Architecture**](/aidocs/architecture) – Technical structure of the system.
--  [**Security Guide**](/aidocs/securityguide) – Security best practices.
--  [**Governance**](/aidocs/governance) – Project management and leadership.
--  [**Testing Strategy**](/aidocs/testingstrategy) – Testing approach for AI models.
--  [**Deployment Guide**](aidocs/deploymentguide) – Instructions for deploying the system.
--  [**Roadmap**](/aidocs/roadmap) – Planned project enhancements.
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 
 ---
 

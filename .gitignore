@@ -125,7 +125,7 @@ obj/
 .eslintcache
 .stylelintcache
 .temp/
-
+temp*/
 gateway/ai_service/db.sqlite3
 gateway/ai_service/audio/
 
@@ -134,14 +134,27 @@ model/
 models/
 **/models/**
 
-
 *.mp3
 *.wav
 *.aac
 *.m4a
-*.ogg
 *.flac
 *.wma
 *.aiff
 *.mid
 *.midi
+
+
+# Models and checkpoints
+*.ckpt
+*.pth
+*.pt
+*.h5
+*.pkl
+*.joblib
+*.model
+*.pb
+*.onnx
+*.tflite
+*.weights
+*.ckpt.index

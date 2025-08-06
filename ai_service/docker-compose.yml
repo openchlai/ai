@@ -3,11 +3,10 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    ports:
-      - "6379:6379"
     volumes:
       - redis_data:/data
-    command: redis-server --appendonly yes
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -19,6 +18,7 @@ services:
     build: .
     ports:
       - "8123:8123"
+      - "8300:8300"
     depends_on:
       redis:
         condition: service_healthy
@@ -30,9 +30,29 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - REDIS_TASK_DB=1
       - DOCKER_CONTAINER=true
+      - ENABLE_STREAMING=${ENABLE_STREAMING:-false}
+      - MAX_STREAMING_SLOTS=${MAX_STREAMING_SLOTS:-2}
+      - MAX_BATCH_SLOTS=${MAX_BATCH_SLOTS:-1}
+      - STREAMING_PORT=${STREAMING_PORT:-8300}
+      - STREAMING_HOST=${STREAMING_HOST:-0.0.0.0}
+      - REDIS_STREAMING_DB=${REDIS_STREAMING_DB:-2}  # Separate Redis DB for streaming
     volumes:
       - ./logs:/app/logs
       - ./temp:/app/temp
+      - ./logs/streaming:/app/logs/streaming
+    command: >
+      sh -c "
+        echo 'Container Environment Check:';
+        echo 'ENABLE_STREAMING='\"$$ENABLE_STREAMING\";
+        echo 'Command args: enable-streaming='\"$$ENABLE_STREAMING\";
+        if [ \"$$ENABLE_STREAMING\" = \"true\" ]; then
+          echo '🎙️ Starting AI Pipeline with Streaming Support...';
+          python -m app.main --enable-streaming;
+        else
+          echo '📦 Starting AI Pipeline (Batch Only mode)...';
+          python -m app.main;
+        fi
+      "
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8123/health"]

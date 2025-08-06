@@ -34,7 +34,8 @@ RUN echo "listen = 9000" >> /usr/local/etc/php-fpm.d/zz-docker.conf && \
 WORKDIR /var/www/html
 
 # Copy PHP configuration
-COPY docker/php/php.ini /usr/local/etc/php/conf.d/custom.ini
+COPY php.ini /usr/local/etc/php/conf.d/custom.ini
+
 
 # Create data directory and set permissions
 RUN mkdir -p /var/www/html/helpline/data && \

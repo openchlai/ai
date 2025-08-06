@@ -162,9 +162,9 @@ XLSX.esc = function (v)
 	v = v.replace(/&/g, '&amp;');
 	v = v.replace(/</g, '&lt;'); 
 	v = v.replace(/>/g, '&gt;'); 
-	v = v.replace(/\x00/g, '');
-	v = v.replace(/\x03/g, '');
-	v = v.replace(/\x0B/g, '');
+	v = v.replace ("\x00", '');
+	v = v.replace ("\x03", '');
+	v = v.replace ("\x0B", '');
 	return v;
 }
 
