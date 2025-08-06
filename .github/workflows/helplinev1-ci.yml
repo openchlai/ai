@@ -1,5 +1,4 @@
 name: HelplineV1 CI
-
 permissions:
   contents: read
 
@@ -17,24 +16,14 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-
-    services:
-      mysql:
-        image: mysql:5.7
-        env:
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: helpline
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping -h localhost"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
+    
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Build PHP image
         run: |
@@ -47,17 +36,11 @@ jobs:
       - name: Run Docker Compose
         working-directory: helplinev1
         run: |
-          docker compose up -d
+          dockercompose up -d
 
-      - name: Wait for services to be ready
-        run: sleep 20
+      - name: Wait for app to be ready
+        run: sleep 20  # Allow containers to settle
 
-      - name: Check Web Endpoint
+      - name: Check web endpoint
         run: |
           curl -I http://localhost || echo "Web check failed"
-
-      - name: Tear down Docker Compose
-        if: always()
-        working-directory: helplinev1
-        run: |
-          docker compose down
