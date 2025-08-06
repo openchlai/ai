@@ -36,12 +36,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Docker Compose
-        run: |
-          sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-          sudo chmod +x /usr/local/bin/docker-compose
-          docker-compose version
-
       - name: Build PHP image
         run: |
           docker build -t helpline-php helplinev1/docker/php
@@ -53,7 +47,7 @@ jobs:
       - name: Run Docker Compose
         working-directory: helplinev1
         run: |
-          docker-compose up -d
+          docker compose up -d
 
       - name: Wait for services to be ready
         run: sleep 20
@@ -66,4 +60,4 @@ jobs:
         if: always()
         working-directory: helplinev1
         run: |
-          docker-compose down
+          docker compose down
