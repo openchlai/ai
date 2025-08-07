@@ -9,7 +9,7 @@ services:
       MYSQL_USER: helpline_user
       MYSQL_PASSWORD: helpline_pass
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - db_data:/var/lib/mysql
       - ./rest_api/config/uchl.sql:/docker-entrypoint-initdb.d/01-schema.sql
@@ -17,6 +17,12 @@ services:
     restart: unless-stopped
     networks:
       - helpline-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   # PHP-FPM Backend API
   php-api:
@@ -40,6 +46,12 @@ services:
     restart: unless-stopped
     networks:
       - helpline-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   # Nginx Web Server
   nginx:
@@ -60,6 +72,12 @@ services:
     restart: unless-stopped
     networks:
       - helpline-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
 volumes:
   db_data:
