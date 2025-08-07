@@ -79,9 +79,12 @@ services:
     volumes:
       - ./logs:/app/logs
       - ./temp:/app/temp
-    command: celery -A app.celery_app worker --loglevel=info -E --pool=solo
+    command: celery -A app.celery_app worker --loglevel=info -E --pool=solo --hostname=worker@%h
+    # Production command with concurrency and GPU support
+    # command: celery -A app.celery_app worker --loglevel=info -E --pool=prefork --concurrency=2 --hostname=worker@%h
     restart: unless-stopped
     deploy:
+      replicas: 3  # This sets the default number of worker replicas to 3
       resources:
         reservations:
           devices:

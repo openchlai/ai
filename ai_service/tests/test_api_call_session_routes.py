@@ -188,7 +188,7 @@ class TestSpecificCallEndpoint:
     @pytest.mark.asyncio
     async def test_get_call_session_success(self, client, mock_call_session_manager, mock_call_session):
         """Test successful retrieval of specific call session"""
-        mock_call_session_manager.get_session = AsyncMock(return_value=mock_call_session)
+        mock_call_session_manager.get_session.return_value = mock_call_session
         
         response = client.get("/api/v1/calls/test_call_001")
         
@@ -202,7 +202,7 @@ class TestSpecificCallEndpoint:
     @pytest.mark.asyncio
     async def test_get_call_session_not_found(self, client, mock_call_session_manager):
         """Test retrieval of non-existent call session"""
-        mock_call_session_manager.get_session = AsyncMock(return_value=None)
+        mock_call_session_manager.get_session.return_value = None
         
         response = client.get("/api/v1/calls/nonexistent_call")
         
@@ -222,7 +222,7 @@ class TestSpecificCallEndpoint:
     @pytest.mark.asyncio
     async def test_get_call_session_invalid_id(self, client, mock_call_session_manager):
         """Test call with invalid ID format"""
-        mock_call_session_manager.get_session = AsyncMock(return_value=None)
+        mock_call_session_manager.get_session.return_value = None
         
         response = client.get("/api/v1/calls/invalid-id-format-!!!")
         
@@ -234,7 +234,7 @@ class TestCallTranscriptEndpoint:
     @pytest.mark.asyncio
     async def test_get_call_transcript_success(self, client, mock_call_session_manager, mock_call_session):
         """Test successful retrieval of call transcript"""
-        mock_call_session_manager.get_session = AsyncMock(return_value=mock_call_session)
+        mock_call_session_manager.get_session.return_value = mock_call_session
         
         response = client.get("/api/v1/calls/test_call_001/transcript")
         
@@ -250,7 +250,7 @@ class TestCallTranscriptEndpoint:
     @pytest.mark.asyncio
     async def test_get_call_transcript_with_segments(self, client, mock_call_session_manager, mock_call_session):
         """Test transcript retrieval with segments included"""
-        mock_call_session_manager.get_session = AsyncMock(return_value=mock_call_session)
+        mock_call_session_manager.get_session.return_value = mock_call_session
         
         response = client.get("/api/v1/calls/test_call_001/transcript?include_segments=true")
         
@@ -265,7 +265,7 @@ class TestCallTranscriptEndpoint:
     @pytest.mark.asyncio
     async def test_get_call_transcript_not_found(self, client, mock_call_session_manager):
         """Test transcript retrieval for non-existent call"""
-        mock_call_session_manager.get_session = AsyncMock(return_value=None)
+        mock_call_session_manager.get_session.return_value = None
         
         response = client.get("/api/v1/calls/nonexistent/transcript")
         
@@ -275,7 +275,7 @@ class TestCallTranscriptEndpoint:
     @pytest.mark.asyncio
     async def test_get_call_transcript_query_parameters(self, client, mock_call_session_manager, mock_call_session):
         """Test various query parameter combinations"""
-        mock_call_session_manager.get_session = AsyncMock(return_value=mock_call_session)
+        mock_call_session_manager.get_session.return_value = mock_call_session
         
         # Test include_segments=false
         response = client.get("/api/v1/calls/test_call_001/transcript?include_segments=false")
@@ -293,7 +293,7 @@ class TestCallTranscriptEndpoint:
         mock_call_session.cumulative_transcript = ""
         mock_call_session.segment_count = 0
         mock_call_session.transcript_segments = []
-        mock_call_session_manager.get_session = AsyncMock(return_value=mock_call_session)
+        mock_call_session_manager.get_session.return_value = mock_call_session
         
         response = client.get("/api/v1/calls/test_call_001/transcript")
         
@@ -309,7 +309,7 @@ class TestEndCallEndpoint:
     @pytest.mark.asyncio
     async def test_manually_end_call_success(self, client, mock_call_session_manager, mock_call_session):
         """Test successful manual call termination"""
-        mock_call_session_manager.end_session = AsyncMock(return_value=mock_call_session)
+        mock_call_session_manager.end_session.return_value = mock_call_session
         
         response = client.post("/api/v1/calls/test_call_001/end")
         
@@ -324,7 +324,7 @@ class TestEndCallEndpoint:
     @pytest.mark.asyncio
     async def test_manually_end_call_with_reason(self, client, mock_call_session_manager, mock_call_session):
         """Test manual call termination with custom reason"""
-        mock_call_session_manager.end_session = AsyncMock(return_value=mock_call_session)
+        mock_call_session_manager.end_session.return_value = mock_call_session
         
         response = client.post("/api/v1/calls/test_call_001/end?reason=timeout")
         
@@ -335,7 +335,7 @@ class TestEndCallEndpoint:
     @pytest.mark.asyncio
     async def test_manually_end_call_not_found(self, client, mock_call_session_manager):
         """Test ending a non-existent call"""
-        mock_call_session_manager.end_session = AsyncMock(return_value=None)
+        mock_call_session_manager.end_session.return_value = None
         
         response = client.post("/api/v1/calls/nonexistent/end")
         
@@ -355,7 +355,7 @@ class TestEndCallEndpoint:
     @pytest.mark.asyncio
     async def test_manually_end_call_default_reason(self, client, mock_call_session_manager, mock_call_session):
         """Test ending call with default reason"""
-        mock_call_session_manager.end_session = AsyncMock(return_value=mock_call_session)
+        mock_call_session_manager.end_session.return_value = mock_call_session
         
         response = client.post("/api/v1/calls/test_call_001/end")
         
@@ -414,14 +414,14 @@ class TestAgentIntegrationEndpoints:
     @pytest.mark.asyncio
     async def test_agent_notification_health(self, client, mock_agent_service):
         """Test agent notification service health check"""
-        mock_agent_service.get_health_status = AsyncMock(return_value={
+        mock_agent_service.get_health_status.return_value = {
             "status": "healthy",
             "notifications_sent": 150,
             "success_rate": 0.98,
             "last_notification": datetime(2023, 1, 1, 10, 0, 0).isoformat()
-        })
+        }
         
-        response = client.get("/api/v1/calls/agent-service/health")
+        response = client.get("/api/v1/calls/agent/health")
         
         assert response.status_code == 200
         data = response.json()
@@ -432,21 +432,21 @@ class TestAgentIntegrationEndpoints:
     @pytest.mark.asyncio
     async def test_test_agent_notification(self, client, mock_agent_service):
         """Test sending test notification to agent"""
-        mock_agent_service.send_call_start = AsyncMock(return_value=True)
+        mock_agent_service.send_test_notification.return_value = True
         
-        response = client.post("/api/v1/calls/agent-service/test-notification")
+        response = client.post("/api/v1/calls/agent/test")
         
         assert response.status_code == 200
         data = response.json()
         
         assert data["success"] is True
-        assert "Test notification sent successfully" in data["message"]
+        assert "test notification sent" in data["message"]
 
     @pytest.mark.asyncio
     async def test_agent_notification_service_unavailable(self, client):
         """Test endpoints when agent service is unavailable"""
         with patch('app.api.call_session_routes.AGENT_SERVICE_AVAILABLE', False):
-            response = client.get("/api/v1/calls/agent-service/health")
+            response = client.get("/api/v1/calls/agent/health")
             
             assert response.status_code == 503
             assert "Agent notification service not available" in response.json()["detail"]
@@ -458,8 +458,8 @@ class TestCallSessionRouteIntegration:
     async def test_call_lifecycle_integration(self, client, mock_call_session_manager, mock_call_session):
         """Test complete call session lifecycle"""
         # Mock the session to be found in all calls
-        mock_call_session_manager.get_session = AsyncMock(return_value=mock_call_session)
-        mock_call_session_manager.end_session = AsyncMock(return_value=mock_call_session)
+        mock_call_session_manager.get_session.return_value = mock_call_session
+        mock_call_session_manager.end_session.return_value = mock_call_session
         
         # Get call session
         response = client.get("/api/v1/calls/test_call_001")
@@ -478,7 +478,7 @@ class TestCallSessionRouteIntegration:
         """Test concurrent access to same call session"""
         import threading
         
-        mock_call_session_manager.get_session = AsyncMock(return_value=mock_call_session)
+        mock_call_session_manager.get_session.return_value = mock_call_session
         results = []
         
         def access_call():
@@ -524,7 +524,7 @@ class TestCallSessionRouteConfiguration:
     def test_response_model_validation(self, client, mock_call_session_manager, mock_call_session):
         """Test that response models are properly validated"""
         # Mock response that should match the expected model
-        mock_call_session_manager.get_all_active_sessions = AsyncMock(return_value=[mock_call_session])
+        mock_call_session_manager.get_all_active_sessions.return_value = [mock_call_session]
         
         response = client.get("/api/v1/calls/active")
         
@@ -571,7 +571,7 @@ class TestErrorHandlingAcrossEndpoints:
     @pytest.mark.asyncio
     async def test_malformed_call_ids(self, client, mock_call_session_manager):
         """Test handling of malformed call IDs"""
-        mock_call_session_manager.get_session = AsyncMock(return_value=None)
+        mock_call_session_manager.get_session.return_value = None
         
         malformed_ids = ["", "   ", "call/with/slashes", "call with spaces", "call?with=query"]
         
