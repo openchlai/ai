@@ -31,7 +31,7 @@ from core.views import HealthView
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/core/', include('core.urls')),
-    path('health/', HealthView.as_view(), name='health'),
+    path('health/', HealthView.as_view(), name='health-check'),
 ]
 
 if settings.DEBUG:

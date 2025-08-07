@@ -1029,8 +1029,11 @@ body {
   margin: 0 auto;
   max-width: 1400px;
   min-height: 100vh;
+<<<<<<< HEAD
+=======
   overflow-y: auto;
   flex: 1;
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 }
 
 .sidebar.collapsed ~ .main-content {

@@ -3943,6 +3943,8 @@ textarea.form-control {
 .glass-btn.filled:hover {
   background: var(--accent-hover);
 }
+<<<<<<< HEAD
+=======
 
 .ai-preview,
 .ai-preview-content,
@@ -3977,4 +3979,5 @@ textarea.form-control {
   font-size: 14px;
   font-weight: 400;
 }
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 </style>

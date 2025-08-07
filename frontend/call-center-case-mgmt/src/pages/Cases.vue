@@ -61,26 +61,14 @@ image.png
         </div>
 
         <!-- Search -->
-        <div class="search-container" style="position: relative">
+        <div class="search-container" style="position: relative;">
           <span class="search-icon">
-            <svg
-              width="20"
-              height="20"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              viewBox="0 0 24 24"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           </span>
-          <input
+          <input 
             v-model="searchQuery"
-            class="search-input"
-            placeholder="Search by category, assignee, or filer..."
+            class="search-input" 
+            placeholder="Search case by title, assignee, or filer..." 
             type="text"
             @input="handleSearch"
           />
@@ -746,14 +734,11 @@ body {
   margin-right: 15px;
   color: #fff;
   flex-shrink: 0;
-}
-
 .case-icon svg {
   width: 18px;
   height: 18px;
   stroke: #fff;
 }
-
 .case-details {
   flex: 1;
   min-width: 0;
@@ -774,6 +759,55 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+<<<<<<< HEAD
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+.case-id {
+  font-size: 0.95rem;
+  color: #bbb;
+  margin-bottom: 8px;
+}
+.case-priority {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.case-assigned {
+  display: flex;
+  align-items: center;
+  font-weight: 400;
+  color: #888;
+  margin-top: 2px;
+}
+.case-assigned span {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  font-size: 12px;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.priority-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1.5px solid #fff;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.08);
+=======
 
 .case-meta {
   display: flex;
@@ -811,6 +845,7 @@ body {
   vertical-align: middle;
 }
 
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 .priority-dot.high {
   background-color: var(--high-priority);
 }
@@ -820,6 +855,8 @@ body {
 .priority-dot.low {
   background-color: var(--low-priority);
 }
+<<<<<<< HEAD
+=======
 
 .case-date {
   font-size: 12px;
@@ -838,6 +875,7 @@ body {
   color: #bbb;
   margin-bottom: 8px;
 }
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 .case-detail-drawer {
   position: fixed;
   top: 0;
@@ -1110,6 +1148,25 @@ body.high-contrast .priority-dot.low {
 }
 @media (max-width: 900px) {
   .case-item {
+<<<<<<< HEAD
+    padding: 20px 18px 22px 18px;
+    gap: 12px;
+  }
+  .case-icon {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    max-width: 36px;
+    max-height: 36px;
+    margin-right: 12px;
+  }
+  .case-title {
+    font-size: 1rem;
+  }
+  .case-meta {
+    font-size: 12px;
+=======
     padding: 14px 10px;
     max-width: 100vw;
     min-width: 0;
@@ -1126,6 +1183,7 @@ body.high-contrast .priority-dot.low {
     max-width: 100%;
     width: 100%;
     display: block;
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
   }
 }
 @media (max-width: 600px) {
@@ -1149,6 +1207,8 @@ body.high-contrast .priority-dot.low {
   .case-meta {
     font-size: 11px;
   }
+<<<<<<< HEAD
+=======
   .case-meta {
     flex-direction: column;
     align-items: flex-start;
@@ -1162,5 +1222,6 @@ body.high-contrast .priority-dot.low {
     width: 100%;
     display: block;
   }
+>>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 }
 </style>

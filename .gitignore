@@ -38,7 +38,7 @@ vendor/
 *.pem
 .secret*
 translation_env
-
+ai_service/test_env/
 
 # Log files and caches
 *.log
@@ -73,6 +73,43 @@ venv.bak/
 .coverage
 htmlcov/
 
+# Node.js specific
+*.node
+*.npm
+*.npmrc
+
+# PHP specific
+*.php~
+*.phps
+composer.phar
+vendor/
+*.phpunit.result.cache
+
+# C# specific
+*.exe
+*.dll
+*.pdb
+*.cache
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# SQL specific
+*.mdf
+*.ldf
+*.ndf
+*.bak
+*.dbmdl
+*.dbproj.schemaview
+*.pfx
+*.publishsettings
+*.sql
+
 # Java specific
 *.class
 *.jar
@@ -92,14 +129,33 @@ htmlcov/
 gateway/ai_service/db.sqlite3
 gateway/ai_service/audio/
 
+# Models
+model/
+models/
+**/models/**
+
 
 *.mp3
 *.wav
 *.aac
 *.m4a
-*.ogg
 *.flac
 *.wma
 *.aiff
 *.mid
 *.midi
+
+
+# Models and checkpoints
+*.ckpt
+*.pth
+*.pt
+*.h5
+*.pkl
+*.joblib
+*.model
+*.pb
+*.onnx
+*.tflite
+*.weights
+*.ckpt.index
