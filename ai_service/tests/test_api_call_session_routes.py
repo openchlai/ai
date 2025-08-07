@@ -414,14 +414,14 @@ class TestAgentIntegrationEndpoints:
     @pytest.mark.asyncio
     async def test_agent_notification_health(self, client, mock_agent_service):
         """Test agent notification service health check"""
-        mock_agent_service.get_health_status.return_value = {
+        mock_agent_service.get_health_status = AsyncMock(return_value={
             "status": "healthy",
             "notifications_sent": 150,
             "success_rate": 0.98,
             "last_notification": datetime(2023, 1, 1, 10, 0, 0).isoformat()
-        }
+        })
         
-        response = client.get("/api/v1/calls/agent/health")
+        response = client.get("/api/v1/calls/agent-service/health")
         
         assert response.status_code == 200
         data = response.json()
@@ -432,21 +432,21 @@ class TestAgentIntegrationEndpoints:
     @pytest.mark.asyncio
     async def test_test_agent_notification(self, client, mock_agent_service):
         """Test sending test notification to agent"""
-        mock_agent_service.send_test_notification.return_value = True
+        mock_agent_service.send_call_start = AsyncMock(return_value=True)
         
-        response = client.post("/api/v1/calls/agent/test")
+        response = client.post("/api/v1/calls/agent-service/test-notification")
         
         assert response.status_code == 200
         data = response.json()
         
         assert data["success"] is True
-        assert "test notification sent" in data["message"]
+        assert "Test notification sent successfully" in data["message"]
 
     @pytest.mark.asyncio
     async def test_agent_notification_service_unavailable(self, client):
         """Test endpoints when agent service is unavailable"""
         with patch('app.api.call_session_routes.AGENT_SERVICE_AVAILABLE', False):
-            response = client.get("/api/v1/calls/agent/health")
+            response = client.get("/api/v1/calls/agent-service/health")
             
             assert response.status_code == 503
             assert "Agent notification service not available" in response.json()["detail"]
@@ -524,7 +524,7 @@ class TestCallSessionRouteConfiguration:
     def test_response_model_validation(self, client, mock_call_session_manager, mock_call_session):
         """Test that response models are properly validated"""
         # Mock response that should match the expected model
-        mock_call_session_manager.get_all_active_sessions.return_value = [mock_call_session]
+        mock_call_session_manager.get_all_active_sessions = AsyncMock(return_value=[mock_call_session])
         
         response = client.get("/api/v1/calls/active")
         
