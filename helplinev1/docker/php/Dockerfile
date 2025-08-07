@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
     libfreetype6-dev \
     libonig-dev \
     libxml2-dev \
+    git \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) \
         mysqli \
@@ -22,6 +23,12 @@ RUN apt-get update && apt-get install -y \
         xml \
         opcache \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Install PCOV for code coverage
+RUN pecl install pcov && docker-php-ext-enable pcov
 
 # Configure PHP-FPM pool
 RUN echo "listen = 9000" >> /usr/local/etc/php-fpm.d/zz-docker.conf && \
