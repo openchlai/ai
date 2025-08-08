@@ -12,18 +12,23 @@ services:
       - "3307:3306"
     volumes:
       - db_data:/var/lib/mysql
-      - ./rest_api/config/uchl.sql:/docker-entrypoint-initdb.d/01-complete-schema.sql
+      - ./rest_api/config/uchl.sql:/docker-entrypoint-initdb.d/01-schema.sql
       - ./docker/mysql/init-user.sql:/docker-entrypoint-initdb.d/02-init-user.sql
-      - ./docker/mysql/03-missing-columns.sql:/docker-entrypoint-initdb.d/03-missing-columns.sql
     restart: unless-stopped
     networks:
       - helpline-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   # PHP-FPM Backend API
   php-api:
     build:
-      context: .
-      dockerfile: docker/php/Dockerfile
+      context: ./docker/php
+      dockerfile: Dockerfile
     container_name: helpline-php-api
     volumes:
       - ./application:/var/www/html/helpline
@@ -41,15 +46,21 @@ services:
     restart: unless-stopped
     networks:
       - helpline-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   # Nginx Web Server
   nginx:
     build:
-      context: .
-      dockerfile: docker/nginx/Dockerfile
+      context: ./docker/nginx
+      dockerfile: Dockerfile
     container_name: helpline-nginx
     ports:
-      - "8888:80"
+      - "8087:80"
       - "8443:443"
     volumes:
       - ./application:/var/www/html/helpline
@@ -61,6 +72,12 @@ services:
     restart: unless-stopped
     networks:
       - helpline-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
 volumes:
   db_data:

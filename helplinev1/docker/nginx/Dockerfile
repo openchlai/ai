@@ -5,8 +5,9 @@ FROM nginx:alpine
 RUN rm /etc/nginx/conf.d/default.conf
 
 # Copy custom nginx configuration files
-COPY docker/nginx/nginx.conf /etc/nginx/nginx.conf
-COPY docker/nginx/helpline.conf /etc/nginx/conf.d/helpline.conf
+COPY ./nginx.conf /etc/nginx/nginx.conf
+COPY ./helpline.conf /etc/nginx/conf.d/helpline.conf
+
 
 # Create necessary directories
 RUN mkdir -p /var/www/html/helpline
