@@ -185,7 +185,8 @@ class AsteriskTCPServer:
         return {
             "server_running": self.server is not None,
             "active_calls": len(self.active_connections),
+            "active_connections": len(self.active_connections),
             "call_sessions": connection_stats,
-            "transcription_method": "celery_workers_with_session_tracking",
+            "transcription_method": "celery_workers",
             "tcp_port": 8300
         }

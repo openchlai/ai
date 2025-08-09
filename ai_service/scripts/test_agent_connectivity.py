@@ -25,12 +25,12 @@ def test_agent_connectivity():
         print(f"📍 Using server IP from settings: {server_ip}")
     except ImportError:
         # Fallback to environment variable or default
-        server_ip = os.getenv('ASTERISK_SERVER_IP', '192.168.8.13')
+        server_ip = os.getenv('ASTERISK_SERVER_IP', '192.168.10.119')
         print(f"📍 Using server IP from env/default: {server_ip}")
     
     auth_endpoint = f"https://{server_ip}/helpline/api/"
     msg_endpoint = f"https://{server_ip}/helpline/api/msg/"
-    basic_auth = "dGVzdDpwQHNzdzByZA=="  # test:p@ssw0rd
+    basic_auth = "dGVzdDowMDI5MjI0MA=="  # test:p@ssw0rd
     
     # Test 1: Basic connectivity
     print("1️⃣ Testing basic connectivity...")

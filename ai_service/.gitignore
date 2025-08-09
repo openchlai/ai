@@ -54,4 +54,11 @@ db.sqlite3
 
 # Logs
 *.log
+
+# Model weights and binaries (not Python source code)
 /models/
+*.bin
+*.safetensors
+*.onnx
+*.pt
+*.pth

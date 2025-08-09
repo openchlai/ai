@@ -296,10 +296,16 @@ class CallSessionManager:
             # Create synthetic audio filename for the complete call
             filename = f"call_{session.call_id}_{session.start_time.strftime('%Y%m%d_%H%M%S')}.transcript"
             
-            # Convert transcript to bytes (simulate audio processing)
-            transcript_bytes = session.cumulative_transcript.encode('utf-8')
+            # Since we already have the transcript, pass it directly as text
+            # Use a special marker to indicate this is pre-transcribed text
+            transcript_data = {
+                'transcript': session.cumulative_transcript,
+                'is_pretranscribed': True,
+                'language': 'sw'
+            }
+            transcript_bytes = json.dumps(transcript_data).encode('utf-8')
             
-            # Submit to full AI pipeline
+            # Submit to full AI pipeline with pre-transcribed flag
             task = process_audio_task.delay(
                 audio_bytes=transcript_bytes,
                 filename=filename,
@@ -403,6 +409,24 @@ class CallSessionManager:
                                     logger.info(f"💡 [session] Sent insights with full QA analysis for {call_id}")
                                 except Exception as e:
                                     logger.error(f"❌ Failed to send insights for {call_id}: {e}")
+                                    
+                            # Generate and send Mistral GPT insights
+                            try:
+                                from ..services.insights_service import generate_case_insights
+                                
+                                transcript = pipeline_result.get('transcript', '')
+                                if transcript and len(transcript.strip()) > 50:
+                                    logger.info(f"🧠 [session] Generating Mistral GPT insights for call {call_id}")
+                                    gpt_insights = generate_case_insights(transcript)
+                                    
+                                    # Send GPT insights notification
+                                    await agent_notification_service.send_gpt_insights(call_id, gpt_insights)
+                                    logger.info(f"🤖 [session] Sent Mistral GPT insights for {call_id}")
+                                else:
+                                    logger.warning(f"⚠️ [session] Transcript too short for GPT insights generation: {len(transcript)} chars")
+                                    
+                            except Exception as e:
+                                logger.error(f"❌ Failed to generate/send GPT insights for {call_id}: {e}")
                             
                         break
                     else:

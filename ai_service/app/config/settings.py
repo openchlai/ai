@@ -53,7 +53,7 @@ class Settings(BaseSettings):
     whisper_batch_model: str = "large-v3"
     
     # Agent Notification Configuration
-    asterisk_server_ip: str = "192.168.8.13"
+    asterisk_server_ip: str = "192.168.10.119"
     
     # Docker detection
     docker_container: bool = False

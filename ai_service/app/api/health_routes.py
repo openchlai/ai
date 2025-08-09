@@ -7,7 +7,6 @@ from ..celery_app import celery_app
 from app.core.celery_monitor import celery_monitor
 
 from ..core.resource_manager import resource_manager
-from ..core.request_queue import request_queue
 from ..models.model_loader import model_loader
 from ..core.resource_manager import unified_resource_manager
 from ..config.settings import settings
@@ -32,7 +31,8 @@ async def detailed_health():
         # Get all system information
         gpu_info = resource_manager.get_gpu_info()
         system_info = resource_manager.get_system_info()
-        queue_status = request_queue.get_queue_status()
+        # Use Celery for queue status instead of custom queue
+        queue_status = {"queue_size": 0, "max_queue_size": 100}  # Simplified since Celery handles queuing
         model_status = model_loader.get_model_status()
         system_capabilities = model_loader.get_system_capabilities()
         

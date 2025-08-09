@@ -13,8 +13,8 @@ on:
       - '.github/workflows/ci-cd.yml'
   workflow_dispatch: 
   
-  permissions:
-  contents: read
+permissions:
+    contents: read
 
 
 env:

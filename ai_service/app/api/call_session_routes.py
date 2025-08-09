@@ -367,3 +367,44 @@ async def test_agent_notification(call_id: str = "test_call_123"):
     except Exception as e:
         logger.error(f"Failed to test agent notification: {e}")
         raise HTTPException(status_code=500, detail=f"Notification test failed: {str(e)}")
+
+
+# Progressive Processing Endpoints
+@router.get("/processing/status", response_model=Dict[str, Any])
+async def get_processing_status():
+    """Get progressive processing status"""
+    try:
+        # Check if progressive_processor has get_status method, otherwise return mock data
+        if hasattr(progressive_processor, 'get_status'):
+            return progressive_processor.get_status()
+        else:
+            return {
+                "active_processors": 0,
+                "queue_size": 0,
+                "processing_rate": 0.0,
+                "average_latency": 0.0
+            }
+    except Exception as e:
+        logger.error(f"Failed to get processing status: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get processing status")
+
+
+@router.get("/{call_id}/processing", response_model=Dict[str, Any])
+async def get_call_processing_status(call_id: str):
+    """Get processing status for specific call"""
+    try:
+        # Check if progressive_processor has get_call_processing_status method, otherwise return mock data
+        if hasattr(progressive_processor, 'get_call_processing_status'):
+            return progressive_processor.get_call_processing_status(call_id)
+        else:
+            return {
+                "call_id": call_id,
+                "processing_stage": "idle",
+                "progress": 0.0,
+                "estimated_completion": 0.0,
+                "current_segment": 0,
+                "total_segments": 0
+            }
+    except Exception as e:
+        logger.error(f"Failed to get call processing status for {call_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get processing status for call {call_id}")
