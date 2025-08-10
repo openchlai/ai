@@ -36,8 +36,8 @@ class AsteriskTCPServer:
         try:
             packet_count = 0
             while True:
-                # Receive 20ms SLIN (640 bytes)
-                data = await reader.read(640)
+                # Receive 10ms SLIN (320 bytes) - mixed-mono with both parties
+                data = await reader.read(320)
                 packet_count += 1
                 
                 if not data:

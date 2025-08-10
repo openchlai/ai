@@ -5,6 +5,8 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Set
 from dataclasses import dataclass, asdict
 import asyncio
+import aiohttp
+import os
 
 from ..config.settings import redis_task_client
 from .progressive_processor import progressive_processor
@@ -247,7 +249,14 @@ class CallSessionManager:
             except Exception as e:
                 logger.error(f"❌ Failed to finalize progressive analysis for call {call_id}: {e}")
             
-            # Trigger AI pipeline processing if transcript is substantial
+            # Download and process complete audio file from Asterisk server
+            audio_download_task = None
+            try:
+                audio_download_task = await self._download_and_process_audio(session)
+            except Exception as e:
+                logger.error(f"❌ Failed to download/process audio for {call_id}: {e}")
+
+            # Trigger AI pipeline processing if transcript is substantial (fallback)
             ai_task = None
             if len(session.cumulative_transcript.strip()) > 50:  # Minimum threshold
                 ai_task = await self._trigger_ai_pipeline(session)
@@ -779,6 +788,90 @@ class CallSessionManager:
         
         if inactive_sessions:
             logger.info(f"🧹 [session] Cleaned up {len(inactive_sessions)} inactive sessions")
+    
+    async def _download_and_process_audio(self, session: CallSession):
+        """Download complete audio file from Asterisk server and process through full pipeline"""
+        try:
+            # Get Asterisk server IP from connection info or environment
+            asterisk_server_ip = session.connection_info.get('asterisk_server_ip')
+            if not asterisk_server_ip:
+                # Fallback to environment variable or connection client address
+                asterisk_server_ip = os.getenv('ASTERISK_SERVER_IP', 
+                                             session.connection_info.get('client_addr', ['localhost'])[0])
+            
+            # Construct audio download URL
+            audio_url = f"https://{asterisk_server_ip}/helpline/api/calls/{session.call_id}?file=wav"
+            
+            logger.info(f"📥 [download] Downloading audio file for call {session.call_id} from {audio_url}")
+            
+            # Download audio file
+            async with aiohttp.ClientSession() as session_http:
+                async with session_http.get(audio_url, timeout=aiohttp.ClientTimeout(total=60)) as response:
+                    if response.status == 200:
+                        audio_bytes = await response.read()
+                        file_size_mb = len(audio_bytes) / (1024 * 1024)
+                        
+                        logger.info(f"✅ [download] Downloaded {file_size_mb:.2f}MB audio file for call {session.call_id}")
+                        
+                        # Submit to full audio processing pipeline (/audio/process equivalent)
+                        return await self._process_downloaded_audio(session, audio_bytes, audio_url)
+                        
+                    else:
+                        logger.warning(f"⚠️ [download] Audio download failed for call {session.call_id}: HTTP {response.status}")
+                        return None
+                        
+        except asyncio.TimeoutError:
+            logger.error(f"❌ [download] Audio download timeout for call {session.call_id}")
+            return None
+        except Exception as e:
+            logger.error(f"❌ [download] Audio download failed for call {session.call_id}: {e}")
+            return None
+    
+    async def _process_downloaded_audio(self, session: CallSession, audio_bytes: bytes, audio_url: str):
+        """Process downloaded audio through the full /audio/process pipeline"""
+        try:
+            from ..tasks.audio_tasks import process_audio_task
+            
+            # Create filename from call information
+            filename = f"call_{session.call_id}_{session.start_time.strftime('%Y%m%d_%H%M%S')}.wav"
+            
+            logger.info(f"🎵 [pipeline] Processing downloaded audio for call {session.call_id} ({len(audio_bytes)} bytes)")
+            
+            # Submit to full audio processing pipeline (same as /audio/process endpoint)
+            task = process_audio_task.delay(
+                audio_bytes=audio_bytes,
+                filename=filename,
+                language="sw",  # Could be configurable
+                include_translation=True,
+                include_insights=True
+            )
+            
+            # Store task reference in session metadata for tracking
+            session_key = f"call_session:{session.call_id}"
+            audio_pipeline_info = {
+                'audio_task_id': task.id,
+                'audio_url': audio_url,
+                'audio_size_bytes': len(audio_bytes),
+                'submitted_at': datetime.now().isoformat(),
+                'status': 'processing',
+                'processing_type': 'full_audio_analysis'
+            }
+            
+            if self.redis_client:
+                self.redis_client.hset(
+                    session_key, 
+                    'audio_pipeline', 
+                    json.dumps(audio_pipeline_info)
+                )
+            
+            logger.info(f"🤖 [pipeline] Submitted full audio processing for call {session.call_id}, task: {task.id}")
+            logger.info(f"📊 [pipeline] Audio analysis will provide higher quality results than streaming transcripts")
+            
+            return task
+            
+        except Exception as e:
+            logger.error(f"❌ [pipeline] Failed to process downloaded audio for call {session.call_id}: {e}")
+            return None
 
 # Global session manager instance
 call_session_manager = CallSessionManager()

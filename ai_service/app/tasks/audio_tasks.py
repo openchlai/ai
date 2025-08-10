@@ -908,6 +908,7 @@ def process_streaming_audio_task(
 ):
     """
     Process real-time streaming audio chunks from Asterisk with call session tracking
+    Mixed-mono audio (both caller and agent voices) in 5-second windows from 10ms chunks
     Quick transcription only for low latency, adds to cumulative transcript
     """
     

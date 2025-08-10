@@ -3,10 +3,12 @@
 ## Overview
 This document describes how to analyze and extract call IDs from Asterisk TCP audio streams.
 
-## Current Implementation
-Your TCP server currently handles a simple UID protocol:
+## Current Implementation (Updated)
+Your TCP server handles a simple UID protocol:
 - Asterisk sends a UID string terminated by `\r` (CR, byte 13)
-- After the UID, raw PCM audio data follows (640 bytes per 20ms chunk)
+- After the UID, raw PCM audio data follows (320 bytes per 10ms chunk)
+- Audio format: 16kHz, 16-bit signed linear, mixed-mono (both parties on one channel)
+- No WAV header - raw PCM samples only
 
 ## Header Inspection Setup
 
@@ -60,7 +62,9 @@ print(format_analysis_report(stream_analysis))
 [UID_STRING]\r[AUDIO_DATA][AUDIO_DATA]...
 ```
 - UID terminated by CR (0x0D)
-- Followed by continuous 640-byte audio chunks
+- Followed by continuous 320-byte audio chunks (10ms each)
+- Each chunk contains 160 samples (160 int16 values = 320 bytes)
+- Mixed-mono: both caller and agent voices combined in one channel
 
 ### Format 2: Structured Headers (If Enhanced)
 ```
@@ -155,6 +159,27 @@ print('Call IDs found:', analysis['potential_call_ids'])
 "
 ```
 
+## Audio File Download Integration
+
+After call completion, the system now downloads the complete audio file for comprehensive analysis:
+
+### Download URL Format
+```
+https://{asterisk_server_ip}/helpline/api/calls/{call_id}?file=wav
+```
+
+### Integration Process
+1. **Real-time processing**: 10ms chunks processed for immediate transcription
+2. **Call end**: Complete audio file downloaded from Asterisk server
+3. **Full pipeline**: Downloaded audio processed through `/audio/process` equivalent
+4. **Enhanced results**: Better quality analysis from complete audio file
+
+### Benefits
+- **Dual processing**: Real-time + comprehensive analysis
+- **Higher accuracy**: Full audio provides better transcription quality  
+- **Complete context**: Both parties' audio for better insights
+- **Fallback capability**: Streaming transcripts as backup
+
 ## Next Steps
 
 1. **Capture Real Headers**: Run a test call and examine the header logs
@@ -162,6 +187,8 @@ print('Call IDs found:', analysis['potential_call_ids'])
 3. **Extract Call ID**: Implement extraction logic based on discovered pattern
 4. **Update Tracking**: Modify connection management to use call IDs
 5. **Test Multiple Calls**: Verify different calls get different IDs
+6. **Test Audio Download**: Verify complete audio files are downloaded and processed
+7. **Configure Asterisk Server**: Set ASTERISK_SERVER_IP environment variable
 
 ## Troubleshooting
 
