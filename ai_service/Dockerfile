@@ -4,7 +4,7 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Install system dependencies (including curl for health checks and audio libraries)
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     build-essential \
     gcc \
@@ -14,7 +14,8 @@ RUN apt-get update && apt-get install -y \
     libsndfile1 \
     libsox-fmt-all \
     sox \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /root/.cache
 
 # Create non-root user
 RUN groupadd -g 1000 appuser && useradd -r -u 1000 -g appuser appuser
@@ -28,7 +29,9 @@ COPY requirements.txt .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
+    && pip install --no-cache-dir -r requirements.txt \
+    && pip cache purge \
+    && rm -rf /root/.cache/pip
 
 # Copy models into container (container-baked approach)
 COPY models/ /app/models/
