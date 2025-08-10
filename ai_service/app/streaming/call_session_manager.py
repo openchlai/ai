@@ -867,11 +867,137 @@ class CallSessionManager:
             logger.info(f"🤖 [pipeline] Submitted full audio processing for call {session.call_id}, task: {task.id}")
             logger.info(f"📊 [pipeline] Audio analysis will provide higher quality results than streaming transcripts")
             
+            # Wait for processing completion and generate enhanced insights
+            if AGENT_NOTIFICATIONS_ENABLED:
+                asyncio.create_task(self._wait_and_generate_enhanced_insights(
+                    session, task, audio_bytes, audio_url
+                ))
+            
             return task
             
         except Exception as e:
             logger.error(f"❌ [pipeline] Failed to process downloaded audio for call {session.call_id}: {e}")
             return None
+    
+    async def _wait_and_generate_enhanced_insights(self, session: CallSession, audio_task, audio_bytes: bytes, audio_url: str):
+        """Wait for audio processing completion and generate enhanced Mistral insights"""
+        try:
+            from celery.result import AsyncResult
+            from ..services.insights_service import generate_enhanced_audio_insights
+            
+            call_id = session.call_id
+            logger.info(f"🔍 [enhanced] Waiting for audio processing completion for call {call_id}, task: {audio_task.id}")
+            
+            # Wait for audio task completion with timeout
+            timeout_seconds = 600  # 10 minutes timeout for audio processing
+            start_time = datetime.now()
+            
+            while (datetime.now() - start_time).total_seconds() < timeout_seconds:
+                # Check task status
+                result = AsyncResult(audio_task.id)
+                
+                if result.ready():
+                    if result.successful():
+                        # Audio processing completed successfully
+                        audio_result = result.result
+                        logger.info(f"✅ [enhanced] Audio processing completed for call {call_id}")
+                        
+                        # Extract results from the audio task output
+                        if isinstance(audio_result, dict) and 'result' in audio_result:
+                            pipeline_result = audio_result['result']
+                            
+                            # Get enhanced transcript and other data
+                            enhanced_transcript = pipeline_result.get('transcript', '')
+                            translation = pipeline_result.get('translation', '')
+                            entities = pipeline_result.get('entities', {})
+                            classification = pipeline_result.get('classification', {})
+                            qa_scores = pipeline_result.get('qa_scores', {})
+                            summary = pipeline_result.get('summary', '')
+                            
+                            # Audio quality information
+                            audio_quality_info = {
+                                'file_size_mb': round(len(audio_bytes) / (1024 * 1024), 2),
+                                'audio_url': audio_url,
+                                'processing_time': pipeline_result.get('pipeline_info', {}).get('total_time', 0),
+                                'format': 'mixed_mono_16khz_16bit'
+                            }
+                            
+                            # Generate enhanced insights using original streaming transcript vs enhanced
+                            original_transcript = session.cumulative_transcript
+                            
+                            if enhanced_transcript and len(enhanced_transcript.strip()) > 50:
+                                logger.info(f"🧠 [enhanced] Generating enhanced Mistral insights for call {call_id}")
+                                logger.info(f"📊 [enhanced] Original: {len(original_transcript)} chars, Enhanced: {len(enhanced_transcript)} chars")
+                                
+                                try:
+                                    enhanced_insights = generate_enhanced_audio_insights(
+                                        original_transcript=original_transcript,
+                                        enhanced_transcript=enhanced_transcript,
+                                        translation=translation,
+                                        entities=entities,
+                                        classification=classification,
+                                        qa_scores=qa_scores,
+                                        summary=summary,
+                                        audio_quality_info=audio_quality_info
+                                    )
+                                    
+                                    # Send enhanced insights notification to agent
+                                    await self._send_enhanced_insights_notification(call_id, enhanced_insights, audio_quality_info)
+                                    
+                                    logger.info(f"🤖 [enhanced] Sent comprehensive enhanced insights for call {call_id}")
+                                    
+                                except Exception as insights_error:
+                                    logger.error(f"❌ Failed to generate enhanced insights for {call_id}: {insights_error}")
+                            else:
+                                logger.warning(f"⚠️ [enhanced] Enhanced transcript too short for insights generation: {len(enhanced_transcript)} chars")
+                        
+                        break
+                    else:
+                        # Audio processing failed
+                        logger.error(f"❌ [enhanced] Audio processing failed for call {call_id}: {result.info}")
+                        break
+                
+                # Wait before checking again
+                await asyncio.sleep(5)  # Check every 5 seconds
+            else:
+                # Timeout occurred
+                logger.warning(f"⏰ [enhanced] Audio processing timeout for call {call_id} after {timeout_seconds}s")
+                
+        except Exception as e:
+            logger.error(f"❌ Failed to wait for enhanced insights for {call_id}: {e}")
+    
+    async def _send_enhanced_insights_notification(self, call_id: str, enhanced_insights: dict, audio_quality_info: dict):
+        """Send enhanced insights notification to agent system"""
+        try:
+            # Create enhanced insights payload
+            payload = {
+                "update_type": "enhanced_audio_insights",
+                "call_id": call_id,
+                "timestamp": datetime.now().isoformat(),
+                "insights": enhanced_insights,
+                "audio_quality": audio_quality_info,
+                "insight_summary": {
+                    "analysis_type": enhanced_insights.get("analysis_metadata", {}).get("analysis_type", "enhanced_audio_based"),
+                    "confidence_level": enhanced_insights.get("analysis_metadata", {}).get("confidence_level", "high"),
+                    "quality_improvement": enhanced_insights.get("analysis_metadata", {}).get("transcript_quality_improvement", "unknown"),
+                    "complexity_level": enhanced_insights.get("advanced_classification", {}).get("complexity_level", "unknown"),
+                    "intervention_urgency": enhanced_insights.get("advanced_classification", {}).get("intervention_urgency", "unknown"),
+                    "risk_levels": {
+                        "suicide_risk": enhanced_insights.get("comprehensive_risk_assessment", {}).get("suicide_risk_level", "unknown"),
+                        "violence_risk": enhanced_insights.get("comprehensive_risk_assessment", {}).get("violence_risk_level", "unknown")
+                    }
+                },
+                "processing_complete": True,
+                "supersedes_streaming_insights": True
+            }
+            
+            # Use existing notification infrastructure
+            from ..services.agent_notification_service import UpdateType
+            return await agent_notification_service._send_notification(call_id, UpdateType.CALL_INSIGHTS, payload)
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to send enhanced insights notification for {call_id}: {e}")
+            return False
 
 # Global session manager instance
 call_session_manager = CallSessionManager()
