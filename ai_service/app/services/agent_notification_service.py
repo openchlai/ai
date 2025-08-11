@@ -18,9 +18,11 @@ class UpdateType(Enum):
     TRANSLATION_UPDATE = "translation_update"
     ENTITY_UPDATE = "entity_update"
     CLASSIFICATION_UPDATE = "classification_update"
+    QA_UPDATE = "qa_update"
     CALL_END = "call_end"
     CALL_SUMMARY = "call_summary"
     CALL_INSIGHTS = "call_insights"
+    GPT_INSIGHTS = "gpt_insights"
     ERROR = "error"
 
 class AgentNotificationService:
@@ -32,8 +34,8 @@ class AgentNotificationService:
         
         # Configuration
         self.asterisk_server_ip = settings.asterisk_server_ip
-        self.endpoint_url = f"https://{self.asterisk_server_ip}/helpline/api/msg/"
-        self.auth_endpoint_url = f"https://{self.asterisk_server_ip}/helpline/api/"
+        self.endpoint_url = f"https://192.168.10.3/hh5aug2025/api/msg/"
+        self.auth_endpoint_url = f"https://192.168.10.3/hh5aug2025/api/"
         self.basic_auth = "dGVzdDpwQHNzdzByZA=="  # Base64: test:p@ssw0rd
         
         # Dynamic token management
@@ -301,6 +303,22 @@ class AgentNotificationService:
         
         return await self._send_notification(call_id, UpdateType.CLASSIFICATION_UPDATE, payload)
     
+    async def send_qa_update(self, call_id: str, qa_scores: Dict[str, Any], 
+                           processing_info: Dict[str, Any] = None) -> bool:
+        """Send QA analysis results to agent"""
+        payload = {
+            "update_type": "qa_update",
+            "call_id": call_id,
+            "timestamp": datetime.now().isoformat(),
+            "qa_scores": qa_scores,
+            "overall_qa_score": self._extract_overall_qa_score(qa_scores),
+            "performance_grade": self._get_performance_grade(self._extract_overall_qa_score(qa_scores)),
+            "processing_info": processing_info or {},
+            "status": "completed"
+        }
+        
+        return await self._send_notification(call_id, UpdateType.QA_UPDATE, payload)
+    
     async def send_call_end(self, call_id: str, reason: str, final_stats: Dict[str, Any]) -> bool:
         """Notify agent that call has ended"""
         payload = {
@@ -326,6 +344,18 @@ class AgentNotificationService:
         }
         
         return await self._send_notification(call_id, UpdateType.CALL_SUMMARY, payload)
+    
+    async def send_gpt_insights(self, call_id: str, insights: Dict[str, Any]) -> bool:
+        """Send GPT-generated case insights to agent"""
+        payload = {
+            "update_type": "gpt_insights",
+            "call_id": call_id,
+            "timestamp": datetime.now().isoformat(),
+            "insights": insights,
+            "processing_complete": True
+        }
+        
+        return await self._send_notification(call_id, UpdateType.GPT_INSIGHTS, payload)
     
     async def send_error_notification(self, call_id: str, error_type: str, 
                                     error_message: str, error_context: Dict[str, Any] = None) -> bool:
@@ -392,6 +422,52 @@ class AgentNotificationService:
                 "endpoint": self.endpoint_url,
                 "auth_endpoint": self.auth_endpoint_url
             }
+    
+    def _extract_overall_qa_score(self, qa_scores: Dict[str, Any]) -> float:
+        """Extract overall QA score from QA results"""
+        if not qa_scores:
+            return 0.0
+            
+        # If it's already processed with overall_qa_score
+        if isinstance(qa_scores, dict) and 'overall_qa_score' in qa_scores:
+            return float(qa_scores['overall_qa_score'])
+            
+        # Calculate from detailed scores
+        if isinstance(qa_scores, dict) and 'detailed_scores' in qa_scores:
+            detailed = qa_scores['detailed_scores']
+            if isinstance(detailed, dict):
+                scores = []
+                for category_data in detailed.values():
+                    if isinstance(category_data, dict) and 'score_percent' in category_data:
+                        scores.append(category_data['score_percent'])
+                return sum(scores) / len(scores) if scores else 0.0
+                
+        # Calculate from raw QA model output format
+        if isinstance(qa_scores, dict):
+            category_scores = []
+            for category, submetrics in qa_scores.items():
+                if isinstance(submetrics, list):
+                    # Count passed submetrics
+                    passed = sum(1 for sm in submetrics if sm.get('prediction', False))
+                    total = len(submetrics)
+                    if total > 0:
+                        category_scores.append((passed / total) * 100)
+            return sum(category_scores) / len(category_scores) if category_scores else 0.0
+            
+        return 0.0
+    
+    def _get_performance_grade(self, score: float) -> str:
+        """Convert QA score to performance grade"""
+        if score >= 90:
+            return "Excellent"
+        elif score >= 80:
+            return "Good"
+        elif score >= 70:
+            return "Average" 
+        elif score >= 60:
+            return "Below Average"
+        else:
+            return "Poor"
 
 # Global service instance
 agent_notification_service = AgentNotificationService()

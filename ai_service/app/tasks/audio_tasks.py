@@ -307,6 +307,22 @@ def _process_audio_sync_worker(
     processing_steps = {}
     task_id = task_instance.request.id
     
+    # Check if this is pre-transcribed text data
+    transcript = None
+    is_pretranscribed = False
+    try:
+        # Try to decode as JSON to check for pre-transcribed flag
+        data_str = audio_bytes.decode('utf-8')
+        transcript_data = json.loads(data_str)
+        if isinstance(transcript_data, dict) and transcript_data.get('is_pretranscribed'):
+            transcript = transcript_data.get('transcript', '')
+            is_pretranscribed = True
+            language = transcript_data.get('language', language)
+            logger.info(f"🎯 Processing pre-transcribed text: {len(transcript)} characters")
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        # Not pre-transcribed data, continue with normal audio processing
+        pass
+    
     # Initialize streaming (sync wrapper for async streaming service)
     import asyncio
     
@@ -357,33 +373,44 @@ def _process_audio_sync_worker(
         state="PROCESSING",
         meta={"step": "transcription", "progress": 10}
     )
-    publish_update("transcription", 10, "Starting audio transcription...")
     
     step_start = datetime.now()
-    whisper_model = models.models.get("whisper")
-    if not whisper_model:
-        publish_update("transcription_error", 10, "Whisper model not available")
-        raise RuntimeError("Whisper model not available in worker")
     
-    # Check if model supports streaming transcription
-    if hasattr(whisper_model, 'transcribe_streaming'):
-        # Stream partial transcription results
-        transcript = ""
-        for partial_transcript, progress_pct in whisper_model.transcribe_streaming(audio_bytes, language=language):
-            transcript = partial_transcript
-            stream_progress = 10 + int(progress_pct * 0.2)  # 10-30% range
-            publish_update(
-                "transcription", 
-                stream_progress, 
-                f"Transcribing... ({progress_pct:.1f}%)",
-                partial_result={"transcript": transcript, "is_final": False}
-            )
+    if is_pretranscribed:
+        # Skip transcription for pre-transcribed text
+        publish_update("transcription", 30, "Using pre-transcribed text...")
+        transcription_duration = 0.01  # Minimal time for pre-transcribed
+        logger.info(f"✅ Using existing transcript: {len(transcript)} characters")
     else:
-        # Fallback to regular transcription
-        transcript = whisper_model.transcribe_audio_bytes(audio_bytes, language=language)
+        # Normal audio transcription
+        publish_update("transcription", 10, "Starting audio transcription...")
+        
+        whisper_model = models.models.get("whisper")
+        if not whisper_model:
+            publish_update("transcription_error", 10, "Whisper model not available")
+            raise RuntimeError("Whisper model not available in worker")
+        
+        # Check if model supports streaming transcription
+        if hasattr(whisper_model, 'transcribe_streaming'):
+            # Stream partial transcription results
+            transcript = ""
+            for partial_transcript, progress_pct in whisper_model.transcribe_streaming(audio_bytes, language=language):
+                transcript = partial_transcript
+                stream_progress = 10 + int(progress_pct * 0.2)  # 10-30% range
+                publish_update(
+                    "transcription", 
+                    stream_progress, 
+                    f"Transcribing... ({progress_pct:.1f}%)",
+                    partial_result={"transcript": transcript, "is_final": False}
+                )
+        else:
+            # Fallback to regular transcription
+            transcript = whisper_model.transcribe_audio_bytes(audio_bytes, language=language)
+        
+        # Calculate transcription duration for normal processing
+        transcription_duration = (datetime.now() - step_start).total_seconds()
     
     # Publish final transcription
-    transcription_duration = (datetime.now() - step_start).total_seconds()
     publish_update(
         "transcription_complete", 
         30, 
@@ -446,6 +473,57 @@ def _process_audio_sync_worker(
                 "status": "completed",
                 "output_length": len(translation)
             }
+            
+            # Run QA analysis immediately after translation since translation is the input for QA
+            if translation and translation.strip():
+                try:
+                    publish_update("qa_analysis", 52, "Running QA analysis on translation...")
+                    qa_start = datetime.now()
+                    
+                    qa_score_model = models.models.get("all_qa_distilbert_v1")
+                    if qa_score_model:
+                        qa_score = qa_score_model.predict(translation, threshold=threshold, return_raw=return_raw)
+                        qa_duration = (datetime.now() - qa_start).total_seconds()
+                        
+                        # Send QA update notification to agent immediately
+                        try:
+                            from ..services.agent_notification_service import agent_notification_service
+                            # Extract call_id from filename or use task_id as fallback
+                            call_id = filename.replace('.wav', '').replace('.mp3', '') if filename else task_id
+                            processing_info = {
+                                "duration": qa_duration,
+                                "model_used": "all_qa_distilbert_v1",
+                                "threshold": threshold,
+                                "input_source": "translated_text",
+                                "input_length": len(translation)
+                            }
+                            # Run async notification in event loop for Celery worker
+                            try:
+                                loop = asyncio.get_event_loop()
+                                if loop.is_running():
+                                    # Event loop is running, create task
+                                    asyncio.create_task(
+                                        agent_notification_service.send_qa_update(call_id, qa_score, processing_info)
+                                    )
+                                else:
+                                    # No running loop, run directly
+                                    loop.run_until_complete(
+                                        agent_notification_service.send_qa_update(call_id, qa_score, processing_info)
+                                    )
+                            except RuntimeError:
+                                # No event loop exists, create one
+                                asyncio.run(
+                                    agent_notification_service.send_qa_update(call_id, qa_score, processing_info)
+                                )
+                            logger.info(f"📤 Sent QA update notification for call {call_id} after translation")
+                            publish_update("qa_complete", 55, "QA analysis completed and sent to agent")
+                        except Exception as notify_error:
+                            logger.error(f"❌ Failed to send QA notification for call {call_id}: {notify_error}")
+                    else:
+                        logger.warning("QA model not available for immediate analysis")
+                except Exception as qa_error:
+                    logger.error(f"❌ QA analysis failed after translation: {qa_error}")
+                    
         except Exception as e:
             translation_duration = (datetime.now() - step_start).total_seconds()
             publish_update("translation_error", 35, f"Translation failed: {str(e)}")
@@ -830,6 +908,7 @@ def process_streaming_audio_task(
 ):
     """
     Process real-time streaming audio chunks from Asterisk with call session tracking
+    Mixed-mono audio (both caller and agent voices) in 5-second windows from 10ms chunks
     Quick transcription only for low latency, adds to cumulative transcript
     """
     
