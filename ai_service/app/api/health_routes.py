@@ -7,7 +7,7 @@ from ..celery_app import celery_app
 from app.core.celery_monitor import celery_monitor
 
 from ..core.resource_manager import resource_manager
-from ..models.model_loader import model_loader
+from ..model_scripts.model_loader import model_loader
 from ..core.resource_manager import unified_resource_manager
 from ..config.settings import settings
 

@@ -130,7 +130,7 @@ jobs:
           
           echo "\nTesting basic imports:"
           python -c "from app.config.settings import settings; print('Settings OK')"
-          python -c "from app.models.model_loader import model_loader; print('Model loader OK')"
+          python -c "from app.model_scripts.model_loader import model_loader; print('Model loader OK')"
           
           echo "\nChecking Redis connection:"
           python -c "import redis; r=redis.Redis(host='localhost', port=6379); r.ping(); print('Redis OK')"

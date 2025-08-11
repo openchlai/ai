@@ -30,7 +30,7 @@ def mock_models():
 
 def test_model_loader_initialization():
     """Test ModelLoader initialization"""
-    from app.models.model_loader import ModelLoader
+    from app.model_scripts.model_loader import ModelLoader
     loader = ModelLoader()
     
     assert hasattr(loader, 'models')
@@ -39,17 +39,17 @@ def test_model_loader_initialization():
 
 def test_library_availability_check():
     """Test checking available ML libraries"""
-    from app.models.model_loader import AVAILABLE_LIBRARIES, TORCH_AVAILABLE
+    from app.model_scripts.model_loader import AVAILABLE_LIBRARIES, TORCH_AVAILABLE
     
     assert isinstance(AVAILABLE_LIBRARIES, dict)
     assert isinstance(TORCH_AVAILABLE, bool)
 
 def test_load_model_success(mock_models):
     """Test successful model loading"""
-    with patch("app.models.model_loader.ClassifierModel") as mock_cls:
+    with patch("app.model_scripts.model_loader.ClassifierModel") as mock_cls:
         mock_cls.return_value = mock_models['classifier_model']
         
-        from app.models.model_loader import ModelLoader
+        from app.model_scripts.model_loader import ModelLoader
         loader = ModelLoader()
         
         result = loader.load_model('classifier_model')
@@ -60,8 +60,8 @@ def test_load_model_success(mock_models):
 
 def test_load_model_failure():
     """Test model loading failure"""
-    with patch("app.models.model_loader.ClassifierModel", side_effect=Exception("Load failed")):
-        from app.models.model_loader import ModelLoader
+    with patch("app.model_scripts.model_loader.ClassifierModel", side_effect=Exception("Load failed")):
+        from app.model_scripts.model_loader import ModelLoader
         loader = ModelLoader()
         
         result = loader.load_model('classifier_model')
@@ -71,7 +71,7 @@ def test_load_model_failure():
 
 def test_load_invalid_model():
     """Test loading invalid model name"""
-    from app.models.model_loader import ModelLoader
+    from app.model_scripts.model_loader import ModelLoader
     loader = ModelLoader()
     
     result = loader.load_model('invalid_model')
@@ -80,15 +80,15 @@ def test_load_invalid_model():
 
 def test_load_all_models(mock_models):
     """Test loading all available models"""
-    with patch("app.models.model_loader.ClassifierModel") as mock_cls, \
-         patch("app.models.model_loader.NERModel") as mock_ner, \
-         patch("app.models.model_loader.SummarizationModel") as mock_sum:
+    with patch("app.model_scripts.model_loader.ClassifierModel") as mock_cls, \
+         patch("app.model_scripts.model_loader.NERModel") as mock_ner, \
+         patch("app.model_scripts.model_loader.SummarizationModel") as mock_sum:
         
         mock_cls.return_value = mock_models['classifier_model']
         mock_ner.return_value = mock_models['ner_model']
         mock_sum.return_value = mock_models['summarizer_model']
         
-        from app.models.model_loader import ModelLoader
+        from app.model_scripts.model_loader import ModelLoader
         loader = ModelLoader()
         
         results = loader.load_all_models()
@@ -99,7 +99,7 @@ def test_load_all_models(mock_models):
 
 def test_get_model_instance():
     """Test getting loaded model instance"""
-    from app.models.model_loader import ModelLoader
+    from app.model_scripts.model_loader import ModelLoader
     loader = ModelLoader()
     
     # Add a mock model
@@ -115,7 +115,7 @@ def test_get_model_instance():
 
 def test_is_model_loaded():
     """Test checking if a model is loaded"""
-    from app.models.model_loader import ModelLoader
+    from app.model_scripts.model_loader import ModelLoader
     loader = ModelLoader()
     
     # Add a loaded model
@@ -128,7 +128,7 @@ def test_is_model_loaded():
 
 def test_unload_model():
     """Test unloading a model"""
-    from app.models.model_loader import ModelLoader
+    from app.model_scripts.model_loader import ModelLoader
     loader = ModelLoader()
     
     # Add a model
@@ -143,7 +143,7 @@ def test_unload_model():
 
 def test_unload_all_models():
     """Test unloading all models"""
-    from app.models.model_loader import ModelLoader
+    from app.model_scripts.model_loader import ModelLoader
     loader = ModelLoader()
     
     # Add some models
@@ -157,7 +157,7 @@ def test_unload_all_models():
 
 def test_get_system_status():
     """Test getting system status"""
-    from app.models.model_loader import ModelLoader
+    from app.model_scripts.model_loader import ModelLoader
     loader = ModelLoader()
     
     # Add some models
@@ -182,7 +182,7 @@ def test_get_system_status():
 
 def test_get_memory_usage():
     """Test getting memory usage information"""
-    from app.models.model_loader import ModelLoader
+    from app.model_scripts.model_loader import ModelLoader
     loader = ModelLoader()
     
     with patch("psutil.virtual_memory") as mock_mem, \
@@ -200,7 +200,7 @@ def test_get_memory_usage():
 
 def test_gpu_availability():
     """Test GPU availability check"""
-    from app.models.model_loader import ModelLoader
+    from app.model_scripts.model_loader import ModelLoader
     loader = ModelLoader()
     
     with patch("torch.cuda.is_available", return_value=True), \
@@ -214,7 +214,7 @@ def test_gpu_availability():
 
 def test_model_performance_stats():
     """Test getting model performance statistics"""
-    from app.models.model_loader import ModelLoader
+    from app.model_scripts.model_loader import ModelLoader
     loader = ModelLoader()
     
     # Add a model with performance stats
@@ -234,12 +234,12 @@ def test_model_performance_stats():
 
 def test_validate_model_requirements():
     """Test validating model requirements"""
-    from app.models.model_loader import ModelLoader
+    from app.model_scripts.model_loader import ModelLoader
     loader = ModelLoader()
     
     # Test with required libraries available
-    with patch("app.models.model_loader.TORCH_AVAILABLE", True), \
-         patch("app.models.model_loader.TRANSFORMERS_AVAILABLE", True):
+    with patch("app.model_scripts.model_loader.TORCH_AVAILABLE", True), \
+         patch("app.model_scripts.model_loader.TRANSFORMERS_AVAILABLE", True):
         
         requirements = ['torch', 'transformers']
         result = loader._validate_requirements(requirements)
@@ -248,7 +248,7 @@ def test_validate_model_requirements():
 
 def test_model_health_check():
     """Test health check for loaded models"""
-    from app.models.model_loader import ModelLoader
+    from app.model_scripts.model_loader import ModelLoader
     loader = ModelLoader()
     
     # Add models with different health states
@@ -271,7 +271,7 @@ def test_model_health_check():
 
 def test_batch_model_operations():
     """Test batch operations on multiple models"""
-    from app.models.model_loader import ModelLoader
+    from app.model_scripts.model_loader import ModelLoader
     loader = ModelLoader()
     
     # Add multiple models
