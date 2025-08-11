@@ -12,8 +12,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 @pytest.fixture
 def mock_translator_model():
     """Create a mocked translator model for testing"""
-    with patch("app.models.translator_model.AutoTokenizer.from_pretrained") as mock_tokenizer, \
-         patch("app.models.translator_model.AutoModelForSeq2SeqLM.from_pretrained") as mock_model_cls, \
+    with patch("app.model_scripts.translator_model.AutoTokenizer.from_pretrained") as mock_tokenizer, \
+         patch("app.model_scripts.translator_model.AutoModelForSeq2SeqLM.from_pretrained") as mock_model_cls, \
          patch("os.path.exists", return_value=True):
         
         # Mock tokenizer
@@ -27,7 +27,7 @@ def mock_translator_model():
         mock_model.generate.return_value = torch.tensor([[1, 2, 3, 4, 5]])
         mock_model_cls.return_value = mock_model
         
-        from app.models.translator_model import TranslationModel
+        from app.model_scripts.translator_model import TranslationModel
         model = TranslationModel()
         model.tokenizer = mock_tok
         model.model = mock_model
@@ -39,7 +39,7 @@ def mock_translator_model():
 def test_translator_model_initialization():
     """Test TranslationModel initialization"""
     with patch("app.config.settings.Settings.get_model_path", return_value="/fake/path"):
-        from app.models.translator_model import TranslationModel
+        from app.model_scripts.translator_model import TranslationModel
         model = TranslationModel()
         assert model.model_path == "/fake/path"
         assert not model.loaded
@@ -47,14 +47,14 @@ def test_translator_model_initialization():
 
 def test_translator_model_load_success():
     """Test successful model loading"""
-    with patch("app.models.translator_model.AutoTokenizer.from_pretrained") as mock_tokenizer, \
-         patch("app.models.translator_model.AutoModelForSeq2SeqLM.from_pretrained") as mock_model, \
+    with patch("app.model_scripts.translator_model.AutoTokenizer.from_pretrained") as mock_tokenizer, \
+         patch("app.model_scripts.translator_model.AutoModelForSeq2SeqLM.from_pretrained") as mock_model, \
          patch("os.path.exists", return_value=True):
         
         mock_tokenizer.return_value = MagicMock()
         mock_model.return_value = MagicMock()
         
-        from app.models.translator_model import TranslationModel
+        from app.model_scripts.translator_model import TranslationModel
         model = TranslationModel()
         result = model.load()
         
@@ -65,7 +65,7 @@ def test_translator_model_load_success():
 def test_translator_model_load_failure():
     """Test model loading failure"""
     with patch("os.path.exists", return_value=False):
-        from app.models.translator_model import TranslationModel
+        from app.model_scripts.translator_model import TranslationModel
         model = TranslationModel()
         result = model.load()
         
@@ -87,7 +87,7 @@ def test_translate_empty_text(mock_translator_model):
 
 def test_translate_model_not_loaded():
     """Test translating when model is not loaded"""
-    from app.models.translator_model import TranslationModel
+    from app.model_scripts.translator_model import TranslationModel
     model = TranslationModel()
     
     with pytest.raises(RuntimeError, match="Translation model is not loaded"):
@@ -157,7 +157,7 @@ def test_is_ready(mock_translator_model):
 
 def test_detect_language(mock_translator_model):
     """Test language detection"""
-    with patch("app.models.translator_model.detect") as mock_detect:
+    with patch("app.model_scripts.translator_model.detect") as mock_detect:
         mock_detect.return_value = "en"
         
         result = mock_translator_model.detect_language("Hello world")

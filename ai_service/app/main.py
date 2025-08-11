@@ -9,7 +9,7 @@ import uvicorn
 
 from .config.settings import settings
 from .api import health_routes, ner_routes, translator_routes, summarizer_routes, classifier_route, whisper_routes, audio_routes, call_session_routes, qa_route
-from .models.model_loader import model_loader
+from .model_scripts.model_loader import model_loader
 from .core.resource_manager import resource_manager
 from .streaming.tcp_server import AsteriskTCPServer
 from .streaming.websocket_server import websocket_manager

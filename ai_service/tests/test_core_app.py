@@ -59,14 +59,14 @@ class TestModelLoader:
 
     def test_model_loader_import(self):
         """Test that model loader can be imported"""
-        from app.models.model_loader import ModelLoader
+        from app.model_scripts.model_loader import ModelLoader
         
         loader = ModelLoader()
         assert loader is not None
 
     def test_model_loader_initialization(self):
         """Test model loader initialization"""
-        from app.models.model_loader import ModelLoader
+        from app.model_scripts.model_loader import ModelLoader
         
         loader = ModelLoader()
         assert hasattr(loader, 'models')
@@ -74,7 +74,7 @@ class TestModelLoader:
 
     def test_available_libraries(self):
         """Test that library availability is tracked"""
-        from app.models.model_loader import AVAILABLE_LIBRARIES
+        from app.model_scripts.model_loader import AVAILABLE_LIBRARIES
         
         assert isinstance(AVAILABLE_LIBRARIES, dict)
         # Should have some common libraries
@@ -253,7 +253,7 @@ class TestIntegration:
         """Test that major components can work together"""
         # Test that we can import all major components together
         from app.config.settings import settings
-        from app.models.model_loader import ModelLoader
+        from app.model_scripts.model_loader import ModelLoader
         from app.core.resource_manager import UnifiedResourceManager
         from app.core.text_chunker import IntelligentTextChunker
         
@@ -282,17 +282,17 @@ class TestIntegration:
             try:
                 # Try to import each model
                 if model_name == 'classifier_model':
-                    from app.models.classifier_model import ClassifierModel
+                    from app.model_scripts.classifier_model import ClassifierModel
                 elif model_name == 'ner_model':
-                    from app.models.ner_model import NERModel
+                    from app.model_scripts.ner_model import NERModel
                 elif model_name == 'summarizer_model':
-                    from app.models.summarizer_model import SummarizationModel
+                    from app.model_scripts.summarizer_model import SummarizationModel
                 elif model_name == 'whisper_model':
-                    from app.models.whisper_model import WhisperModel
+                    from app.model_scripts.whisper_model import WhisperModel
                 elif model_name == 'translator_model':
-                    from app.models.translator_model import TranslationModel
+                    from app.model_scripts.translator_model import TranslationModel
                 elif model_name == 'qa_model':
-                    from app.models.qa_model import QAModel
+                    from app.model_scripts.qa_model import QAModel
                 
                 # If we get here, import succeeded
                 assert True

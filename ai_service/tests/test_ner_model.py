@@ -17,7 +17,7 @@ def patch_settings_path(monkeypatch):
 
 @pytest.fixture
 def mock_ner_model():
-    with patch("app.models.ner_model.spacy.load") as mock_spacy_load, \
+    with patch("app.model_scripts.ner_model.spacy.load") as mock_spacy_load, \
          patch("os.path.exists", return_value=False):
 
         # Fake SpaCy nlp pipeline mock
@@ -48,7 +48,7 @@ def mock_ner_model():
         # Set spacy.load(...) to return the mocked nlp
         mock_spacy_load.return_value = mock_nlp
 
-        from app.models.ner_model import NERModel
+        from app.model_scripts.ner_model import NERModel
         model = NERModel()
         model.nlp = mock_nlp
         model.loaded = True
@@ -56,10 +56,10 @@ def mock_ner_model():
         yield model
 
 def test_load_model_success():
-    with patch("app.models.ner_model.spacy.load"), \
+    with patch("app.model_scripts.ner_model.spacy.load"), \
          patch("os.path.exists", return_value=False), \
          patch("app.config.settings.Settings.get_model_path", return_value="/fake/path"):
-        from app.models.ner_model import NERModel
+        from app.model_scripts.ner_model import NERModel
         model = NERModel()
         result = model.load()
         assert result is True
@@ -81,7 +81,7 @@ def test_extract_entities_empty_text(mock_ner_model):
     assert result == []
 
 def test_extract_entities_raises_if_not_loaded():
-    from app.models.ner_model import NERModel
+    from app.model_scripts.ner_model import NERModel
     model = NERModel()
     with pytest.raises(RuntimeError):
         model.extract_entities("Barack Obama")

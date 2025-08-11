@@ -10,13 +10,13 @@ from datetime import datetime
 
 @pytest.fixture
 def mock_model():
-    with patch("app.models.summarizer_model.AutoTokenizer.from_pretrained"), \
-         patch("app.models.summarizer_model.AutoModelForSeq2SeqLM.from_pretrained"), \
-         patch("app.models.summarizer_model.pipeline"), \
+    with patch("app.model_scripts.summarizer_model.AutoTokenizer.from_pretrained"), \
+         patch("app.model_scripts.summarizer_model.AutoModelForSeq2SeqLM.from_pretrained"), \
+         patch("app.model_scripts.summarizer_model.pipeline"), \
          patch("os.path.exists", return_value=True), \
          patch("app.config.settings.Settings.get_model_path", return_value="/fake/model/path"):
 
-        from app.models.summarizer_model import SummarizationModel
+        from app.model_scripts.summarizer_model import SummarizationModel
         model = SummarizationModel()
         model.tokenizer = MagicMock()
         model.tokenizer.encode.return_value = list(range(100))  # Simulate 100 tokens
@@ -29,13 +29,13 @@ def mock_model():
 
 
 def test_load_model_success():
-    with patch("app.models.summarizer_model.AutoTokenizer.from_pretrained"), \
-         patch("app.models.summarizer_model.AutoModelForSeq2SeqLM.from_pretrained"), \
-         patch("app.models.summarizer_model.pipeline"), \
+    with patch("app.model_scripts.summarizer_model.AutoTokenizer.from_pretrained"), \
+         patch("app.model_scripts.summarizer_model.AutoModelForSeq2SeqLM.from_pretrained"), \
+         patch("app.model_scripts.summarizer_model.pipeline"), \
          patch("os.path.exists", return_value=True), \
          patch("app.config.settings.Settings.get_model_path", return_value="/fake/model/path"):
 
-        from app.models.summarizer_model import SummarizationModel
+        from app.model_scripts.summarizer_model import SummarizationModel
         model = SummarizationModel()
         result = model.load()
         assert result is True
@@ -52,7 +52,7 @@ def test_summarize_empty_text_returns_blank(mock_model):
     assert result == ""
 
 def test_summarize_not_loaded_raises():
-    from app.models.summarizer_model import SummarizationModel
+    from app.model_scripts.summarizer_model import SummarizationModel
     model = SummarizationModel()
     with pytest.raises(RuntimeError):
         model.summarize("Some input")
@@ -77,7 +77,7 @@ def test_summarize_with_fallback_success(mock_model):
     assert isinstance(result, str)
 
 def test_summarize_with_fallback_failure(mock_model):
-    from app.models.summarizer_model import SummarizationModel
+    from app.model_scripts.summarizer_model import SummarizationModel
     with patch.object(mock_model, "summarize", side_effect=RuntimeError("fail")):
         result = mock_model.summarize_with_fallback("Fallback trigger input.")
         assert isinstance(result, str)

@@ -92,7 +92,7 @@ def init_worker(**kwargs):
         
         # Step 4: Create model loader instance
         logger.info("🤖 Creating ModelLoader instance...")
-        from ..models.model_loader import ModelLoader
+        from ..model_scripts.model_loader import ModelLoader
         worker_model_loader = ModelLoader()
         
         # Step 5: Load models asynchronously (converted to sync for Celery)

@@ -64,7 +64,7 @@ def test_text_chunker_basic_methods():
 
 def test_model_loader_basic():
     """Test model loader basic functionality"""
-    from app.models.model_loader import ModelLoader, AVAILABLE_LIBRARIES
+    from app.model_scripts.model_loader import ModelLoader, AVAILABLE_LIBRARIES
     
     # Test ModelLoader initialization
     loader = ModelLoader()
@@ -96,7 +96,7 @@ def test_tcp_server_methods():
 def test_whisper_model_methods():
     """Test whisper model additional methods"""
     with patch("app.config.settings.Settings.get_model_path", return_value="/fake/path"):
-        from app.models.whisper_model import WhisperModel
+        from app.model_scripts.whisper_model import WhisperModel
         
         model = WhisperModel()
         

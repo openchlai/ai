@@ -6,9 +6,9 @@ from typing import Dict, Any
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-from ..models.summarizer_model import summarization_model
-from ..models.ner_model import ner_model
-from ..models.classifier_model import classifier_model
+from ..model_scripts.summarizer_model import summarization_model
+from ..model_scripts.ner_model import ner_model
+from ..model_scripts.classifier_model import classifier_model
 
 logger = logging.getLogger(__name__)
 

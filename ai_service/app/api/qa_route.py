@@ -5,7 +5,7 @@ from typing import Dict, List, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from ..models.qa_model import qa_model
+from ..model_scripts.qa_model import qa_model
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/qa", tags=["quality_assurance"])
