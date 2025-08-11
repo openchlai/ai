@@ -22,7 +22,7 @@ def mock_whisper_model():
         mock_pipe.return_value = {"text": "Mocked transcription result"}
         mock_pipeline.return_value = mock_pipe
         
-        from app.models.whisper_model import WhisperModel
+        from app.model_scripts.whisper_model import WhisperModel
         model = WhisperModel()
         model.pipe = mock_pipe
         model.is_loaded = True
@@ -33,7 +33,7 @@ def mock_whisper_model():
 def test_whisper_model_initialization():
     """Test WhisperModel initialization"""
     with patch("app.config.settings.Settings.get_model_path", return_value="/fake/path"):
-        from app.models.whisper_model import WhisperModel
+        from app.model_scripts.whisper_model import WhisperModel
         model = WhisperModel()
         assert model.model_path == "/fake/path"
         assert model.fallback_model_id == "openai/whisper-large-v3-turbo"
@@ -51,7 +51,7 @@ def test_whisper_model_load_success():
         mock_pipe = MagicMock()
         mock_pipeline.return_value = mock_pipe
         
-        from app.models.whisper_model import WhisperModel
+        from app.model_scripts.whisper_model import WhisperModel
         model = WhisperModel()
         result = model.load()
         
@@ -75,7 +75,7 @@ def test_transcribe_empty_file_path(mock_whisper_model):
 
 def test_transcribe_model_not_loaded():
     """Test transcribing when model is not loaded"""
-    from app.models.whisper_model import WhisperModel
+    from app.model_scripts.whisper_model import WhisperModel
     model = WhisperModel()
     
     with pytest.raises(RuntimeError, match="not loaded"):
@@ -160,7 +160,7 @@ def test_model_load_failure():
     with patch("transformers.pipeline", side_effect=Exception("Load failed")), \
          patch("os.path.exists", return_value=True):
         
-        from app.models.whisper_model import WhisperModel
+        from app.model_scripts.whisper_model import WhisperModel
         model = WhisperModel()
         result = model.load()
         

@@ -13,8 +13,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 @pytest.fixture
 def mock_qa_model():
     """Create a mocked QA model for testing"""
-    with patch("app.models.qa_model.DistilBertTokenizer.from_pretrained") as mock_tokenizer, \
-         patch("app.models.qa_model.torch.load") as mock_load, \
+    with patch("app.model_scripts.qa_model.DistilBertTokenizer.from_pretrained") as mock_tokenizer, \
+         patch("app.model_scripts.qa_model.torch.load") as mock_load, \
          patch("os.path.exists", return_value=True):
         
         # Mock tokenizer
@@ -34,7 +34,7 @@ def mock_qa_model():
         }
         mock_load.return_value = mock_state
         
-        from app.models.qa_model import QAModel
+        from app.model_scripts.qa_model import QAModel
         model = QAModel()
         model.tokenizer = mock_tok
         model.model = MagicMock()
@@ -45,7 +45,7 @@ def mock_qa_model():
 def test_qa_model_initialization():
     """Test QAModel initialization"""
     with patch("app.config.settings.Settings.get_model_path", return_value="/fake/path"):
-        from app.models.qa_model import QAModel
+        from app.model_scripts.qa_model import QAModel
         model = QAModel()
         assert model.model_path == "/fake/path"
         assert not model.loaded
@@ -53,15 +53,15 @@ def test_qa_model_initialization():
 
 def test_qa_model_load_success():
     """Test successful QA model loading"""
-    with patch("app.models.qa_model.DistilBertTokenizer.from_pretrained") as mock_tokenizer, \
-         patch("app.models.qa_model.torch.load") as mock_load, \
+    with patch("app.model_scripts.qa_model.DistilBertTokenizer.from_pretrained") as mock_tokenizer, \
+         patch("app.model_scripts.qa_model.torch.load") as mock_load, \
          patch("os.path.exists", return_value=True):
         
         # Mock tokenizer and model loading
         mock_tokenizer.return_value = MagicMock()
         mock_load.return_value = {"test": "state"}
         
-        from app.models.qa_model import QAModel
+        from app.model_scripts.qa_model import QAModel
         model = QAModel()
         
         # Mock the model creation
@@ -77,7 +77,7 @@ def test_qa_model_load_success():
 def test_qa_model_load_failure():
     """Test QA model loading failure"""
     with patch("os.path.exists", return_value=False):
-        from app.models.qa_model import QAModel
+        from app.model_scripts.qa_model import QAModel
         model = QAModel()
         result = model.load()
         
@@ -116,7 +116,7 @@ def test_evaluate_empty_transcript(mock_qa_model):
 
 def test_evaluate_transcript_not_loaded():
     """Test evaluating transcript when model is not loaded"""
-    from app.models.qa_model import QAModel
+    from app.model_scripts.qa_model import QAModel
     model = QAModel()
     
     with pytest.raises(RuntimeError, match="QA model is not loaded"):

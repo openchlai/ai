@@ -21,12 +21,12 @@ def test_settings_attributes():
 def test_import_all_models():
     """Test importing all model classes for coverage"""
     # Import each model to hit their class definitions
-    from app.models.classifier_model import ClassifierModel
-    from app.models.ner_model import NERModel  
-    from app.models.summarizer_model import SummarizationModel
-    from app.models.whisper_model import WhisperModel
-    from app.models.translator_model import TranslationModel
-    from app.models.qa_model import QAModel
+    from app.model_scripts.classifier_model import ClassifierModel
+    from app.model_scripts.ner_model import NERModel  
+    from app.model_scripts.summarizer_model import SummarizationModel
+    from app.model_scripts.whisper_model import WhisperModel
+    from app.model_scripts.translator_model import TranslationModel
+    from app.model_scripts.qa_model import QAModel
     
     assert ClassifierModel is not None
     assert NERModel is not None
@@ -38,7 +38,7 @@ def test_import_all_models():
 def test_basic_imports():
     """Test basic app imports for coverage"""
     from app.config import settings
-    from app.models import model_loader
+    from app.model_scripts import model_loader
     from app.core import resource_manager
     from app.core import text_chunker
     

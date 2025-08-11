@@ -13,7 +13,7 @@ class TestQAModelBasic:
     def test_qa_initialization(self):
         """Test QA model can be initialized"""
         with patch("app.config.settings.Settings.get_model_path", return_value="/fake/path"):
-            from app.models.qa_model import QAModel
+            from app.model_scripts.qa_model import QAModel
             model = QAModel()
             
             assert model.model_path == "/fake/path"
@@ -29,7 +29,7 @@ class TestQAModelBasic:
             mock_tok.return_value = MagicMock()
             mock_model.return_value = MagicMock()
             
-            from app.models.qa_model import QAModel
+            from app.model_scripts.qa_model import QAModel
             model = QAModel()
             result = model.load()
             
@@ -39,7 +39,7 @@ class TestQAModelBasic:
     def test_qa_load_failure(self):
         """Test QA loading failure"""
         with patch("os.path.exists", return_value=False):
-            from app.models.qa_model import QAModel
+            from app.model_scripts.qa_model import QAModel
             model = QAModel()
             result = model.load()
             
@@ -64,7 +64,7 @@ class TestQAModelBasic:
             mock_model_instance.return_value = MagicMock(start_logits=[1, 2, 3], end_logits=[1, 2, 3])
             mock_model.return_value = mock_model_instance
             
-            from app.models.qa_model import QAModel
+            from app.model_scripts.qa_model import QAModel
             model = QAModel()
             model.load()
             
@@ -78,7 +78,7 @@ class TestQAModelBasic:
 
     def test_qa_not_loaded(self):
         """Test QA when not loaded"""
-        from app.models.qa_model import QAModel
+        from app.model_scripts.qa_model import QAModel
         model = QAModel()
         
         with pytest.raises(RuntimeError):
@@ -93,7 +93,7 @@ class TestQAModelBasic:
             mock_tok.return_value = MagicMock()
             mock_model.return_value = MagicMock()
             
-            from app.models.qa_model import QAModel
+            from app.model_scripts.qa_model import QAModel
             model = QAModel()
             model.load()
             
@@ -111,7 +111,7 @@ class TestQAModelBasic:
             mock_tok.return_value = MagicMock()
             mock_model.return_value = MagicMock()
             
-            from app.models.qa_model import QAModel
+            from app.model_scripts.qa_model import QAModel
             model = QAModel()
             model.load()
             

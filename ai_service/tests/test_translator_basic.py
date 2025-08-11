@@ -13,7 +13,7 @@ class TestTranslatorModelBasic:
     def test_translator_initialization(self):
         """Test translator model can be initialized"""
         with patch("app.config.settings.Settings.get_model_path", return_value="/fake/path"):
-            from app.models.translator_model import TranslationModel
+            from app.model_scripts.translator_model import TranslationModel
             model = TranslationModel()
             
             assert model.model_path == "/fake/path"
@@ -29,7 +29,7 @@ class TestTranslatorModelBasic:
             mock_tok.return_value = MagicMock()
             mock_model.return_value = MagicMock()
             
-            from app.models.translator_model import TranslationModel
+            from app.model_scripts.translator_model import TranslationModel
             model = TranslationModel()
             result = model.load()
             
@@ -39,7 +39,7 @@ class TestTranslatorModelBasic:
     def test_translator_load_failure(self):
         """Test translator loading failure"""
         with patch("os.path.exists", return_value=False):
-            from app.models.translator_model import TranslationModel
+            from app.model_scripts.translator_model import TranslationModel
             model = TranslationModel()
             result = model.load()
             
@@ -61,7 +61,7 @@ class TestTranslatorModelBasic:
             mock_model_instance.generate.return_value = [[1, 2, 3]]
             mock_model.return_value = mock_model_instance
             
-            from app.models.translator_model import TranslationModel
+            from app.model_scripts.translator_model import TranslationModel
             model = TranslationModel()
             model.load()
             
@@ -85,7 +85,7 @@ class TestTranslatorModelBasic:
             mock_tok.return_value = MagicMock()
             mock_model.return_value = MagicMock()
             
-            from app.models.translator_model import TranslationModel
+            from app.model_scripts.translator_model import TranslationModel
             model = TranslationModel()
             model.load()
             
@@ -94,7 +94,7 @@ class TestTranslatorModelBasic:
 
     def test_translator_not_loaded(self):
         """Test translator when not loaded"""
-        from app.models.translator_model import TranslationModel
+        from app.model_scripts.translator_model import TranslationModel
         model = TranslationModel()
         
         with pytest.raises(RuntimeError):
@@ -109,7 +109,7 @@ class TestTranslatorModelBasic:
             mock_tok.return_value = MagicMock()
             mock_model.return_value = MagicMock()
             
-            from app.models.translator_model import TranslationModel
+            from app.model_scripts.translator_model import TranslationModel
             model = TranslationModel()
             model.load()
             

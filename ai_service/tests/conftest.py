@@ -24,8 +24,8 @@ def patch_settings(monkeypatch):
 @pytest.fixture
 def mock_classifier_model():
     """Fixture for mocked classifier model"""
-    with patch("app.models.classifier_model.AutoTokenizer.from_pretrained"), \
-         patch("app.models.classifier_model.MultiTaskDistilBert.from_pretrained"), \
+    with patch("app.model_scripts.classifier_model.AutoTokenizer.from_pretrained"), \
+         patch("app.model_scripts.classifier_model.MultiTaskDistilBert.from_pretrained"), \
          patch("os.path.exists", return_value=True), \
          patch("builtins.open", mock_open(read_data='["violence", "neglect"]')), \
          patch("json.load", side_effect=[
@@ -34,7 +34,7 @@ def mock_classifier_model():
              ["intervention_1", "intervention_2"],
              ["low", "medium", "high", "urgent"]
          ]):
-        from app.models.classifier_model import ClassifierModel
+        from app.model_scripts.classifier_model import ClassifierModel
         model = ClassifierModel()
         model.loaded = True
         model.load_time = datetime.now()
@@ -49,7 +49,7 @@ def mock_classifier_model():
 @pytest.fixture
 def mock_ner_model():
     """Fixture for mocked NER model"""
-    with patch("app.models.ner_model.spacy.load") as mock_spacy_load, \
+    with patch("app.model_scripts.ner_model.spacy.load") as mock_spacy_load, \
          patch("os.path.exists", return_value=False):
 
         # Fake SpaCy nlp pipeline mock
@@ -79,7 +79,7 @@ def mock_ner_model():
         # Set spacy.load(...) to return the mocked nlp
         mock_spacy_load.return_value = mock_nlp
 
-        from app.models.ner_model import NERModel
+        from app.model_scripts.ner_model import NERModel
         model = NERModel()
         model.nlp = mock_nlp
         model.loaded = True
@@ -89,12 +89,12 @@ def mock_ner_model():
 @pytest.fixture
 def mock_summarizer_model():
     """Fixture for mocked summarizer model"""
-    with patch("app.models.summarizer_model.AutoTokenizer.from_pretrained"), \
-         patch("app.models.summarizer_model.AutoModelForSeq2SeqLM.from_pretrained"), \
-         patch("app.models.summarizer_model.pipeline"), \
+    with patch("app.model_scripts.summarizer_model.AutoTokenizer.from_pretrained"), \
+         patch("app.model_scripts.summarizer_model.AutoModelForSeq2SeqLM.from_pretrained"), \
+         patch("app.model_scripts.summarizer_model.pipeline"), \
          patch("os.path.exists", return_value=True):
 
-        from app.models.summarizer_model import SummarizationModel
+        from app.model_scripts.summarizer_model import SummarizationModel
         model = SummarizationModel()
         model.tokenizer = MagicMock()
         model.tokenizer.encode.return_value = list(range(100))  # Simulate 100 tokens
@@ -107,7 +107,7 @@ def mock_summarizer_model():
 @pytest.fixture
 def mock_whisper_model():
     """Fixture for mocked Whisper model"""
-    with patch("app.models.whisper_model.whisper.load_model") as mock_load, \
+    with patch("app.model_scripts.whisper_model.whisper.load_model") as mock_load, \
          patch("os.path.exists", return_value=True):
         
         mock_model = MagicMock()
@@ -117,7 +117,7 @@ def mock_whisper_model():
         }
         mock_load.return_value = mock_model
         
-        from app.models.whisper_model import WhisperModel
+        from app.model_scripts.whisper_model import WhisperModel
         model = WhisperModel()
         model.model = mock_model
         model.loaded = True
@@ -127,12 +127,12 @@ def mock_whisper_model():
 @pytest.fixture
 def mock_translator_model():
     """Fixture for mocked translator model"""
-    with patch("app.models.translator_model.AutoTokenizer.from_pretrained"), \
-         patch("app.models.translator_model.AutoModelForSeq2SeqLM.from_pretrained"), \
-         patch("app.models.translator_model.pipeline"), \
+    with patch("app.model_scripts.translator_model.AutoTokenizer.from_pretrained"), \
+         patch("app.model_scripts.translator_model.AutoModelForSeq2SeqLM.from_pretrained"), \
+         patch("app.model_scripts.translator_model.pipeline"), \
          patch("os.path.exists", return_value=True):
 
-        from app.models.translator_model import TranslatorModel
+        from app.model_scripts.translator_model import TranslatorModel
         model = TranslatorModel()
         model.tokenizer = MagicMock()
         model.pipeline = MagicMock()

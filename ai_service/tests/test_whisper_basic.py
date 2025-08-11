@@ -14,7 +14,7 @@ class TestWhisperModelBasic:
     def test_whisper_initialization(self):
         """Test whisper model can be initialized"""
         with patch("app.config.settings.Settings.get_model_path", return_value="/fake/path"):
-            from app.models.whisper_model import WhisperModel
+            from app.model_scripts.whisper_model import WhisperModel
             model = WhisperModel()
             
             assert model.model_path == "/fake/path"
@@ -33,7 +33,7 @@ class TestWhisperModelBasic:
             mock_proc.return_value = MagicMock()
             mock_pipeline.return_value = MagicMock()
             
-            from app.models.whisper_model import WhisperModel
+            from app.model_scripts.whisper_model import WhisperModel
             model = WhisperModel()
             result = model.load()
             
@@ -44,7 +44,7 @@ class TestWhisperModelBasic:
         """Test whisper loading failure"""
         with patch("os.path.exists", return_value=False), \
              patch("transformers.AutoModelForSpeechSeq2Seq.from_pretrained", side_effect=Exception("Model not found")):
-            from app.models.whisper_model import WhisperModel
+            from app.model_scripts.whisper_model import WhisperModel
             model = WhisperModel()
             result = model.load()
             
@@ -53,7 +53,7 @@ class TestWhisperModelBasic:
 
     def test_whisper_check_local_model_exists(self):
         """Test checking if local model exists"""
-        from app.models.whisper_model import WhisperModel
+        from app.model_scripts.whisper_model import WhisperModel
         model = WhisperModel()
         
         # Test with non-existent path
@@ -76,7 +76,7 @@ class TestWhisperModelBasic:
     def test_whisper_validate_language(self):
         """Test language validation"""
         with patch("app.config.settings.Settings.get_model_path", return_value="/fake/path"):
-            from app.models.whisper_model import WhisperModel
+            from app.model_scripts.whisper_model import WhisperModel
             model = WhisperModel()
             
             # Test valid language
@@ -103,7 +103,7 @@ class TestWhisperModelBasic:
             mock_pipe.return_value = {"text": "Transcribed text"}
             mock_pipeline.return_value = mock_pipe
             
-            from app.models.whisper_model import WhisperModel
+            from app.model_scripts.whisper_model import WhisperModel
             model = WhisperModel()
             model.load()
             
@@ -146,7 +146,7 @@ class TestWhisperModelBasic:
             mock_temp_file.name = "/tmp/test.wav"
             mock_temp.__enter__.return_value = mock_temp_file
             
-            from app.models.whisper_model import WhisperModel
+            from app.model_scripts.whisper_model import WhisperModel
             model = WhisperModel()
             model.load()
             
@@ -177,7 +177,7 @@ class TestWhisperModelBasic:
             
             mock_frombuffer.return_value = [0.1, 0.2, 0.3]  # Mock audio data
             
-            from app.models.whisper_model import WhisperModel
+            from app.model_scripts.whisper_model import WhisperModel
             model = WhisperModel()
             model.load()
             
@@ -188,7 +188,7 @@ class TestWhisperModelBasic:
 
     def test_whisper_not_loaded_error(self):
         """Test whisper methods when not loaded"""
-        from app.models.whisper_model import WhisperModel
+        from app.model_scripts.whisper_model import WhisperModel
         model = WhisperModel()
         
         with pytest.raises(RuntimeError):
@@ -210,7 +210,7 @@ class TestWhisperModelBasic:
             
             mock_pipeline.return_value = MagicMock()
             
-            from app.models.whisper_model import WhisperModel
+            from app.model_scripts.whisper_model import WhisperModel
             model = WhisperModel()
             model.load()
             

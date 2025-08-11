@@ -17,8 +17,8 @@ def patch_settings(monkeypatch):
 
 @pytest.fixture
 def mock_classifier_model():
-    with patch("app.models.classifier_model.AutoTokenizer.from_pretrained"), \
-         patch("app.models.classifier_model.MultiTaskDistilBert.from_pretrained"), \
+    with patch("app.model_scripts.classifier_model.AutoTokenizer.from_pretrained"), \
+         patch("app.model_scripts.classifier_model.MultiTaskDistilBert.from_pretrained"), \
          patch("os.path.exists", return_value=True), \
          patch("builtins.open", mock_open(read_data='["violence", "neglect"]')), \
          patch("json.load", side_effect=[
@@ -27,7 +27,7 @@ def mock_classifier_model():
              ["intervention_1", "intervention_2"],
              ["low", "medium", "high", "urgent"]
          ]):
-        from app.models.classifier_model import ClassifierModel
+        from app.model_scripts.classifier_model import ClassifierModel
         model = ClassifierModel()
         model.loaded = True
         model.load_time = datetime.now()
@@ -40,8 +40,8 @@ def mock_classifier_model():
         return model
 
 def test_model_load_success():
-    with patch("app.models.classifier_model.AutoTokenizer.from_pretrained"), \
-         patch("app.models.classifier_model.MultiTaskDistilBert.from_pretrained"), \
+    with patch("app.model_scripts.classifier_model.AutoTokenizer.from_pretrained"), \
+         patch("app.model_scripts.classifier_model.MultiTaskDistilBert.from_pretrained"), \
          patch("os.path.exists", return_value=True), \
          patch("builtins.open", mock_open(read_data='["main1", "main2"]')), \
          patch("json.load", side_effect=[
@@ -50,7 +50,7 @@ def test_model_load_success():
              ["int1", "int2"],
              ["low", "high"]
          ]):
-        from app.models.classifier_model import ClassifierModel
+        from app.model_scripts.classifier_model import ClassifierModel
         model = ClassifierModel()
         assert model.load() is True
         assert model.loaded is True
