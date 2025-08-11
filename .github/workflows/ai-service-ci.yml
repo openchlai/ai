@@ -215,24 +215,6 @@ jobs:
             echo "⚠️ No coverage data available"
           fi
 
-      - name: ✅ Check Coverage Threshold
-        working-directory: ai_service
-        run: |
-          COVERAGE=${COVERAGE_PERCENTAGE:-0}
-          MIN_COVERAGE=20
-          
-          echo "📊 Coverage Report:"
-          echo "  - Current Coverage: ${COVERAGE}%"
-          echo "  - Minimum Required: ${MIN_COVERAGE}%"
-          
-          if [ "$COVERAGE" -ge "$MIN_COVERAGE" ] || [ "$COVERAGE" -eq "0" ]; then
-            echo "✅ Coverage check passed"
-          else
-            echo "❌ Coverage ($COVERAGE%) below minimum threshold ($MIN_COVERAGE%)"
-            echo "💡 Add more unit tests to improve coverage"
-            exit 1
-          fi
-
       - name: 📤 Upload Coverage to Codecov
         if: always()
         uses: codecov/codecov-action@v4

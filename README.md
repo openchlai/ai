@@ -1,5 +1,10 @@
 # AI-Powered Voice Processing & Case Prediction
 
+<!-- Coverage badges will be available once Codecov is set up by repository owner -->
+[![Codecov AI Service](https://codecov.io/gh/openchlai/ai/branch/main/graph/badge.svg?flag=ai-service)](https://codecov.io/gh/openchlai/ai?flag=ai-service)
+[![Codecov Helpline v1](https://codecov.io/gh/openchlai/ai/branch/main/graph/badge.svg?flag=helplinev1-backend)](https://codecov.io/gh/openchlai/ai?flag=helplinev1-backend)
+[![Codecov Docs](https://codecov.io/gh/openchlai/ai/branch/main/graph/badge.svg?flag=docs)](https://codecov.io/gh/openchlai/ai?flag=docs)
+
 This project is an advanced AI-driven solution for voice processing and case prediction. It enables automated transcription, translation, and case classification to enhance efficiency in call management systems.
 
 ## Features
