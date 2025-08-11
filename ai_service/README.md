@@ -6,6 +6,16 @@
 [![Celery](https://img.shields.io/badge/celery-5.5.3-37b24d.svg)](https://docs.celeryproject.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
+## 🛡️ Code Coverage
+
+[![AI Service Coverage](https://codecov.io/gh/YOUR_USERNAME/YOUR_REPO_NAME/branch/main/graph/badge.svg?flag=ai-service)](https://codecov.io/gh/YOUR_USERNAME/YOUR_REPO_NAME?flags%5B%5D=ai-service)
+[![HelplineV1 Coverage](https://codecov.io/gh/YOUR_USERNAME/YOUR_REPO_NAME/branch/main/graph/badge.svg?flag=helplinev1-backend)](https://codecov.io/gh/YOUR_USERNAME/YOUR_REPO_NAME?flags%5B%5D=helplinev1-backend)
+
+**📊 Coverage Reports:**
+- [**AI Service Coverage Report**](https://codecov.io/gh/YOUR_USERNAME/YOUR_REPO_NAME?flags%5B%5D=ai-service) - Click to view detailed AI service coverage
+- [**HelplineV1 Coverage Report**](https://codecov.io/gh/YOUR_USERNAME/YOUR_REPO_NAME?flags%5B%5D=helplinev1-backend) - Click to view detailed HelplineV1 backend coverage
+- [**GitHub Actions Artifacts**](https://github.com/YOUR_USERNAME/YOUR_REPO_NAME/actions) - Download HTML coverage reports from workflow runs
+
 A production-ready, containerized AI pipeline for processing audio recordings into structured insights. Built for child protection organizations and social services to transform call recordings into actionable case analysis.
 
 ## 🎯 Overview
