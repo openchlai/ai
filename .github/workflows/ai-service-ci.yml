@@ -182,73 +182,104 @@
             EOF
             fi
 
-        - name: 📊 Generate Coverage Report
-          working-directory: ai_service
+        # - name: 📊 Generate Coverage Report
+        #   working-directory: ai_service
+        #   run: |
+        #     if [ -f coverage.xml ] && [ -s coverage.xml ]; then
+        #       # Try to get coverage percentage
+        #       if command -v coverage >/dev/null; then
+        #         coverage report --show-missing 2>/dev/null || true
+        #         COVERAGE=$(coverage report --format=total 2>/dev/null || echo "0")
+        #       else
+        #         # Fallback to parsing XML
+        #         COVERAGE=$(grep -o 'line-rate="[0-9.]*"' coverage.xml | head -1 | sed 's/line-rate="//;s/"//' | awk '{print int($1*100)}' || echo "0")
+        #       fi
+              
+        #       echo "COVERAGE_PERCENTAGE=$COVERAGE" >> $GITHUB_ENV
+        #       echo "📊 Detected Coverage: ${COVERAGE}%"
+              
+        #       # Create coverage badge data
+        #       if [ "$COVERAGE" -ge "80" ]; then
+        #         COLOR="brightgreen"
+        #       elif [ "$COVERAGE" -ge "60" ]; then
+        #         COLOR="yellow"
+        #       elif [ "$COVERAGE" -ge "40" ]; then
+        #         COLOR="orange"
+        #       else
+        #         COLOR="red"
+        #       fi
+        #       echo "COVERAGE_COLOR=$COLOR" >> $GITHUB_ENV
+        #     else
+        #       echo "COVERAGE_PERCENTAGE=0" >> $GITHUB_ENV
+        #       echo "COVERAGE_COLOR=red" >> $GITHUB_ENV
+        #       echo "⚠️ No coverage data available"
+        #     fi
+
+        # - name: 📤 Upload Coverage to Codecov
+        #   if: always()
+        #   uses: codecov/codecov-action@v4
+        #   with:
+        #     file: ./ai_service/coverage.xml
+        #     flags: ai-service,python${{ matrix.python-version }}
+        #     name: ai-service-coverage-py${{ matrix.python-version }}
+        #     fail_ci_if_error: false
+        #     verbose: true
+        #   env:
+        #     CODECOV_TOKEN: ${{ secrets.AI_CODE_COV }}
+
+        # - name: 📦 Archive Coverage Results
+        #   if: always()
+        #   uses: actions/upload-artifact@v4
+        #   with:
+        #     name: coverage-report-python${{ matrix.python-version }}
+        #     path: |
+        #       ai_service/coverage-html/
+        #       ai_service/coverage.xml
+        #       ai_service/test-results.xml
+        #     retention-days: 30
+        #     if-no-files-found: ignore
+
+        # - name: 📦 Archive Test Results
+        #   if: always()
+        #   uses: actions/upload-artifact@v4
+        #   with:
+        #     name: test-results-python${{ matrix.python-version }}
+        #     path: |
+        #       ai_service/test-results.xml
+        #       ai_service/pytest.log
+        #     retention-days: 30
+        #     if-no-files-found: ignore
+
+        - name: 🧪 Run tests with coverage
           run: |
-            if [ -f coverage.xml ] && [ -s coverage.xml ]; then
-              # Try to get coverage percentage
-              if command -v coverage >/dev/null; then
-                coverage report --show-missing 2>/dev/null || true
-                COVERAGE=$(coverage report --format=total 2>/dev/null || echo "0")
-              else
-                # Fallback to parsing XML
-                COVERAGE=$(grep -o 'line-rate="[0-9.]*"' coverage.xml | head -1 | sed 's/line-rate="//;s/"//' | awk '{print int($1*100)}' || echo "0")
-              fi
-              
-              echo "COVERAGE_PERCENTAGE=$COVERAGE" >> $GITHUB_ENV
-              echo "📊 Detected Coverage: ${COVERAGE}%"
-              
-              # Create coverage badge data
-              if [ "$COVERAGE" -ge "80" ]; then
-                COLOR="brightgreen"
-              elif [ "$COVERAGE" -ge "60" ]; then
-                COLOR="yellow"
-              elif [ "$COVERAGE" -ge "40" ]; then
-                COLOR="orange"
-              else
-                COLOR="red"
-              fi
-              echo "COVERAGE_COLOR=$COLOR" >> $GITHUB_ENV
-            else
-              echo "COVERAGE_PERCENTAGE=0" >> $GITHUB_ENV
-              echo "COVERAGE_COLOR=red" >> $GITHUB_ENV
-              echo "⚠️ No coverage data available"
-            fi
+            coverage run manage.py test
+            coverage report
+            coverage json -o coverage.json
 
-        - name: 📤 Upload Coverage to Codecov
-          if: always()
-          uses: codecov/codecov-action@v4
-          with:
-            file: ./ai_service/coverage.xml
-            flags: ai-service,python${{ matrix.python-version }}
-            name: ai-service-coverage-py${{ matrix.python-version }}
-            fail_ci_if_error: false
-            verbose: true
-          env:
-            CODECOV_TOKEN: ${{ secrets.AI_CODE_COV }}
+        - name: 📊 Generate Coverage Report with Timestamp
+          run: |
+            echo "# Test Coverage Report" > coverage.md
+            echo "" >> coverage.md
+            echo "**Generated on:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> coverage.md
+            echo "" >> coverage.md
+            coverage report --format=markdown >> coverage.md
 
-        - name: 📦 Archive Coverage Results
+        - name: 📝 Commit coverage.md to repo root
           if: always()
-          uses: actions/upload-artifact@v4
-          with:
-            name: coverage-report-python${{ matrix.python-version }}
-            path: |
-              ai_service/coverage-html/
-              ai_service/coverage.xml
-              ai_service/test-results.xml
-            retention-days: 30
-            if-no-files-found: ignore
+          run: |
+            mv coverage.md ./coverage.md
 
-        - name: 📦 Archive Test Results
-          if: always()
-          uses: actions/upload-artifact@v4
-          with:
-            name: test-results-python${{ matrix.python-version }}
-            path: |
-              ai_service/test-results.xml
-              ai_service/pytest.log
-            retention-days: 30
-            if-no-files-found: ignore
+            git config --global user.name "github-actions[bot]"
+            git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+            git fetch origin ${{ github.ref_name }}
+            git checkout ${{ github.ref_name }}
+
+            git add coverage.md
+            git commit -m "chore(ci): update coverage report [skip ci]" || echo "No changes to commit"
+            git push origin ${{ github.ref_name }}
+
+        # Coverage Ends Here 
 
     # # Docker Build, Security Scan and Integration Tests
     # docker-integration:
