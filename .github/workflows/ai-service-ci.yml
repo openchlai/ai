@@ -7,7 +7,7 @@
       paths:
         - 'ai_service/**'
       branches:
-        - '**'  # any branch, so pushes to feature/* trigger too
+        - '**'  # run for all branches
     pull_request:
       paths:
         - 'ai_service/**'
