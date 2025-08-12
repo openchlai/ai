@@ -119,3 +119,6 @@ Ensure you have the following installed:
    ```sh
    git clone https://github.com/your-repo-name.git
    cd your-repo-name
+
+
+[![AI Service CI/CD](https://github.com/openchlai/ai/actions/workflows/ai-service-ci.yml/badge.svg?branch=main)](https://github.com/openchlai/ai/actions/workflows/ai-service-ci.yml)
