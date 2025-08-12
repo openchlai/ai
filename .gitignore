@@ -1,4 +1,4 @@
-# OS specific files
+c# OS specific files
 .DS_Store
 .DS_Store?
 ._*
@@ -108,7 +108,7 @@ obj/
 *.dbproj.schemaview
 *.pfx
 *.publishsettings
-*.sql
+# *.sql
 
 # Java specific
 *.class
