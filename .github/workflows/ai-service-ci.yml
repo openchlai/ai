@@ -225,7 +225,7 @@
             fail_ci_if_error: false
             verbose: true
           env:
-            CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+            CODECOV_TOKEN: ${{ secrets.AI_CODE_COV }}
 
         - name: 📦 Archive Coverage Results
           if: always()
