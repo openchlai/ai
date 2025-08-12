@@ -108,7 +108,7 @@ obj/
 *.dbproj.schemaview
 *.pfx
 *.publishsettings
-# *.sql
+*.sql
 
 # Java specific
 *.class
