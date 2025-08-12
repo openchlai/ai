@@ -12,8 +12,9 @@ services:
       - "3307:3306"
     volumes:
       - db_data:/var/lib/mysql
-      - ./rest_api/config/uchl.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./rest_api/config/uchl.sql:/docker-entrypoint-initdb.d/01-complete-schema.sql
       - ./docker/mysql/init-user.sql:/docker-entrypoint-initdb.d/02-init-user.sql
+      - ./docker/mysql/03-missing-columns.sql:/docker-entrypoint-initdb.d/03-missing-columns.sql
     restart: unless-stopped
     networks:
       - helpline-network
@@ -27,8 +28,8 @@ services:
   # PHP-FPM Backend API
   php-api:
     build:
-      context: ./docker/php
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: docker/php/Dockerfile
     container_name: helpline-php-api
     volumes:
       - ./application:/var/www/html/helpline
@@ -56,11 +57,11 @@ services:
   # Nginx Web Server
   nginx:
     build:
-      context: ./docker/nginx
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: docker/nginx/Dockerfile
     container_name: helpline-nginx
     ports:
-      - "8087:80"
+      - "8888:80"
       - "8443:443"
     volumes:
       - ./application:/var/www/html/helpline
