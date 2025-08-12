@@ -12,8 +12,8 @@
       paths:
         - 'ai_service/**'
       branches:
-        - main
-        - develop
+        - '**'
+
 
 
   env:
