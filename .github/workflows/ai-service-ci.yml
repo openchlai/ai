@@ -6,12 +6,14 @@
     push:
       paths:
         - 'ai_service/**'
-      branches: [main, develop]
+      branches:
+        - '**'  # any branch, so pushes to feature/* trigger too
     pull_request:
       paths:
         - 'ai_service/**'
-      # branches: [main, develop]
-    workflow_dispatch:
+      branches:
+        - main
+        - develop
 
   env:
     PYTHONPATH: /app
