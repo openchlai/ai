@@ -10,7 +10,7 @@
     pull_request:
       paths:
         - 'ai_service/**'
-      branches: [main, develop]
+      # branches: [main, develop]
     workflow_dispatch:
 
   env:
