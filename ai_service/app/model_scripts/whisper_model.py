@@ -1,7 +1,7 @@
 import torch
 import logging
 import librosa
-import tempfile
+import numpy as np
 import os
 from pathlib import Path
 from typing import Optional, Dict, Any
@@ -214,6 +214,18 @@ class WhisperModel:
         logger.warning(f"⚠️ Language '{language}' not in known list, but will attempt transcription")
         return lang_code
     
+    def _convert_pcm_bytes_to_array(self, audio_bytes: bytes, sample_rate: int = 16000) -> np.ndarray:
+        """Convert raw PCM bytes (16-bit, mono) to normalized float32 numpy array"""
+        # Convert bytes to int16 array
+        audio_int16 = np.frombuffer(audio_bytes, dtype=np.int16)
+        
+        # Convert to float32 and normalize to [-1.0, 1.0] range
+        audio_float32 = audio_int16.astype(np.float32) / 32768.0
+        
+        logger.info(f"🎙️ Converted PCM data: {len(audio_int16)} samples, {len(audio_int16)/sample_rate:.1f}s duration")
+        
+        return audio_float32
+    
     def transcribe_audio_file(self, audio_file_path: str, language: Optional[str] = None) -> str:
         """Transcribe audio file to text with support for long audio"""
         if not self.is_loaded:
@@ -231,6 +243,23 @@ class WhisperModel:
             
             # Load audio with librosa (handles multiple formats)
             audio_array, sample_rate = librosa.load(audio_file_path, sr=16000, mono=True)
+            
+            # Use the shared transcription logic
+            return self._transcribe_audio_array(audio_array, language, sample_rate)
+            
+        except Exception as e:
+            logger.error(f"❌ Transcription failed: {e}")
+            raise RuntimeError(f"Transcription failed: {str(e)}")
+    
+    def _transcribe_audio_array(self, audio_array: np.ndarray, language: Optional[str] = None, sample_rate: int = 16000) -> str:
+        """Core transcription logic for numpy audio arrays"""
+        try:
+            # Validate and normalize language
+            validated_language = self._validate_language(language)
+            if validated_language:
+                logger.info(f"🎙️ Target language: {validated_language} ({self.supported_languages.get(validated_language, 'Unknown')})")
+            else:
+                logger.info("🎙️ Language: Auto-detect")
             
             # Calculate audio duration
             duration = len(audio_array) / sample_rate
@@ -273,31 +302,50 @@ class WhisperModel:
                 transcript = str(result).strip()
             
             logger.info(f"✅ Transcription completed: {len(transcript)} characters")
-            
             return transcript
             
         except Exception as e:
-            logger.error(f"❌ Transcription failed: {e}")
+            logger.error(f"❌ Array transcription failed: {e}")
             raise RuntimeError(f"Transcription failed: {str(e)}")
     
     def transcribe_audio_bytes(self, audio_bytes: bytes, language: Optional[str] = None) -> str:
-        """Transcribe audio from bytes (for uploaded files)"""
+        """Transcribe audio from raw PCM bytes (16-bit, 16kHz, mono)"""
         if not self.is_loaded:
             raise RuntimeError("Whisper model not loaded")
         
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_file:
-            try:
-                temp_file.write(audio_bytes)
-                temp_file.flush()
-                
-                result = self.transcribe_audio_file(temp_file.name, language)
-                return result
-                
-            finally:
-                try:
-                    os.unlink(temp_file.name)
-                except:
-                    pass
+        try:
+            # Convert raw PCM bytes to numpy array
+            audio_array = self._convert_pcm_bytes_to_array(audio_bytes, sample_rate=16000)
+            
+            # Transcribe the audio array directly
+            result = self._transcribe_audio_array(audio_array, language, sample_rate=16000)
+            return result
+            
+        except Exception as e:
+            logger.error(f"❌ Transcription from bytes failed: {e}")
+            raise RuntimeError(f"Transcription failed: {str(e)}")
+    
+    def transcribe_pcm_audio(self, audio_bytes: bytes, sample_rate: int = 16000, language: Optional[str] = None) -> str:
+        """Transcribe raw PCM audio bytes with specified sample rate
+        
+        Args:
+            audio_bytes: Raw PCM audio data (16-bit, mono)
+            sample_rate: Sample rate in Hz (default: 16000, currently only 16000 is supported)
+            language: Language code for transcription (optional, auto-detect if None)
+            
+        Returns:
+            Transcribed text
+            
+        Raises:
+            RuntimeError: If model not loaded or transcription fails
+            ValueError: If unsupported sample rate provided
+        """
+        # Validate sample rate
+        if sample_rate != 16000:
+            raise ValueError(f"Sample rate {sample_rate} not supported. Currently only 16000 Hz is supported.")
+        
+        # Delegate to the existing transcribe_audio_bytes method
+        return self.transcribe_audio_bytes(audio_bytes, language)
     
     def get_supported_languages(self) -> Dict[str, str]:
         """Get dictionary of supported language codes and names"""

@@ -14,16 +14,27 @@ class AsteriskAudioBuffer:
         self.buffer = bytearray()
         self.offset = 0
         self.chunk_count = 0
-        self.expected_chunk_size = 320  # 10ms chunks: 160 samples * 2 bytes = 320 bytes
+        # Flexible chunk sizes - observed patterns from TCP fragmentation
+        self.common_chunk_sizes = {168, 240, 88, 320}  # Common sizes we've observed
+        self.target_chunk_size = 320  # Ideal 10ms chunk size (160 samples * 2 bytes)
+        self.size_statistics = {}  # Track frequency of different chunk sizes
         
     def add_chunk(self, chunk: bytes) -> Optional[np.ndarray]:
         """
-        Add 10ms chunk (320 bytes), return audio array when 5-second window ready
+        Add variable-size audio chunks, return audio array when 5-second window ready
         Mixed-mono audio contains both caller and agent voices in one channel
+        Handles TCP fragmentation patterns: 168+168+240=576, 168+88=256, etc.
         """
-        # Validate chunk size (log warning if unexpected)
-        if len(chunk) != self.expected_chunk_size:
-            logger.warning(f"⚠️ Unexpected chunk size: {len(chunk)} bytes (expected {self.expected_chunk_size})")
+        chunk_size = len(chunk)
+        
+        # Track chunk size statistics
+        self.size_statistics[chunk_size] = self.size_statistics.get(chunk_size, 0) + 1
+        
+        # Log chunk size patterns occasionally for monitoring
+        if self.chunk_count > 0 and self.chunk_count % 100 == 0:
+            total_chunks = sum(self.size_statistics.values())
+            size_breakdown = {size: count/total_chunks*100 for size, count in self.size_statistics.items()}
+            logger.info(f"📊 Chunk size distribution after {total_chunks} chunks: {size_breakdown}")
         
         self.buffer.extend(chunk)
         self.chunk_count += 1
@@ -56,10 +67,13 @@ class AsteriskAudioBuffer:
         return None
         
     def get_stats(self) -> dict:
-        """Get buffer statistics"""
+        """Get buffer statistics including chunk size patterns"""
         return {
             "buffer_size_bytes": len(self.buffer),
             "buffer_duration_seconds": len(self.buffer) / (self.sample_rate * 2),
             "chunks_received": self.chunk_count,
-            "window_ready": (len(self.buffer) - self.offset) >= self.window_size_bytes
+            "window_ready": (len(self.buffer) - self.offset) >= self.window_size_bytes,
+            "chunk_size_distribution": self.size_statistics,
+            "average_chunk_size": sum(size * count for size, count in self.size_statistics.items()) / max(1, sum(self.size_statistics.values())),
+            "most_common_chunk_size": max(self.size_statistics.keys(), key=self.size_statistics.get) if self.size_statistics else 0
         }

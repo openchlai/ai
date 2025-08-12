@@ -139,7 +139,7 @@ class ProgressiveProcessor:
         
         return window
     
-    async def process_window(self, call_id: str, window: ProcessingWindow) -> ProcessingWindow:
+    async def process_window(self, call_id: str, window: ProcessingWindow, client_ip: str = "192.168.10.1") -> ProcessingWindow:
         """Process a window through translation, NER, and classification"""
         
         start_time = datetime.now()
@@ -178,7 +178,7 @@ class ProgressiveProcessor:
             await self._update_cumulative_analysis(call_id, window)
             
             # Send real-time updates to agent
-            await self._send_agent_notifications(call_id, window)
+            await self._send_agent_notifications(call_id, window, client_ip)
             
             logger.info(f"✅ Processed window {window.window_id} for call {call_id} in {window.processing_duration:.2f}s")
             
@@ -292,13 +292,13 @@ class ProgressiveProcessor:
             # No overlap found, concatenate with separator
             return existing + " " + new_translation
     
-    async def process_if_ready(self, call_id: str, transcript: str) -> Optional[ProcessingWindow]:
+    async def process_if_ready(self, call_id: str, transcript: str, client_ip: str = "192.168.10.1") -> Optional[ProcessingWindow]:
         """Check if ready and process new window if needed"""
         
         try:
             if await self.should_process_window(call_id, transcript):
                 window = self.create_processing_window(call_id, transcript)
-                processed_window = await self.process_window(call_id, window)
+                processed_window = await self.process_window(call_id, window, client_ip)
                 
                 # Store analysis in Redis for persistence
                 await self._store_analysis_in_redis(call_id)
@@ -421,7 +421,7 @@ class ProgressiveProcessor:
         except Exception as e:
             logger.error(f"Failed to store final report for {call_id}: {e}")
     
-    async def _send_agent_notifications(self, call_id: str, window: ProcessingWindow):
+    async def _send_agent_notifications(self, call_id: str, window: ProcessingWindow, client_ip: str = "192.168.10.1"):
         """Send real-time updates to agent endpoint"""
         
         if not NOTIFICATIONS_ENABLED:
@@ -436,7 +436,8 @@ class ProgressiveProcessor:
                     call_id=call_id,
                     window_id=window.window_id,
                     translation=window.translation,
-                    cumulative_translation=analysis.cumulative_translation
+                    cumulative_translation=analysis.cumulative_translation,
+                    client_ip=client_ip
                 )
             
             # Send entity update if available
@@ -445,7 +446,8 @@ class ProgressiveProcessor:
                     call_id=call_id,
                     window_id=window.window_id,
                     entities=window.entities,
-                    entity_evolution=analysis.entity_evolution
+                    entity_evolution=analysis.entity_evolution,
+                    client_ip=client_ip
                 )
             
             # Send classification update if available
@@ -454,7 +456,8 @@ class ProgressiveProcessor:
                     call_id=call_id,
                     window_id=window.window_id,
                     classification=window.classification,
-                    classification_evolution=analysis.classification_evolution
+                    classification_evolution=analysis.classification_evolution,
+                    client_ip=client_ip
                 )
             
             logger.info(f"📤 Sent agent notifications for window {window.window_id}, call {call_id}")

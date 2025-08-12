@@ -135,9 +135,15 @@ class CallSessionManager:
             
             # Trigger progressive processing (translation, NER, classification)
             try:
+                # Extract client IP for dynamic environment selection
+                client_ip = session.connection_info.get('client_addr', '192.168.10.1')
+                if isinstance(client_ip, (tuple, list)):
+                    client_ip = client_ip[0]
+                
                 processed_window = await progressive_processor.process_if_ready(
                     call_id, 
-                    session.cumulative_transcript
+                    session.cumulative_transcript,
+                    client_ip
                 )
                 
                 if processed_window:
@@ -156,10 +162,16 @@ class CallSessionManager:
             # Send transcript segment notification to agent
             if AGENT_NOTIFICATIONS_ENABLED:
                 try:
+                    # Extract client IP from session connection info
+                    client_ip = session.connection_info.get('client_addr', '192.168.10.1')
+                    if isinstance(client_ip, (tuple, list)):
+                        client_ip = client_ip[0]
+                    
                     await agent_notification_service.send_transcript_segment(
                         call_id, 
                         segment, 
-                        session.cumulative_transcript
+                        session.cumulative_transcript,
+                        client_ip
                     )
                 except Exception as e:
                     logger.error(f"❌ Failed to send transcript segment notification for {call_id}: {e}")
@@ -278,7 +290,13 @@ class CallSessionManager:
                         'start_time': session.start_time.isoformat(),
                         'end_time': session.last_activity.isoformat()
                     }
-                    await agent_notification_service.send_call_end(call_id, reason, final_stats)
+                    
+                    # Extract client IP from session connection info
+                    client_ip = session.connection_info.get('client_addr', '192.168.10.1')
+                    if isinstance(client_ip, (tuple, list)):
+                        client_ip = client_ip[0]
+                    
+                    await agent_notification_service.send_call_end(call_id, reason, final_stats, client_ip)
                 except Exception as e:
                     logger.error(f"❌ Failed to send call end notification for {call_id}: {e}")
             
@@ -395,7 +413,15 @@ class CallSessionManager:
                                         }
                                     }
                                     
-                                    await agent_notification_service.send_call_summary(call_id, summary, final_analysis)
+                                    # Get client IP from session for dynamic environment selection
+                                    session = self.active_sessions.get(call_id)
+                                    client_ip = '192.168.10.1'  # default to prod
+                                    if session:
+                                        client_ip = session.connection_info.get('client_addr', '192.168.10.1')
+                                        if isinstance(client_ip, tuple):
+                                            client_ip = client_ip[0]
+                                    
+                                    await agent_notification_service.send_call_summary(call_id, summary, final_analysis, client_ip)
                                     logger.info(f"📋 [session] Sent call summary with QA summary for {call_id}")
                                 except Exception as e:
                                     logger.error(f"❌ Failed to send call summary for {call_id}: {e}")
@@ -428,8 +454,16 @@ class CallSessionManager:
                                     logger.info(f"🧠 [session] Generating Mistral GPT insights for call {call_id}")
                                     gpt_insights = generate_case_insights(transcript)
                                     
+                                    # Get client IP from session for dynamic environment selection
+                                    session = self.active_sessions.get(call_id)
+                                    client_ip = '192.168.10.1'  # default to prod
+                                    if session:
+                                        client_ip = session.connection_info.get('client_addr', '192.168.10.1')
+                                        if isinstance(client_ip, tuple):
+                                            client_ip = client_ip[0]
+                                    
                                     # Send GPT insights notification
-                                    await agent_notification_service.send_gpt_insights(call_id, gpt_insights)
+                                    await agent_notification_service.send_gpt_insights(call_id, gpt_insights, client_ip)
                                     logger.info(f"🤖 [session] Sent Mistral GPT insights for {call_id}")
                                 else:
                                     logger.warning(f"⚠️ [session] Transcript too short for GPT insights generation: {len(transcript)} chars")

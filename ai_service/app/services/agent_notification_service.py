@@ -12,6 +12,20 @@ from enum import Enum
 
 logger = logging.getLogger(__name__)
 
+# Environment-specific configuration
+ENVIRONMENT_CONFIG = {
+    "prod": {
+        "base_url": "https://192.168.10.3",
+        "endpoint_path": "/hh5aug2025/api/",
+        "basic_auth": "dGVzdDpwQHNzdzByZA=="  # test:p@ssw0rd
+    },
+    "dev": {
+        "base_url": "https://192.168.8.13",
+        "endpoint_path": "/helpline/api/",
+        "basic_auth": "dGVzdDowMDI5MjI0MA=="  # test:00292240
+    }
+}
+
 class UpdateType(Enum):
     CALL_START = "call_start"
     TRANSCRIPT_SEGMENT = "transcript_segment" 
@@ -32,11 +46,8 @@ class AgentNotificationService:
         # Import settings here to avoid circular imports
         from ..config.settings import settings
         
-        # Configuration
+        # Configuration (URLs will be determined dynamically based on client IP)
         self.asterisk_server_ip = settings.asterisk_server_ip
-        self.endpoint_url = f"https://192.168.10.3/hh5aug2025/api/msg/"
-        self.auth_endpoint_url = f"https://192.168.10.3/hh5aug2025/api/"
-        self.basic_auth = "dGVzdDpwQHNzdzByZA=="  # Base64: test:p@ssw0rd
         
         # Dynamic token management
         self.bearer_token: Optional[str] = None
@@ -50,6 +61,53 @@ class AgentNotificationService:
         self.max_retries = 3
         self.retry_delay = 1.0  # seconds
         self.request_timeout = 10.0  # seconds
+        
+    def _determine_environment(self, client_ip: str) -> str:
+        """Determine environment (prod/dev) based on client IP
+        
+        Args:
+            client_ip: The client IP address from connection_info
+            
+        Returns:
+            Environment string: 'prod' or 'dev'
+        """
+        # Extract IP from client_addr tuple/list if needed
+        if isinstance(client_ip, (tuple, list)):
+            client_ip = client_ip[0]
+        elif isinstance(client_ip, str) and ',' in client_ip:
+            # Handle comma-separated format like "192.168.10.3, 1234"
+            client_ip = client_ip.split(',')[0].strip()
+        
+        # Determine environment based on IP
+        if client_ip.startswith('192.168.10.'):
+            return 'prod'
+        elif client_ip.startswith('192.168.8.'):
+            return 'dev'
+        else:
+            # Default to prod for unknown IPs
+            logger.warning(f"Unknown client IP {client_ip}, defaulting to prod environment")
+            return 'prod'
+    
+    def _get_environment_config(self, client_ip: str) -> Dict[str, str]:
+        """Get environment configuration based on client IP
+        
+        Args:
+            client_ip: The client IP address
+            
+        Returns:
+            Dictionary with environment-specific configuration
+        """
+        env = self._determine_environment(client_ip)
+        config = ENVIRONMENT_CONFIG.get(env, ENVIRONMENT_CONFIG['prod'])
+        
+        logger.info(f"🌍 Using {env.upper()} environment for client {client_ip}")
+        
+        return {
+            'environment': env,
+            'endpoint_url': config['base_url'] + config['endpoint_path'] + 'msg/',
+            'auth_endpoint_url': config['base_url'] + config['endpoint_path'],
+            'basic_auth': config['basic_auth']
+        }
         
     async def _ensure_session(self):
         """Ensure HTTP session is available"""
@@ -70,19 +128,19 @@ class AgentNotificationService:
         if self.session and not self.session.closed:
             await self.session.close()
     
-    async def _fetch_auth_token(self) -> Optional[str]:
+    async def _fetch_auth_token(self, env_config: Dict[str, str]) -> Optional[str]:
         """Fetch authentication token from auth endpoint"""
         try:
             await self._ensure_session()
             
             headers = {
-                "Authorization": f"Basic {self.basic_auth}"
+                "Authorization": f"Basic {env_config['basic_auth']}"
             }
             
-            logger.info("🔑 Fetching auth token from endpoint...")
+            logger.info(f"🔑 Fetching auth token from {env_config['environment'].upper()} endpoint...")
             
             async with self.session.get(
-                self.auth_endpoint_url,
+                env_config['auth_endpoint_url'],
                 headers=headers,
                 ssl=False  # Disable SSL verification
             ) as response:
@@ -119,7 +177,7 @@ class AgentNotificationService:
         
         return None
     
-    async def _ensure_valid_token(self) -> bool:
+    async def _ensure_valid_token(self, env_config: Dict[str, str]) -> bool:
         """Ensure we have a valid authentication token"""
         now = datetime.now()
         
@@ -132,7 +190,7 @@ class AgentNotificationService:
         
         if needs_refresh:
             logger.info("🔑 Token refresh needed, fetching new token...")
-            new_token = await self._fetch_auth_token()
+            new_token = await self._fetch_auth_token(env_config)
             
             if new_token:
                 self.bearer_token = new_token
@@ -160,14 +218,17 @@ class AgentNotificationService:
         return encoded_bytes.decode('utf-8')
     
     async def _send_notification(self, call_id: str, update_type: UpdateType, 
-                                payload: Dict[str, Any], retries: int = 0) -> bool:
+                                payload: Dict[str, Any], client_ip: str, retries: int = 0) -> bool:
         """Send notification to agent endpoint with retry logic"""
         
         try:
             await self._ensure_session()
             
+            # Get environment configuration based on client IP
+            env_config = self._get_environment_config(client_ip)
+            
             # Ensure we have a valid auth token
-            if not await self._ensure_valid_token():
+            if not await self._ensure_valid_token(env_config):
                 logger.error(f"❌ Cannot send {update_type.value} for call {call_id}: No valid auth token")
                 return False
             
@@ -199,7 +260,7 @@ class AgentNotificationService:
             
             # Send request
             async with self.session.post(
-                self.endpoint_url, 
+                env_config['endpoint_url'], 
                 json=request_body, 
                 headers=headers
             ) as response:
@@ -234,10 +295,15 @@ class AgentNotificationService:
             "status": "active"
         }
         
-        return await self._send_notification(call_id, UpdateType.CALL_START, payload)
+        # Extract client IP from connection_info
+        client_ip = connection_info.get('client_addr', '192.168.10.1')  # Default to prod if missing
+        if isinstance(client_ip, (tuple, list)):
+            client_ip = client_ip[0]
+        
+        return await self._send_notification(call_id, UpdateType.CALL_START, payload, client_ip)
     
     async def send_transcript_segment(self, call_id: str, segment_data: Dict[str, Any], 
-                                    cumulative_transcript: str) -> bool:
+                                    cumulative_transcript: str, client_ip: str = "192.168.10.1") -> bool:
         """Send new transcript segment to agent"""
         payload = {
             "update_type": "transcript_segment",
@@ -248,10 +314,10 @@ class AgentNotificationService:
             "transcript_length": len(cumulative_transcript)
         }
         
-        return await self._send_notification(call_id, UpdateType.TRANSCRIPT_SEGMENT, payload)
+        return await self._send_notification(call_id, UpdateType.TRANSCRIPT_SEGMENT, payload, client_ip)
     
     async def send_translation_update(self, call_id: str, window_id: int, 
-                                    translation: str, cumulative_translation: str) -> bool:
+                                    translation: str, cumulative_translation: str, client_ip: str = "192.168.10.1") -> bool:
         """Send translation update to agent"""
         payload = {
             "update_type": "translation_update", 
@@ -263,10 +329,10 @@ class AgentNotificationService:
             "translation_length": len(cumulative_translation)
         }
         
-        return await self._send_notification(call_id, UpdateType.TRANSLATION_UPDATE, payload)
+        return await self._send_notification(call_id, UpdateType.TRANSLATION_UPDATE, payload, client_ip)
     
     async def send_entity_update(self, call_id: str, window_id: int, 
-                               entities: Dict[str, Any], entity_evolution: list) -> bool:
+                               entities: Dict[str, Any], entity_evolution: list, client_ip: str = "192.168.10.1") -> bool:
         """Send entity extraction update to agent"""
         payload = {
             "update_type": "entity_update",
@@ -283,10 +349,10 @@ class AgentNotificationService:
             }
         }
         
-        return await self._send_notification(call_id, UpdateType.ENTITY_UPDATE, payload)
+        return await self._send_notification(call_id, UpdateType.ENTITY_UPDATE, payload, client_ip)
     
     async def send_classification_update(self, call_id: str, window_id: int,
-                                       classification: Dict[str, Any], classification_evolution: list) -> bool:
+                                       classification: Dict[str, Any], classification_evolution: list, client_ip: str = "192.168.10.1") -> bool:
         """Send classification update to agent"""
         payload = {
             "update_type": "classification_update",
@@ -301,10 +367,10 @@ class AgentNotificationService:
             "confidence_trend": [c.get("confidence", 0) for c in classification_evolution[-3:]]  # Last 3 confidences
         }
         
-        return await self._send_notification(call_id, UpdateType.CLASSIFICATION_UPDATE, payload)
+        return await self._send_notification(call_id, UpdateType.CLASSIFICATION_UPDATE, payload, client_ip)
     
     async def send_qa_update(self, call_id: str, qa_scores: Dict[str, Any], 
-                           processing_info: Dict[str, Any] = None) -> bool:
+                           processing_info: Dict[str, Any] = None, client_ip: str = "192.168.10.1") -> bool:
         """Send QA analysis results to agent"""
         payload = {
             "update_type": "qa_update",
@@ -317,9 +383,9 @@ class AgentNotificationService:
             "status": "completed"
         }
         
-        return await self._send_notification(call_id, UpdateType.QA_UPDATE, payload)
+        return await self._send_notification(call_id, UpdateType.QA_UPDATE, payload, client_ip)
     
-    async def send_call_end(self, call_id: str, reason: str, final_stats: Dict[str, Any]) -> bool:
+    async def send_call_end(self, call_id: str, reason: str, final_stats: Dict[str, Any], client_ip: str = "192.168.10.1") -> bool:
         """Notify agent that call has ended"""
         payload = {
             "update_type": "call_end",
@@ -330,9 +396,9 @@ class AgentNotificationService:
             "status": "completed"
         }
         
-        return await self._send_notification(call_id, UpdateType.CALL_END, payload)
+        return await self._send_notification(call_id, UpdateType.CALL_END, payload, client_ip)
     
-    async def send_call_summary(self, call_id: str, summary: str, final_analysis: Dict[str, Any]) -> bool:
+    async def send_call_summary(self, call_id: str, summary: str, final_analysis: Dict[str, Any], client_ip: str = "192.168.10.1") -> bool:
         """Send final call summary to agent"""
         payload = {
             "update_type": "call_summary",
@@ -343,9 +409,9 @@ class AgentNotificationService:
             "processing_complete": True
         }
         
-        return await self._send_notification(call_id, UpdateType.CALL_SUMMARY, payload)
+        return await self._send_notification(call_id, UpdateType.CALL_SUMMARY, payload, client_ip)
     
-    async def send_gpt_insights(self, call_id: str, insights: Dict[str, Any]) -> bool:
+    async def send_gpt_insights(self, call_id: str, insights: Dict[str, Any], client_ip: str = "192.168.10.1") -> bool:
         """Send GPT-generated case insights to agent"""
         payload = {
             "update_type": "gpt_insights",
@@ -355,10 +421,10 @@ class AgentNotificationService:
             "processing_complete": True
         }
         
-        return await self._send_notification(call_id, UpdateType.GPT_INSIGHTS, payload)
+        return await self._send_notification(call_id, UpdateType.GPT_INSIGHTS, payload, client_ip)
     
     async def send_error_notification(self, call_id: str, error_type: str, 
-                                    error_message: str, error_context: Dict[str, Any] = None) -> bool:
+                                    error_message: str, error_context: Dict[str, Any] = None, client_ip: str = "192.168.10.1") -> bool:
         """Send error notification to agent"""
         payload = {
             "update_type": "error",
@@ -370,11 +436,11 @@ class AgentNotificationService:
             "status": "error"
         }
         
-        return await self._send_notification(call_id, UpdateType.ERROR, payload)
+        return await self._send_notification(call_id, UpdateType.ERROR, payload, client_ip)
     
     # Batch notification methods for efficiency
     async def send_progressive_update(self, call_id: str, window_id: int, 
-                                    window_data: Dict[str, Any]) -> bool:
+                                    window_data: Dict[str, Any], client_ip: str = "192.168.10.1") -> bool:
         """Send comprehensive progressive update (translation + entities + classification)"""
         payload = {
             "update_type": "progressive_update",
@@ -385,7 +451,7 @@ class AgentNotificationService:
             "processing_complete": True
         }
         
-        return await self._send_notification(call_id, UpdateType.TRANSLATION_UPDATE, payload)
+        return await self._send_notification(call_id, UpdateType.TRANSLATION_UPDATE, payload, client_ip)
     
     async def get_health_status(self) -> Dict[str, Any]:
         """Check health of agent notification service"""

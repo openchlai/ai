@@ -36,8 +36,9 @@ class AsteriskTCPServer:
         try:
             packet_count = 0
             while True:
-                # Receive 10ms SLIN (320 bytes) - mixed-mono with both parties
-                data = await reader.read(320)
+                # Receive audio data - flexible size to handle TCP fragmentation
+                # Common patterns: 168, 240, 88, 320 bytes due to network fragmentation
+                data = await reader.read(4096)  # Read up to 4KB, handle variable chunk sizes
                 packet_count += 1
                 
                 if not data:
