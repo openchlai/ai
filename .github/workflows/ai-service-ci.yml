@@ -230,10 +230,10 @@ jobs:
           cat > COVERAGE.md <<EOF
           # 📊 Code Coverage Report - AI Service
           
-          **Branch:** ${{ github.ref_name }}  
-          **Commit:** [\`${GITHUB_SHA:0:7}\`](https://github.com/${{ github.repository }}/commit/${{ github.sha }})  
-          **Generated:** $(date '+%Y-%m-%d %H:%M:%S UTC')  
-          **Python Version:** ${{ matrix.python-version }}  
+          **Branch:** ${{ github.ref_name }}
+          **Commit:** [\`${GITHUB_SHA:0:7}\`](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
+          **Generated:** $(date '+%Y-%m-%d %H:%M:%S UTC')
+          **Python Version:** ${{ matrix.python-version }}
           **Workflow:** [\`${{ github.run_id }}\`](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
           
           ## 🎯 Coverage Summary
@@ -278,26 +278,16 @@ jobs:
         working-directory: ai_service
         run: |
           echo "💾 Creating branch and committing coverage report for push event..."
-          
-          # Configure git
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          
-          # Check if there are any changes
           if git diff --quiet COVERAGE.md 2>/dev/null; then
             echo "📝 No changes to COVERAGE.md, skipping commit"
             exit 0
           fi
-          
-          # Create a new branch for the coverage update
           BRANCH_NAME="update-coverage-$(date +%s)"
           git checkout -b $BRANCH_NAME
-          
-          # Add and commit the file
           git add COVERAGE.md
           git commit -m "📊 Update coverage report - ${COVERAGE_PERCENTAGE:-0}% [skip ci]"
-          
-          # Push the new branch with retry logic
           max_retries=3
           for i in $(seq 1 $max_retries); do
             if git push origin $BRANCH_NAME; then
@@ -332,30 +322,20 @@ jobs:
             - View report: [COVERAGE.md](https://github.com/${{ github.repository }}/blob/${{ env.COVERAGE_MD_LINK }}/ai_service/COVERAGE.md)
           labels: automated, coverage
           delete-branch: true
-        env:
-          COVERAGE_PERCENTAGE: ${{ env.COVERAGE_PERCENTAGE }}
 
       - name: 💾 Commit COVERAGE.md for Pull Request Events
         if: github.event_name == 'pull_request' && matrix.python-version == '3.12'
         working-directory: ai_service
         run: |
           echo "💾 Committing coverage report for pull request..."
-          
-          # Configure git
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          
-          # Check if there are any changes
           if git diff --quiet COVERAGE.md 2>/dev/null; then
             echo "📝 No changes to COVERAGE.md, skipping commit"
             exit 0
           fi
-          
-          # Add and commit the file
           git add COVERAGE.md
           git commit -m "📊 Update coverage report for PR - ${COVERAGE_PERCENTAGE:-0}% [skip ci]"
-          
-          # Push to the PR's head branch
           max_retries=3
           for i in $(seq 1 $max_retries); do
             if git push origin HEAD:${{ github.event.pull_request.head.ref }}; then
@@ -423,7 +403,6 @@ jobs:
           echo "### ✅ Completed Jobs:" >> $GITHUB_STEP_SUMMARY
           echo "- Unit Tests: ${{ needs.unit-tests.result }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
           if [ "${{ needs.unit-tests.result }}" == "success" ]; then
             echo "### 🎉 All tests passed successfully!" >> $GITHUB_STEP_SUMMARY
             echo "The AI Service is ready for deployment." >> $GITHUB_STEP_SUMMARY
@@ -431,7 +410,6 @@ jobs:
             echo "### ⚠️ Some tests failed" >> $GITHUB_STEP_SUMMARY
             echo "Please check the logs and fix any issues." >> $GITHUB_STEP_SUMMARY
           fi
-          
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📊 Coverage Reports" >> $GITHUB_STEP_SUMMARY
           echo "- Coverage reports have been generated and uploaded as artifacts" >> $GITHUB_STEP_SUMMARY
