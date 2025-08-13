@@ -55,6 +55,12 @@ def mock_call_session():
 def mock_call_session_manager():
     """Mock call session manager"""
     with patch('app.api.call_session_routes.call_session_manager') as mock:
+        # Set all async methods to be AsyncMock
+        mock.get_all_active_sessions = AsyncMock()
+        mock.get_session_stats = AsyncMock()
+        mock.get_session = AsyncMock()
+        mock.end_session = AsyncMock()
+        mock._trigger_ai_pipeline = AsyncMock()
         yield mock
 
 @pytest.fixture
