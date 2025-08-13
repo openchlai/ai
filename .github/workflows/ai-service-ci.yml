@@ -338,27 +338,28 @@ jobs:
     if: always()
 
     steps:
-      - name: 📋 CI/CD Summary
-        run: |
-          echo "## 🎯 AI Service CI/CD Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### ✅ Completed Jobs:" >> $GITHUB_STEP_SUMMARY
-          echo "- Unit Tests: ${{ needs.unit-tests.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ needs.unit-tests.result }}" == "success" ]; then
-            echo "### 🎉 All tests passed successfully!" >> $GITHUB_STEP_SUMMARY
-            echo "The AI Service is ready for deployment." >> $GITHUB_STEP_SUMMARY
-          else
-            echo "### ⚠️ Some tests failed" >> $GITHUB_STEP_SUMMARY
-            echo "Please check the logs and fix any issues." >> $GITHUB_STEP_SUMMARY
-          fi
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📊 Coverage Reports" >> $GITHUB_STEP_SUMMARY
-          echo "- Coverage reports have been generated and uploaded as artifacts" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ github.event_name }}" == "push" ]; then
-            echo "- Markdown coverage report committed to a new branch and PR created" >> $GITHUB_STEP_SUMMARY
-            echo "- Access the coverage report at: [COVERAGE.md](${{ env.COVERAGE_MD_LINK }})" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "- Markdown coverage report committed to PR branch" >> $GITHUB_STEP_SUMMARY
-            echo "- Access the coverage report at: [COVERAGE.md](${{ env.COVERAGE_MD_PR_LINK }})" >> $GITHUB_STEP_SUMMARY
-
+    - name: 📋 CI/CD Summary
+      run: |
+        echo "## 🎯 AI Service CI/CD Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### ✅ Completed Jobs:" >> $GITHUB_STEP_SUMMARY
+        echo "- Unit Tests: $RESULT" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        if [ "$RESULT" == "success" ]; then
+          echo "### 🎉 All tests passed successfully!" >> $GITHUB_STEP_SUMMARY
+          echo "The AI Service is ready for deployment." >> $GITHUB_STEP_SUMMARY
+        else
+          echo "### ⚠️ Some tests failed" >> $GITHUB_STEP_SUMMARY
+          echo "Please check the logs and fix any issues." >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📊 Coverage Reports" >> $GITHUB_STEP_SUMMARY
+        echo "- Coverage reports have been generated and uploaded as artifacts" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ github.event_name }}" == "push" ]; then
+          echo "- Markdown coverage report committed to a new branch and PR created" >> $GITHUB_STEP_SUMMARY
+          echo "- Access the coverage report at: [COVERAGE.md](${{ env.COVERAGE_MD_LINK }})" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- Markdown coverage report committed to PR branch" >> $GITHUB_STEP_SUMMARY
+          echo "- Access the coverage report at: [COVERAGE.md](${{ env.COVERAGE_MD_PR_LINK }})" >> $GITHUB_STEP_SUMMARY
+      env:
+        RESULT: ${{ needs.unit-tests.result }}
