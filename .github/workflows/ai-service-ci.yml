@@ -142,7 +142,7 @@ jobs:
             [ -f test_progressive_system.py ] && timeout 60 python test_progressive_system.py || echo "test_progressive_system.py skipped"
             [ -f test_agent_connectivity.py ] && timeout 30 python test_agent_connectivity.py || echo "test_agent_connectivity.py skipped"
           fi
-
+  
       - name: 🧪 Run Tests with Coverage
         working-directory: ai_service
         run: |
@@ -158,7 +158,7 @@ jobs:
               --tb=no \
               || {
                 if [ ! -f coverage.xml ]; then
-                  cat > coverage.xml <<'EOF'
+                  cat > coverage.xml <<-EOF
                   <?xml version="1.0" ?>
                   <coverage version="7.0" timestamp="$(date +%s)" lines-valid="100" lines-covered="0" line-rate="0.0">
                     <sources><source>./app</source></sources>
@@ -168,7 +168,7 @@ jobs:
                 fi
               }
           else
-            cat > coverage.xml <<'EOF'
+            cat > coverage.xml <<-EOF
             <?xml version="1.0" ?>
             <coverage version="7.0" timestamp="$(date +%s)" lines-valid="100" lines-covered="0" line-rate="0.0">
               <sources><source>./app</source></sources>
@@ -176,6 +176,7 @@ jobs:
             </coverage>
             EOF
           fi
+
 
       - name: 📊 Generate Coverage Report
         working-directory: ai_service
