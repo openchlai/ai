@@ -6,12 +6,15 @@ on:
   push:
     paths:
       - 'helplinev1/**'
-    branches: [main]
+    branches:
+      - '**'  # any branch
   pull_request:
     paths:
       - 'helplinev1/**'
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
+
 
 jobs:
   # Unit Tests and Code Coverage for REST API Backend
