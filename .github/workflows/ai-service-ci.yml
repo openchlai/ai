@@ -1,15 +1,17 @@
 name: AI Service CI/CD
 permissions:
-  contents: write  # Changed from 'read' to 'write' to enable coverage report commits
+  contents: write  # Enable writing coverage reports and creating branches
+  pull-requests: write  # Enable creating PRs and writing to PR branches
 
 on:
   push:
     paths:
-      - 'ai_service/**'
+      - 'ai_service/**'  # Trigger on any file in ai_service folder
+    branches: [main, develop]
   pull_request:
     paths:
-      - 'ai_service/**'
-    branches: [main]
+      - 'ai_service/**'  # Trigger on any file in ai_service folder
+    branches: [main, develop]
   workflow_dispatch:
 
 env:
@@ -17,7 +19,6 @@ env:
   PYTHONUNBUFFERED: 1
 
 jobs:
-  # Unit Tests and Code Coverage for AI Service
   unit-tests:
     runs-on: ubuntu-latest
     strategy:
@@ -36,6 +37,7 @@ jobs:
       - name: 🛎️ Checkout code
         uses: actions/checkout@v4
         with:
+          fetch-depth: 0  # Needed for git operations
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 🐍 Set up Python ${{ matrix.python-version }}
@@ -66,7 +68,6 @@ jobs:
           # Install requirements but handle potential GPU-specific packages gracefully
           pip install -r requirements.txt || {
             echo "Some packages failed to install, trying without GPU packages..."
-            # Install core packages individually for better error handling
             pip install fastapi uvicorn pydantic redis celery
             pip install transformers torch --index-url https://download.pytorch.org/whl/cpu
             pip install numpy pandas scikit-learn librosa soundfile
@@ -175,12 +176,12 @@ jobs:
           else
             echo "Creating minimal coverage report..."
             cat > coverage.xml <<'EOF'
-          <?xml version="1.0" ?>
-          <coverage version="7.0" timestamp="$(date +%s)" lines-valid="100" lines-covered="0" line-rate="0.0">
-            <sources><source>./app</source></sources>
-            <packages></packages>
-          </coverage>
-          EOF
+            <?xml version="1.0" ?>
+            <coverage version="7.0" timestamp="$(date +%s)" lines-valid="100" lines-covered="0" line-rate="0.0">
+              <sources><source>./app</source></sources>
+              <packages></packages>
+            </coverage>
+            EOF
           fi
 
       - name: 📊 Generate Coverage Report
@@ -191,9 +192,12 @@ jobs:
             if command -v coverage >/dev/null; then
               coverage report --show-missing 2>/dev/null || true
               COVERAGE=$(coverage report --format=total 2>/dev/null || echo "0")
+              # Also save detailed report to file for markdown generation
+              coverage report --show-missing > coverage.txt 2>/dev/null || echo "No coverage data" > coverage.txt
             else
               # Fallback to parsing XML
               COVERAGE=$(grep -o 'line-rate="[0-9.]*"' coverage.xml | head -1 | sed 's/line-rate="//;s/"//' | awk '{print int($1*100)}' || echo "0")
+              echo "Coverage data parsed from XML: ${COVERAGE}%" > coverage.txt
             fi
             
             echo "COVERAGE_PERCENTAGE=$COVERAGE" >> $GITHUB_ENV
@@ -214,39 +218,160 @@ jobs:
             echo "COVERAGE_PERCENTAGE=0" >> $GITHUB_ENV
             echo "COVERAGE_COLOR=red" >> $GITHUB_ENV
             echo "⚠️ No coverage data available"
+            echo "No coverage data available" > coverage.txt
           fi
 
       - name: 📝 Generate COVERAGE.md
         working-directory: ai_service
         run: |
-          echo "# Code Coverage Report" > COVERAGE.md
+          echo "📝 Generating coverage report in ai_service folder..."
+          
+          # Create coverage report with timestamp
+          cat > COVERAGE.md <<EOF
+          # 📊 Code Coverage Report - AI Service
+          
+          **Branch:** ${{ github.ref_name }}  
+          **Commit:** [\`${GITHUB_SHA:0:7}\`](https://github.com/${{ github.repository }}/commit/${{ github.sha }})  
+          **Generated:** $(date '+%Y-%m-%d %H:%M:%S UTC')  
+          **Python Version:** ${{ matrix.python-version }}  
+          **Workflow:** [\`${{ github.run_id }}\`](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          
+          ## 🎯 Coverage Summary
+          
+          ![Coverage](https://img.shields.io/badge/Coverage-${COVERAGE_PERCENTAGE:-0}%25-${COVERAGE_COLOR:-red})
+          
+          | Metric | Value | Status |
+          |--------|-------|--------|
+          | **Coverage** | ${COVERAGE_PERCENTAGE:-0}% | $([ "${COVERAGE_PERCENTAGE:-0}" -ge 80 ] && echo "✅ Pass" || echo "❌ Fail") |
+          | **Threshold** | 80% | Target |
+          
+          EOF
+          
+          # Add detailed coverage report
+          echo "## 📈 Detailed Coverage Report" >> COVERAGE.md
           echo "" >> COVERAGE.md
-          echo "**Branch:** $GITHUB_REF_NAME" >> COVERAGE.md
-          echo "**Commit:** $GITHUB_SHA" >> COVERAGE.md
-          echo "" >> COVERAGE.md
-          echo "## Summary" >> COVERAGE.md
-          echo "- Coverage: ${COVERAGE_PERCENTAGE:-0}%" >> COVERAGE.md
-          echo "- Threshold: 80%" >> COVERAGE.md
-          echo "- Status: $([ "${COVERAGE_PERCENTAGE:-0}" -ge 80 ] && echo "✅ Pass" || echo "❌ Fail")" >> COVERAGE.md
-          echo "" >> COVERAGE.md
-          echo "## Detailed Report" >> COVERAGE.md
+          echo "\`\`\`" >> COVERAGE.md
+          
           if [ -f coverage.txt ]; then
+            echo "Using existing coverage.txt..." >&2
             cat coverage.txt >> COVERAGE.md
-          elif command -v coverage >/dev/null; then
-            coverage report -m >> COVERAGE.md || true
+          elif command -v coverage >/dev/null && [ -f .coverage ]; then
+            echo "Generating coverage report from .coverage file..." >&2
+            coverage report --show-missing >> COVERAGE.md 2>/dev/null || echo "Unable to generate detailed coverage report" >> COVERAGE.md
           else
-            echo "_No detailed report available_" >> COVERAGE.md
+            echo "No detailed coverage data available" >> COVERAGE.md
           fi
+          
+          echo "\`\`\`" >> COVERAGE.md
+          echo "" >> COVERAGE.md
+          
+          # Add footer with link to the file
+          echo "---" >> COVERAGE.md
+          echo "*Report generated automatically by GitHub Actions*" >> COVERAGE.md
+          echo "*Access this report at: [COVERAGE.md](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/ai_service/COVERAGE.md)*" >> COVERAGE.md
+          
+          echo "✅ Coverage report generated successfully"
+          echo "COVERAGE_MD_LINK=https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/ai_service/COVERAGE.md" >> $GITHUB_ENV
 
-      - name: 💾 Commit COVERAGE.md
+      - name: 💾 Create Branch and Commit COVERAGE.md for Push Events
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && matrix.python-version == '3.12'
+        working-directory: ai_service
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin $GITHUB_REF_NAME
-          git checkout $GITHUB_REF_NAME
-          git add ai_service/COVERAGE.md
-          git commit -m "📊 Update coverage report [skip ci]" || echo "No changes to commit"
-          git push origin HEAD:$GITHUB_REF_NAME
+          echo "💾 Creating branch and committing coverage report for push event..."
+          
+          # Configure git
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Check if there are any changes
+          if git diff --quiet COVERAGE.md 2>/dev/null; then
+            echo "📝 No changes to COVERAGE.md, skipping commit"
+            exit 0
+          fi
+          
+          # Create a new branch for the coverage update
+          BRANCH_NAME="update-coverage-$(date +%s)"
+          git checkout -b $BRANCH_NAME
+          
+          # Add and commit the file
+          git add COVERAGE.md
+          git commit -m "📊 Update coverage report - ${COVERAGE_PERCENTAGE:-0}% [skip ci]"
+          
+          # Push the new branch with retry logic
+          max_retries=3
+          for i in $(seq 1 $max_retries); do
+            if git push origin $BRANCH_NAME; then
+              echo "✅ Successfully pushed coverage report to branch $BRANCH_NAME"
+              echo "COVERAGE_MD_LINK=https://github.com/${{ github.repository }}/blob/$BRANCH_NAME/ai_service/COVERAGE.md" >> $GITHUB_ENV
+              break
+            else
+              echo "⚠️ Push failed, attempt $i/$max_retries"
+              if [ $i -eq $max_retries ]; then
+                echo "❌ Failed to push after $max_retries attempts"
+                exit 1
+              fi
+              sleep 5
+              git pull --rebase origin $BRANCH_NAME || true
+            fi
+          done
+
+      - name: 📬 Create Pull Request for Push Events
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && matrix.python-version == '3.12'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "📊 Update coverage report - ${COVERAGE_PERCENTAGE:-0}% [skip ci]"
+          branch: update-coverage-$(date +%s)
+          base: ${{ github.ref_name }}
+          title: "Update COVERAGE.md - ${COVERAGE_PERCENTAGE:-0}%"
+          body: |
+            Automated update of COVERAGE.md with code coverage report.
+            - Coverage: ${COVERAGE_PERCENTAGE:-0}%
+            - Generated: $(date '+%Y-%m-%d %H:%M:%S UTC')
+            - Workflow: [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            - View report: [COVERAGE.md](https://github.com/${{ github.repository }}/blob/${{ env.COVERAGE_MD_LINK }}/ai_service/COVERAGE.md)
+          labels: automated, coverage
+          delete-branch: true
+        env:
+          COVERAGE_PERCENTAGE: ${{ env.COVERAGE_PERCENTAGE }}
+
+      - name: 💾 Commit COVERAGE.md for Pull Request Events
+        if: github.event_name == 'pull_request' && matrix.python-version == '3.12'
+        working-directory: ai_service
+        run: |
+          echo "💾 Committing coverage report for pull request..."
+          
+          # Configure git
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Check if there are any changes
+          if git diff --quiet COVERAGE.md 2>/dev/null; then
+            echo "📝 No changes to COVERAGE.md, skipping commit"
+            exit 0
+          fi
+          
+          # Add and commit the file
+          git add COVERAGE.md
+          git commit -m "📊 Update coverage report for PR - ${COVERAGE_PERCENTAGE:-0}% [skip ci]"
+          
+          # Push to the PR's head branch
+          max_retries=3
+          for i in $(seq 1 $max_retries); do
+            if git push origin HEAD:${{ github.event.pull_request.head.ref }}; then
+              echo "✅ Successfully pushed coverage report to PR branch ${{ github.event.pull_request.head.ref }}"
+              echo "COVERAGE_MD_PR_LINK=https://github.com/${{ github.repository }}/blob/${{ github.event.pull_request.head.ref }}/ai_service/COVERAGE.md" >> $GITHUB_ENV
+              break
+            else
+              echo "⚠️ Push failed, attempt $i/$max_retries"
+              if [ $i -eq $max_retries ]; then
+                echo "❌ Failed to push after $max_retries attempts"
+                exit 1
+              fi
+              sleep 5
+              git pull --rebase origin ${{ github.event.pull_request.head.ref }}
+            fi
+          done
 
       - name: 📤 Upload Coverage to Codecov
         if: always()
@@ -268,6 +393,8 @@ jobs:
           path: |
             ai_service/coverage-html/
             ai_service/coverage.xml
+            ai_service/coverage.txt
+            ai_service/COVERAGE.md
             ai_service/test-results.xml
           retention-days: 30
           if-no-files-found: ignore
@@ -283,219 +410,6 @@ jobs:
           retention-days: 30
           if-no-files-found: ignore
 
-  # # Docker Build, Security Scan and Integration Tests
-  # docker-integration:
-  #   runs-on: ubuntu-latest
-  #   needs: unit-tests
-    
-  #   steps:
-  #     - name: 🛎️ Checkout code
-  #       uses: actions/checkout@v4
-
-  #     - name: 🧹 Free disk space
-  #       run: |
-  #         # Clean up Docker resources
-  #         docker system prune -af
-  #         # Remove unnecessary packages and files
-  #         sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost /usr/local/.ghcup || true
-  #         sudo apt-get autoremove -y || true
-  #         sudo apt-get autoclean || true
-  #         # Show available disk space
-  #         df -h
-
-  #     - name: 🐳 Set up Docker Buildx
-  #       uses: docker/setup-buildx-action@v3
-
-  #     - name: 🏗️ Prepare Docker build context
-  #       working-directory: ai_service
-  #       run: |
-  #         # Create models directory for Docker build
-  #         mkdir -p models
-  #         echo "# Models directory for containerized deployment" > models/README.md
-          
-  #         # Create minimal model files for build
-  #         mkdir -p models/whisper models/classifier models/ner models/summarizer
-  #         echo "Model placeholder" > models/whisper/model.txt
-  #         echo "Model placeholder" > models/classifier/model.txt
-          
-  #         # Verify Dockerfile exists
-  #         [ -f Dockerfile ] || { echo "❌ Dockerfile not found"; exit 1; }
-  #         [ -f docker-compose.yml ] || { echo "❌ docker-compose.yml not found"; exit 1; }
-
-  #     - name: 🔨 Build AI Service Docker image
-  #       working-directory: ai_service
-  #       run: |
-  #         echo "🏗️ Building Docker image..."
-  #         docker build \
-  #           --tag ai-service-test:latest \
-  #           --tag ai-service-test:${{ github.sha }} \
-  #           --build-arg BUILDKIT_INLINE_CACHE=1 \
-  #           .
-          
-  #         echo "✅ Docker build completed"
-  #         docker images | grep ai-service-test
-
-  #     - name: 🔍 Docker Security Scan
-  #       run: |
-  #         echo "🛡️ Running security scan on Docker image..."
-  #         docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-  #           -v $(pwd):/app \
-  #           aquasec/trivy:latest image --exit-code 0 --severity HIGH,CRITICAL \
-  #           --format table ai-service-test:latest || echo "⚠️ Security scan completed with warnings"
-
-  #     - name: 🚀 Start services with Docker Compose
-  #       working-directory: ai_service
-  #       run: |
-  #         echo "🚀 Starting services..."
-          
-  #         # Set environment for testing
-  #         export ENABLE_STREAMING=false
-  #         export ENABLE_MODEL_LOADING=false
-  #         export MAX_STREAMING_SLOTS=1
-  #         export MAX_BATCH_SLOTS=1
-          
-  #         # Start services
-  #         docker compose up -d
-          
-  #         echo "📋 Services status:"
-  #         docker compose ps
-          
-  #         echo "📋 Container logs preview:"
-  #         timeout 10 docker compose logs --tail=20 || true
-
-  #     - name: ⏳ Wait for services readiness
-  #       run: |
-  #         echo "⏳ Waiting for services to be ready..."
-          
-  #         # Wait for Redis
-  #         for i in {1..30}; do
-  #           if docker compose -f ai_service/docker-compose.yml exec redis redis-cli ping 2>/dev/null; then
-  #             echo "✅ Redis is ready"
-  #             break
-  #           fi
-  #           echo "⏳ Waiting for Redis... ($i/30)"
-  #           sleep 2
-  #         done
-          
-  #         # Wait for AI service
-  #         for i in {1..60}; do
-  #           if curl -f http://localhost:8123/health 2>/dev/null; then
-  #             echo "✅ AI Service is ready"
-  #             break
-  #           fi
-  #           echo "⏳ Waiting for AI Service... ($i/60)"
-  #           sleep 3
-  #         done
-          
-  #         echo "📋 Final services check:"
-  #         docker compose -f ai_service/docker-compose.yml ps
-
-  #     - name: 🏥 Health Check Tests
-  #       run: |
-  #         echo "🏥 Running health checks..."
-          
-  #         # Test health endpoint
-  #         echo "Testing /health endpoint:"
-  #         curl -v http://localhost:8123/health || { echo "❌ Health check failed"; exit 1; }
-          
-  #         # Test detailed health
-  #         echo "\nTesting /health/detailed endpoint:"
-  #         curl -s http://localhost:8123/health/detailed | jq '.' || echo "Detailed health check completed"
-          
-  #         # Test root endpoint
-  #         echo "\nTesting root endpoint:"
-  #         curl -s http://localhost:8123/ | jq '.status' || echo "Root endpoint check completed"
-          
-  #         # Test info endpoint
-  #         echo "\nTesting /info endpoint:"
-  #         curl -s http://localhost:8123/info | jq '.app' || echo "Info endpoint check completed"
-
-  #     - name: 🧪 Integration Tests
-  #       working-directory: ai_service
-  #       run: |
-  #         echo "🧪 Running integration tests..."
-          
-  #         # Get container names
-  #         AI_CONTAINER=$(docker compose ps --format "table {{.Names}}" | grep ai-pipeline | head -1 | tr -d '[:space:]')
-  #         REDIS_CONTAINER=$(docker compose ps --format "table {{.Names}}" | grep redis | head -1 | tr -d '[:space:]')
-          
-  #         echo "AI Container: $AI_CONTAINER"
-  #         echo "Redis Container: $REDIS_CONTAINER"
-          
-  #         # Test container health from inside
-  #         if [ ! -z "$AI_CONTAINER" ]; then
-  #           echo "Testing internal API calls..."
-  #           docker exec "$AI_CONTAINER" python -c "
-  #         import requests
-  #         import sys
-  #         try:
-  #             r = requests.get('http://localhost:8123/health', timeout=5)
-  #             print(f'✅ Internal health check: {r.status_code}')
-  #             if r.status_code != 200:
-  #                 sys.exit(1)
-  #         except Exception as e:
-  #             print(f'❌ Internal health check failed: {e}')
-  #             sys.exit(1)
-  #         " || echo "⚠️ Internal API test failed"
-          
-  #           # Test Redis connectivity from app container
-  #           docker exec "$AI_CONTAINER" python -c "
-  #         import redis
-  #         import os
-  #         try:
-  #             r = redis.Redis(host='redis', port=6379, db=0)
-  #             r.ping()
-  #             print('✅ Redis connectivity OK')
-  #         except Exception as e:
-  #             print(f'❌ Redis connectivity failed: {e}')
-  #         " || echo "⚠️ Redis connectivity test failed"
-  #         else
-  #           echo "⚠️ Could not find AI pipeline container"
-  #         fi
-          
-  #         # External API tests
-  #         echo "\n🌐 Testing external API endpoints..."
-          
-  #         # Queue status
-  #         curl -f http://localhost:8123/queue/status || echo "Queue status check failed"
-          
-  #         # Resource status
-  #         curl -f http://localhost:8123/health/resources || echo "Resource status check failed"
-          
-  #         echo "\n✅ Integration tests completed"
-
-  #     - name: 📊 Collect Container Logs
-  #       if: always()
-  #       working-directory: ai_service
-  #       run: |
-  #         echo "📊 Collecting container logs..."
-  #         mkdir -p logs/integration
-          
-  #         docker compose logs --no-color --timestamps ai-pipeline > logs/integration/ai-pipeline.log 2>&1 || true
-  #         docker compose logs --no-color --timestamps redis > logs/integration/redis.log 2>&1 || true
-          
-  #         echo "📋 Log files created:"
-  #         ls -la logs/integration/ || echo "No logs collected"
-
-  #     - name: 📦 Archive Integration Test Results
-  #       if: always()
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: integration-test-results
-  #         path: |
-  #           ai_service/logs/integration/
-  #         retention-days: 14
-  #         if-no-files-found: ignore
-
-  #     - name: 🧹 Cleanup Docker Resources
-  #       if: always()
-  #       working-directory: ai_service
-  #       run: |
-  #         echo "🧹 Cleaning up Docker resources..."
-  #         docker compose down --volumes --remove-orphans || true
-  #         docker system prune -f || true
-
-  # Summary Job
   ci-summary:
     runs-on: ubuntu-latest
     needs: [unit-tests]
@@ -510,10 +424,21 @@ jobs:
           echo "- Unit Tests: ${{ needs.unit-tests.result }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
-          if [ "${{ needs.unit-tests.result }}" == "success" ];then
+          if [ "${{ needs.unit-tests.result }}" == "success" ]; then
             echo "### 🎉 All tests passed successfully!" >> $GITHUB_STEP_SUMMARY
             echo "The AI Service is ready for deployment." >> $GITHUB_STEP_SUMMARY
           else
             echo "### ⚠️ Some tests failed" >> $GITHUB_STEP_SUMMARY
             echo "Please check the logs and fix any issues." >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📊 Coverage Reports" >> $GITHUB_STEP_SUMMARY
+          echo "- Coverage reports have been generated and uploaded as artifacts" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ github.event_name }}" == "push" ]; then
+            echo "- Markdown coverage report committed to a new branch and PR created" >> $GITHUB_STEP_SUMMARY
+            echo "- Access the coverage report at: [COVERAGE.md](${{ env.COVERAGE_MD_LINK }})" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Markdown coverage report committed to PR branch" >> $GITHUB_STEP_SUMMARY
+            echo "- Access the coverage report at: [COVERAGE.md](${{ env.COVERAGE_MD_PR_LINK }})" >> $GITHUB_STEP_SUMMARY
           fi
