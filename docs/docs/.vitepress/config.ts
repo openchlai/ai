@@ -45,6 +45,13 @@ export default defineConfig({
           { text: 'Acknowledgements', link: '/acknowledgements' }
         ]
       },
+      
+      {
+  text: 'Developer Tools',
+  items: [
+    { text: 'Test Coverage', link: '/coverage-html/' }
+  ]
+},
       {
         text: 'Project Evolution',
         items: [

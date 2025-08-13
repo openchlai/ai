@@ -18,18 +18,12 @@ services:
     restart: unless-stopped
     networks:
       - helpline-network
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
 
   # PHP-FPM Backend API
   php-api:
     build:
-      context: .
-      dockerfile: docker/php/Dockerfile
+      context: ./docker/php    # CHANGED: from . to ./docker/php
+      dockerfile: Dockerfile   # CHANGED: from docker/php/Dockerfile to Dockerfile
     container_name: helpline-php-api
     volumes:
       - ./application:/var/www/html/helpline
@@ -47,18 +41,12 @@ services:
     restart: unless-stopped
     networks:
       - helpline-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
 
   # Nginx Web Server
   nginx:
     build:
-      context: .
-      dockerfile: docker/nginx/Dockerfile
+      context: ./docker/nginx  # CHANGED: from . to ./docker/nginx
+      dockerfile: Dockerfile   # CHANGED: from docker/nginx/Dockerfile to Dockerfile
     container_name: helpline-nginx
     ports:
       - "8888:80"
@@ -73,12 +61,6 @@ services:
     restart: unless-stopped
     networks:
       - helpline-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
 
 volumes:
   db_data:
