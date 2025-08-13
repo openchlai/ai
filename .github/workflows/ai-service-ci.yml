@@ -1,18 +1,18 @@
 name: AI Service CI/CD
 permissions:
-  contents: write  # Enable writing coverage reports and creating branches
-  pull-requests: write  # Enable creating PRs and writing to PR branches
+  contents: write
+  pull-requests: write
 
 on:
   push:
     paths:
-      - 'ai_service/**'  # Trigger on any file in ai_service folder
-      - '.github/workflows/ai-service-ci.yml'  # Trigger on workflow file changes this is notWORKING 
+      - "ai_service/**"
+      - ".github/workflows/ai-service-ci.yml"
     branches: [main, develop]
   pull_request:
     paths:
-      - 'ai_service/**'  # Trigger on any file in ai_service folder
-      - '.github/workflows/ai-service-ci.yml'  # Trigger on workflow file changes
+      - "ai_service/**"
+      - ".github/workflows/ai-service-ci.yml"
     branches: [main, develop]
   workflow_dispatch:
 
@@ -25,9 +25,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.11', '3.12']
+        python-version: ["3.11", "3.12"]
       fail-fast: false
-    
+
     services:
       redis:
         image: redis:7-alpine
@@ -39,15 +39,15 @@ jobs:
       - name: 🛎️ Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Needed for git operations
+          fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 🐍 Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pip'
-          cache-dependency-path: 'ai_service/requirements.txt'
+          cache: "pip"
+          cache-dependency-path: "ai_service/requirements.txt"
 
       - name: 🔧 Install system dependencies
         run: |
@@ -66,8 +66,6 @@ jobs:
         run: |
           python -m pip install --upgrade pip wheel setuptools
           pip install pytest pytest-cov pytest-asyncio pytest-xdist coverage
-          
-          # Install requirements but handle potential GPU-specific packages gracefully
           pip install -r requirements.txt || {
             echo "Some packages failed to install, trying without GPU packages..."
             pip install fastapi uvicorn pydantic redis celery
@@ -79,41 +77,36 @@ jobs:
       - name: 🏗️ Setup test environment
         working-directory: ai_service
         run: |
-          # Create missing directories and files to prevent import errors
           mkdir -p app/models models logs temp
-          
-          # Create model loader placeholder
-          cat > app/models/__init__.py <<'EOF'
+
+          cat > app/models/__init__.py <<-'EOF'
           """Models package placeholder for testing"""
           EOF
-          
-          cat > app/models/model_loader.py <<'EOF'
+
+          cat > app/models/model_loader.py <<-'EOF'
           """Model loader placeholder for CI testing"""
           import logging
-          
+
           logger = logging.getLogger(__name__)
-          
+
           class ModelLoader:
               def __init__(self):
                   self.models = {}
                   logger.info("ModelLoader initialized (CI mode)")
-              
+
               async def load_all_models(self):
                   logger.info("Skipping model loading in CI environment")
                   return True
-              
+
               def get_model(self, model_name):
                   return None
-          
-          # Global instance
+
           model_loader = ModelLoader()
           EOF
-          
-          # Create empty models directory for Docker
+
           echo "# Models directory for CI testing" > models/README.md
-          
-          # Create test configuration
-          cat > .env.test <<'EOF'
+
+          cat > .env.test <<-'EOF'
           DEBUG=true
           LOG_LEVEL=INFO
           SITE_ID=ci-test
@@ -126,25 +119,16 @@ jobs:
       - name: 🔍 Verify test setup
         working-directory: ai_service
         run: |
-          echo "Python path setup:"
           python -c "import sys; print('\n'.join(sys.path))"
-          
-          echo "\nChecking app module structure:"
           find app -name "*.py" | head -10
-          
-          echo "\nTesting basic imports:"
           python -c "from app.config.settings import settings; print('Settings OK')"
           python -c "from app.model_scripts.model_loader import model_loader; print('Model loader OK')"
-          
-          echo "\nChecking Redis connection:"
           python -c "import redis; r=redis.Redis(host='localhost', port=6379); r.ping(); print('Redis OK')"
 
       - name: 🧪 Run Unit Tests
         working-directory: ai_service
         run: |
-          # Run basic tests first
           if [ -d tests ] && [ -n "$(find tests -name '*.py' -type f)" ]; then
-            echo "Running pytest with discovery..."
             python -m pytest tests/ \
               -v \
               --tb=short \
@@ -154,7 +138,6 @@ jobs:
               --continue-on-collection-errors \
               || echo "Some unit tests failed, continuing..."
           else
-            echo "No proper test files found, running standalone scripts..."
             python test_runner.py < /dev/null || echo "test_runner.py failed"
             [ -f test_progressive_system.py ] && timeout 60 python test_progressive_system.py || echo "test_progressive_system.py skipped"
             [ -f test_agent_connectivity.py ] && timeout 30 python test_agent_connectivity.py || echo "test_agent_connectivity.py skipped"
@@ -164,7 +147,6 @@ jobs:
         working-directory: ai_service
         run: |
           if [ -d tests ] && [ -n "$(find tests -name '*.py' -type f)" ]; then
-            echo "Running coverage analysis..."
             python -m pytest tests/ \
               --cov=app \
               --cov-report=term-missing \
@@ -175,10 +157,7 @@ jobs:
               --continue-on-collection-errors \
               --tb=no \
               || {
-                echo "Coverage tests completed with some failures"
-                # Ensure minimal coverage.xml is created if pytest fails
                 if [ ! -f coverage.xml ]; then
-                  echo "Creating minimal coverage report due to pytest failure..."
                   cat > coverage.xml <<'EOF'
                   <?xml version="1.0" ?>
                   <coverage version="7.0" timestamp="$(date +%s)" lines-valid="100" lines-covered="0" line-rate="0.0">
@@ -189,7 +168,6 @@ jobs:
                 fi
               }
           else
-            echo "No proper test files found, creating minimal coverage report..."
             cat > coverage.xml <<'EOF'
             <?xml version="1.0" ?>
             <coverage version="7.0" timestamp="$(date +%s)" lines-valid="100" lines-covered="0" line-rate="0.0">
@@ -203,14 +181,11 @@ jobs:
         working-directory: ai_service
         run: |
           if [ -f coverage.xml ] && [ -s coverage.xml ]; then
-            # Try to get coverage percentage
             if command -v coverage >/dev/null; then
               coverage report --show-missing 2>/dev/null || true
               COVERAGE=$(coverage report --format=total 2>/dev/null || echo "0")
-              # Also save detailed report to file for markdown generation
               coverage report --show-missing > coverage.txt 2>/dev/null || echo "No coverage data" > coverage.txt
             else
-              # Fallback to parsing XML
               COVERAGE=$(grep -o 'line-rate="[0-1].[0-9]*"' coverage.xml | head -1 | sed 's/line-rate="//;s/"//' | awk '{print int($1*100)}' || echo "0")
               echo "Coverage data parsed from XML: ${COVERAGE}%" > coverage.txt
             fi
@@ -218,7 +193,6 @@ jobs:
             echo "COVERAGE_PERCENTAGE=$COVERAGE" >> $GITHUB_ENV
             echo "📊 Detected Coverage: ${COVERAGE}%"
             
-            # Create coverage badge data
             if [ "$COVERAGE" -ge "80" ]; then
               COLOR="brightgreen"
             elif [ "$COVERAGE" -ge "60" ]; then
@@ -239,49 +213,43 @@ jobs:
       - name: 📝 Generate COVERAGE.md
         working-directory: ai_service
         run: |
-          echo "📝 Generating coverage report in ai_service folder..."
-          
-          # Generate detailed coverage report content
           if [ -f coverage.txt ]; then
-            echo "Using existing coverage.txt..." >&2
             COVERAGE_DETAILS=$(cat coverage.txt)
           elif command -v coverage >/dev/null && [ -f .coverage ]; then
-            echo "Generating coverage report from .coverage file..." >&2
             COVERAGE_DETAILS=$(coverage report --show-missing 2>/dev/null || echo "Unable to generate detailed coverage report")
           else
             COVERAGE_DETAILS="No detailed coverage data available"
           fi
-          
-          # Create coverage report with heredoc
+
           cat > COVERAGE.md <<'EOF'
           # 📊 Code Coverage Report - AI Service
-          
+
           **Branch:** ${{ github.ref_name }}
           **Commit:** [`${GITHUB_SHA:0:7}`](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
           **Generated:** $(date '+%Y-%m-%d %H:%M:%S UTC')
           **Python Version:** ${{ matrix.python-version }}
           **Workflow:** [`${{ github.run_id }}`](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
-          
+
           ## 🎯 Coverage Summary
-          
+
           ![Coverage](https://img.shields.io/badge/Coverage-${COVERAGE_PERCENTAGE:-0}%25-${COVERAGE_COLOR:-red})
-          
+
           | Metric | Value | Status |
           |--------|-------|--------|
           | **Coverage** | ${COVERAGE_PERCENTAGE:-0}% | $([ "${COVERAGE_PERCENTAGE:-0}" -ge 80 ] && echo "✅ Pass" || echo "❌ Fail") |
           | **Threshold** | 80% | Target |
-          
+
           ## 📈 Detailed Coverage Report
-          
+
           ```
           ${COVERAGE_DETAILS}
           ```
-          
+
           ---
           *Report generated automatically by GitHub Actions*
           *Access this report at: [COVERAGE.md](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/ai_service/COVERAGE.md)*
           EOF
-          
+
           echo "✅ Coverage report generated successfully"
           echo "COVERAGE_MD_LINK=https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/ai_service/COVERAGE.md" >> $GITHUB_ENV
 
@@ -289,11 +257,9 @@ jobs:
         if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && matrix.python-version == '3.12'
         working-directory: ai_service
         run: |
-          echo "💾 Creating branch and committing coverage report for push event..."
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           if git diff --quiet COVERAGE.md 2>/dev/null; then
-            echo "📝 No changes to COVERAGE.md, skipping commit"
             exit 0
           fi
           BRANCH_NAME="update-coverage-$(date +%s)"
@@ -307,9 +273,7 @@ jobs:
               echo "COVERAGE_MD_LINK=https://github.com/${{ github.repository }}/blob/$BRANCH_NAME/ai_service/COVERAGE.md" >> $GITHUB_ENV
               break
             else
-              echo "⚠️ Push failed, attempt $i/$max_retries"
               if [ $i -eq $max_retries ]; then
-                echo "❌ Failed to push after $max_retries attempts"
                 exit 1
               fi
               sleep 5
@@ -341,11 +305,9 @@ jobs:
         if: github.event_name == 'pull_request' && matrix.python-version == '3.12'
         working-directory: ai_service
         run: |
-          echo "💾 Committing coverage report for pull request..."
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           if git diff --quiet COVERAGE.md 2>/dev/null; then
-            echo "📝 No changes to COVERAGE.md, skipping commit"
             exit 0
           fi
           git add COVERAGE.md
@@ -357,9 +319,7 @@ jobs:
               echo "COVERAGE_MD_PR_LINK=https://github.com/${{ github.repository }}/blob/${{ github.event.pull_request.head.ref }}/ai_service/COVERAGE.md" >> $GITHUB_ENV
               break
             else
-              echo "⚠️ Push failed, attempt $i/$max_retries"
               if [ $i -eq $max_retries ]; then
-                echo "❌ Failed to push after $max_retries attempts"
                 exit 1
               fi
               sleep 5
@@ -408,7 +368,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [unit-tests]
     if: always()
-    
+
     steps:
       - name: 📋 CI/CD Summary
         run: |
@@ -433,4 +393,3 @@ jobs:
           else
             echo "- Markdown coverage report committed to PR branch" >> $GITHUB_STEP_SUMMARY
             echo "- Access the coverage report at: [COVERAGE.md](${{ env.COVERAGE_MD_PR_LINK }})" >> $GITHUB_STEP_SUMMARY
-          fi
