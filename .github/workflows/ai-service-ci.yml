@@ -1,15 +1,16 @@
 name: AI Service CI/CD
 permissions:
-  contents: write  # Enable writing coverage reports back to repo
+  contents: write  # Enable writing coverage reports and creating branches
+  pull-requests: write  # Enable creating PRs and writing to PR branches
 
 on:
   push:
     paths:
-      - 'ai_service/**'
+      - 'ai_service/**'  # Trigger on any file in ai_service folder
     branches: [main, develop]
   pull_request:
     paths:
-      - 'ai_service/**'
+      - 'ai_service/**'  # Trigger on any file in ai_service folder
     branches: [main, develop]
   workflow_dispatch:
 
@@ -18,7 +19,6 @@ env:
   PYTHONUNBUFFERED: 1
 
 jobs:
-  # Unit Tests and Code Coverage for AI Service
   unit-tests:
     runs-on: ubuntu-latest
     strategy:
@@ -68,7 +68,6 @@ jobs:
           # Install requirements but handle potential GPU-specific packages gracefully
           pip install -r requirements.txt || {
             echo "Some packages failed to install, trying without GPU packages..."
-            # Install core packages individually for better error handling
             pip install fastapi uvicorn pydantic redis celery
             pip install transformers torch --index-url https://download.pytorch.org/whl/cpu
             pip install numpy pandas scikit-learn librosa soundfile
@@ -177,12 +176,12 @@ jobs:
           else
             echo "Creating minimal coverage report..."
             cat > coverage.xml <<'EOF'
-          <?xml version="1.0" ?>
-          <coverage version="7.0" timestamp="$(date +%s)" lines-valid="100" lines-covered="0" line-rate="0.0">
-            <sources><source>./app</source></sources>
-            <packages></packages>
-          </coverage>
-          EOF
+            <?xml version="1.0" ?>
+            <coverage version="7.0" timestamp="$(date +%s)" lines-valid="100" lines-covered="0" line-rate="0.0">
+              <sources><source>./app</source></sources>
+              <packages></packages>
+            </coverage>
+            EOF
           fi
 
       - name: 📊 Generate Coverage Report
@@ -225,7 +224,7 @@ jobs:
       - name: 📝 Generate COVERAGE.md
         working-directory: ai_service
         run: |
-          echo "📝 Generating coverage report..."
+          echo "📝 Generating coverage report in ai_service folder..."
           
           # Create coverage report with timestamp
           cat > COVERAGE.md <<EOF
@@ -266,17 +265,81 @@ jobs:
           echo "\`\`\`" >> COVERAGE.md
           echo "" >> COVERAGE.md
           
-          # Add footer
+          # Add footer with link to the file
           echo "---" >> COVERAGE.md
           echo "*Report generated automatically by GitHub Actions*" >> COVERAGE.md
+          echo "*Access this report at: [COVERAGE.md](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/ai_service/COVERAGE.md)*" >> COVERAGE.md
           
           echo "✅ Coverage report generated successfully"
+          echo "COVERAGE_MD_LINK=https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/ai_service/COVERAGE.md" >> $GITHUB_ENV
 
-      - name: 💾 Commit COVERAGE.md
+      - name: 💾 Create Branch and Commit COVERAGE.md for Push Events
         if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && matrix.python-version == '3.12'
         working-directory: ai_service
         run: |
-          echo "💾 Committing coverage report..."
+          echo "💾 Creating branch and committing coverage report for push event..."
+          
+          # Configure git
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Check if there are any changes
+          if git diff --quiet COVERAGE.md 2>/dev/null; then
+            echo "📝 No changes to COVERAGE.md, skipping commit"
+            exit 0
+          fi
+          
+          # Create a new branch for the coverage update
+          BRANCH_NAME="update-coverage-$(date +%s)"
+          git checkout -b $BRANCH_NAME
+          
+          # Add and commit the file
+          git add COVERAGE.md
+          git commit -m "📊 Update coverage report - ${COVERAGE_PERCENTAGE:-0}% [skip ci]"
+          
+          # Push the new branch with retry logic
+          max_retries=3
+          for i in $(seq 1 $max_retries); do
+            if git push origin $BRANCH_NAME; then
+              echo "✅ Successfully pushed coverage report to branch $BRANCH_NAME"
+              echo "COVERAGE_MD_LINK=https://github.com/${{ github.repository }}/blob/$BRANCH_NAME/ai_service/COVERAGE.md" >> $GITHUB_ENV
+              break
+            else
+              echo "⚠️ Push failed, attempt $i/$max_retries"
+              if [ $i -eq $max_retries ]; then
+                echo "❌ Failed to push after $max_retries attempts"
+                exit 1
+              fi
+              sleep 5
+              git pull --rebase origin $BRANCH_NAME || true
+            fi
+          done
+
+      - name: 📬 Create Pull Request for Push Events
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && matrix.python-version == '3.12'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "📊 Update coverage report - ${COVERAGE_PERCENTAGE:-0}% [skip ci]"
+          branch: update-coverage-$(date +%s)
+          base: ${{ github.ref_name }}
+          title: "Update COVERAGE.md - ${COVERAGE_PERCENTAGE:-0}%"
+          body: |
+            Automated update of COVERAGE.md with code coverage report.
+            - Coverage: ${COVERAGE_PERCENTAGE:-0}%
+            - Generated: $(date '+%Y-%m-%d %H:%M:%S UTC')
+            - Workflow: [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            - View report: [COVERAGE.md](https://github.com/${{ github.repository }}/blob/${{ env.COVERAGE_MD_LINK }}/ai_service/COVERAGE.md)
+          labels: automated, coverage
+          delete-branch: true
+        env:
+          COVERAGE_PERCENTAGE: ${{ env.COVERAGE_PERCENTAGE }}
+
+      - name: 💾 Commit COVERAGE.md for Pull Request Events
+        if: github.event_name == 'pull_request' && matrix.python-version == '3.12'
+        working-directory: ai_service
+        run: |
+          echo "💾 Committing coverage report for pull request..."
           
           # Configure git
           git config --local user.name "github-actions[bot]"
@@ -290,13 +353,14 @@ jobs:
           
           # Add and commit the file
           git add COVERAGE.md
-          git commit -m "📊 Update coverage report - ${COVERAGE_PERCENTAGE:-0}% [skip ci]"
+          git commit -m "📊 Update coverage report for PR - ${COVERAGE_PERCENTAGE:-0}% [skip ci]"
           
-          # Push with retry logic
+          # Push to the PR's head branch
           max_retries=3
           for i in $(seq 1 $max_retries); do
-            if git push origin HEAD; then
-              echo "✅ Successfully pushed coverage report"
+            if git push origin HEAD:${{ github.event.pull_request.head.ref }}; then
+              echo "✅ Successfully pushed coverage report to PR branch ${{ github.event.pull_request.head.ref }}"
+              echo "COVERAGE_MD_PR_LINK=https://github.com/${{ github.repository }}/blob/${{ github.event.pull_request.head.ref }}/ai_service/COVERAGE.md" >> $GITHUB_ENV
               break
             else
               echo "⚠️ Push failed, attempt $i/$max_retries"
@@ -305,7 +369,7 @@ jobs:
                 exit 1
               fi
               sleep 5
-              git pull --rebase origin ${{ github.ref_name }}
+              git pull --rebase origin ${{ github.event.pull_request.head.ref }}
             fi
           done
 
@@ -346,7 +410,6 @@ jobs:
           retention-days: 30
           if-no-files-found: ignore
 
-  # Summary Job
   ci-summary:
     runs-on: ubuntu-latest
     needs: [unit-tests]
@@ -372,4 +435,10 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📊 Coverage Reports" >> $GITHUB_STEP_SUMMARY
           echo "- Coverage reports have been generated and uploaded as artifacts" >> $GITHUB_STEP_SUMMARY
-          echo "- Markdown coverage report committed to repository (main/develop branches only)" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ github.event_name }}" == "push" ]; then
+            echo "- Markdown coverage report committed to a new branch and PR created" >> $GITHUB_STEP_SUMMARY
+            echo "- Access the coverage report at: [COVERAGE.md](${{ env.COVERAGE_MD_LINK }})" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Markdown coverage report committed to PR branch" >> $GITHUB_STEP_SUMMARY
+            echo "- Access the coverage report at: [COVERAGE.md](${{ env.COVERAGE_MD_PR_LINK }})" >> $GITHUB_STEP_SUMMARY
+          fi
