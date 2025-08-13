@@ -79,11 +79,11 @@ jobs:
         run: |
           mkdir -p app/models models logs temp
 
-          cat > app/models/__init__.py <<-'EOF'
+          cat > app/models/__init__.py <<-EOF
           """Models package placeholder for testing"""
           EOF
 
-          cat > app/models/model_loader.py <<-'EOF'
+          cat > app/models/model_loader.py <<-EOF
           """Model loader placeholder for CI testing"""
           import logging
 
@@ -106,7 +106,7 @@ jobs:
 
           echo "# Models directory for CI testing" > models/README.md
 
-          cat > .env.test <<-'EOF'
+          cat > .env.test <<-EOF
           DEBUG=true
           LOG_LEVEL=INFO
           SITE_ID=ci-test
