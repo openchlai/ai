@@ -7,10 +7,13 @@ on:
   push:
     paths:
       - 'ai_service/**'  # Trigger on any file in ai_service folder
+      - '.github/workflows/ai-service-ci.yml'  # Trigger on workflow file changes
+
     branches: [main, develop]
   pull_request:
     paths:
       - 'ai_service/**'  # Trigger on any file in ai_service folder
+      - '.github/workflows/ai-service-ci.yml'  # Trigger on workflow file changes
     branches: [main, develop]
   workflow_dispatch:
 
