@@ -1,0 +1,565 @@
+{
+  "test_timestamp": "2025-08-12T12:36:52.970500",
+  "tests_run": [
+    {
+      "test_name": "audio_buffer_configurations",
+      "results": [
+        {
+          "config": {
+            "duration": 5.0,
+            "overlapping": false,
+            "name": "Original 5s"
+          },
+          "windows_generated": 1,
+          "buffer_stats": {
+            "configuration": {
+              "window_duration_seconds": 5.0,
+              "window_size_bytes": 160000,
+              "enable_overlapping": false,
+              "overlap_ratio": 0,
+              "overlap_bytes": 0
+            },
+            "buffer_state": {
+              "buffer_size_bytes": 176000,
+              "buffer_duration_seconds": 5.5,
+              "current_offset": 160000,
+              "window_ready": false,
+              "bytes_until_window": 144000
+            },
+            "chunk_statistics": {
+              "chunks_received": 550,
+              "chunk_size_distribution": {
+                "320": 550
+              },
+              "average_chunk_size": 320.0,
+              "most_common_chunk_size": 320
+            }
+          },
+          "chunks_processed": 550
+        },
+        {
+          "config": {
+            "duration": 15.0,
+            "overlapping": false,
+            "name": "Fixed 15s"
+          },
+          "windows_generated": 1,
+          "buffer_stats": {
+            "configuration": {
+              "window_duration_seconds": 15.0,
+              "window_size_bytes": 480000,
+              "enable_overlapping": false,
+              "overlap_ratio": 0,
+              "overlap_bytes": 0
+            },
+            "buffer_state": {
+              "buffer_size_bytes": 496000,
+              "buffer_duration_seconds": 15.5,
+              "current_offset": 480000,
+              "window_ready": false,
+              "bytes_until_window": 464000
+            },
+            "chunk_statistics": {
+              "chunks_received": 1550,
+              "chunk_size_distribution": {
+                "320": 1550
+              },
+              "average_chunk_size": 320.0,
+              "most_common_chunk_size": 320
+            }
+          },
+          "chunks_processed": 1550
+        },
+        {
+          "config": {
+            "duration": 15.0,
+            "overlapping": true,
+            "name": "Enhanced 15s + overlap"
+          },
+          "windows_generated": 1,
+          "buffer_stats": {
+            "configuration": {
+              "window_duration_seconds": 15.0,
+              "window_size_bytes": 480000,
+              "enable_overlapping": true,
+              "overlap_ratio": 0.25,
+              "overlap_bytes": 120000
+            },
+            "buffer_state": {
+              "buffer_size_bytes": 496000,
+              "buffer_duration_seconds": 15.5,
+              "current_offset": 360000,
+              "window_ready": false,
+              "bytes_until_window": 344000
+            },
+            "chunk_statistics": {
+              "chunks_received": 1550,
+              "chunk_size_distribution": {
+                "320": 1550
+              },
+              "average_chunk_size": 320.0,
+              "most_common_chunk_size": 320
+            }
+          },
+          "chunks_processed": 1550
+        },
+        {
+          "config": {
+            "duration": 30.0,
+            "overlapping": true,
+            "name": "Optimal 30s + overlap"
+          },
+          "windows_generated": 1,
+          "buffer_stats": {
+            "configuration": {
+              "window_duration_seconds": 30.0,
+              "window_size_bytes": 960000,
+              "enable_overlapping": true,
+              "overlap_ratio": 0.25,
+              "overlap_bytes": 240000
+            },
+            "buffer_state": {
+              "buffer_size_bytes": 976000,
+              "buffer_duration_seconds": 30.5,
+              "current_offset": 720000,
+              "window_ready": false,
+              "bytes_until_window": 704000
+            },
+            "chunk_statistics": {
+              "chunks_received": 3050,
+              "chunk_size_distribution": {
+                "320": 3050
+              },
+              "average_chunk_size": 320.0,
+              "most_common_chunk_size": 320
+            }
+          },
+          "chunks_processed": 3050
+        }
+      ]
+    },
+    {
+      "test_name": "whisper_parameters",
+      "results": [
+        {
+          "duration": 5.0,
+          "status": "error",
+          "error": "Transcription failed: Transcription failed: The following `model_kwargs` are not used by the model: ['condition_on_previous_text'] (note: typos in the generate arguments will also show up in this list)"
+        },
+        {
+          "duration": 10.0,
+          "status": "error",
+          "error": "Transcription failed: Transcription failed: The following `model_kwargs` are not used by the model: ['condition_on_previous_text'] (note: typos in the generate arguments will also show up in this list)"
+        },
+        {
+          "duration": 15.0,
+          "status": "error",
+          "error": "Transcription failed: Transcription failed: The following `model_kwargs` are not used by the model: ['condition_on_previous_text'] (note: typos in the generate arguments will also show up in this list)"
+        },
+        {
+          "duration": 20.0,
+          "status": "error",
+          "error": "Transcription failed: Transcription failed: The following `model_kwargs` are not used by the model: ['condition_on_previous_text'] (note: typos in the generate arguments will also show up in this list)"
+        },
+        {
+          "duration": 30.0,
+          "status": "error",
+          "error": "Transcription failed: Transcription failed: The following `model_kwargs` are not used by the model: ['condition_on_previous_text'] (note: typos in the generate arguments will also show up in this list)"
+        }
+      ]
+    },
+    {
+      "test_name": "audio_quality_analysis",
+      "results": [
+        {
+          "test_name": "good_audio",
+          "whisper_ready": true,
+          "overall_score": 0.8,
+          "voice_activity_ratio": 0.7,
+          "status": "success",
+          "full_analysis": {
+            "file_info": {
+              "path": "/tmp/tmppi0jwx3_/good_audio.wav",
+              "duration": 5.0,
+              "samples": 80000,
+              "sample_rate": 16000
+            },
+            "amplitude_stats": {
+              "peak": 0.300018310546875,
+              "rms": 0.2121322751045227,
+              "dynamic_range": 1.4142982073617354,
+              "clipping_ratio": 0.0
+            },
+            "silence_analysis": {
+              "silence_ratio_0.001": 0.005,
+              "silence_ratio_0.005": 0.015,
+              "silence_ratio_0.01": 0.025,
+              "silence_ratio_0.05": 0.105,
+              "silence_segments_count": 2000,
+              "longest_silence_duration": 6.25e-05,
+              "total_silence_duration": 0.125
+            },
+            "spectral_analysis": {
+              "fundamental_freq": 440.0,
+              "spectral_centroid": 441.48686702711404,
+              "low_freq_energy": 0.011334513314068317,
+              "speech_energy": 99.96454620361328,
+              "high_freq_energy": 0.02485344558954239,
+              "spectral_rolloff": 440.0,
+              "zero_crossing_rate": 0.0549875
+            },
+            "voice_activity": {
+              "voice_activity_ratio": 0.7,
+              "total_frames": 400,
+              "voice_frames": 280,
+              "energy_threshold": 22.366762161254883,
+              "frame_length_ms": 25.0,
+              "hop_length_ms": 10.0
+            },
+            "quality_issues": {
+              "clipping": {
+                "detected": "False",
+                "clipped_samples": 0,
+                "clipping_ratio": 0.0
+              },
+              "dc_offset": {
+                "detected": false,
+                "offset_value": -1.5182495189947076e-05
+              },
+              "low_signal": {
+                "detected": false,
+                "rms_level": 0.2121322751045227,
+                "rms_db": -13.467864595183293
+              },
+              "noise": {
+                "estimated_snr_db": 0.06505411863327026,
+                "high_noise": true,
+                "noise_floor": 6.922712326049805,
+                "signal_energy": 7.027190208435059
+              }
+            },
+            "whisper_readiness": {
+              "duration_ok": true,
+              "optimal_duration": false,
+              "signal_level_ok": true,
+              "voice_activity_ok": true,
+              "no_clipping": true,
+              "good_snr": false,
+              "overall_score": 0.8,
+              "whisper_ready": true,
+              "recommendations": []
+            }
+          }
+        },
+        {
+          "test_name": "noisy_audio",
+          "whisper_ready": true,
+          "overall_score": 0.8,
+          "voice_activity_ratio": 0.7,
+          "status": "success",
+          "full_analysis": {
+            "file_info": {
+              "path": "/tmp/tmppi0jwx3_/noisy_audio.wav",
+              "duration": 5.0,
+              "samples": 80000,
+              "sample_rate": 16000
+            },
+            "amplitude_stats": {
+              "peak": 0.49505615234375,
+              "rms": 0.21805298328399658,
+              "dynamic_range": 2.2703478860250224,
+              "clipping_ratio": 0.0
+            },
+            "silence_analysis": {
+              "silence_ratio_0.001": 0.002175,
+              "silence_ratio_0.005": 0.0101375,
+              "silence_ratio_0.01": 0.02075,
+              "silence_ratio_0.05": 0.1080875,
+              "silence_segments_count": 1533,
+              "longest_silence_duration": 0.0001875,
+              "total_silence_duration": 0.10375
+            },
+            "spectral_analysis": {
+              "fundamental_freq": 440.0,
+              "spectral_centroid": 3919.5430932366985,
+              "low_freq_energy": 3.627523899078369,
+              "speech_energy": 40.30509948730469,
+              "high_freq_energy": 56.074161529541016,
+              "spectral_rolloff": 6784.8,
+              "zero_crossing_rate": 0.0758125
+            },
+            "voice_activity": {
+              "voice_activity_ratio": 0.7,
+              "total_frames": 400,
+              "voice_frames": 280,
+              "energy_threshold": 23.425336837768555,
+              "frame_length_ms": 25.0,
+              "hop_length_ms": 10.0
+            },
+            "quality_issues": {
+              "clipping": {
+                "detected": "False",
+                "clipped_samples": 0,
+                "clipping_ratio": 0.0
+              },
+              "dc_offset": {
+                "detected": false,
+                "offset_value": -0.00012875556421931833
+              },
+              "low_signal": {
+                "detected": false,
+                "rms_level": 0.21805298328399658,
+                "rms_db": -13.228758944975056
+              },
+              "noise": {
+                "estimated_snr_db": 0.43070530891418457,
+                "high_noise": true,
+                "noise_floor": 7.00952672958374,
+                "signal_energy": 7.740325450897217
+              }
+            },
+            "whisper_readiness": {
+              "duration_ok": true,
+              "optimal_duration": false,
+              "signal_level_ok": true,
+              "voice_activity_ok": true,
+              "no_clipping": true,
+              "good_snr": false,
+              "overall_score": 0.8,
+              "whisper_ready": true,
+              "recommendations": []
+            }
+          }
+        },
+        {
+          "test_name": "quiet_audio",
+          "whisper_ready": true,
+          "overall_score": 0.6,
+          "voice_activity_ratio": 0.685,
+          "status": "success",
+          "full_analysis": {
+            "file_info": {
+              "path": "/tmp/tmppi0jwx3_/quiet_audio.wav",
+              "duration": 5.0,
+              "samples": 80000,
+              "sample_rate": 16000
+            },
+            "amplitude_stats": {
+              "peak": 0.00030517578125,
+              "rms": 0.00021193244901951402,
+              "dynamic_range": 1.4398992871027068,
+              "clipping_ratio": 0.0
+            },
+            "silence_analysis": {
+              "silence_ratio_0.001": 1.0,
+              "silence_ratio_0.005": 1.0,
+              "silence_ratio_0.01": 1.0,
+              "silence_ratio_0.05": 1.0,
+              "silence_segments_count": 1,
+              "longest_silence_duration": 5.0,
+              "total_silence_duration": 5.0
+            },
+            "spectral_analysis": {
+              "fundamental_freq": 440.0,
+              "spectral_centroid": 1291.3057047675645,
+              "low_freq_energy": 7.4819207191467285,
+              "speech_energy": 78.01531982421875,
+              "high_freq_energy": 14.874943733215332,
+              "spectral_rolloff": 3320.0,
+              "zero_crossing_rate": 0.0549875
+            },
+            "voice_activity": {
+              "voice_activity_ratio": 0.685,
+              "total_frames": 400,
+              "voice_frames": 274,
+              "energy_threshold": 2.209097146987915e-05,
+              "frame_length_ms": 25.0,
+              "hop_length_ms": 10.0
+            },
+            "quality_issues": {
+              "clipping": {
+                "detected": "False",
+                "clipped_samples": 0,
+                "clipping_ratio": 0.0
+              },
+              "dc_offset": {
+                "detected": false,
+                "offset_value": -1.5182495189947076e-05
+              },
+              "low_signal": {
+                "detected": true,
+                "rms_level": 0.00021193244901951402,
+                "rms_db": -73.47564103297204
+              },
+              "noise": {
+                "estimated_snr_db": 0.23865221440792084,
+                "high_noise": true,
+                "noise_floor": 6.751157343387604e-06,
+                "signal_energy": 7.133092367439531e-06
+              }
+            },
+            "whisper_readiness": {
+              "duration_ok": true,
+              "optimal_duration": false,
+              "signal_level_ok": false,
+              "voice_activity_ok": true,
+              "no_clipping": true,
+              "good_snr": false,
+              "overall_score": 0.6,
+              "whisper_ready": true,
+              "recommendations": [
+                "Signal level too low - check audio gain"
+              ]
+            }
+          }
+        },
+        {
+          "test_name": "mostly_silence",
+          "whisper_ready": true,
+          "overall_score": 1.0,
+          "voice_activity_ratio": 0.7,
+          "status": "success",
+          "full_analysis": {
+            "file_info": {
+              "path": "/tmp/tmppi0jwx3_/mostly_silence.wav",
+              "duration": 5.0,
+              "samples": 80000,
+              "sample_rate": 16000
+            },
+            "amplitude_stats": {
+              "peak": 0.030029296875,
+              "rms": 0.0023717975709587336,
+              "dynamic_range": 12.660933054894306,
+              "clipping_ratio": 0.0
+            },
+            "silence_analysis": {
+              "silence_ratio_0.001": 0.9878125,
+              "silence_ratio_0.005": 0.9888125,
+              "silence_ratio_0.01": 0.9901875,
+              "silence_ratio_0.05": 1.0,
+              "silence_segments_count": 56,
+              "longest_silence_duration": 2.500125,
+              "total_silence_duration": 4.9509375
+            },
+            "spectral_analysis": {
+              "fundamental_freq": 440.0,
+              "spectral_centroid": 572.0455399293895,
+              "low_freq_energy": 11.948443412780762,
+              "speech_energy": 86.46233367919922,
+              "high_freq_energy": 1.6029052734375,
+              "spectral_rolloff": 564.6,
+              "zero_crossing_rate": 0.000675
+            },
+            "voice_activity": {
+              "voice_activity_ratio": 0.7,
+              "total_frames": 400,
+              "voice_frames": 280,
+              "energy_threshold": 0.0025270211044698954,
+              "frame_length_ms": 25.0,
+              "hop_length_ms": 10.0
+            },
+            "quality_issues": {
+              "clipping": {
+                "detected": "False",
+                "clipped_samples": 0,
+                "clipping_ratio": 0.0
+              },
+              "dc_offset": {
+                "detected": false,
+                "offset_value": 4.138946678722277e-06
+              },
+              "low_signal": {
+                "detected": false,
+                "rms_level": 0.0023717975709587336,
+                "rms_db": -52.4984109795182
+              },
+              "noise": {
+                "estimated_snr_db": 10.61955451965332,
+                "high_noise": false,
+                "noise_floor": 0.00014252960681915283,
+                "signal_energy": 0.0016439491882920265
+              }
+            },
+            "whisper_readiness": {
+              "duration_ok": true,
+              "optimal_duration": false,
+              "signal_level_ok": true,
+              "voice_activity_ok": true,
+              "no_clipping": true,
+              "good_snr": true,
+              "overall_score": 1.0,
+              "whisper_ready": true,
+              "recommendations": [
+                "High noise level - consider noise reduction"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "test_name": "tcp_server_configuration",
+      "results": [
+        {
+          "config": {
+            "window_duration": 5.0,
+            "overlapping": false,
+            "name": "Original"
+          },
+          "status": "success",
+          "server_status": {
+            "server_running": false,
+            "active_calls": 0,
+            "active_connections": 0,
+            "call_sessions": {},
+            "transcription_method": "celery_workers",
+            "tcp_port": 8300
+          }
+        },
+        {
+          "config": {
+            "window_duration": 15.0,
+            "overlapping": true,
+            "name": "Enhanced"
+          },
+          "status": "success",
+          "server_status": {
+            "server_running": false,
+            "active_calls": 0,
+            "active_connections": 0,
+            "call_sessions": {},
+            "transcription_method": "celery_workers",
+            "tcp_port": 8300
+          }
+        },
+        {
+          "config": {
+            "window_duration": 30.0,
+            "overlapping": true,
+            "name": "Optimal"
+          },
+          "status": "success",
+          "server_status": {
+            "server_running": false,
+            "active_calls": 0,
+            "active_connections": 0,
+            "call_sessions": {},
+            "transcription_method": "celery_workers",
+            "tcp_port": 8300
+          }
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "total_test_suites": 4,
+    "successful_test_suites": 2,
+    "failed_test_suites": 2,
+    "success_rate": 0.5,
+    "recommendations": [
+      "Use 15-30 second windows with overlap for better Whisper performance",
+      "Enable chunking for audio segments longer than 10 seconds",
+      "Implement audio quality checks before sending to Whisper"
+    ]
+  }
+}

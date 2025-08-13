@@ -2,6 +2,8 @@
 import json
 import os
 import socket
+import sys
+from pathlib import Path
 from celery import current_task
 from celery.signals import worker_init
 import numpy as np
@@ -11,6 +13,11 @@ import asyncio
 from typing import Dict, Any, Optional
 from datetime import datetime
 from ..config.settings import redis_task_client
+
+# Ensure project root is in Python path for utils imports
+project_root = Path(__file__).parent.parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
 
 logger = logging.getLogger(__name__)
@@ -893,6 +900,56 @@ def _generate_insights(transcript: str, translation: Optional[str],
         }
     }
     
+def _save_debug_audio_chunk(
+    audio_bytes: bytes, 
+    call_id: str, 
+    filename: str, 
+    sample_rate: int, 
+    duration_seconds: float
+) -> Optional[str]:
+    """Save raw audio chunk as WAV file for debugging purposes"""
+    try:
+        import os
+        import soundfile as sf
+        import numpy as np
+        from datetime import datetime
+        
+        # Create debug directory if it doesn't exist
+        debug_dir = "/tmp/debug_audio_chunks"
+        os.makedirs(debug_dir, exist_ok=True)
+        
+        # Convert raw PCM bytes to float32 array (same as Whisper preprocessing)
+        audio_int16 = np.frombuffer(audio_bytes, dtype=np.int16)
+        audio_float32 = audio_int16.astype(np.float32) / 32768.0
+        
+        # Create debug filename with timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]  # microsecond precision
+        debug_filename = f"debug_{call_id}_{timestamp}_{duration_seconds:.1f}s.wav"
+        debug_path = os.path.join(debug_dir, debug_filename)
+        
+        # Save as WAV file
+        sf.write(debug_path, audio_float32, sample_rate)
+        
+        # Calculate basic audio stats
+        audio_stats = {
+            "duration": len(audio_float32) / sample_rate,
+            "samples": len(audio_float32),
+            "peak": float(np.max(np.abs(audio_float32))),
+            "rms": float(np.sqrt(np.mean(audio_float32**2))),
+            "zero_crossings": int(np.sum(np.diff(np.signbit(audio_float32)))),
+            "silence_ratio": float(np.sum(np.abs(audio_float32) < 0.01) / len(audio_float32))
+        }
+        
+        logger.info(f"🎧 DEBUG: Saved audio chunk {debug_filename}")
+        logger.info(f"🎧 DEBUG: Stats - Peak: {audio_stats['peak']:.3f}, RMS: {audio_stats['rms']:.4f}, "
+                   f"Silence: {audio_stats['silence_ratio']:.1%}, ZC: {audio_stats['zero_crossings']}")
+        
+        return debug_path
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to save debug audio chunk: {e}")
+        return None
+
 # Add to app/tasks/audio_tasks.py
 
 @celery_app.task(bind=True, name="process_streaming_audio_task")
@@ -904,7 +961,9 @@ def process_streaming_audio_task(
     language: str = "sw",
     sample_rate: int = 16000,
     duration_seconds: float = 5.0,
-    is_streaming: bool = True
+    is_streaming: bool = True,
+    debug_save_audio: bool = True,  # Enable audio debugging by default
+    enable_auto_language: bool = False  # Enable dynamic language detection
 ):
     """
     Process real-time streaming audio chunks from Asterisk with call session tracking
@@ -921,14 +980,94 @@ def process_streaming_audio_task(
         start_time = datetime.now()
         call_id = connection_id  # connection_id is now actually call_id
         
+        # DEBUG: Save audio chunk for analysis if enabled
+        debug_file_path = None
+        if debug_save_audio:
+            debug_file_path = _save_debug_audio_chunk(
+                audio_bytes, call_id, filename, sample_rate, duration_seconds
+            )
+        
+        # SPEECH DETECTION: Use Silero VAD to determine if audio should be transcribed
+        vad_info = {}
+        should_transcribe = True  # Default to transcribe if VAD fails
+        
+        # Check if VAD is enabled via environment variable
+        import os
+        enable_vad = os.getenv("ASTERISK_ENABLE_VAD", "true").lower() == "true"
+        speech_threshold = float(os.getenv("ASTERISK_SPEECH_THRESHOLD", "0.6"))  # 60% default
+        
+        if enable_vad:
+            try:
+                # Import Silero VAD
+                try:
+                    from utils.silero_vad import should_transcribe_audio
+                except ImportError:
+                    # Fallback: add project root to path and retry
+                    import sys
+                    from pathlib import Path
+                    project_root = Path(__file__).parent.parent.parent
+                    if str(project_root) not in sys.path:
+                        sys.path.insert(0, str(project_root))
+                    from utils.silero_vad import should_transcribe_audio
+                
+                # Analyze speech activity (no audio filtering, just decision)
+                should_transcribe, vad_info = should_transcribe_audio(
+                    audio_bytes, sample_rate, speech_threshold
+                )
+            
+                if not should_transcribe:
+                    # Silero VAD rejected the audio - don't transcribe
+                    logger.info(f"🚫 Silero VAD rejected audio for {call_id}: {vad_info.get('rejection_reason', 'unknown')}")
+                    return {
+                        "call_id": call_id,
+                        "transcript": "[SILENCE_DETECTED]",  # Indicate no speech
+                        "processing_duration": (datetime.now() - start_time).total_seconds(),
+                        "audio_duration": duration_seconds,
+                        "timestamp": datetime.now().isoformat(),
+                        "session_updated": False,
+                        "debug_file_path": debug_file_path,
+                        "vad_info": vad_info,
+                        "rejected_by_vad": True
+                    }
+                else:
+                    logger.info(f"✅ Silero VAD accepted audio for {call_id}: "
+                               f"speech ratio {vad_info.get('speech_ratio', 0):.1%}")
+                
+            except Exception as vad_error:
+                logger.warning(f"⚠️ Silero VAD failed for {call_id}, transcribing anyway: {vad_error}")
+                vad_info["vad_error"] = str(vad_error)
+                # Continue with transcription if VAD fails
+        else:
+            logger.info(f"🔇 Speech detection disabled for {call_id}")
+            vad_info["vad_enabled"] = False
+        
+        # LANGUAGE DETECTION: Determine optimal language for transcription
+        final_language = language  # Default to provided language
+        language_info = {}
+        
+        if enable_auto_language and duration_seconds >= 10.0:  # Only for longer segments
+            try:
+                # Use auto-detection for first transcription attempt
+                logger.info(f"🌐 Auto-detecting language for {call_id} ({duration_seconds:.1f}s audio)")
+                final_language = None  # Let Whisper auto-detect
+                language_info["detection_attempted"] = True
+                language_info["fallback_language"] = language
+            except Exception as lang_error:
+                logger.warning(f"⚠️ Language auto-detection failed for {call_id}: {lang_error}")
+                language_info["detection_error"] = str(lang_error)
+        else:
+            language_info["detection_attempted"] = False
+            language_info["reason"] = "disabled" if not enable_auto_language else f"duration too short ({duration_seconds:.1f}s < 10.0s)"
+        
         # Quick transcription only (no full pipeline for speed)
         whisper_model = models.models.get("whisper")
         if whisper_model: 
-            # Use the PCM transcription method for raw audio bytes
-            transcript = whisper_model.transcribe_pcm_audio(
-                audio_bytes,
-                sample_rate=sample_rate,
-                language=language
+            # Use the same transcription method as /audio/process endpoint (which works correctly)
+            # transcribe_audio_bytes() doesn't use problematic chunking for short audio
+            # NOTE: Using original audio_bytes (not VAD-filtered) for consistent transcription
+            transcript = whisper_model.transcribe_audio_bytes(
+                audio_bytes,  # Original 15s audio chunk (not VAD-filtered)
+                language=final_language  # Use detected or default language
             )
             
             processing_duration = (datetime.now() - start_time).total_seconds()
@@ -989,13 +1128,43 @@ def process_streaming_audio_task(
                 # Fallback logging
                 logger.info(f"🎵 {processing_duration:<6.2f}s | {duration_seconds:<3.0f}s | {call_id} | {transcript}")
             
+            # Ensure all values are JSON serializable (convert numpy types to Python types)
+            def make_json_serializable(obj):
+                """Convert numpy types to Python native types for JSON serialization"""
+                try:
+                    if hasattr(obj, 'dtype'):  # numpy array
+                        if obj.size == 1:
+                            return obj.item()  # Convert single element to scalar
+                        else:
+                            return obj.tolist()  # Convert array to list
+                    elif hasattr(obj, 'item'):  # numpy scalar
+                        return obj.item()
+                    elif isinstance(obj, dict):
+                        return {k: make_json_serializable(v) for k, v in obj.items()}
+                    elif isinstance(obj, (list, tuple)):
+                        return [make_json_serializable(item) for item in obj]
+                    elif hasattr(obj, '__float__'):  # numpy float types
+                        return float(obj)
+                    elif hasattr(obj, '__int__'):  # numpy int types
+                        return int(obj)
+                    else:
+                        return obj
+                except (ValueError, TypeError):
+                    # Fallback for problematic numpy types
+                    return str(obj)
+            
             return {
                 "call_id": call_id,
                 "transcript": transcript,
-                "processing_duration": processing_duration,
-                "audio_duration": duration_seconds,
+                "processing_duration": float(processing_duration),
+                "audio_duration": float(duration_seconds),
                 "timestamp": datetime.now().isoformat(),
-                "session_updated": True
+                "session_updated": True,
+                "debug_file_path": debug_file_path,  # Include debug file path for analysis
+                "vad_info": make_json_serializable(vad_info),  # Include Silero VAD information
+                "language_info": make_json_serializable(language_info),  # Include language detection information
+                "final_language": str(final_language),  # Language used for transcription
+                "rejected_by_vad": False
             }
         else:
             logger.warning(f"⚠️ Whisper model not available in worker")

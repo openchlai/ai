@@ -13,6 +13,7 @@ from .model_scripts.model_loader import model_loader
 from .core.resource_manager import resource_manager
 from .streaming.tcp_server import AsteriskTCPServer
 from .streaming.websocket_server import websocket_manager
+from .web.monitoring_dashboard import setup_monitoring_dashboard
 
 from .config.settings import settings
 
@@ -72,7 +73,17 @@ async def lifespan(app: FastAPI):
     if os.getenv("ENABLE_ASTERISK_TCP", "true").lower() == "true":
         try:
             logger.info("🎙️ Starting Asterisk TCP listener...")
-            asterisk_server = AsteriskTCPServer()  # Remove model_loader parameter
+            
+            # Enhanced configuration for better Whisper performance
+            window_duration = float(os.getenv("ASTERISK_WINDOW_DURATION", "10.0"))  # 20s windows vs original 5s
+            enable_overlapping = os.getenv("ASTERISK_ENABLE_OVERLAPPING", "true").lower() == "true"  # 25% overlap
+            
+            asterisk_server = AsteriskTCPServer(
+                window_duration=window_duration,
+                enable_overlapping=enable_overlapping
+            )
+            
+            logger.info(f"🎙️ TCP server config: {window_duration}s windows, overlapping: {enable_overlapping}")
             
             # Start TCP listener in background
             asyncio.create_task(asterisk_server.start_server())
@@ -126,6 +137,16 @@ app.include_router(audio_routes.router)
 app.include_router(call_session_routes.router)
 app.include_router(qa_route.router)
 
+# 🆕 Setup monitoring dashboard
+if os.getenv("ENABLE_MONITORING_DASHBOARD", "true").lower() == "true":
+    try:
+        monitoring_dashboard = setup_monitoring_dashboard(app)
+        logger.info("🌐 Monitoring dashboard enabled at /monitoring")
+    except Exception as e:
+        logger.error(f"❌ Failed to setup monitoring dashboard: {e}")
+else:
+    logger.info("📊 Monitoring dashboard disabled")
+
 @app.websocket("/audio/stream")
 async def websocket_audio_stream(websocket: WebSocket):
     """WebSocket endpoint for Asterisk audio streaming"""
@@ -167,7 +188,10 @@ async def root():
             "call_sessions": "/api/v1/calls",
             "active_calls": "/api/v1/calls/active",
             "call_stats": "/api/v1/calls/stats",
-            "qa_predict": "/qa/predict"
+            "qa_predict": "/qa/predict",
+            "monitoring_dashboard": "/monitoring",
+            "monitoring_api": "/monitoring/api/calls",
+            "monitoring_websocket": "ws://localhost:8123/monitoring/ws"
 
         }
     }

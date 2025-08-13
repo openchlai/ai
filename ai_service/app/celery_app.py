@@ -1,6 +1,13 @@
 # app/celery_app.py - MLOps Production Configuration
 from celery import Celery
 import os
+import sys
+from pathlib import Path
+
+# Add project root to Python path for utils imports
+project_root = Path(__file__).parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
 def get_redis_url():
     if os.getenv("DOCKER_CONTAINER") or os.path.exists("/.dockerenv"):

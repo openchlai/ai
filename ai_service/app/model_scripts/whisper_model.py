@@ -251,8 +251,8 @@ class WhisperModel:
             logger.error(f"❌ Transcription failed: {e}")
             raise RuntimeError(f"Transcription failed: {str(e)}")
     
-    def _transcribe_audio_array(self, audio_array: np.ndarray, language: Optional[str] = None, sample_rate: int = 16000) -> str:
-        """Core transcription logic for numpy audio arrays"""
+    def _transcribe_audio_array(self, audio_array: np.ndarray, language: Optional[str] = None, sample_rate: int = 16000, enable_chunking: bool = True) -> str:
+        """Core transcription logic for numpy audio arrays with enhanced chunking"""
         try:
             # Validate and normalize language
             validated_language = self._validate_language(language)
@@ -267,25 +267,43 @@ class WhisperModel:
             
             # Prepare pipeline kwargs - EXPLICITLY set task to transcribe
             generate_kwargs = {
-                "task": "transcribe"  # Explicitly set to transcribe (not translate)
+                "task": "transcribe",  # Explicitly set to transcribe (not translate)
+                "temperature": 0.0,    # Deterministic generation to reduce hallucinations
+                "compression_ratio_threshold": 2.4,  # Detect audio compression issues
+                "logprob_threshold": -1.0,  # Filter low-confidence outputs
+                "no_speech_threshold": 0.6,  # Higher threshold to avoid transcribing silence
+# Note: condition_on_previous_text not supported in transformers pipeline, controlled by chunk_length_s instead
             }
             
             # Add language if specified
             if validated_language:
                 generate_kwargs["language"] = validated_language
             
-            # For audio longer than 30 seconds, enable timestamps and chunking
-            if duration > 30:
-                logger.info("🎙️ Long audio detected (>30s) - using chunked transcription")
+            # Enhanced chunking strategy based on audio duration
+            if enable_chunking and duration > 10:  # Use chunking for audio > 10 seconds
+                # Adaptive chunk size based on duration
+                if duration > 30:
+                    chunk_length = 30
+                    stride_length = 5
+                    logger.info(f"🎙️ Long audio ({duration:.1f}s) - using 30s chunks with 5s stride")
+                elif duration > 15:
+                    chunk_length = 20
+                    stride_length = 4
+                    logger.info(f"🎙️ Medium audio ({duration:.1f}s) - using 20s chunks with 4s stride")
+                else:
+                    chunk_length = 15
+                    stride_length = 3
+                    logger.info(f"🎙️ Short-medium audio ({duration:.1f}s) - using 15s chunks with 3s stride")
+                
                 result = self.pipe(
                     audio_array,
                     generate_kwargs=generate_kwargs,
-                    return_timestamps=True,  # Required for long-form audio
-                    chunk_length_s=30,      # Process in 30-second chunks
-                    stride_length_s=5       # 5-second overlap between chunks
+                    return_timestamps=True,  # Required for chunked processing
+                    chunk_length_s=chunk_length,
+                    stride_length_s=stride_length
                 )
             else:
-                logger.info("🎙️ Short audio detected (≤30s) - using standard transcription")
+                logger.info(f"🎙️ Short audio ({duration:.1f}s) - using standard transcription")
                 result = self.pipe(
                     audio_array,
                     generate_kwargs=generate_kwargs,
@@ -325,13 +343,14 @@ class WhisperModel:
             logger.error(f"❌ Transcription from bytes failed: {e}")
             raise RuntimeError(f"Transcription failed: {str(e)}")
     
-    def transcribe_pcm_audio(self, audio_bytes: bytes, sample_rate: int = 16000, language: Optional[str] = None) -> str:
-        """Transcribe raw PCM audio bytes with specified sample rate
+    def transcribe_pcm_audio(self, audio_bytes: bytes, sample_rate: int = 16000, language: Optional[str] = None, enable_chunking: bool = True) -> str:
+        """Transcribe raw PCM audio bytes with specified sample rate and enhanced processing
         
         Args:
             audio_bytes: Raw PCM audio data (16-bit, mono)
             sample_rate: Sample rate in Hz (default: 16000, currently only 16000 is supported)
             language: Language code for transcription (optional, auto-detect if None)
+            enable_chunking: Enable chunking for longer audio segments (default: True)
             
         Returns:
             Transcribed text
@@ -344,8 +363,20 @@ class WhisperModel:
         if sample_rate != 16000:
             raise ValueError(f"Sample rate {sample_rate} not supported. Currently only 16000 Hz is supported.")
         
-        # Delegate to the existing transcribe_audio_bytes method
-        return self.transcribe_audio_bytes(audio_bytes, language)
+        if not self.is_loaded:
+            raise RuntimeError("Whisper model not loaded")
+        
+        try:
+            # Convert raw PCM bytes to numpy array
+            audio_array = self._convert_pcm_bytes_to_array(audio_bytes, sample_rate=sample_rate)
+            
+            # Transcribe with enhanced chunking support
+            result = self._transcribe_audio_array(audio_array, language, sample_rate=sample_rate, enable_chunking=enable_chunking)
+            return result
+            
+        except Exception as e:
+            logger.error(f"❌ Transcription from PCM bytes failed: {e}")
+            raise RuntimeError(f"Transcription failed: {str(e)}")
     
     def get_supported_languages(self) -> Dict[str, str]:
         """Get dictionary of supported language codes and names"""
