@@ -7,12 +7,12 @@ on:
   push:
     paths:
       - 'ai_service/**'  # Trigger on any file in ai_service folder
-      - '.github/workflows/ai-service-ci.yml'
+      - '.github/workflows/ai-service-ci.yml'  # Trigger on workflow file changes
     branches: [main, develop]
   pull_request:
     paths:
       - 'ai_service/**'  # Trigger on any file in ai_service folder
-      - '.github/workflows/ai-service-ci.yml'
+      - '.github/workflows/ai-service-ci.yml'  # Trigger on workflow file changes
     branches: [main, develop]
   workflow_dispatch:
 
@@ -198,7 +198,7 @@ jobs:
               coverage report --show-missing > coverage.txt 2>/dev/null || echo "No coverage data" > coverage.txt
             else
               # Fallback to parsing XML
-              COVERAGE=$(grep -o 'line-rate="[0-9.]*"' coverage.xml | head -1 | sed 's/line-rate="//;s/"//' | awk '{print int($1*100)}' || echo "0")
+              COVERAGE=$(grep -o 'line-rate="[0-1].[0-9]*"' coverage.xml | head -1 | sed 's/line-rate="//;s/"//' | awk '{print int($1*100)}' || echo "0")
               echo "Coverage data parsed from XML: ${COVERAGE}%" > coverage.txt
             fi
             
@@ -228,15 +228,15 @@ jobs:
         run: |
           echo "📝 Generating coverage report in ai_service folder..."
           
-          # Create coverage report with timestamp
-          cat > COVERAGE.md <<EOF
+          # Create coverage report with heredoc
+          cat > COVERAGE.md <<'EOF'
           # 📊 Code Coverage Report - AI Service
           
           **Branch:** ${{ github.ref_name }}
-          **Commit:** [\`${GITHUB_SHA:0:7}\`](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
+          **Commit:** [`${GITHUB_SHA:0:7}`](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
           **Generated:** $(date '+%Y-%m-%d %H:%M:%S UTC')
           **Python Version:** ${{ matrix.python-version }}
-          **Workflow:** [\`${{ github.run_id }}\`](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          **Workflow:** [`${{ github.run_id }}`](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
           
           ## 🎯 Coverage Summary
           
@@ -247,30 +247,16 @@ jobs:
           | **Coverage** | ${COVERAGE_PERCENTAGE:-0}% | $([ "${COVERAGE_PERCENTAGE:-0}" -ge 80 ] && echo "✅ Pass" || echo "❌ Fail") |
           | **Threshold** | 80% | Target |
           
+          ## 📈 Detailed Coverage Report
+          
+          ```
+          $(if [ -f coverage.txt ]; then cat coverage.txt; elif command -v coverage >/dev/null && [ -f .coverage ]; then coverage report --show-missing 2>/dev/null || echo "Unable to generate detailed coverage report"; else echo "No detailed coverage data available"; fi)
+          ```
+          
+          ---
+          *Report generated automatically by GitHub Actions*
+          *Access this report at: [COVERAGE.md](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/ai_service/COVERAGE.md)*
           EOF
-          
-          # Add detailed coverage report
-          echo "## 📈 Detailed Coverage Report" >> COVERAGE.md
-          echo "" >> COVERAGE.md
-          echo "\`\`\`" >> COVERAGE.md
-          
-          if [ -f coverage.txt ]; then
-            echo "Using existing coverage.txt..." >&2
-            cat coverage.txt >> COVERAGE.md
-          elif command -v coverage >/dev/null && [ -f .coverage ]; then
-            echo "Generating coverage report from .coverage file..." >&2
-            coverage report --show-missing >> COVERAGE.md 2>/dev/null || echo "Unable to generate detailed coverage report" >> COVERAGE.md
-          else
-            echo "No detailed coverage data available" >> COVERAGE.md
-          fi
-          
-          echo "\`\`\`" >> COVERAGE.md
-          echo "" >> COVERAGE.md
-          
-          # Add footer with link to the file
-          echo "---" >> COVERAGE.md
-          echo "*Report generated automatically by GitHub Actions*" >> COVERAGE.md
-          echo "*Access this report at: [COVERAGE.md](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/ai_service/COVERAGE.md)*" >> COVERAGE.md
           
           echo "✅ Coverage report generated successfully"
           echo "COVERAGE_MD_LINK=https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/ai_service/COVERAGE.md" >> $GITHUB_ENV
@@ -324,6 +310,8 @@ jobs:
             - View report: [COVERAGE.md](https://github.com/${{ github.repository }}/blob/${{ env.COVERAGE_MD_LINK }}/ai_service/COVERAGE.md)
           labels: automated, coverage
           delete-branch: true
+        env:
+          COVERAGE_PERCENTAGE: ${{ env.COVERAGE_PERCENTAGE }}
 
       - name: 💾 Commit COVERAGE.md for Pull Request Events
         if: github.event_name == 'pull_request' && matrix.python-version == '3.12'
