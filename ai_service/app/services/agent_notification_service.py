@@ -23,6 +23,7 @@ class UpdateType(Enum):
     CALL_SUMMARY = "call_summary"
     CALL_INSIGHTS = "call_insights"
     GPT_INSIGHTS = "gpt_insights"
+    UNIFIED_INSIGHT = "unified_insight"
     ERROR = "error"
 
 class AgentNotificationService:
@@ -356,6 +357,69 @@ class AgentNotificationService:
         }
         
         return await self._send_notification(call_id, UpdateType.GPT_INSIGHTS, payload)
+    
+    async def send_unified_insight(self, call_id: str, pipeline_result: Dict[str, Any], 
+                                 audio_quality_info: Dict[str, Any], processing_metadata: Dict[str, Any] = None) -> bool:
+        """
+        Send comprehensive unified insights after complete audio processing
+        This includes all pipeline results: transcript, translation, entities, classification, QA, summary, insights
+        """
+        
+        # Extract key components from pipeline result
+        transcript = pipeline_result.get('transcript', '')
+        translation = pipeline_result.get('translation', '')
+        entities = pipeline_result.get('entities', {})
+        classification = pipeline_result.get('classification', {})
+        qa_scores = pipeline_result.get('qa_scores', {})
+        summary = pipeline_result.get('summary', '')
+        insights = pipeline_result.get('insights', {})
+        
+        # Create comprehensive payload with all results
+        payload = {
+            "update_type": "unified_insight",
+            "call_id": call_id,
+            "timestamp": datetime.now().isoformat(),
+            
+            # Core processing results
+            "transcript": {
+                "text": transcript,
+                "length": len(transcript),
+                "source": "high_quality_audio_download"
+            },
+            "translation": {
+                "text": translation,
+                "length": len(translation) if translation else 0,
+                "available": bool(translation)
+            },
+            "entities": entities,
+            "classification": classification,
+            "qa_scores": qa_scores,
+            "summary": summary,
+            "insights": insights,
+            
+            # Audio and processing metadata
+            "audio_quality": audio_quality_info,
+            "processing_metadata": processing_metadata or {},
+            
+            # Status indicators
+            "processing_complete": True,
+            "supersedes_streaming_results": True,
+            "quality_level": "high_fidelity_audio_based",
+            
+            # Quick access summary for agents
+            "summary_data": {
+                "main_category": classification.get('main_category', 'unknown'),
+                "priority_level": classification.get('priority', 'medium'),
+                "risk_level": insights.get('risk_assessment', {}).get('risk_level', 'unknown'),
+                "intervention_needed": classification.get('intervention', 'assessment_required'),
+                "transcript_length": len(transcript),
+                "has_translation": bool(translation),
+                "entities_found": sum(len(ent_list) for ent_list in entities.values() if isinstance(ent_list, list)),
+                "processing_time": audio_quality_info.get('processing_time', 0)
+            }
+        }
+        
+        return await self._send_notification(call_id, UpdateType.UNIFIED_INSIGHT, payload)
     
     async def send_error_notification(self, call_id: str, error_type: str, 
                                     error_message: str, error_context: Dict[str, Any] = None) -> bool:

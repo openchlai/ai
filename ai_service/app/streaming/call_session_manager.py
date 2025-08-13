@@ -2,7 +2,7 @@
 import json
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set, Any
 from dataclasses import dataclass, asdict
 import asyncio
 import aiohttp
@@ -790,44 +790,40 @@ class CallSessionManager:
             logger.info(f"🧹 [session] Cleaned up {len(inactive_sessions)} inactive sessions")
     
     async def _download_and_process_audio(self, session: CallSession):
-        """Download complete audio file from Asterisk server and process through full pipeline"""
+        """Download complete audio file from Asterisk server via SCP and process through full pipeline"""
         try:
-            # Get Asterisk server IP from connection info or environment
-            asterisk_server_ip = session.connection_info.get('asterisk_server_ip')
-            if not asterisk_server_ip:
-                # Fallback to environment variable or connection client address
-                asterisk_server_ip = os.getenv('ASTERISK_SERVER_IP', 
-                                             session.connection_info.get('client_addr', ['localhost'])[0])
+            call_id = session.call_id
+            logger.info(f"📥 [download] Starting SCP audio download for call {call_id}")
             
-            # Construct audio download URL
-            audio_url = f"https://{asterisk_server_ip}/helpline/api/calls/{session.call_id}?file=wav"
+            # Use SCP downloader with GSM to WAV conversion
+            from utils.scp_audio_downloader import download_and_convert_audio
             
-            logger.info(f"📥 [download] Downloading audio file for call {session.call_id} from {audio_url}")
+            audio_bytes, download_info = await download_and_convert_audio(
+                call_id=call_id, 
+                convert_to_wav=True  # Convert GSM to WAV for better Whisper processing
+            )
             
-            # Download audio file
-            async with aiohttp.ClientSession() as session_http:
-                async with session_http.get(audio_url, timeout=aiohttp.ClientTimeout(total=60)) as response:
-                    if response.status == 200:
-                        audio_bytes = await response.read()
-                        file_size_mb = len(audio_bytes) / (1024 * 1024)
+            if audio_bytes is not None:
+                logger.info(f"✅ [download] Successfully downloaded {download_info['file_size_mb']:.2f}MB "
+                           f"audio file for call {call_id} via SCP")
+                logger.info(f"📊 [download] Format: {download_info['format']}, "
+                           f"Original: {download_info.get('original_size_mb', 'N/A')}MB")
+                
+                # Store download metadata in session for debugging
+                session.audio_download_info = download_info
+                
+                # Submit to full audio processing pipeline
+                return await self._process_downloaded_audio(session, audio_bytes, download_info)
+                
+            else:
+                logger.error(f"❌ [download] SCP download failed for call {call_id}: {download_info.get('error', 'unknown')}")
+                return None
                         
-                        logger.info(f"✅ [download] Downloaded {file_size_mb:.2f}MB audio file for call {session.call_id}")
-                        
-                        # Submit to full audio processing pipeline (/audio/process equivalent)
-                        return await self._process_downloaded_audio(session, audio_bytes, audio_url)
-                        
-                    else:
-                        logger.warning(f"⚠️ [download] Audio download failed for call {session.call_id}: HTTP {response.status}")
-                        return None
-                        
-        except asyncio.TimeoutError:
-            logger.error(f"❌ [download] Audio download timeout for call {session.call_id}")
-            return None
         except Exception as e:
-            logger.error(f"❌ [download] Audio download failed for call {session.call_id}: {e}")
+            logger.error(f"❌ [download] Unexpected error downloading audio for call {session.call_id}: {e}")
             return None
     
-    async def _process_downloaded_audio(self, session: CallSession, audio_bytes: bytes, audio_url: str):
+    async def _process_downloaded_audio(self, session: CallSession, audio_bytes: bytes, download_info: Dict[str, Any]):
         """Process downloaded audio through the full /audio/process pipeline"""
         try:
             from ..tasks.audio_tasks import process_audio_task
@@ -850,7 +846,8 @@ class CallSessionManager:
             session_key = f"call_session:{session.call_id}"
             audio_pipeline_info = {
                 'audio_task_id': task.id,
-                'audio_url': audio_url,
+                'download_method': 'scp',
+                'download_info': download_info,
                 'audio_size_bytes': len(audio_bytes),
                 'submitted_at': datetime.now().isoformat(),
                 'status': 'processing',
@@ -870,7 +867,7 @@ class CallSessionManager:
             # Wait for processing completion and generate enhanced insights
             if AGENT_NOTIFICATIONS_ENABLED:
                 asyncio.create_task(self._wait_and_generate_enhanced_insights(
-                    session, task, audio_bytes, audio_url
+                    session, task, audio_bytes, download_info
                 ))
             
             return task
@@ -879,7 +876,7 @@ class CallSessionManager:
             logger.error(f"❌ [pipeline] Failed to process downloaded audio for call {session.call_id}: {e}")
             return None
     
-    async def _wait_and_generate_enhanced_insights(self, session: CallSession, audio_task, audio_bytes: bytes, audio_url: str):
+    async def _wait_and_generate_enhanced_insights(self, session: CallSession, audio_task, audio_bytes: bytes, download_info: Dict[str, Any]):
         """Wait for audio processing completion and generate enhanced Mistral insights"""
         try:
             from celery.result import AsyncResult
@@ -914,12 +911,15 @@ class CallSessionManager:
                             qa_scores = pipeline_result.get('qa_scores', {})
                             summary = pipeline_result.get('summary', '')
                             
-                            # Audio quality information
+                            # Audio quality information from SCP download
                             audio_quality_info = {
-                                'file_size_mb': round(len(audio_bytes) / (1024 * 1024), 2),
-                                'audio_url': audio_url,
-                                'processing_time': pipeline_result.get('pipeline_info', {}).get('total_time', 0),
-                                'format': 'mixed_mono_16khz_16bit'
+                                'file_size_mb': download_info.get('file_size_mb', round(len(audio_bytes) / (1024 * 1024), 2)),
+                                'download_method': download_info.get('method', 'scp'),
+                                'audio_format': download_info.get('format', 'unknown'),
+                                'original_size_mb': download_info.get('original_size_mb'),
+                                'conversion_successful': download_info.get('conversion_successful', False),
+                                'server': download_info.get('server', 'unknown'),
+                                'processing_time': pipeline_result.get('pipeline_info', {}).get('total_time', 0)
                             }
                             
                             # Generate enhanced insights using original streaming transcript vs enhanced
@@ -930,6 +930,7 @@ class CallSessionManager:
                                 logger.info(f"📊 [enhanced] Original: {len(original_transcript)} chars, Enhanced: {len(enhanced_transcript)} chars")
                                 
                                 try:
+                                    # Generate enhanced insights using original vs enhanced comparison
                                     enhanced_insights = generate_enhanced_audio_insights(
                                         original_transcript=original_transcript,
                                         enhanced_transcript=enhanced_transcript,
@@ -941,15 +942,56 @@ class CallSessionManager:
                                         audio_quality_info=audio_quality_info
                                     )
                                     
-                                    # Send enhanced insights notification to agent
-                                    await self._send_enhanced_insights_notification(call_id, enhanced_insights, audio_quality_info)
+                                    # Add enhanced insights to pipeline result
+                                    pipeline_result['enhanced_insights'] = enhanced_insights
                                     
-                                    logger.info(f"🤖 [enhanced] Sent comprehensive enhanced insights for call {call_id}")
+                                    # Send unified insight notification with complete results
+                                    processing_metadata = {
+                                        'original_transcript_length': len(original_transcript),
+                                        'enhanced_transcript_length': len(enhanced_transcript),
+                                        'quality_improvement': 'high_fidelity_audio_based',
+                                        'processing_type': 'complete_audio_pipeline',
+                                        'download_method': 'scp',
+                                        'audio_format': audio_quality_info.get('audio_format', 'unknown')
+                                    }
+                                    
+                                    await agent_notification_service.send_unified_insight(
+                                        call_id=call_id,
+                                        pipeline_result=pipeline_result,
+                                        audio_quality_info=audio_quality_info,
+                                        processing_metadata=processing_metadata
+                                    )
+                                    
+                                    logger.info(f"🤖 [unified] Sent comprehensive unified insights for call {call_id}")
+                                    logger.info(f"📊 [unified] Includes: transcript, translation, entities, classification, QA, summary, insights")
                                     
                                 except Exception as insights_error:
-                                    logger.error(f"❌ Failed to generate enhanced insights for {call_id}: {insights_error}")
+                                    logger.error(f"❌ Failed to generate/send unified insights for {call_id}: {insights_error}")
                             else:
                                 logger.warning(f"⚠️ [enhanced] Enhanced transcript too short for insights generation: {len(enhanced_transcript)} chars")
+                                
+                                # Still send unified insight with available data (no enhanced insights)
+                                try:
+                                    processing_metadata = {
+                                        'original_transcript_length': len(original_transcript),
+                                        'enhanced_transcript_length': len(enhanced_transcript),
+                                        'quality_improvement': 'limited_due_to_short_transcript',
+                                        'processing_type': 'basic_audio_pipeline',
+                                        'download_method': 'scp',
+                                        'audio_format': audio_quality_info.get('audio_format', 'unknown')
+                                    }
+                                    
+                                    await agent_notification_service.send_unified_insight(
+                                        call_id=call_id,
+                                        pipeline_result=pipeline_result,
+                                        audio_quality_info=audio_quality_info,
+                                        processing_metadata=processing_metadata
+                                    )
+                                    
+                                    logger.info(f"🤖 [unified] Sent basic unified insights for call {call_id} (short transcript)")
+                                    
+                                except Exception as basic_error:
+                                    logger.error(f"❌ Failed to send basic unified insights for {call_id}: {basic_error}")
                         
                         break
                     else:

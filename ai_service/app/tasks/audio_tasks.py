@@ -921,13 +921,37 @@ def process_streaming_audio_task(
         start_time = datetime.now()
         call_id = connection_id  # connection_id is now actually call_id
         
+        # Simple processing - no VAD for now (can add Silero VAD later)
+        vad_info = {"vad_enabled": False, "note": "VAD not implemented in this branch"}
+        
         # Quick transcription only (no full pipeline for speed)
         whisper_model = models.models.get("whisper")
         if whisper_model: 
-            # Use the PCM transcription method for raw audio bytes
-            transcript = whisper_model.transcribe_pcm_audio(
-                audio_bytes,
-                sample_rate=sample_rate,
+            # Use the same transcription method as /audio/process endpoint
+            # transcribe_audio_bytes() expects WAV format, so we need to convert PCM bytes
+            import soundfile as sf
+            import tempfile
+            import numpy as np
+            
+            # Convert raw PCM bytes to numpy array
+            audio_int16 = np.frombuffer(audio_bytes, dtype=np.int16)
+            audio_float32 = audio_int16.astype(np.float32) / 32768.0
+            
+            # Save as temporary WAV file
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_file:
+                sf.write(temp_file.name, audio_float32, sample_rate)
+                temp_file.flush()
+                
+                # Read back as bytes for transcribe_audio_bytes
+                with open(temp_file.name, 'rb') as wav_file:
+                    wav_bytes = wav_file.read()
+                
+                # Clean up temp file
+                os.unlink(temp_file.name)
+            
+            # Use standard transcription method (same as /audio/process)
+            transcript = whisper_model.transcribe_audio_bytes(
+                wav_bytes,
                 language=language
             )
             
@@ -989,13 +1013,40 @@ def process_streaming_audio_task(
                 # Fallback logging
                 logger.info(f"🎵 {processing_duration:<6.2f}s | {duration_seconds:<3.0f}s | {call_id} | {transcript}")
             
+            # Ensure all values are JSON serializable (convert numpy types to Python types)
+            def make_json_serializable(obj):
+                """Convert numpy types to Python native types for JSON serialization"""
+                try:
+                    if hasattr(obj, 'dtype'):  # numpy array
+                        if obj.size == 1:
+                            return obj.item()  # Convert single element to scalar
+                        else:
+                            return obj.tolist()  # Convert array to list
+                    elif hasattr(obj, 'item'):  # numpy scalar
+                        return obj.item()
+                    elif isinstance(obj, dict):
+                        return {k: make_json_serializable(v) for k, v in obj.items()}
+                    elif isinstance(obj, (list, tuple)):
+                        return [make_json_serializable(item) for item in obj]
+                    elif hasattr(obj, '__float__'):  # numpy float types
+                        return float(obj)
+                    elif hasattr(obj, '__int__'):  # numpy int types
+                        return int(obj)
+                    else:
+                        return obj
+                except (ValueError, TypeError):
+                    # Fallback for problematic numpy types
+                    return str(obj)
+            
             return {
                 "call_id": call_id,
                 "transcript": transcript,
-                "processing_duration": processing_duration,
-                "audio_duration": duration_seconds,
+                "processing_duration": float(processing_duration),
+                "audio_duration": float(duration_seconds),
                 "timestamp": datetime.now().isoformat(),
-                "session_updated": True
+                "session_updated": True,
+                "vad_info": make_json_serializable(vad_info),
+                "rejected_by_vad": False
             }
         else:
             logger.warning(f"⚠️ Whisper model not available in worker")
