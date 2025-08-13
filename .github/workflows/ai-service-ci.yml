@@ -172,22 +172,9 @@ jobs:
               --disable-warnings \
               --continue-on-collection-errors \
               --tb=no \
-              || {
-                echo "Coverage tests completed with some failures"
-                # Ensure minimal coverage.xml is created if pytest fails
-                if [ ! -f coverage.xml ]; then
-                  echo "Creating minimal coverage report due to pytest failure..."
-                  cat > coverage.xml <<'EOF'
-                  <?xml version="1.0" ?>
-                  <coverage version="7.0" timestamp="$(date +%s)" lines-valid="100" lines-covered="0" line-rate="0.0">
-                    <sources><source>./app</source></sources>
-                    <packages></packages>
-                  </coverage>
-                  EOF
-                fi
-              }
+              || echo "Coverage tests completed with some failures"
           else
-            echo "No proper test files found, creating minimal coverage report..."
+            echo "Creating minimal coverage report..."
             cat > coverage.xml <<'EOF'
           <?xml version="1.0" ?>
           <coverage version="7.0" timestamp="$(date +%s)" lines-valid="100" lines-covered="0" line-rate="0.0">
