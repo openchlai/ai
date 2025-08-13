@@ -200,6 +200,7 @@ jobs:
         if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && matrix.python-version == '3.12'
         working-directory: ai_service
         run: |
+          set -x
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           if git diff --quiet COVERAGE.md 2>/dev/null; then
