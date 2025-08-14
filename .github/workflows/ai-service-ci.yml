@@ -245,33 +245,14 @@ jobs:
         env:
           COVERAGE_PERCENTAGE: ${{ env.COVERAGE_PERCENTAGE }}
 
-      - name: 💾 Commit COVERAGE.md for Pull Request Events
-        if: github.event_name == 'pull_request' && matrix.python-version == '3.12'
-        working-directory: ai_service
-        env:
-          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+      - name: Commit Coverage.md to PR branch
         run: |
-          git config --local user.name "github-actions[bot]"
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet COVERAGE.md 2>/dev/null; then
-            exit 0
-          fi
-          git add COVERAGE.md
-          git commit -m "📊 Update coverage report for PR - ${COVERAGE_PERCENTAGE:-0}% [skip ci]"
-          max_retries=3
-          for i in $(seq 1 $max_retries); do
-            if git push origin "HEAD:$PR_HEAD_REF"; then
-              echo "✅ Successfully pushed coverage report to PR branch $PR_HEAD_REF"
-              echo "COVERAGE_MD_PR_LINK=https://github.com/${{ github.repository }}/blob/$PR_HEAD_REF/ai_service/COVERAGE.md" >> $GITHUB_ENV
-              break
-            else
-              if [ $i -eq $max_retries ]; then
-                exit 1
-              fi
-              sleep 5
-              git pull --rebase origin "$PR_HEAD_REF"
-            fi
-          done
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Coverage.md
+          git commit -m "chore: update coverage report" || echo "No changes to commit"
+          git push origin HEAD:${GITHUB_HEAD_REF}
+
 
       - name: 📤 Upload Coverage to Codecov
         if: always()
@@ -337,6 +318,6 @@ jobs:
             echo "- Markdown coverage report committed to a new branch and PR created" >> $GITHUB_STEP_SUMMARY
             echo "- Access the coverage report at: [COVERAGE.md](${{ env.COVERAGE_MD_LINK }})" >> $GITHUB_STEP_SUMMARY
           else
-            echo "- Markdown coverage report committed to PR branch" >> $GITHUB_STEP_SUMMARY
+            echo "- Modify this Markdown coverage report committed to PR branch" >> $GITHUB_STEP_SUMMARY
             echo "- Access the coverage report at: [COVERAGE.md](${{ env.COVERAGE_MD_PR_LINK }})" >> $GITHUB_STEP_SUMMARY
           fi
