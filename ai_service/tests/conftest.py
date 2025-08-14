@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 # Async test support
 pytest_plugins = ('pytest_asyncio',)
 
-# Global fixture to patch settings for all tests
+# Global fixture to patch settings for all tests .....
 @pytest.fixture(autouse=True)
 def patch_settings(monkeypatch):
     """Globally patch settings paths for all tests"""
