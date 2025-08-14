@@ -79,31 +79,65 @@ jobs:
         run: |
           # Extract coverage percentage from PCOV XML (the official source)
           if [ -f "coverage.xml" ]; then
-            # Parse XML to get line coverage percentage
+            echo "📊 Found coverage.xml, extracting data..."
+            
+            # Debug: Show XML structure
+            echo "XML Preview:"
+            head -20 coverage.xml
+            
+            # Try multiple parsing methods
             COVERAGE=$(python3 -c "
             import xml.etree.ElementTree as ET
+            import sys
             try:
                 tree = ET.parse('coverage.xml')
                 root = tree.getroot()
+                
+                # Method 1: Look for project metrics
+                metrics = root.find('.//project/metrics')
+                if metrics is not None:
+                    covered = float(metrics.get('coveredstatements', 0))
+                    total = float(metrics.get('statements', 1))
+                    if total > 0:
+                        percentage = round((covered / total) * 100)
+                        print(percentage)
+                        sys.exit(0)
+                
+                # Method 2: Look for any metrics tag
                 metrics = root.find('.//metrics')
                 if metrics is not None:
                     covered = float(metrics.get('coveredstatements', 0))
-                    total = float(metrics.get('statements', 0))
+                    total = float(metrics.get('statements', 1))
                     if total > 0:
                         percentage = round((covered / total) * 100)
-                        print(f'{percentage}')
-                    else:
-                        print('0')
-                else:
-                    print('0')
-            except Exception as e:
+                        print(percentage)
+                        sys.exit(0)
+                
                 print('0')
-            " 2>/dev/null || echo "0")
+            except Exception as e:
+                print(f'Error: {str(e)}', file=sys.stderr)
+                print('0')
+            " || echo "0")
+            
+            # If Python parsing failed, try grep method as fallback
+            if [ "$COVERAGE" = "0" ]; then
+              echo "Python parsing failed, trying grep fallback..."
+              COVERAGE=$(grep -o 'statements.*coveredstatements.*' coverage.xml | head -1 | sed 's/.*statements="\([0-9]*\)".*coveredstatements="\([0-9]*\)".*/\2 \1/' | awk '{if($2>0) print int(($1/$2)*100); else print 0}' || echo "0")
+            fi
+            
+            # Final fallback to old calculation method
+            if [ "$COVERAGE" = "0" ]; then
+              echo "All parsing methods failed, trying calculate-coverage.php fallback..."
+              if [ -f "calculate-coverage.php" ]; then
+                COVERAGE=$(php calculate-coverage.php 2>/dev/null | grep "Estimated Line Coverage" | grep -oE "[0-9]+%" | grep -oE "[0-9]+" || echo "0")
+              fi
+            fi
           else
+            echo "❌ coverage.xml not found!"
             COVERAGE="0"
           fi
           
-          echo "PCOV Coverage: ${COVERAGE}%"
+          echo "📈 Final PCOV Coverage: ${COVERAGE}%"
           echo "COVERAGE_PERCENTAGE=$COVERAGE" >> $GITHUB_ENV
           
           # Set coverage color for badge
