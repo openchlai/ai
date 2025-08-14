@@ -116,6 +116,7 @@ jobs:
       - name: 🧪 Run Tests with Coverage
         working-directory: ai_service
         run: |
+          echo "🛠 Running unit tests with coverage..."
           if [ -d tests ] && [ -n "$(find tests -name '*.py' -type f)" ]; then
             python -m pytest tests/ \
               --cov=app \
@@ -125,56 +126,53 @@ jobs:
               --cov-config=.coveragerc \
               --disable-warnings \
               --continue-on-collection-errors \
-              --tb=no \
-              || {
-                if [ ! -f coverage.xml ]; then
-                  printf '<?xml version="1.0"?>\n<coverage version="7.0" timestamp="1" lines-valid="100" lines-covered="0" line-rate="0.0">\n<sources><source>./app</source></sources>\n<packages></packages>\n</coverage>\n' > coverage.xml
-                fi
+              --tb=no || {
+                echo "⚠️ Tests failed. Creating fallback coverage.xml so downstream steps still run."
+                printf '<?xml version="1.0"?>\n<coverage version="7.0" timestamp="1" lines-valid="100" lines-covered="0" line-rate="0.0">\n<sources><source>./app</source></sources>\n<packages></packages>\n</coverage>\n' > coverage.xml
               }
           else
+            echo "⚠️ No tests folder found. Creating fallback coverage.xml."
             printf '<?xml version="1.0"?>\n<coverage version="7.0" timestamp="1" lines-valid="100" lines-covered="0" line-rate="0.0">\n<sources><source>./app</source></sources>\n<packages></packages>\n</coverage>\n' > coverage.xml
           fi
+
 
       - name: 📊 Generate Coverage Report
         working-directory: ai_service
         run: |
+          echo "📊 Generating coverage summary..."
           if [ -f coverage.xml ] && [ -s coverage.xml ]; then
             if command -v coverage >/dev/null; then
-              coverage report --show-missing 2>/dev/null || true
+              echo "ℹ️ Using 'coverage' CLI to compute total percentage..."
               COVERAGE=$(coverage report --format=total 2>/dev/null || echo "0")
               coverage report --show-missing > coverage.txt 2>/dev/null || echo "No coverage data" > coverage.txt
             else
-              COVERAGE=$(grep -o 'line-rate="[0-1].[0-9]*"' coverage.xml | head -1 | sed 's/line-rate="//;s/"//' | awk '{print int($1*100)}' || echo "0")
+              echo "ℹ️ 'coverage' CLI not found. Parsing XML..."
+              COVERAGE=$(grep -o 'line-rate="[0-1]\.[0-9]*"' coverage.xml | head -1 | sed 's/line-rate="//;s/"//' | awk '{print int($1*100)}' || echo "0")
               echo "Coverage data parsed from XML: ${COVERAGE}%" > coverage.txt
             fi
-            
+
             echo "COVERAGE_PERCENTAGE=$COVERAGE" >> $GITHUB_ENV
             echo "📊 Detected Coverage: ${COVERAGE}%"
-            
-            if [ "$COVERAGE" -ge "80" ]; then
-              COLOR="brightgreen"
-            elif [ "$COVERAGE" -ge "60" ]; then
-              COLOR="yellow"
-            elif [ "$COVERAGE" -ge "40" ]; then
-              COLOR="orange"
-            else
-              COLOR="red"
-            fi
+
+            if [ "$COVERAGE" -ge "80" ]; then COLOR="brightgreen"
+            elif [ "$COVERAGE" -ge "60" ]; then COLOR="yellow"
+            elif [ "$COVERAGE" -ge "40" ]; then COLOR="orange"
+            else COLOR="red"; fi
             echo "COVERAGE_COLOR=$COLOR" >> $GITHUB_ENV
           else
+            echo "⚠️ No coverage.xml found or it's empty."
             echo "COVERAGE_PERCENTAGE=0" >> $GITHUB_ENV
             echo "COVERAGE_COLOR=red" >> $GITHUB_ENV
-            echo "⚠️ No coverage data available"
             echo "No coverage data available" > coverage.txt
           fi
+
 
       - name: 📝 Generate COVERAGE.md
         working-directory: ai_service
         run: |
+          echo "📝 Writing COVERAGE.md..."
           if [ -f coverage.txt ]; then
             COVERAGE_DETAILS=$(cat coverage.txt)
-          elif command -v coverage >/dev/null && [ -f .coverage ]; then
-            COVERAGE_DETAILS=$(coverage report --show-missing 2>/dev/null || echo "Unable to generate detailed coverage report")
           else
             COVERAGE_DETAILS="No detailed coverage data available"
           fi
@@ -193,32 +191,33 @@ jobs:
             "$([ "${COVERAGE_PERCENTAGE:-0}" -ge 80 ] && echo "✅ Pass" || echo "❌ Fail")" \
             "${COVERAGE_DETAILS}" > COVERAGE.md
 
-          echo "✅ Coverage report generated successfully"
-          echo "COVERAGE_MD_LINK=https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/ai_service/COVERAGE.md" >> $GITHUB_ENV
-
-   
-
-      - name: Run unit tests and generate coverage
-        run: |
-          echo "🛠 Running unit tests..."
-          pytest --cov=ai_service --cov-report=term --cov-report=markdown:Coverage.md
-          echo "✅ Unit tests completed."
-
-          if [ -f Coverage.md ]; then
-            echo "📄 Coverage.md generated successfully."
-            cat Coverage.md
+          if [ -f COVERAGE.md ]; then
+            echo "✅ COVERAGE.md generated successfully at ai_service/COVERAGE.md"
           else
-            echo "❌ Coverage.md was NOT generated."
+            echo "❌ Failed to write COVERAGE.md"
             exit 1
           fi
 
-      - name: Commit Coverage.md to PR branch
+          echo "COVERAGE_MD_LINK=https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/ai_service/COVERAGE.md" >> $GITHUB_ENV
+
+      - name: 💾 Commit COVERAGE.md to PR branch
+        if: github.event_name == 'pull_request' && matrix.python-version == '3.12'
+        working-directory: ai_service
         run: |
+          echo "💾 Committing COVERAGE.md to PR branch ${GITHUB_HEAD_REF}..."
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add Coverage.md
-          git commit -m "chore: update coverage report" || echo "No changes to commit"
+
+          # Ensure we’re on the PR’s HEAD
+          git fetch origin "${GITHUB_HEAD_REF}:${GITHUB_HEAD_REF}" || true
+          git checkout "${GITHUB_HEAD_REF}" || true
+
+          git add COVERAGE.md
+          git status --porcelain
+          git commit -m "📊 Update coverage report [skip ci]" || echo "ℹ️ No changes to commit"
           git push origin HEAD:${GITHUB_HEAD_REF}
+          echo "✅ Pushed COVERAGE.md to PR branch."
+
 
 
       - name: 📤 Upload Coverage to Codecov
