@@ -97,7 +97,7 @@ jobs:
           # Create clean, simple coverage report
           TIMESTAMP=$(date -u "+%Y-%m-%d %H:%M:%S UTC")
           
-          cat > helpline-coverage.md << EOF
+          cat > helplinev1/helpline-coverage.md << EOF
           # 📊 HelplineV1 Code Coverage Report
 
           ![Coverage](https://img.shields.io/badge/Coverage-${{ env.COVERAGE_PERCENTAGE }}%25-${{ env.COVERAGE_COLOR }})
@@ -115,37 +115,37 @@ jobs:
 
           # Add status based on coverage percentage
           if [ "${{ env.COVERAGE_PERCENTAGE }}" -ge "80" ]; then
-            echo "| **Status** | 🟢 EXCELLENT |" >> helpline-coverage.md
+            echo "| **Status** | 🟢 EXCELLENT |" >> helplinev1/helpline-coverage.md
           elif [ "${{ env.COVERAGE_PERCENTAGE }}" -ge "60" ]; then
-            echo "| **Status** | 🟡 GOOD |" >> helpline-coverage.md
+            echo "| **Status** | 🟡 GOOD |" >> helplinev1/helpline-coverage.md
           elif [ "${{ env.COVERAGE_PERCENTAGE }}" -ge "40" ]; then
-            echo "| **Status** | 🟠 FAIR |" >> helpline-coverage.md
+            echo "| **Status** | 🟠 FAIR |" >> helplinev1/helpline-coverage.md
           else
-            echo "| **Status** | 🔴 NEEDS IMPROVEMENT |" >> helpline-coverage.md
+            echo "| **Status** | 🔴 NEEDS IMPROVEMENT |" >> helplinev1/helpline-coverage.md
           fi
           
           # Add simple footer
-          cat >> helpline-coverage.md << EOF
+          cat >> helplinev1/helpline-coverage.md << EOF
 
           ---
           *Generated automatically by GitHub Actions*
           EOF
           
-          echo "✅ Coverage README.md generated in root directory"
-          ls -la helpline-coverage.md
+          echo "✅ Coverage README.md generated in helplinev1 directory"
+          ls -la helplinev1/helpline-coverage.md
           echo "Content preview:"
-          head -10 helpline-coverage.md
+          head -10 helplinev1/helpline-coverage.md
 
-      - name: Commit Coverage Report to Main Branch Only
-        if: matrix.php-version == '8.3' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - name: Commit Coverage Report to Current Branch
+        if: matrix.php-version == '8.3' && github.event_name == 'push'
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add helpline-coverage.md
+          git add helplinev1/helpline-coverage.md
           if ! git diff --staged --quiet; then
             git commit -m "📈 Auto-update coverage report - ${{ env.COVERAGE_PERCENTAGE }}% coverage"
-            git push origin main
-            echo "✅ Coverage report committed to main branch"
+            git push origin ${{ github.ref_name }}
+            echo "✅ Coverage report committed to ${{ github.ref_name }} branch"
           else
             echo "No changes to commit"
           fi
@@ -162,7 +162,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: helpline-coverage-readme-php${{ matrix.php-version }}
-          path: helpline-coverage.md
+          path: helplinev1/helpline-coverage.md
           retention-days: 30
 
       - name: Archive Coverage Results
