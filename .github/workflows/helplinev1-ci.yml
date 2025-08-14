@@ -97,7 +97,7 @@ jobs:
           # Create clean, simple coverage report
           TIMESTAMP=$(date -u "+%Y-%m-%d %H:%M:%S UTC")
           
-          cat > helpline-coverage.md << 'EOF'
+          cat > helpline-coverage.md << EOF
           # 📊 HelplineV1 Code Coverage Report
 
           ![Coverage](https://img.shields.io/badge/Coverage-${{ env.COVERAGE_PERCENTAGE }}%25-${{ env.COVERAGE_COLOR }})
@@ -125,7 +125,7 @@ jobs:
           fi
           
           # Add simple footer
-          cat >> helpline-coverage.md << 'EOF'
+          cat >> helpline-coverage.md << EOF
 
           ---
           *Generated automatically by GitHub Actions*
