@@ -1,5 +1,6 @@
 # app/services/agent_notification_service.py
 import asyncio
+import pathlib
 import aiohttp
 import json
 import base64
@@ -160,10 +161,32 @@ class AgentNotificationService:
         encoded_bytes = base64.b64encode(json_message.encode('utf-8'))
         return encoded_bytes.decode('utf-8')
     
+    def _log_notification_to_file(self, call_id: str, update_type: UpdateType, payload: dict):
+        """Append each notification payload to a per-call_id folder as a separate JSON file."""
+        try:
+            # Base path for logs
+            base_path = pathlib.Path("/tmp/ai_service_logs/notifications") / call_id
+            base_path.mkdir(parents=True, exist_ok=True)
+
+            # Filename: timestamp + random UUID + update_type for uniqueness
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]
+            unique_id = uuid.uuid4().hex[:6]
+            file_path = base_path / f"{timestamp}_{update_type.value}_{unique_id}.json"
+
+            # Save JSON payload
+            with open(file_path, "w", encoding="utf-8") as f:
+                json.dump(payload, f, ensure_ascii=False, indent=2)
+
+        except Exception as e:
+            logger.error(f"Failed to log notification for call_id {call_id}: {e}")
+    
     async def _send_notification(self, call_id: str, update_type: UpdateType, 
                                 payload: Dict[str, Any], retries: int = 0) -> bool:
         """Send notification to agent endpoint with retry logic"""
         
+        # Log every outgoing notification before sending
+        self._log_notification_to_file(call_id, update_type, payload)
+
         try:
             await self._ensure_session()
             

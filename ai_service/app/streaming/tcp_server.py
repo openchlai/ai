@@ -97,9 +97,13 @@ class AsteriskTCPServer:
                 if call_id and audio_buffer:
                     audio_array = audio_buffer.add_chunk(data)
                     
+                    # DEMO MODE: Skip real-time processing, only monitor call audio
                     if audio_array is not None:
-                        # Submit to Celery for transcription with call session tracking
-                        await self._submit_transcription(audio_array, call_id)
+                        # Just log that we received audio chunk (for monitoring purposes)
+                        logger.debug(f"📊 [demo] Received {len(data)} bytes for call {call_id} (not processing in real-time)")
+                        
+                        # Real-time transcription disabled for demo
+                        # await self._submit_transcription(audio_array, call_id)
                     
         except Exception as e:
             logger.error(f"❌ [client] Error handling connection {temp_connection_id}: {e}")

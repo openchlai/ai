@@ -110,6 +110,10 @@ class ModelLoader:
             "summarizer": {
                 "required": ["torch", "transformers", "numpy"],
                 "description": "Text summarization"
+            },
+            "all_qa_distilbert_v1": {
+                "required": ["torch", "transformers", "numpy"],
+                "description": "Quality assurance analysis"
             }
         }
         
@@ -188,6 +192,19 @@ class ModelLoader:
                     logger.error(f"❌ Whisper model failed to load: {model_status.error}")
                 
                 model_status.load_time = datetime.now()
+                
+                # Also load Whisper translation model if translation is needed
+                from .whisper_model import whisper_translation_model
+                try:
+                    translation_success = whisper_translation_model.load()
+                    if translation_success:
+                        self.models["whisper_translation"] = whisper_translation_model
+                        logger.info("✅ Whisper translation model loaded successfully")
+                    else:
+                        logger.warning(f"⚠️ Whisper translation model failed to load: {whisper_translation_model.error}")
+                except Exception as e:
+                    logger.warning(f"⚠️ Failed to load Whisper translation model: {e}")
+                
                 return
             
             if model_name == "ner":
@@ -253,6 +270,23 @@ class ModelLoader:
                     model_status.error = summarization_model.error or "Failed to load summarization model"
                     logger.error(f"❌ Summarization model failed to load: {model_status.error}")
 
+                model_status.load_time = datetime.now()
+                return
+            
+            if model_name == "all_qa_distilbert_v1":
+                from .qa_model import qa_model
+                
+                success = qa_model.load()
+                if success:
+                    model_status.loaded = True
+                    model_status.error = None
+                    model_status.model_info = qa_model.get_model_info()
+                    self.models[model_name] = qa_model
+                    logger.info("✅ QA model loaded successfully")
+                else:
+                    model_status.error = qa_model.error or "Failed to load QA model"
+                    logger.error(f"❌ QA model failed to load: {model_status.error}")
+                
                 model_status.load_time = datetime.now()
                 return
             

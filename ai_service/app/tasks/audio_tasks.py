@@ -425,7 +425,7 @@ def _process_audio_sync_worker(
         "output_length": len(transcript)
     }
     
-    # Step 2: Translation (if enabled)
+    # Step 2: Translation (if enabled) - with Whisper translation option
     translation = None
     if include_translation:
         task_instance.update_state(
@@ -436,27 +436,56 @@ def _process_audio_sync_worker(
         
         step_start = datetime.now()
         try:
-            translator_model = models.models.get("translator")
-            if not translator_model:
-                publish_update("translation_error", 35, "Translator model not available")
-                raise RuntimeError("Translator model not available")
+            # Check if we should use Whisper for translation (if available and enabled)
+            whisper_translation_model = models.models.get("whisper_translation")
+            use_whisper_translation = (whisper_translation_model and 
+                                       whisper_translation_model.is_ready() and 
+                                       hasattr(whisper_translation_model, 'enable_translation') and
+                                       whisper_translation_model.enable_translation)
             
-            # Check if model supports streaming translation
-            if hasattr(translator_model, 'translate_streaming'):
-                # Stream partial translation results
-                translation = ""
-                for partial_translation, progress_pct in translator_model.translate_streaming(transcript):
-                    translation = partial_translation
-                    stream_progress = 35 + int(progress_pct * 0.15)  # 35-50% range
-                    publish_update(
-                        "translation", 
-                        stream_progress, 
-                        f"Translating... ({progress_pct:.1f}%)",
-                        partial_result={"translation": translation, "is_final": False}
+            if use_whisper_translation:
+                # Use Whisper Large-V3 for translation
+                logger.info("🔄 Using Whisper Large-V3 for translation")
+                publish_update("translation", 38, "Using Whisper for translation...")
+                
+                if is_pretranscribed:
+                    # For pre-transcribed text, we can't use Whisper translation (needs audio)
+                    # Fall back to regular translation model
+                    logger.warning("⚠️ Cannot use Whisper translation on pre-transcribed text, falling back to translation model")
+                    use_whisper_translation = False
+                else:
+                    # Re-process audio with translation task - FORCE Swahili language and translate task
+                    translation = whisper_translation_model.transcribe_audio_bytes(
+                        audio_bytes, 
+                        language="sw",  # Force Swahili as source language
+                        task="translate"  # Force translate task to English
                     )
-            else:
-                # Fallback to regular translation
-                translation = translator_model.translate(transcript)
+                    logger.info("✅ Whisper translation completed successfully (sw→en)")
+            
+            if not use_whisper_translation:
+                # Use regular translation model
+                translator_model = models.models.get("translator")
+                if not translator_model:
+                    publish_update("translation_error", 35, "Translator model not available")
+                    raise RuntimeError("Translator model not available")
+                
+                logger.info("🔄 Using regular translation model")
+                # Check if model supports streaming translation
+                if hasattr(translator_model, 'translate_streaming'):
+                    # Stream partial translation results
+                    translation = ""
+                    for partial_translation, progress_pct in translator_model.translate_streaming(transcript):
+                        translation = partial_translation
+                        stream_progress = 35 + int(progress_pct * 0.15)  # 35-50% range
+                        publish_update(
+                            "translation", 
+                            stream_progress, 
+                            f"Translating... ({progress_pct:.1f}%)",
+                            partial_result={"translation": translation, "is_final": False}
+                        )
+                else:
+                    # Fallback to regular translation
+                    translation = translator_model.translate(transcript)
             
             # Publish final translation
             translation_duration = (datetime.now() - step_start).total_seconds()
@@ -541,8 +570,15 @@ def _process_audio_sync_worker(
     )
     publish_update("nlp_analysis", 55, "Starting NLP analysis...")
     
-    nlp_text = translation if translation else transcript
-    nlp_source = "translated_text" if translation else "original_transcript"
+    # Use Whisper translation output directly if available (already in English)
+    if translation:
+        nlp_text = translation
+        nlp_source = "whisper_translated_text" if use_whisper_translation else "translated_text"
+        logger.info(f"🔄 Using translated text for NLP processing: {nlp_source}")
+    else:
+        nlp_text = transcript
+        nlp_source = "original_transcript"
+        logger.info("🔄 Using original transcript for NLP processing")
     
     # NER
     publish_update("ner", 60, "Extracting named entities...")
@@ -924,11 +960,15 @@ def process_streaming_audio_task(
         # Simple processing - no VAD for now (can add Silero VAD later)
         vad_info = {"vad_enabled": False, "note": "VAD not implemented in this branch"}
         
-        # Quick transcription only (no full pipeline for speed)
-        whisper_model = models.models.get("whisper")
-        if whisper_model: 
-            # Use the same transcription method as /audio/process endpoint
-            # transcribe_audio_bytes() expects WAV format, so we need to convert PCM bytes
+        # Quick transcription/translation for streaming (prioritize Whisper translation)
+        whisper_translation_model = models.models.get("whisper_translation")
+        use_whisper_translation = (whisper_translation_model and 
+                                   whisper_translation_model.is_ready() and 
+                                   hasattr(whisper_translation_model, 'enable_translation') and
+                                   whisper_translation_model.enable_translation)
+        
+        if use_whisper_translation:
+            # Use Whisper Large-V3 for direct translation (sw→en)
             import soundfile as sf
             import tempfile
             import numpy as np
@@ -949,69 +989,107 @@ def process_streaming_audio_task(
                 # Clean up temp file
                 os.unlink(temp_file.name)
             
-            # Use standard transcription method (same as /audio/process)
-            transcript = whisper_model.transcribe_audio_bytes(
+            # Use Whisper translation (sw→en) for better quality
+            transcript = whisper_translation_model.transcribe_audio_bytes(
                 wav_bytes,
-                language=language
+                language="sw",  # Force Swahili source
+                task="translate"  # Force translation to English
+            )
+            logger.info(f"🎵 [streaming] Using Whisper translation (sw→en): {transcript[:100]}...")
+            
+        else:
+            # Fallback to regular transcription
+            whisper_model = models.models.get("whisper")
+            if whisper_model: 
+                import soundfile as sf
+                import tempfile
+                import numpy as np
+                
+                # Convert raw PCM bytes to numpy array
+                audio_int16 = np.frombuffer(audio_bytes, dtype=np.int16)
+                audio_float32 = audio_int16.astype(np.float32) / 32768.0
+                
+                # Save as temporary WAV file
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_file:
+                    sf.write(temp_file.name, audio_float32, sample_rate)
+                    temp_file.flush()
+                    
+                    # Read back as bytes for transcribe_audio_bytes
+                    with open(temp_file.name, 'rb') as wav_file:
+                        wav_bytes = wav_file.read()
+                    
+                    # Clean up temp file
+                    os.unlink(temp_file.name)
+                
+                # Use standard transcription method
+                transcript = whisper_model.transcribe_audio_bytes(
+                    wav_bytes,
+                    language=language
+                )
+            else:
+                logger.warning(f"⚠️ No Whisper models available in worker")
+                return {"error": "No Whisper models loaded"}
+        
+        processing_duration = (datetime.now() - start_time).total_seconds()
+        
+        # Add transcription to call session (async operation in sync context)
+        try:
+            import asyncio
+            
+            # Get or create event loop
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+            
+            # Import session manager and add transcription
+            from ..streaming.call_session_manager import call_session_manager
+            
+            # Debug: Check Redis client availability
+            logger.info(f"🔍 [debug] Celery worker Redis client available: {call_session_manager.redis_client is not None}")
+            if call_session_manager.redis_client:
+                try:
+                    call_session_manager.redis_client.ping()
+                    logger.info(f"🔍 [debug] Redis ping successful")
+                except Exception as e:
+                    logger.error(f"🔍 [debug] Redis ping failed: {e}")
+            
+            # Add to call session with metadata
+            metadata = {
+                'task_id': self.request.id,
+                'processing_duration': processing_duration,
+                'filename': filename,
+                'sample_rate': sample_rate,
+                'translation_used': use_whisper_translation if 'use_whisper_translation' in locals() else False
+            }
+            
+            # Run async operation in sync context
+            updated_session = loop.run_until_complete(
+                call_session_manager.add_transcription(
+                    call_id, 
+                    transcript, 
+                    duration_seconds, 
+                    metadata
+                )
             )
             
-            processing_duration = (datetime.now() - start_time).total_seconds()
+            # Enhanced logging with session info
+            translation_marker = "[SW→EN]" if 'use_whisper_translation' in locals() and use_whisper_translation else "[SW]"
+            if updated_session:
+                logger.info(f"🎵 {translation_marker} {processing_duration:<6.2f}s | {duration_seconds:<3.0f}s | {call_id} | "
+                           f"Segment {updated_session.segment_count} | {transcript}")
+                logger.info(f"📊 Call {call_id}: {updated_session.total_audio_duration:.1f}s total, "
+                           f"{len(updated_session.cumulative_transcript)} chars")
+            else:
+                logger.warning(f"⚠️ Could not add to session {call_id}, logging standalone")
+                logger.info(f"🎵 {translation_marker} {processing_duration:<6.2f}s | {duration_seconds:<3.0f}s | {call_id} | {transcript}")
             
-            # Add transcription to call session (async operation in sync context)
-            try:
-                import asyncio
-                
-                # Get or create event loop
-                try:
-                    loop = asyncio.get_event_loop()
-                except RuntimeError:
-                    loop = asyncio.new_event_loop()
-                    asyncio.set_event_loop(loop)
-                
-                # Import session manager and add transcription
-                from ..streaming.call_session_manager import call_session_manager
-                
-                # Debug: Check Redis client availability
-                logger.info(f"🔍 [debug] Celery worker Redis client available: {call_session_manager.redis_client is not None}")
-                if call_session_manager.redis_client:
-                    try:
-                        call_session_manager.redis_client.ping()
-                        logger.info(f"🔍 [debug] Redis ping successful")
-                    except Exception as e:
-                        logger.error(f"🔍 [debug] Redis ping failed: {e}")
-                
-                # Add to call session with metadata
-                metadata = {
-                    'task_id': self.request.id,
-                    'processing_duration': processing_duration,
-                    'filename': filename,
-                    'sample_rate': sample_rate
-                }
-                
-                # Run async operation in sync context
-                updated_session = loop.run_until_complete(
-                    call_session_manager.add_transcription(
-                        call_id, 
-                        transcript, 
-                        duration_seconds, 
-                        metadata
-                    )
-                )
-                
-                # Enhanced logging with session info
-                if updated_session:
-                    logger.info(f"🎵 {processing_duration:<6.2f}s | {duration_seconds:<3.0f}s | {call_id} | "
-                               f"Segment {updated_session.segment_count} | {transcript}")
-                    logger.info(f"📊 Call {call_id}: {updated_session.total_audio_duration:.1f}s total, "
-                               f"{len(updated_session.cumulative_transcript)} chars")
-                else:
-                    logger.warning(f"⚠️ Could not add to session {call_id}, logging standalone")
-                    logger.info(f"🎵 {processing_duration:<6.2f}s | {duration_seconds:<3.0f}s | {call_id} | {transcript}")
-                
-            except Exception as session_error:
-                logger.error(f"❌ Session update failed for {call_id}: {session_error}")
-                # Fallback logging
-                logger.info(f"🎵 {processing_duration:<6.2f}s | {duration_seconds:<3.0f}s | {call_id} | {transcript}")
+        except Exception as session_error:
+            logger.error(f"❌ Session update failed for {call_id}: {session_error}")
+            # Fallback logging
+            translation_marker = "[SW→EN]" if 'use_whisper_translation' in locals() and use_whisper_translation else "[SW]"
+            logger.info(f"🎵 {translation_marker} {processing_duration:<6.2f}s | {duration_seconds:<3.0f}s | {call_id} | {transcript}")
             
             # Ensure all values are JSON serializable (convert numpy types to Python types)
             def make_json_serializable(obj):
@@ -1055,3 +1133,325 @@ def process_streaming_audio_task(
     except Exception as e:
         logger.error(f"❌ Streaming transcription failed: {e}")
         raise
+
+
+@celery_app.task(bind=True, name="process_post_call_audio_task")
+def process_post_call_audio_task(
+    self,
+    audio_bytes: bytes,
+    filename: str,
+    call_id: str,
+    language: str = "sw"
+):
+    """
+    Process complete call audio after call ends - for demo mode
+    Sequential processing with step-by-step notifications:
+    1. Translation (Whisper Large-V3: sw→en)
+    2. Classification 
+    3. QA Analysis
+    4. Summary
+    """
+    
+    try:
+        # Get worker models
+        models = get_worker_models()
+        if not models:
+            raise RuntimeError("Models not loaded in worker")
+        
+        start_time = datetime.now()
+        
+        # Initialize streaming updates for this call
+        def publish_call_update(step, progress, message=None, result_data=None, metadata=None):
+            """Publish update for this specific call"""
+            try:
+                import redis
+                import json
+                import pathlib
+                import uuid
+                from datetime import datetime
+                from ..config.settings import get_redis_url
+                
+                # Create synchronous Redis client
+                redis_client = redis.from_url(get_redis_url(), decode_responses=True)
+                
+                # Build update message
+                update = {
+                    "update_type": f"post_call_{step}",
+                    "call_id": call_id,
+                    "step": step,
+                    "progress": progress,
+                    "timestamp": datetime.now().isoformat(),
+                    "message": message or f"Processing: {step}",
+                    "task_id": self.request.id,
+                    "processing_method": "whisper_large_v3_demo"
+                }
+                
+                if result_data:
+                    update["result"] = result_data
+                
+                if metadata:
+                    update["metadata"] = metadata
+                
+                # Log to file (same as notification service)
+                try:
+                    # Base path for logs  
+                    base_path = pathlib.Path("/tmp/ai_service_logs/notifications") / call_id
+                    base_path.mkdir(parents=True, exist_ok=True)
+                    
+                    # Filename: timestamp + random UUID + step for uniqueness
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]
+                    unique_id = uuid.uuid4().hex[:6]
+                    file_path = base_path / f"{timestamp}_post_call_{step}_{unique_id}.json"
+                    
+                    # Save JSON payload
+                    with open(file_path, "w", encoding="utf-8") as f:
+                        json.dump(update, f, ensure_ascii=False, indent=2)
+                    
+                    logger.info(f"📋 [post-call] Logged {step} update to file: {file_path}")
+                except Exception as log_error:
+                    logger.error(f"❌ Failed to log update to file: {log_error}")
+                
+                # Publish to call-specific channel
+                channel = f"call_updates:{call_id}"
+                subscribers = redis_client.publish(channel, json.dumps(update))
+                
+                logger.info(f"📡 [post-call] Published {step} update for call {call_id} to {subscribers} subscribers")
+                redis_client.close()
+                
+            except Exception as e:
+                logger.error(f"❌ Failed to publish call update for {step}: {e}")
+        
+        # Publish start
+        publish_call_update("processing_started", 5, f"Starting post-call processing for {call_id}")
+        
+        # Step 1: Translation using Whisper Large-V3 (sw→en)
+        logger.info(f"🎵 [post-call] Starting translation for call {call_id}")
+        publish_call_update("translation", 10, "Translating audio (Swahili → English)...")
+        
+        step_start = datetime.now()
+        
+        whisper_translation_model = models.models.get("whisper_translation")
+        if not whisper_translation_model or not whisper_translation_model.is_ready():
+            raise RuntimeError("Whisper translation model not available")
+        
+        # Debug model info
+        model_info = whisper_translation_model.get_model_info()
+        logger.info(f"🔍 [debug] Whisper translation model info:")
+        logger.info(f"   - Version: {model_info.get('version', 'unknown')}")
+        logger.info(f"   - Model ID: {model_info.get('current_model_id', 'unknown')}")
+        logger.info(f"   - Translation enabled: {model_info.get('translation_enabled', False)}")
+        logger.info(f"   - Device: {model_info.get('device', 'unknown')}")
+        logger.info(f"   - Is loaded: {model_info.get('is_loaded', False)}")
+        
+        # Use Whisper Large-V3 for direct translation (sw→en)
+        logger.info(f"🎯 [debug] Calling transcribe_audio_bytes with language='sw', task='translate'")
+        translation = whisper_translation_model.transcribe_audio_bytes(
+            audio_bytes, 
+            language="sw",        # Force Swahili source
+            task="translate"      # Force translation to English
+        )
+        
+        logger.info(f"🎯 [debug] Whisper translation result: '{translation[:200]}...' ({len(translation)} chars)")
+        
+        translation_duration = (datetime.now() - step_start).total_seconds()
+        logger.info(f"✅ [post-call] Translation completed in {translation_duration:.2f}s: {translation[:100]}...")
+        
+        # Publish translation result
+        publish_call_update(
+            "translation_complete", 
+            30, 
+            "Translation completed successfully",
+            result_data={"translation": translation, "language_pair": "sw→en"},
+            metadata={"duration": translation_duration, "method": "whisper_large_v3"}
+        )
+        
+        # Use translated text for all downstream processing
+        nlp_text = translation
+        
+        # Step 2: Classification
+        logger.info(f"📊 [post-call] Starting classification for call {call_id}")
+        publish_call_update("classification", 40, "Analyzing content classification...")
+        
+        step_start = datetime.now()
+        try:
+            classifier_model = models.models.get("classifier_model")
+            if not classifier_model:
+                raise RuntimeError("Classifier model not available")
+            
+            classification = classifier_model.classify(nlp_text)
+            classification_duration = (datetime.now() - step_start).total_seconds()
+            
+            logger.info(f"✅ [post-call] Classification completed: {classification.get('main_category', 'unknown')}")
+            
+            publish_call_update(
+                "classification_complete",
+                50,
+                f"Classification completed - Category: {classification.get('main_category', 'unknown')}",
+                result_data={"classification": classification},
+                metadata={"duration": classification_duration}
+            )
+            
+        except Exception as e:
+            logger.error(f"❌ Classification failed: {e}")
+            classification = {}
+            publish_call_update("classification_error", 40, f"Classification failed: {str(e)}")
+        
+        # Step 3: NER (Named Entity Recognition)
+        logger.info(f"🏷️ [post-call] Starting NER analysis for call {call_id}")
+        publish_call_update("ner_analysis", 50, "Extracting named entities...")
+        
+        step_start = datetime.now()
+        try:
+            ner_model = models.models.get("ner")
+            if not ner_model:
+                raise RuntimeError("NER model not available")
+            
+            entities = ner_model.extract_entities(nlp_text, flat=False)
+            ner_duration = (datetime.now() - step_start).total_seconds()
+            
+            logger.info(f"✅ [post-call] NER analysis completed: {len(entities)} entity types found")
+            
+            publish_call_update(
+                "ner_complete",
+                55,
+                f"Named entity extraction completed - {len(entities)} entity types found",
+                result_data={"entities": entities},
+                metadata={"duration": ner_duration, "entity_types": list(entities.keys())}
+            )
+            
+        except Exception as e:
+            logger.error(f"❌ NER analysis failed: {e}")
+            entities = {}
+            publish_call_update("ner_error", 50, f"NER analysis failed: {str(e)}")
+        
+        # Step 4: QA Analysis
+        logger.info(f"🎯 [post-call] Starting QA analysis for call {call_id}")
+        publish_call_update("qa_analysis", 65, "Running quality assessment analysis...")
+        
+        step_start = datetime.now()
+        try:
+            qa_score_model = models.models.get("all_qa_distilbert_v1")
+            if not qa_score_model:
+                raise RuntimeError("QA model not available")
+            
+            qa_scores = qa_score_model.predict(nlp_text, threshold=0.5, return_raw=False)
+            qa_duration = (datetime.now() - step_start).total_seconds()
+            
+            logger.info(f"✅ [post-call] QA analysis completed: {qa_scores}")
+            
+            publish_call_update(
+                "qa_complete",
+                75,
+                "QA analysis completed successfully",
+                result_data={"qa_scores": qa_scores},
+                metadata={"duration": qa_duration, "model": "all_qa_distilbert_v1"}
+            )
+            
+        except Exception as e:
+            logger.error(f"❌ QA analysis failed: {e}")
+            qa_scores = {}
+            publish_call_update("qa_error", 65, f"QA analysis failed: {str(e)}")
+        
+        # Step 5: Summary
+        logger.info(f"📝 [post-call] Starting summary generation for call {call_id}")
+        publish_call_update("summary", 80, "Generating call summary...")
+        
+        step_start = datetime.now()
+        try:
+            summarizer_model = models.models.get("summarizer")
+            if not summarizer_model:
+                raise RuntimeError("Summarizer model not available")
+            
+            summary = summarizer_model.summarize(nlp_text)
+            summary_duration = (datetime.now() - step_start).total_seconds()
+            
+            logger.info(f"✅ [post-call] Summary completed: {summary[:100]}...")
+            
+            publish_call_update(
+                "summary_complete",
+                90,
+                "Summary generation completed",
+                result_data={"summary": summary},
+                metadata={"duration": summary_duration}
+            )
+            
+        except Exception as e:
+            logger.error(f"❌ Summary generation failed: {e}")
+            summary = ""
+            publish_call_update("summary_error", 80, f"Summary generation failed: {str(e)}")
+        
+        # Step 6: Case Insights Generation
+        logger.info(f"🔍 [post-call] Starting case insights generation for call {call_id}")
+        publish_call_update("insights", 95, "Generating comprehensive case insights...")
+        
+        step_start = datetime.now()
+        try:
+            from ..services.insights_service import generate_case_insights
+            
+            # Generate case insights using the translated text (English)
+            case_insights = generate_case_insights(nlp_text)
+            insights_duration = (datetime.now() - step_start).total_seconds()
+            
+            logger.info(f"✅ [post-call] Case insights completed in {insights_duration:.2f}s")
+            
+            publish_call_update(
+                "insights_complete",
+                98,
+                "Case insights generation completed successfully", 
+                result_data={"insights": case_insights},
+                metadata={"duration": insights_duration, "service": "mistral_insights", "input_length": len(nlp_text)}
+            )
+            
+        except Exception as e:
+            logger.error(f"❌ Case insights generation failed: {e}")
+            case_insights = {}
+            publish_call_update("insights_error", 95, f"Case insights generation failed: {str(e)}")
+        
+        # Final completion
+        total_duration = (datetime.now() - start_time).total_seconds()
+        
+        final_result = {
+            "call_id": call_id,
+            "processing_completed": True,
+            "total_duration": total_duration,
+            "results": {
+                "translation": translation,
+                "classification": classification,
+                "entities": entities,
+                "qa_scores": qa_scores,
+                "summary": summary,
+                "case_insights": case_insights
+            },
+            "metadata": {
+                "processed_at": datetime.now().isoformat(),
+                "method": "post_call_processing",
+                "whisper_model": "large-v3"
+            }
+        }
+        
+        publish_call_update(
+            "processing_complete",
+            100,
+            f"Post-call processing completed in {total_duration:.2f}s",
+            result_data=final_result,
+            metadata={"total_duration": total_duration}
+        )
+        
+        logger.info(f"🎉 [post-call] Complete processing finished for call {call_id} in {total_duration:.2f}s")
+        
+        return {
+            "status": "completed",
+            "call_id": call_id,
+            "result": final_result
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Post-call processing failed for {call_id}: {e}")
+        
+        # Publish error
+        try:
+            publish_call_update("processing_error", 0, f"Processing failed: {str(e)}")
+        except:
+            pass
+        
+        raise RuntimeError(f"Post-call processing failed: {str(e)}")

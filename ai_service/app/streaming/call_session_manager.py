@@ -824,22 +824,22 @@ class CallSessionManager:
             return None
     
     async def _process_downloaded_audio(self, session: CallSession, audio_bytes: bytes, download_info: Dict[str, Any]):
-        """Process downloaded audio through the full /audio/process pipeline"""
+        """Process downloaded audio through the post-call demo pipeline"""
         try:
-            from ..tasks.audio_tasks import process_audio_task
+            from ..tasks.audio_tasks import process_post_call_audio_task
             
             # Create filename from call information
             filename = f"call_{session.call_id}_{session.start_time.strftime('%Y%m%d_%H%M%S')}.wav"
             
-            logger.info(f"🎵 [pipeline] Processing downloaded audio for call {session.call_id} ({len(audio_bytes)} bytes)")
+            logger.info(f"🎵 [post-call] Processing downloaded audio for call {session.call_id} ({len(audio_bytes)} bytes)")
+            logger.info(f"📡 [post-call] Using demo mode - sequential processing with notifications")
             
-            # Submit to full audio processing pipeline (same as /audio/process endpoint)
-            task = process_audio_task.delay(
+            # Submit to post-call processing pipeline (demo mode)
+            task = process_post_call_audio_task.delay(
                 audio_bytes=audio_bytes,
                 filename=filename,
-                language="sw",  # Could be configurable
-                include_translation=True,
-                include_insights=True
+                call_id=session.call_id,
+                language="sw"
             )
             
             # Store task reference in session metadata for tracking
@@ -851,7 +851,7 @@ class CallSessionManager:
                 'audio_size_bytes': len(audio_bytes),
                 'submitted_at': datetime.now().isoformat(),
                 'status': 'processing',
-                'processing_type': 'full_audio_analysis'
+                'processing_type': 'post_call_demo_processing'
             }
             
             if self.redis_client:
@@ -862,7 +862,7 @@ class CallSessionManager:
                 )
             
             logger.info(f"🤖 [pipeline] Submitted full audio processing for call {session.call_id}, task: {task.id}")
-            logger.info(f"📊 [pipeline] Audio analysis will provide higher quality results than streaming transcripts")
+            logger.info(f"📊 [post-call] Demo mode: Sequential processing will provide step-by-step updates")
             
             # Wait for processing completion and generate enhanced insights
             if AGENT_NOTIFICATIONS_ENABLED:
@@ -955,15 +955,17 @@ class CallSessionManager:
                                         'audio_format': audio_quality_info.get('audio_format', 'unknown')
                                     }
                                     
-                                    await agent_notification_service.send_unified_insight(
-                                        call_id=call_id,
-                                        pipeline_result=pipeline_result,
-                                        audio_quality_info=audio_quality_info,
-                                        processing_metadata=processing_metadata
-                                    )
+                                    # DEMO MODE: Disabled unified_insight updates (empty results)
+                                    # Using new post-call processing with sequential updates instead
+                                    logger.info(f"🚫 [demo] Skipping unified_insight update for call {call_id} (demo mode)")
+                                    logger.info(f"📡 [demo] Using sequential post-call processing updates instead")
                                     
-                                    logger.info(f"🤖 [unified] Sent comprehensive unified insights for call {call_id}")
-                                    logger.info(f"📊 [unified] Includes: transcript, translation, entities, classification, QA, summary, insights")
+                                    # await agent_notification_service.send_unified_insight(
+                                    #     call_id=call_id,
+                                    #     pipeline_result=pipeline_result,
+                                    #     audio_quality_info=audio_quality_info,
+                                    #     processing_metadata=processing_metadata
+                                    # )
                                     
                                 except Exception as insights_error:
                                     logger.error(f"❌ Failed to generate/send unified insights for {call_id}: {insights_error}")
@@ -981,14 +983,17 @@ class CallSessionManager:
                                         'audio_format': audio_quality_info.get('audio_format', 'unknown')
                                     }
                                     
-                                    await agent_notification_service.send_unified_insight(
-                                        call_id=call_id,
-                                        pipeline_result=pipeline_result,
-                                        audio_quality_info=audio_quality_info,
-                                        processing_metadata=processing_metadata
-                                    )
+                                    # DEMO MODE: Disabled unified_insight updates (empty results)  
+                                    # Using new post-call processing with sequential updates instead
+                                    logger.info(f"🚫 [demo] Skipping unified_insight update for call {call_id} (demo mode - short transcript)")
+                                    logger.info(f"📡 [demo] Using sequential post-call processing updates instead")
                                     
-                                    logger.info(f"🤖 [unified] Sent basic unified insights for call {call_id} (short transcript)")
+                                    # await agent_notification_service.send_unified_insight(
+                                    #     call_id=call_id,
+                                    #     pipeline_result=pipeline_result,
+                                    #     audio_quality_info=audio_quality_info,
+                                    #     processing_metadata=processing_metadata
+                                    # )
                                     
                                 except Exception as basic_error:
                                     logger.error(f"❌ Failed to send basic unified insights for {call_id}: {basic_error}")
