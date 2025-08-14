@@ -118,7 +118,6 @@ jobs:
           fi
 
       - name: Generate Coverage README.md
-        if: matrix.php-version == '8.3'
         run: |
           # Create comprehensive coverage README in root directory
           cat > helpline-coverage.md << EOF
@@ -262,6 +261,9 @@ jobs:
           EOF
           
           echo "✅ Coverage README.md generated in root directory"
+          ls -la helpline-coverage.md
+          echo "Content preview:"
+          head -10 helpline-coverage.md
 
       - name: Commit Coverage Report to Main Branch
         if: matrix.php-version == '8.3' && github.event_name == 'push' && github.ref == 'refs/heads/main'
