@@ -19,7 +19,7 @@ services:
     networks:
       - helpline-network
 
-  # PHP-FPM Backend API   # PHP-FPM Backend APi........
+  # PHP-FPM Backend API   # PHP-FPM Backend APi..........
   php-api:
     build:
       context: ./docker/php    # CHANGED: from . to ./docker/php
