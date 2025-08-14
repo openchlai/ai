@@ -1,6 +1,6 @@
 name: HelplineV1 CI
 permissions:
-  contents: read
+  contents: write
 
 on:
   push:
@@ -36,6 +36,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -71,12 +74,36 @@ jobs:
         working-directory: helplinev1/rest_api
         run: ./vendor/bin/phpunit --coverage-text --coverage-clover=coverage.xml --coverage-html=coverage-html
 
-      - name: Generate Real Coverage Analysis
+      - name: Extract Coverage from PCOV XML
         working-directory: helplinev1/rest_api
         run: |
-          php calculate-coverage.php
-          COVERAGE=$(php calculate-coverage.php | grep "Estimated Line Coverage" | grep -oE "[0-9]+%" | grep -oE "[0-9]+" || echo "0")
-          echo "Detected Coverage: ${COVERAGE}%"
+          # Extract coverage percentage from PCOV XML (the official source)
+          if [ -f "coverage.xml" ]; then
+            # Parse XML to get line coverage percentage
+            COVERAGE=$(python3 -c "
+            import xml.etree.ElementTree as ET
+            try:
+                tree = ET.parse('coverage.xml')
+                root = tree.getroot()
+                metrics = root.find('.//metrics')
+                if metrics is not None:
+                    covered = float(metrics.get('coveredstatements', 0))
+                    total = float(metrics.get('statements', 0))
+                    if total > 0:
+                        percentage = round((covered / total) * 100)
+                        print(f'{percentage}')
+                    else:
+                        print('0')
+                else:
+                    print('0')
+            except Exception as e:
+                print('0')
+            " 2>/dev/null || echo "0")
+          else
+            COVERAGE="0"
+          fi
+          
+          echo "PCOV Coverage: ${COVERAGE}%"
           echo "COVERAGE_PERCENTAGE=$COVERAGE" >> $GITHUB_ENV
           
           # Set coverage color for badge
@@ -90,10 +117,11 @@ jobs:
             echo "COVERAGE_COLOR=red" >> $GITHUB_ENV
           fi
 
-      - name: 📝 Generate Coverage README.md in AI Root
+      - name: Generate Coverage README.md
+        if: matrix.php-version == '8.3'
         run: |
-          # Create comprehensive coverage README in AI root directory
-          cat > helpline-coverage.md << 'EOF'
+          # Create comprehensive coverage README in root directory
+          cat > helpline-coverage.md << EOF
           # 📊 HelplineV1 Code Coverage Report
           
           ![Coverage](https://img.shields.io/badge/Coverage-${{ env.COVERAGE_PERCENTAGE }}%25-${{ env.COVERAGE_COLOR }})
@@ -105,13 +133,15 @@ jobs:
           
           **Overall Coverage:** ${{ env.COVERAGE_PERCENTAGE }}%
           
-          **Generated:** $(date -u "+%Y-%m-%d %H:%M:%S UTC")
+          **Generated:** \$(date -u "+%Y-%m-%d %H:%M:%S UTC")
           
           **Branch:** ${{ github.ref_name }}
           
           **Commit:** ${{ github.sha }}
           
           **PHP Version:** ${{ matrix.php-version }}
+          
+          **Coverage Source:** PCOV (PHPUnit Official)
           
           ## 🎯 Coverage Status
           
@@ -226,12 +256,25 @@ jobs:
           
           ---
           
-          *Generated automatically by GitHub Actions on $(date -u "+%Y-%m-%d %H:%M:%S UTC")*
+          *Generated automatically by GitHub Actions*
           
           *Workflow Run: [${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})*
           EOF
           
-          echo "✅ Coverage README.md generated in AI root as helpline-coverage.md"
+          echo "✅ Coverage README.md generated in root directory"
+
+      - name: Commit Coverage Report to Main Branch
+        if: matrix.php-version == '8.3' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add helpline-coverage.md
+          if ! git diff --staged --quiet; then
+            git commit -m "📊 Auto-update coverage report - ${{ env.COVERAGE_PERCENTAGE }}% coverage"
+            git push origin main
+          else
+            echo "No changes to commit"
+          fi
 
       - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v3
@@ -241,7 +284,7 @@ jobs:
           name: helplinev1-rest-api-coverage
           fail_ci_if_error: false
 
-      - name: 📝 Upload Coverage README.md
+      - name: Upload Coverage README as Artifact
         uses: actions/upload-artifact@v4
         with:
           name: helpline-coverage-readme-php${{ matrix.php-version }}
