@@ -97,21 +97,21 @@ jobs:
           # Create clean, simple coverage report
           TIMESTAMP=$(date -u "+%Y-%m-%d %H:%M:%S UTC")
           
-          cat > helpline-coverage.md << EOF
-# 📊 HelplineV1 Code Coverage Report
+          cat > helpline-coverage.md << 'EOF'
+          # 📊 HelplineV1 Code Coverage Report
 
-![Coverage](https://img.shields.io/badge/Coverage-${{ env.COVERAGE_PERCENTAGE }}%25-${{ env.COVERAGE_COLOR }})
-![Tests](https://img.shields.io/badge/Tests-PHPUnit-blue)
+          ![Coverage](https://img.shields.io/badge/Coverage-${{ env.COVERAGE_PERCENTAGE }}%25-${{ env.COVERAGE_COLOR }})
+          ![Tests](https://img.shields.io/badge/Tests-PHPUnit-blue)
 
-## Coverage Summary
+          ## Coverage Summary
 
-| Metric | Value |
-|--------| ------|
-| **Overall Coverage** | **${{ env.COVERAGE_PERCENTAGE }}%** |
-| Generated | ${TIMESTAMP} |
-| Branch | ${{ github.ref_name }} |
-| PHP Version | ${{ matrix.php-version }} |
-EOF
+          | Metric | Value |
+          |--------| ------|
+          | **Overall Coverage** | **${{ env.COVERAGE_PERCENTAGE }}%** |
+          | Generated | ${TIMESTAMP} |
+          | Branch | ${{ github.ref_name }} |
+          | PHP Version | ${{ matrix.php-version }} |
+          EOF
 
           # Add status based on coverage percentage
           if [ "${{ env.COVERAGE_PERCENTAGE }}" -ge "80" ]; then
@@ -127,9 +127,9 @@ EOF
           # Add simple footer
           cat >> helpline-coverage.md << 'EOF'
 
----
-*Generated automatically by GitHub Actions*
-EOF
+          ---
+          *Generated automatically by GitHub Actions*
+          EOF
           
           echo "✅ Coverage README.md generated in root directory"
           ls -la helpline-coverage.md

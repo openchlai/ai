@@ -22,7 +22,7 @@ services:
   # PHP-FPM Backend API   # PHP-FPM Backend APi................
   php-api:
     build:
-      context: ./docker/php    # CHANGED: from . to ./docker/php
+      context: ./docker/php    # CHANGED: from . to ./docker/php.....
       dockerfile: Dockerfile   # CHANGED: from docker/php/Dockerfile to Dockerfile
     container_name: helpline-php-api
     volumes:
