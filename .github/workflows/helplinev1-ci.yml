@@ -136,16 +136,16 @@ EOF
           echo "Content preview:"
           head -10 helpline-coverage.md
 
-      - name: Commit Coverage Report to Current Branch
-        if: matrix.php-version == '8.3' && github.event_name == 'push'
+      - name: Commit Coverage Report to Main Branch Only
+        if: matrix.php-version == '8.3' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add helpline-coverage.md
           if ! git diff --staged --quiet; then
             git commit -m "📈 Auto-update coverage report - ${{ env.COVERAGE_PERCENTAGE }}% coverage"
-            git push origin ${{ github.ref_name }}
-            echo "✅ Coverage report committed to branch: ${{ github.ref_name }}"
+            git push origin main
+            echo "✅ Coverage report committed to main branch"
           else
             echo "No changes to commit"
           fi
