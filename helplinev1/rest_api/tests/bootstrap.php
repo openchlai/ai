@@ -19,6 +19,7 @@ if (!is_dir(DAT)) {
 }
 
 // Mock global variables and functions that might be needed
+// Mock global variables and functions that might be needed 2
 $GLOBALS['COUNTRY_CODE'] = '+256';
 $GLOBALS['API_GATEWAY_USN'] = 'test_user';
 $GLOBALS['API_GATEWAY_PASS'] = 'test_pass';
