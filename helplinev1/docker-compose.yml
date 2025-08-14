@@ -23,7 +23,7 @@ services:
   php-api:
     build:
       context: ./docker/php    # CHANGED: from . to ./docker/php.....
-      dockerfile: Dockerfile   # CHANGED: from docker/php/Dockerfile to Dockerfile
+      dockerfile: Dockerfile   # CHANGED: from docker/php/Dockerfile to Dockerfile......
     container_name: helpline-php-api
     volumes:
       - ./application:/var/www/html/helpline
