@@ -12,7 +12,6 @@
     />
 
     <!-- Main Content -->
-<<<<<<< HEAD
     <div class="main-content">
       <div class="calls-container" :class="{ 'chat-panel-open': showChatPanel }">
         <div class="header">
@@ -45,62 +44,12 @@
           </div>
         <!-- Search and Toggle Row -->
         <div class="search-and-toggle-row">
-=======
-    <div class="main-content chat-main-layout">
-      <div class="chat-list-section">
-        <div class="calls-container" :class="{ 'chat-panel-open': showChatPanel }">
-          <div class="header">
-            <h1 class="page-title">All Chats</h1>
-            <div class="header-actions">
-              <button class="theme-toggle" @click="toggleTheme" id="theme-toggle">
-                <svg v-if="currentTheme === 'dark'" id="moon-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <svg v-else id="sun-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <line x1="12" y1="1" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <line x1="12" y1="21" x2="12" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <line x1="1" y1="12" x2="3" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <line x1="21" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <span id="theme-text">{{ currentTheme === 'dark' ? 'Light Mode' : 'Dark Mode' }}</span>
-              </button>
-            </div>
-          </div>
-         
-         
-<!-- Channel Filters as View Tabs -->
-<div class="channel-filters" role="tablist" aria-label="Chat Channels">
-  <div
-    v-for="platform in channelFilters"
-    :key="platform.id"
-    :class="['channel-pill', { active: activePlatform === platform.id }]"
-    @click="setActivePlatform(platform.id)"
-    role="tab"
-    :aria-selected="activePlatform === platform.id"
-    tabindex="0"
-  >
-    {{ platform.name }}
-  </div>
-</div>
-
-          <!-- Search and Toggle Row -->
-          <div class="search-and-toggle-row">
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
             <div class="search-container">
               <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
                 <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
                 <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2"/>
               </svg>
-<<<<<<< HEAD
           <input v-model="searchQuery" type="text" class="search-input" placeholder="Search conversations..." @input="handleSearch" />
-=======
-              <input v-model="searchQuery" type="text" class="search-input" placeholder="Search conversations..." @input="handleSearch" />
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
               <button v-if="searchQuery" class="search-clear" @click="clearSearch">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                   <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
@@ -108,7 +57,7 @@
                 </svg>
               </button>
             </div>
-<<<<<<< HEAD
+
           <div class="view-toggle-pills" role="tablist" aria-label="View Mode">
             <div class="view-toggle-pill" :class="{ active: activeView === 'timeline' }" @click="activeView = 'timeline'" role="tab" :aria-selected="activeView === 'timeline'" tabindex="0">Timeline</div>
             <div class="view-toggle-pill" :class="{ active: activeView === 'table' }" @click="activeView = 'table'" role="tab" :aria-selected="activeView === 'table'" tabindex="0">Table View</div>
@@ -319,7 +268,7 @@
     No chats to display.
   </div>
 </div>
-</div></div>
+
      <!-- Chat Details Panel (Side Drawer) -->
 <div class="chat-details-panel" :class="{ active: showChatPanel }">
   <div class="chat-details-header">
@@ -401,11 +350,9 @@
   </div>
 </div>
 
-=======
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
->>>>>>> main
+
     </div>
-  </div>
+
 </template>
 
 <script setup>
@@ -444,7 +391,7 @@ const platforms = ref([
   { id: 'past', name: 'Archive' }
 ])
 
-<<<<<<< HEAD
+
 // Use real messages from the store
 // const filteredMessages = computed(() => {
 //   if (activePlatform.value === 'all') return messagesStore.pmessages
@@ -456,7 +403,7 @@ const groupedMessagesByDate = computed(() => {
   const timeKey = messagesStore.pmessages_k?.dth?.[0];
 
   if (!Array.isArray(messages) || timeKey === undefined) return {};
-=======
+
 // Dummy chat records for each channel
 const dummyChats = [
   // WhatsApp
@@ -489,17 +436,16 @@ const dummyChats = [
   { id: 503, senderName: 'Winnie Naliaka', platform: 'archive', status: 'Closed', date: 'Yesterday', time: '10:00AM', text: 'No further action needed.' },
   { id: 504, senderName: 'Xavier Kiplangat', platform: 'archive', status: 'Closed', date: 'Yesterday', time: '10:30AM', text: 'All done, thanks.' },
   { id: 505, senderName: 'Yvonne Atieno', platform: 'archive', status: 'Closed', date: 'Yesterday', time: '11:00AM', text: 'Appreciate your support.' },
-<<<<<<< HEAD
-=======
+
   // CFFS Conversations (children and chatbot)
   { id: 601, senderName: 'Child', platform: 'cffs', status: 'Active', date: 'Today', time: '10:00AM', text: 'Hello!' },
   { id: 602, senderName: 'CFFS Chatbot', platform: 'cffs', status: 'Active', date: 'Today', time: '10:01AM', text: 'Hi there! What is your name?' },
   { id: 603, senderName: 'Child', platform: 'cffs', status: 'Active', date: 'Today', time: '10:02AM', text: 'My name is Amina.' },
   { id: 604, senderName: 'CFFS Chatbot', platform: 'cffs', status: 'Active', date: 'Today', time: '10:03AM', text: 'How old are you, Amina?' },
   { id: 605, senderName: 'Child', platform: 'cffs', status: 'Active', date: 'Today', time: '10:04AM', text: 'I am 10 years old. How are you feeling lately?' },
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
+
 ];
->>>>>>> main
+
 
   const groups = {};
   for (const msg of messages) {
@@ -523,7 +469,7 @@ const getPlatformUnreadCount = (platformId) => {
   ).length
 }
 
-<<<<<<< HEAD
+
 // function getPlatformShortName(platform) {
 //   const map = {
 //     whatsapp: 'WA', safepal: 'SP', email: 'EM',
@@ -531,32 +477,27 @@ const getPlatformUnreadCount = (platformId) => {
 //   }
 //   return map[platform] || 'Other'
 // }
-=======
-<<<<<<< HEAD
+
 const getPlatformShortName = (platform) => {
-=======
+
 // Fix getPlatformShortName to be robust:
 const getPlatformShortName = (platform) => {
   if (!platform || typeof platform !== 'string') return '';
   const key = platform.toLowerCase();
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
+
   const shortNames = {
     whatsapp: 'WA',
     sms: 'SMS',
     messenger: 'MSG',
-<<<<<<< HEAD
+
     telegram: 'TG'
   }
   return shortNames[platform] || platform.toUpperCase()
 }
-=======
-    telegram: 'TG',
-    cffs: 'CFFS'
-  };
-  return shortNames[key] || key.toUpperCase();
-};
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
->>>>>>> main
+
+  return platform ? platform.toUpperCase() : '';
+}
+
 
 const getAvatarColor = (name) => {
   const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9']
@@ -665,24 +606,15 @@ const queueStatus = computed(() => isInQueue.value ? 'In Queue' : 'Not in queue'
 const channelFilters = [
   { id: 'all', name: 'All' },
   { id: 'whatsapp', name: 'WhatsApp' },
-<<<<<<< HEAD
+
   { id: 'safepal', name: 'SafePal' },
   { id: 'email', name: 'Email' },
   { id: 'walkin', name: 'Walk-In' },
   { id: 'ai', name: 'AI' },
   { id: 'call', name: 'Call' }
 ]
-=======
-  { id: 'sms', name: 'SMS' },
-  { id: 'messenger', name: 'Messenger' },
-  { id: 'telegram', name: 'Telegram' },
-<<<<<<< HEAD
-=======
-  { id: 'cffs', name: 'CFFS Conversations' },
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
-  { id: 'archive', name: 'Archive' }
-];
->>>>>>> main
+
+ 
 
 const activeView = ref('timeline')
 
@@ -1037,11 +969,9 @@ function viewCase() {
     background: var(--accent-color);
   }
 
-<<<<<<< HEAD
+
   /* Chat Details Panel (see previous code for details) */
-=======
-  /* Chat Details Panel (Side Drawer) */
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
+
   .chat-details-panel {
     position: fixed;
     top: 0;
@@ -1561,8 +1491,6 @@ function viewCase() {
 .end-chat-btn:hover {
   background: #b71c1c;
 }
-<<<<<<< HEAD
-=======
 
 .chat-main-layout {
   display: flex;
@@ -1612,5 +1540,5 @@ function viewCase() {
     z-index: 1002;
   }
 }
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
+
 </style>

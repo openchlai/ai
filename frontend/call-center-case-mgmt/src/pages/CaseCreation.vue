@@ -3943,41 +3943,4 @@ textarea.form-control {
 .glass-btn.filled:hover {
   background: var(--accent-hover);
 }
-<<<<<<< HEAD
-=======
-
-.ai-preview,
-.ai-preview-content,
-.ai-preview-section,
-.transcription-section,
-.summary-section,
-.entities-section,
-.classification-section,
-.insight-section,
-.ai-autofill-section {
-  font-size: 14px;
-  font-weight: 400;
-}
-
-.ai-preview-title,
-.ai-preview-section-title,
-.subsection-title {
-  font-size: 15px;
-  font-weight: 500;
-}
-
-.transcription-text,
-.summary-text,
-.insight-text,
-.suggestion-text,
-.entity-text,
-.suggestion-label,
-.suggestion-value,
-.risk-list,
-.service-suggestion-btn,
-.entity-tag {
-  font-size: 14px;
-  font-weight: 400;
-}
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 </style>

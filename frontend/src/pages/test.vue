@@ -52,40 +52,28 @@ export default {
     };
   },
   methods: {
-    
+    // Handle incoming call
     myinvitefunction(invitation) {
-      console.log("%c[onInvite] Incoming call received!", "color: green; font-weight: bold;");
-      console.log("Full Invitation Object:", invitation);
+      console.log("Incoming call:", invitation);
 
       this.incomingCall = true;
       this.session = invitation;
+      this.callerId = invitation.remoteIdentity.uri.user;
+      this.remoteIdentity = invitation.remoteIdentity.displayName || this.callerId;
 
-      
-      this.callerId = invitation.remoteIdentity?.uri?.user || "Unknown";
-      this.remoteIdentity = invitation.remoteIdentity?.displayName || this.callerId;
-
-      console.log(`Caller ID: ${this.callerId}`);
-      console.log(`Remote Display Name: ${this.remoteIdentity}`);
-
-      
+      // Attach session end events
       invitation.stateChange.addListener((state) => {
-        console.log(`[Session State Change] New state: ${state}`);
-        if (state === SIP.SessionState.Established) {
-          console.log("%c[Call Connected]", "color: blue; font-weight: bold;");
-        }
         if (state === SIP.SessionState.Terminated) {
-          console.log("%c[Call Terminated]", "color: red; font-weight: bold;");
           this.resetCallState();
         }
       });
     },
 
-    
+    // Answer incoming call
     async answerCall() {
       if (!this.session) return;
 
       try {
-        console.log("[Answer Call] Attempting to answer...");
         await this.session.accept({
           sessionDescriptionHandlerOptions: {
             constraints: { audio: true, video: false }
@@ -95,7 +83,7 @@ export default {
         this.inCall = true;
         this.incomingCall = false;
 
-        
+        // Play remote audio
         const audioEl = this.$refs.remoteAudio;
         this.session.sessionDescriptionHandler.on("addTrack", () => {
           const pc = this.session.sessionDescriptionHandler.peerConnection;
@@ -106,21 +94,21 @@ export default {
           audioEl.srcObject = remoteStream;
         });
 
-        console.log("%c[Answer Call] Call answered successfully", "color: green; font-weight: bold;");
+        console.log("Call answered");
       } catch (err) {
-        console.error("[Answer Call] Failed to answer:", err);
+        console.error("Failed to answer call:", err);
       }
     },
 
-    
+    // Reject incoming call
     async rejectCall() {
       if (!this.session) return;
       try {
         await this.session.reject();
         this.resetCallState();
-        console.log("%c[Reject Call] Call rejected", "color: orange; font-weight: bold;");
+        console.log("Call rejected");
       } catch (err) {
-        console.error("[Reject Call] Failed to reject:", err);
+        console.error("Failed to reject call:", err);
       }
     },
 
@@ -129,9 +117,9 @@ export default {
       if (!this.session) return;
       try {
         await this.session.terminate();
-        console.log("%c[Hangup] Call terminated", "color: red; font-weight: bold;");
+        console.log("Call terminated");
       } catch (err) {
-        console.error("[Hangup] Failed to terminate:", err);
+        console.error("Failed to terminate call:", err);
       }
     },
 
@@ -145,56 +133,48 @@ export default {
         }
       });
       this.isMuted = !this.isMuted;
-      console.log(`[Mute] Audio ${this.isMuted ? "Muted" : "Unmuted"}`);
     },
 
     // Start SIP agent
-   startAgent() {
-  try {
-    const config = {
-      uri: "sip:101@demo-openchs.bitz-itc.com",
-      authorizationUsername: "101",
-      authorizationPassword: "23kdefrtgos09812100",
-       registerExpires: 300, // 5 minutes instead of 30 seconds
-  keepAliveInterval: 30,
-      displayName: "101",
-      transportOptions: {
-        server: "wss://demo-openchs.bitz-itc.com:8089/ws",
-        traceSip: true, // Enables SIP message tracing
-      },
-      log: { level: "log" },
-      delegate: { onInvite: this.myinvitefunction }
-    };
+    async startAgent() {
+      try {
+        this.starting = true;
+        const config = {
+          uri: "sip:101@demo-openchs.bitz-itc.com",
+          authorizationUsername: "101",
+          authorizationPassword: "23kdefrtgos09812100",
+          displayName: "101",
+          transportOptions: {
+            server: "wss://demo-openchs.bitz-itc.com:8089/ws",
+            traceSip: true,
+          },
+          log: { level: "log" },
+          delegate: { onInvite: this.myinvitefunction }
+        };
 
-    console.log("[SIP Agent] Starting with config:", config);
+        console.log("Starting SIP agent with config:", config);
 
-    this.ua = new SIP.UserAgent(config);
+        this.ua = new SIP.UserAgent(config);
 
-    // Listen for transport events
-    this.ua.transport.onConnect = () => {
-      console.log("[SIP Agent] Transport connected successfully");
-    };
-    this.ua.transport.onDisconnect = (error) => {
-      console.error("[SIP Agent] Transport disconnected", error || "");
-    };
-    this.ua.transport.onClosed = (event) => {
-      console.warn("[SIP Agent] Transport closed:", event);
-    };
+        this.ua.delegate = {
+          onConnect: () => {
+            this.connected = true;
+            this.registered = true;
+          },
+          onDisconnect: () => {
+            this.connected = false;
+            this.registered = false;
+          }
+        };
 
-    // Start the UA
-    this.ua.start()
-      .then(() => {
-        console.log("[SIP Agent] SIP Agent started successfully");
-      })
-      .catch((err) => {
-        console.error("[SIP Agent] Failed to start SIP Agent:", err);
-      });
-
-  } catch (err) {
-    console.error("[SIP Agent] Error starting SIP agent:", err);
-  }
-},
-
+        await this.ua.start();
+        console.log("SIP Agent started successfully");
+      } catch (err) {
+        console.error("Failed to start SIP agent:", err);
+      } finally {
+        this.starting = false;
+      }
+    },
 
     // Stop SIP agent
     async stopAgent() {
@@ -204,9 +184,9 @@ export default {
         await this.ua.stop();
         this.registered = false;
         this.connected = false;
-        console.log("%c[SIP Agent] Stopped", "color: red; font-weight: bold;");
+        console.log("SIP Agent stopped");
       } catch (err) {
-        console.error("[SIP Agent] Failed to stop:", err);
+        console.error("Failed to stop SIP agent:", err);
       } finally {
         this.stopping = false;
       }
@@ -223,7 +203,6 @@ export default {
     }
   }
 };
-
 </script>
 
 <style scoped>

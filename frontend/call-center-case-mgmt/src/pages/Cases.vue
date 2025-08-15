@@ -734,6 +734,7 @@ body {
   margin-right: 15px;
   color: #fff;
   flex-shrink: 0;
+}
 .case-icon svg {
   width: 18px;
   height: 18px;
@@ -759,19 +760,7 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-<<<<<<< HEAD
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 13px;
-  color: var(--text-secondary);
-  width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  word-break: break-word;
-  overflow-wrap: break-word;
-}
+ 
 .case-id {
   font-size: 0.95rem;
   color: #bbb;
@@ -807,45 +796,7 @@ body {
   flex-shrink: 0;
   border: 1.5px solid #fff;
   box-shadow: 0 0 0 2px rgba(0,0,0,0.08);
-=======
-
-.case-meta {
-  display: flex;
-  gap: 18px;
-  font-size: 14px;
-  color: var(--text-secondary);
-  align-items: center;
-  flex-wrap: wrap;
-  width: 100%;
-  min-height: 28px;
-  padding-top: 2px;
-  padding-bottom: 2px;
 }
-
-.case-priority,
-.case-date,
-.case-assigned {
-  flex: 1 1 0;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  display: inline-block;
-}
-
-.priority-dot {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  border: 2px solid #fff;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
-  margin-right: 2px;
-  display: inline-block;
-  vertical-align: middle;
-}
-
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 .priority-dot.high {
   background-color: var(--high-priority);
 }
@@ -855,27 +806,6 @@ body {
 .priority-dot.low {
   background-color: var(--low-priority);
 }
-<<<<<<< HEAD
-=======
-
-.case-date {
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.case-assigned {
-  font-size: 12px;
-  color: #888;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.case-id {
-  font-size: 0.95rem;
-  color: #bbb;
-  margin-bottom: 8px;
-}
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 .case-detail-drawer {
   position: fixed;
   top: 0;
@@ -1148,7 +1078,6 @@ body.high-contrast .priority-dot.low {
 }
 @media (max-width: 900px) {
   .case-item {
-<<<<<<< HEAD
     padding: 20px 18px 22px 18px;
     gap: 12px;
   }
@@ -1166,24 +1095,6 @@ body.high-contrast .priority-dot.low {
   }
   .case-meta {
     font-size: 12px;
-=======
-    padding: 14px 10px;
-    max-width: 100vw;
-    min-width: 0;
-  }
-  .case-meta {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
-    white-space: normal;
-  }
-  .case-priority,
-  .case-date,
-  .case-assigned {
-    max-width: 100%;
-    width: 100%;
-    display: block;
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
   }
 }
 @media (max-width: 600px) {
@@ -1207,21 +1118,5 @@ body.high-contrast .priority-dot.low {
   .case-meta {
     font-size: 11px;
   }
-<<<<<<< HEAD
-=======
-  .case-meta {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
-    white-space: normal;
-  }
-  .case-priority,
-  .case-date,
-  .case-assigned {
-    max-width: 100%;
-    width: 100%;
-    display: block;
-  }
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
 }
 </style>
