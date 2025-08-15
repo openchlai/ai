@@ -1,5 +1,7 @@
 # AI-Powered Voice Processing & Case Prediction
 
+[![AI Service CI/CD](https://github.com/openchlai/ai/actions/workflows/ai-service-ci.yml/badge.svg)](https://github.com/openchlai/ai/actions/workflows/ai-service-ci.yml)
+
 This project is an advanced AI-driven solution for voice processing and case prediction. It enables automated transcription, translation, and case classification to enhance efficiency in call management systems.
 
 ## Features
