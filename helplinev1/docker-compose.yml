@@ -1,5 +1,5 @@
 services:
-  # MySQL ....
+  # MySQL .... #sql ...
   database:
     image: mysql:8.0
     container_name: helpline-db
