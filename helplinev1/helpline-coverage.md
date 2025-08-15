@@ -1,10 +1,10 @@
 # 📊 HelplineV1 Code Coverage Report
 
 **Branch:** justphyl
-**Commit:** `c309846`
-**Generated:** 2025-08-15 01:31:21 UTC
+**Commit:** `8c6834a`
+**Generated:** 2025-08-15 01:41:05 UTC
 **PHP Version:** 8.3
-**Workflow:** [`16980687060`](https://github.com/openchlai/ai/actions/runs/16980687060)
+**Workflow:** [`16980813654`](https://github.com/openchlai/ai/actions/runs/16980813654)
 
 ## 🎯 Coverage Summary
 
@@ -14,7 +14,7 @@
 | Metric | Value | Status |
 |--------|-------|--------|
 | **Overall Coverage** | **59%** | 🟠 Fair |
-| **Generated** | 2025-08-15 01:31:21 UTC | |
+| **Generated** | 2025-08-15 01:41:05 UTC | |
 | **Branch** | justphyl | |
 | **PHP Version** | 8.3 | |
 
@@ -46,6 +46,10 @@ Estimated Line Coverage: 59%
 ```
 
 ## 🧪 Test Summary
+
+| Test Class | Test Method | Status |\n|------------|-------------|--------|\n| PHPUnit | Test Execution | ✅ Completed |\n
+
+### Raw Test Output
 
 ```
 PHPUnit 9.6.23 by Sebastian Bergmann and contributors.
