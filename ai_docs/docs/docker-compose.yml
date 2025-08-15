@@ -1,0 +1,9 @@
+services:
+  docs:
+    build:
+      context: ..
+      dockerfile: docs/Dockerfile
+    container_name: ai_docs
+    ports:
+      - '8888:80'
+    restart: unless-stopped
