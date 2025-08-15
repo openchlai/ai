@@ -5,5 +5,5 @@ services:
       dockerfile: docs/Dockerfile
     container_name: ai_docs
     ports:
-      - '8080:80'
+      - '8888:80' 
     restart: unless-stopped
