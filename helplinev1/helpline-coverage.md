@@ -1,10 +1,10 @@
 # 📊 HelplineV1 Code Coverage Report
 
 **Branch:** justphyl
-**Commit:** `8c6834a`
-**Generated:** 2025-08-15 01:41:05 UTC
+**Commit:** `3ff8d78`
+**Generated:** 2025-08-16 10:08:03 UTC
 **PHP Version:** 8.3
-**Workflow:** [`16980813654`](https://github.com/openchlai/ai/actions/runs/16980813654)
+**Workflow:** [`17007198576`](https://github.com/openchlai/ai/actions/runs/17007198576)
 
 ## 🎯 Coverage Summary
 
@@ -14,7 +14,7 @@
 | Metric | Value | Status |
 |--------|-------|--------|
 | **Overall Coverage** | **59%** | 🟠 Fair |
-| **Generated** | 2025-08-15 01:41:05 UTC | |
+| **Generated** | 2025-08-16 10:08:03 UTC | |
 | **Branch** | justphyl | |
 | **PHP Version** | 8.3 | |
 
