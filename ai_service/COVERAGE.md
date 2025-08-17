@@ -1,18 +1,18 @@
 # 📊 Code Coverage Report - AI Service
 
-**Branch:** 267/merge
-**Commit:** [\`857396c\`](https://github.com/openchlai/ai/commit/857396c06e4b253a1409196c9ca0544681b97e34)
-**Generated:** 2025-08-15 12:55:19 UTC
+**Branch:** 271/merge
+**Commit:** [\`083151e\`](https://github.com/openchlai/ai/commit/083151ea054fa92361ff2414e36b17e72e0e14ff)
+**Generated:** 2025-08-17 13:53:01 UTC
 **Python Version:** 3.12
-**Workflow:** [\`16990295220\`](https://github.com/openchlai/ai/actions/runs/16990295220)
+**Workflow:** [\`17021765967\`](https://github.com/openchlai/ai/actions/runs/17021765967)
 
 ## 🎯 Coverage Summary
 
-![Coverage](https://img.shields.io/badge/Coverage-48%25-orange)
+![Coverage](https://img.shields.io/badge/Coverage-56%25-orange)
 
 | Metric | Value | Status |
 |--------|-------|--------|
-| **Coverage** | 48% | ❌ Fail |
+| **Coverage** | 56% | ❌ Fail |
 | **Threshold** | 80% | Target |
 
 ## 📈 Detailed Coverage Report
@@ -52,17 +52,17 @@ app/models/__init__.py                           0      0   100%
 app/models/model_loader.py                      12     12     0%   2-18
 app/services/agent_notification_service.py     192    104    46%   70-71, 90-115, 138-139, 144, 148-150, 154-160, 175-225, 242-251, 256-266, 271-286, 291-304, 309-320, 337-346, 350-358, 363-373, 379-388, 392-418, 428-457, 461-470
 app/streaming/__init__.py                        3      0   100%
-app/streaming/audio_buffer.py                   34      4    88%   48-51
-app/streaming/call_session_manager.py          509    374    27%   20-22, 39-42, 47-49, 91-92, 100-102, 107-175, 179-206, 214-219, 246-250, 256-257, 262, 266-269, 282-283, 296-298, 302-346, 350-453, 457-479, 483-513, 517-576, 586-601, 605-683, 687, 691-695, 714-734, 747-760, 767, 771-772, 776-790, 810-821, 832-880, 884-967, 971-1000
-app/streaming/progressive_processor.py         245    188    23%   15-17, 33-35, 50-52, 70-92, 97-140, 145-190, 194-204, 209-245, 257-293, 298-312, 321-363, 368-393, 397-410, 414-422, 427-463, 467
-app/streaming/tcp_server.py                    101     25    75%   55, 88-90, 101-104, 117-118, 147-148, 152-165, 169-173, 179
-app/streaming/websocket_server.py               57     41    28%   22-75, 79-101, 105
+app/streaming/audio_buffer.py                   34      0   100%
+app/streaming/call_session_manager.py          509    275    46%   20-22, 100-102, 150-151, 158-165, 173-175, 214-219, 246-250, 256-257, 266-269, 282-283, 296-298, 344-346, 350-453, 457-479, 483-513, 517-576, 586-601, 605-683, 733-734, 767, 771-772, 810-821, 832-880, 884-967, 971-1000
+app/streaming/progressive_processor.py         245     10    96%   15-17, 78, 124, 361-363, 375-376
+app/streaming/tcp_server.py                    101      0   100%
+app/streaming/websocket_server.py               57      0   100%
 app/tasks/__init__.py                            0      0   100%
-app/tasks/audio_tasks.py                       408    380     7%   24-48, 55-194, 200, 207-225, 236-290, 306-778, 791-846, 852-863, 915-1006
+app/tasks/audio_tasks.py                       408    379     7%   24-48, 55-194, 207-225, 236-290, 306-778, 791-846, 852-863, 915-1006
 --------------------------------------------------------------------------
-TOTAL                                         4196   2183    48%
+TOTAL                                         4196   1835    56%
 ```
 
 ---
 *Report generated automatically by GitHub Actions*
-*Access this report at: [COVERAGE.md](https://github.com/openchlai/ai/blob/267/merge/ai_service/COVERAGE.md)*
+*Access this report at: [COVERAGE.md](https://github.com/openchlai/ai/blob/271/merge/ai_service/COVERAGE.md)*
