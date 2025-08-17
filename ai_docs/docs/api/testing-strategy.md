@@ -3,6 +3,12 @@ layout: doc
 title: Testing Strategy
 ---
 
+[![AI Service CI/CD](https://github.com/openchlai/ai/actions/workflows/ai-service-ci.yml/badge.svg)](https://github.com/openchlai/ai/actions/workflows/ai-service-ci.yml)
+
+
+[![HelplineV1 CI](https://github.com/openchlai/ai/actions/workflows/helplinev1-ci.yml/badge.svg)](https://github.com/openchlai/ai/actions/workflows/helplinev1-ci.yml)
+
+
 # Testing Strategy for Helpline & AI Service
 
 This strategy is modeled after the **Testing Pyramid**, emphasizing a strong foundation of **unit tests**, supported by **integration** and **end-to-end tests**, ensuring the quality, reliability, and performance of `helplinev1` and `ai_service`.
