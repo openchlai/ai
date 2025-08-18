@@ -1,6 +1,7 @@
 name: HelplineV1 CI
 permissions:
   contents: write
+  pull-requests: write
 
 on:
   push:
@@ -9,6 +10,7 @@ on:
   pull_request:
     paths:
       - 'helplinev1/**'
+    branches: [main, develop]
   workflow_dispatch:
 
 jobs:
@@ -32,11 +34,11 @@ jobs:
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
     steps:
-      - name: Checkout code
+      - name: 🛎️ Checkout code
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -68,18 +70,26 @@ jobs:
         working-directory: helplinev1/rest_api
         run: ./vendor/bin/phpunit --verbose --testdox
 
-      - name: Run Tests with Coverage (PCOV)
-        working-directory: helplinev1/rest_api
-        run: ./vendor/bin/phpunit --coverage-text --coverage-clover=coverage.xml --coverage-html=coverage-html
-
-      - name: Generate Real Coverage Analysis
+      - name: 🧪 Run Tests with Coverage
         working-directory: helplinev1/rest_api
         run: |
+          echo "🛠 Running unit tests with coverage..."
+          ./vendor/bin/phpunit --coverage-text --coverage-clover=coverage.xml --coverage-html=coverage-html || {
+            echo "⚠️ Tests failed. Creating fallback coverage.xml so downstream steps still run."
+            printf '<?xml version="1.0"?>\n<coverage version="6.0" timestamp="1" lines-valid="100" lines-covered="0" line-rate="0.0">\n<sources><source>./</source></sources>\n<packages></packages>\n</coverage>\n' > coverage.xml
+          }
+
+      - name: 📊 Generate Coverage Report
+        working-directory: helplinev1/rest_api
+        run: |
+          echo "📊 Generating coverage summary..."
+          
           # Use original calculation method that was working
-          php calculate-coverage.php > coverage-analysis.txt
-          COVERAGE=$(php calculate-coverage.php | grep "Estimated Line Coverage" | grep -oE "[0-9]+%" | grep -oE "[0-9]+" || echo "0")
-          echo "Detected Coverage: ${COVERAGE}%"
+          php calculate-coverage.php > coverage-analysis.txt || echo "No detailed coverage analysis available" > coverage-analysis.txt
+          COVERAGE=$(php calculate-coverage.php | grep "Estimated Line Coverage" | grep -oE "[0-9]+%" | grep -oE "[0-9]+" 2>/dev/null || echo "0")
+          
           echo "COVERAGE_PERCENTAGE=$COVERAGE" >> $GITHUB_ENV
+          echo "📊 Detected Coverage: ${COVERAGE}%"
           
           # Set coverage color for badge
           if [ "$COVERAGE" -ge "80" ]; then
@@ -91,214 +101,86 @@ jobs:
           else
             echo "COVERAGE_COLOR=red" >> $GITHUB_ENV
           fi
+          
+          # Generate test summary
+          echo "📊 Generating detailed test summary..."
+          ./vendor/bin/phpunit --testdox > test-summary.txt 2>&1 || echo "Test summary not available" > test-summary.txt
 
-      - name: Generate Coverage README.md
+      - name: 📝 Generate COVERAGE.md
         working-directory: helplinev1/rest_api
         run: |
-          # Create detailed coverage report similar to AI service workflow
-          TIMESTAMP=$(date -u "+%Y-%m-%d %H:%M:%S UTC")
+          echo "📝 Writing COVERAGE.md..."
           
           # Get detailed coverage information
-          COVERAGE_DETAILS="No detailed coverage data available"
-          if [ -f "coverage-analysis.txt" ]; then
+          if [ -f coverage-analysis.txt ]; then
             COVERAGE_DETAILS=$(cat coverage-analysis.txt)
+          else
+            COVERAGE_DETAILS="No detailed coverage data available"
           fi
           
-          # Get PHPUnit test output for detailed test information
-          echo "📊 Generating detailed test summary..."
-          
-          # Run PHPUnit with multiple output formats for comprehensive reporting
-          ./vendor/bin/phpunit --testdox > test-summary.txt 2>&1 || echo "Test summary not available" > test-summary.txt
-          ./vendor/bin/phpunit --verbose --testdox-text > test-detailed.txt 2>&1 || echo "Detailed test output not available" > test-detailed.txt
-          
-          # Parse test results and format as table
-          TEST_SUMMARY_TABLE="| Test Class | Test Method | Status |\n|------------|-------------|--------|\n"
-          
-          # Extract test information and create table rows
-          if [ -f "test-summary.txt" ]; then
-            # Parse testdox output to extract test information
-            while IFS= read -r line; do
-              if [[ $line =~ ^[[:space:]]*✓[[:space:]]+(.*) ]]; then
-                # Extract test method name
-                test_method="${BASH_REMATCH[1]}"
-                # Get class name from context (simplified)
-                test_class="PHPUnit Test"
-                TEST_SUMMARY_TABLE+="| $test_class | $test_method | ✅ Pass |\n"
-              elif [[ $line =~ ^[[:space:]]*✗[[:space:]]+(.*) ]]; then
-                test_method="${BASH_REMATCH[1]}"
-                test_class="PHPUnit Test"
-                TEST_SUMMARY_TABLE+="| $test_class | $test_method | ❌ Fail |\n"
-              fi
-            done < test-summary.txt
-          fi
-          
-          # If table is empty, provide fallback
-          if [ "$TEST_SUMMARY_TABLE" == "| Test Class | Test Method | Status |\n|------------|-------------|--------|\n" ]; then
-            TEST_SUMMARY_TABLE="| Test Class | Test Method | Status |\n|------------|-------------|--------|\n| PHPUnit | Test Execution | ✅ Completed |\n"
-          fi
-          
-          # Get raw test details as fallback
-          TEST_DETAILS="No test details available"
-          if [ -f "test-summary.txt" ]; then
+          # Get test summary
+          if [ -f test-summary.txt ]; then
             TEST_DETAILS=$(cat test-summary.txt)
+          else
+            TEST_DETAILS="No test details available"
           fi
           
-          cat > ../helpline-coverage.md << EOF
-          # 📊 HelplineV1 Code Coverage Report
+          printf '# 📊 Code Coverage Report - HelplineV1\n\n**Branch:** %s\n**Commit:** [\`%s\`](%s)\n**Generated:** %s\n**PHP Version:** %s\n**Workflow:** [\`%s\`](%s)\n\n## 🎯 Coverage Summary\n\n![Coverage](https://img.shields.io/badge/Coverage-%s%%25-%s)\n![Tests](https://img.shields.io/badge/Tests-PHPUnit-blue)\n\n| Metric | Value | Status |\n|--------|-------|--------|\n| **Coverage** | %s%% | %s |\n| **Threshold** | 80%% | Target |\n| **Generated** | %s | |\n| **Branch** | %s | |\n| **PHP Version** | %s | |\n\n## 📈 Detailed Coverage Analysis\n\n```\n%s\n```\n\n## 🧪 Test Summary\n\n```\n%s\n```\n\n## 📁 Generated Files\n\n- `coverage.xml` - XML coverage report for CI/CD integration\n- `coverage-html/` - HTML coverage report for detailed browsing\n- `coverage-analysis.txt` - Detailed coverage analysis\n- `test-summary.txt` - Test execution summary\n\n## 🔍 How to View Coverage\n\n### HTML Report (Recommended)\nOpen `helplinev1/rest_api/coverage-html/index.html` in your browser for an interactive view.\n\n### Command Line\n```bash\ncd helplinev1/rest_api\n./vendor/bin/phpunit --coverage-text\n```\n\n### XML Integration\nUse `coverage.xml` for integration with code coverage services like Codecov.\n\n---\n*Report generated automatically by GitHub Actions*\n*Access this report at: [COVERAGE.md](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/helplinev1/COVERAGE.md)*\n' \
+            "${{ github.ref_name }}" \
+            "${GITHUB_SHA:0:7}" \
+            "https://github.com/${{ github.repository }}/commit/${{ github.sha }}" \
+            "$(date '+%Y-%m-%d %H:%M:%S UTC')" \
+            "${{ matrix.php-version }}" \
+            "${{ github.run_id }}" \
+            "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            "${COVERAGE_PERCENTAGE:-0}" \
+            "${COVERAGE_COLOR:-red}" \
+            "${COVERAGE_PERCENTAGE:-0}" \
+            "$([ "${COVERAGE_PERCENTAGE:-0}" -ge 80 ] && echo "✅ Pass" || echo "❌ Fail")" \
+            "$(date '+%Y-%m-%d %H:%M:%S UTC')" \
+            "${{ github.ref_name }}" \
+            "${{ matrix.php-version }}" \
+            "${COVERAGE_DETAILS}" \
+            "${TEST_DETAILS}" > ../COVERAGE.md
 
-          **Branch:** ${{ github.ref_name }}
-          **Commit:** \`${GITHUB_SHA:0:7}\`
-          **Generated:** ${TIMESTAMP}
-          **PHP Version:** ${{ matrix.php-version }}
-          **Workflow:** [\`${{ github.run_id }}\`](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
-
-          ## 🎯 Coverage Summary
-
-          ![Coverage](https://img.shields.io/badge/Coverage-${{ env.COVERAGE_PERCENTAGE }}%25-${{ env.COVERAGE_COLOR }})
-          ![Tests](https://img.shields.io/badge/Tests-PHPUnit-blue)
-
-          | Metric | Value | Status |
-          |--------|-------|--------|
-          | **Overall Coverage** | **${{ env.COVERAGE_PERCENTAGE }}%** | $([ "${{ env.COVERAGE_PERCENTAGE }}" -ge "80" ] && echo "✅ Excellent" || [ "${{ env.COVERAGE_PERCENTAGE }}" -ge "60" ] && echo "🟡 Good" || [ "${{ env.COVERAGE_PERCENTAGE }}" -ge "40" ] && echo "🟠 Fair" || echo "🔴 Needs Improvement") |
-          | **Generated** | ${TIMESTAMP} | |
-          | **Branch** | ${{ github.ref_name }} | |
-          | **PHP Version** | ${{ matrix.php-version }} | |
-
-          ## 📈 Detailed Coverage Analysis
-
-          \`\`\`
-          ${COVERAGE_DETAILS}
-          \`\`\`
-
-          ## 🧪 Test Summary
-
-          ${TEST_SUMMARY_TABLE}
-
-          ### Raw Test Output
-
-          \`\`\`
-          ${TEST_DETAILS}
-          \`\`\`
-
-          ## 📁 Generated Files
-
-          - \`coverage.xml\` - XML coverage report for CI/CD integration
-          - \`coverage-html/\` - HTML coverage report for detailed browsing
-          - \`coverage-analysis.txt\` - Detailed coverage analysis
-          - \`test-summary.txt\` - Test execution summary
-
-          ## 🔍 How to View Coverage
-
-          ### HTML Report (Recommended)
-          Open \`helplinev1/rest_api/coverage-html/index.html\` in your browser for an interactive view.
-
-          ### Command Line
-          \`\`\`bash
-          cd helplinev1/rest_api
-          ./vendor/bin/phpunit --coverage-text
-          \`\`\`
-
-          ### XML Integration
-          Use \`coverage.xml\` for integration with code coverage services like Codecov.
-
-          ## 📊 Coverage Trends
-
-          - **Current Coverage**: ${{ env.COVERAGE_PERCENTAGE }}%
-          - **Target**: 80%+ (Excellent), 60%+ (Good), 40%+ (Minimum)
-          - **Framework**: PHPUnit with PCOV
-
-          ---
-          *Report generated automatically by GitHub Actions*
-          *Access this report at: [helpline-coverage.md](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/helplinev1/helpline-coverage.md)*
-          EOF
-          
-          echo "✅ Detailed coverage report generated in helplinev1/helpline-coverage.md"
-          ls -la ../helpline-coverage.md
-          echo "Content preview:"
-          head -20 ../helpline-coverage.md
-
-      - name: Commit Coverage Report to Working Branch
-        if: matrix.php-version == '8.3'
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          
-          echo "🔍 Current git status before commit:"
-          git status
-          
-          # Handle different event types
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
-            # For pull requests, commit to the PR branch
-            echo "🔄 Working with PR branch: ${{ github.head_ref }}"
-            TARGET_BRANCH="${{ github.head_ref }}"
-            
-            # Ensure we have the latest PR branch
-            git fetch origin ${{ github.head_ref }}:${{ github.head_ref }} || echo "Branch fetch failed, continuing..."
-            git checkout ${{ github.head_ref }} || echo "Checkout failed, staying on current branch"
+          if [ -f ../COVERAGE.md ]; then
+            echo "✅ COVERAGE.md generated successfully at helplinev1/COVERAGE.md"
           else
-            # For push events, commit to the current branch
-            echo "🔄 Working with push branch: ${{ github.ref_name }}"
-            TARGET_BRANCH="${{ github.ref_name }}"
-          fi
-          
-          # Ensure the file exists and add it
-          if [ -f "helplinev1/helpline-coverage.md" ]; then
-            git add helplinev1/helpline-coverage.md
-            echo "✅ Added helpline-coverage.md to git"
-          else
-            echo "❌ helpline-coverage.md not found!"
-            ls -la helplinev1/
+            echo "❌ Failed to write COVERAGE.md"
             exit 1
           fi
-          
-          # Check if there are changes to commit
-          if ! git diff --staged --quiet; then
-            echo "📝 Changes detected, committing..."
-            
-            # Add [skip ci] for PR commits to avoid infinite loops
-            if [ "${{ github.event_name }}" == "pull_request" ]; then
-              git commit -m "📈 Auto-update coverage report - ${{ env.COVERAGE_PERCENTAGE }}% coverage [skip ci]" || {
-                echo "❌ Commit failed for PR"
-                git status
-                exit 1
-              }
-            else
-              git commit -m "📈 Auto-update coverage report - ${{ env.COVERAGE_PERCENTAGE }}% coverage" || {
-                echo "❌ Commit failed for push"
-                git status
-                exit 1
-              }
-            fi
-            
-            # Push the changes
-            git push origin $TARGET_BRANCH || {
-              echo "❌ Push failed to $TARGET_BRANCH"
-              git status
-              exit 1
-            }
-            
-            echo "✅ Coverage report committed to $TARGET_BRANCH branch"
-            echo "📊 Coverage: ${{ env.COVERAGE_PERCENTAGE }}% on branch: $TARGET_BRANCH"
-          else
-            echo "ℹ️ No changes to commit - coverage report unchanged"
-          fi
+
+          echo "COVERAGE_MD_LINK=https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/helplinev1/COVERAGE.md" >> $GITHUB_ENV
+
+      - name: 💾 Commit COVERAGE.md to PR branch
+        if: github.event_name == 'pull_request' && matrix.php-version == '8.3'
+        working-directory: helplinev1
+        run: |
+          echo "💾 Committing COVERAGE.md to PR branch ${GITHUB_HEAD_REF}..."
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Ensure we're on the PR's HEAD
+          git fetch origin "${GITHUB_HEAD_REF}:${GITHUB_HEAD_REF}" || true
+          git checkout "${GITHUB_HEAD_REF}" || true
+
+          git add COVERAGE.md
+          git status --porcelain
+          git commit -m "📊 Update coverage report [skip ci]" || echo "ℹ️ No changes to commit"
+          git push origin HEAD:${GITHUB_HEAD_REF}
+          echo "✅ Pushed COVERAGE.md to PR branch."
 
       - name: Upload Coverage to Codecov
+        if: always()
         uses: codecov/codecov-action@v3
         with:
           file: ./helplinev1/rest_api/coverage.xml
-          flags: helplinev1-backend
-          name: helplinev1-rest-api-coverage
+          flags: helplinev1-backend,php${{ matrix.php-version }}
+          name: helplinev1-rest-api-coverage-php${{ matrix.php-version }}
           fail_ci_if_error: false
 
-      - name: Upload Coverage README as Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: helpline-coverage-readme-php${{ matrix.php-version }}
-          path: helplinev1/helpline-coverage.md
-          retention-days: 30
-
-      - name: Archive Coverage Results
+      - name: 📦 Archive Coverage Results
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report-php${{ matrix.php-version }}
@@ -307,17 +189,19 @@ jobs:
             helplinev1/rest_api/coverage.xml
             helplinev1/rest_api/coverage-analysis.txt
             helplinev1/rest_api/test-summary.txt
-            helplinev1/helpline-coverage.md
+            helplinev1/COVERAGE.md
             helplinev1/rest_api/test-results.xml
           retention-days: 30
+          if-no-files-found: ignore
 
-      - name: Archive Test Results
-        uses: actions/upload-artifact@v4
+      - name: 📦 Archive Test Results
         if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: test-results-php${{ matrix.php-version }}
           path: helplinev1/rest_api/test-results.xml
           retention-days: 30
+          if-no-files-found: ignore
 
   # Docker Build and Integration Tests
   build-and-test:
@@ -367,3 +251,34 @@ jobs:
         if: always()
         working-directory: helplinev1
         run: docker compose down
+
+  ci-summary:
+    runs-on: ubuntu-latest
+    needs: [unit-tests, build-and-test]
+    if: always()
+
+    steps:
+      - name: 📋 CI/CD Summary
+        run: |
+          echo "## 🎯 HelplineV1 CI/CD Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ Completed Jobs:" >> $GITHUB_STEP_SUMMARY
+          echo "- Unit Tests: ${{ needs.unit-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Build & Test: ${{ needs.build-and-test.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ needs.unit-tests.result }}" == "success" ] && [ "${{ needs.build-and-test.result }}" == "success" ]; then
+            echo "### 🎉 All tests passed successfully!" >> $GITHUB_STEP_SUMMARY
+            echo "The HelplineV1 is ready for deployment." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ⚠️ Some tests failed" >> $GITHUB_STEP_SUMMARY
+            echo "Please check the logs and fix any issues." >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📊 Coverage Reports" >> $GITHUB_STEP_SUMMARY
+          echo "- Coverage reports have been generated and uploaded as artifacts" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "- Coverage report committed to PR branch" >> $GITHUB_STEP_SUMMARY
+            echo "- Access the coverage report at: [COVERAGE.md](https://github.com/${{ github.repository }}/blob/${{ github.head_ref }}/helplinev1/COVERAGE.md)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Coverage report available as artifact" >> $GITHUB_STEP_SUMMARY
+          fi

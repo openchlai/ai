@@ -1,10 +1,10 @@
-# 📊 HelplineV1 Code Coverage Report
+# 📊 Code Coverage Report - HelplineV1
 
-**Branch:** justphyl
-**Commit:** `3ff8d78`
-**Generated:** 2025-08-16 10:08:03 UTC
+**Branch:** 272/merge
+**Commit:** [\`de0b5f2\`](https://github.com/openchlai/ai/commit/de0b5f2ecc26d5d811d929e4912fd19aefe6f936)
+**Generated:** 2025-08-17 20:11:55 UTC
 **PHP Version:** 8.3
-**Workflow:** [`17007198576`](https://github.com/openchlai/ai/actions/runs/17007198576)
+**Workflow:** [\`17025356989\`](https://github.com/openchlai/ai/actions/runs/17025356989)
 
 ## 🎯 Coverage Summary
 
@@ -13,9 +13,10 @@
 
 | Metric | Value | Status |
 |--------|-------|--------|
-| **Overall Coverage** | **59%** | 🟠 Fair |
-| **Generated** | 2025-08-16 10:08:03 UTC | |
-| **Branch** | justphyl | |
+| **Coverage** | 59% | ❌ Fail |
+| **Threshold** | 80% | Target |
+| **Generated** | 2025-08-17 20:11:55 UTC | |
+| **Branch** | 272/merge | |
 | **PHP Version** | 8.3 | |
 
 ## 📈 Detailed Coverage Analysis
@@ -46,10 +47,6 @@ Estimated Line Coverage: 59%
 ```
 
 ## 🧪 Test Summary
-
-| Test Class | Test Method | Status |\n|------------|-------------|--------|\n| PHPUnit | Test Execution | ✅ Completed |\n
-
-### Raw Test Output
 
 ```
 PHPUnit 9.6.23 by Sebastian Bergmann and contributors.
@@ -351,12 +348,6 @@ cd helplinev1/rest_api
 ### XML Integration
 Use `coverage.xml` for integration with code coverage services like Codecov.
 
-## 📊 Coverage Trends
-
-- **Current Coverage**: 59%
-- **Target**: 80%+ (Excellent), 60%+ (Good), 40%+ (Minimum)
-- **Framework**: PHPUnit with PCOV
-
 ---
 *Report generated automatically by GitHub Actions*
-*Access this report at: [helpline-coverage.md](https://github.com/openchlai/ai/blob/justphyl/helplinev1/helpline-coverage.md)*
+*Access this report at: [COVERAGE.md](https://github.com/openchlai/ai/blob/272/merge/helplinev1/COVERAGE.md)*
