@@ -1162,14 +1162,16 @@ def process_post_call_audio_task(
         
         # Initialize streaming updates for this call
         def publish_call_update(step, progress, message=None, result_data=None, metadata=None):
-            """Publish update for this specific call"""
+            """Publish update for this specific call and send to agent endpoint"""
             try:
                 import redis
                 import json
                 import pathlib
                 import uuid
+                import asyncio
                 from datetime import datetime
                 from ..config.settings import get_redis_url
+                from ..services.agent_notification_service import agent_notification_service
                 
                 # Create synchronous Redis client
                 redis_client = redis.from_url(get_redis_url(), decode_responses=True)
@@ -1211,12 +1213,44 @@ def process_post_call_audio_task(
                 except Exception as log_error:
                     logger.error(f"❌ Failed to log update to file: {log_error}")
                 
-                # Publish to call-specific channel
+                # Publish to call-specific channel (Redis)
                 channel = f"call_updates:{call_id}"
                 subscribers = redis_client.publish(channel, json.dumps(update))
-                
                 logger.info(f"📡 [post-call] Published {step} update for call {call_id} to {subscribers} subscribers")
                 redis_client.close()
+                
+                # ALSO send to agent endpoint - send Redis update as-is
+                async def send_to_agent():
+                    try:
+                        # Import UpdateType properly
+                        from ..services.agent_notification_service import UpdateType
+                        
+                        # Send the exact Redis update payload to agent endpoint
+                        # Use a generic notification method that sends raw payload
+                        await agent_notification_service._send_notification(
+                            call_id=call_id,
+                            update_type=UpdateType.GPT_INSIGHTS,  # Use generic type
+                            payload=update  # Send the exact Redis update payload
+                        )
+                        
+                        logger.info(f"🚀 [post-call] Sent {step} Redis update to agent endpoint for call {call_id}")
+                            
+                    except Exception as agent_error:
+                        logger.error(f"❌ Failed to send {step} to agent endpoint: {agent_error}")
+                
+                # Run the async function in the current event loop or create one
+                try:
+                    # Try to get current event loop
+                    loop = asyncio.get_event_loop()
+                    if loop.is_running():
+                        # If loop is running, schedule coroutine
+                        loop.create_task(send_to_agent())
+                    else:
+                        # If no loop is running, run it
+                        loop.run_until_complete(send_to_agent())
+                except RuntimeError:
+                    # No event loop, create new one
+                    asyncio.run(send_to_agent())
                 
             except Exception as e:
                 logger.error(f"❌ Failed to publish call update for {step}: {e}")
@@ -1388,8 +1422,15 @@ def process_post_call_audio_task(
         try:
             from ..services.insights_service import generate_case_insights
             
-            # Generate case insights using the translated text (English)
-            case_insights = generate_case_insights(nlp_text)
+            # Generate case insights using the translated text (English) and pre-computed results
+            # This avoids redundant processing since we already have summary, entities, classification, and QA
+            case_insights = generate_case_insights(
+                transcript=nlp_text,
+                summary=summary,
+                entities=entities,
+                classification=classification,
+                qa_scores=qa_scores
+            )
             insights_duration = (datetime.now() - step_start).total_seconds()
             
             logger.info(f"✅ [post-call] Case insights completed in {insights_duration:.2f}s")
