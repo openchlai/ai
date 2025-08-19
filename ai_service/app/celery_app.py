@@ -15,7 +15,7 @@ celery_app = Celery(
     "audio_pipeline",
     broker=broker_url,
     backend=result_backend,
-    include=["app.tasks.audio_tasks"]
+    include=["app.tasks.audio_tasks", "app.tasks.inference_tasks"]
 )
 
 # PRODUCTION-GRADE CONFIGURATION
@@ -41,8 +41,21 @@ celery_app.conf.update(
     
     # Task routing
     task_routes={
+        # Heavy audio processing tasks
         'app.tasks.audio_tasks.process_audio_task': {'queue': 'audio_processing'},
         'app.tasks.audio_tasks.process_audio_quick_task': {'queue': 'audio_quick'},
+        'app.tasks.audio_tasks.process_streaming_audio_task': {'queue': 'audio_streaming'},
+        'app.tasks.audio_tasks.process_post_call_audio_task': {'queue': 'audio_processing'},
+        
+        # Lightweight inference tasks (higher priority)
+        'app.tasks.inference_tasks.whisper_transcribe_inference': {'queue': 'inference'},
+        'app.tasks.inference_tasks.whisper_get_info': {'queue': 'inference'},
+        'app.tasks.inference_tasks.whisper_get_languages': {'queue': 'inference'},
+        'app.tasks.inference_tasks.ner_extract_inference': {'queue': 'inference'},
+        'app.tasks.inference_tasks.translator_inference': {'queue': 'inference'},
+        'app.tasks.inference_tasks.summarizer_inference': {'queue': 'inference'},
+        'app.tasks.inference_tasks.classifier_inference': {'queue': 'inference'},
+        'app.tasks.inference_tasks.qa_inference': {'queue': 'inference'},
     },
     
     # Error handling - CRITICAL

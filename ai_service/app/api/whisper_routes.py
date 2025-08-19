@@ -1,11 +1,13 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional, Dict
 import logging
 from datetime import datetime
 import os
+from celery.exceptions import TimeoutError as CeleryTimeoutError
 
-from ..model_scripts.model_loader import model_loader
+from ..tasks.inference_tasks import whisper_transcribe_inference, whisper_get_info, whisper_get_languages
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/whisper", tags=["whisper"])
@@ -21,25 +23,24 @@ class TranscriptionResponse(BaseModel):
     timestamp: str
     audio_info: Dict
 
-@router.post("/transcribe", response_model=TranscriptionResponse)
+@router.post("/transcribe")
 async def transcribe_audio(
     audio: UploadFile = File(...),
-    language: Optional[str] = Form(None)  # Use Form to accept both file and text data
+    language: Optional[str] = Form(None),  # Use Form to accept both file and text data
+    task_type: Optional[str] = Form("transcribe")  # "transcribe" or "translate"
 ):
     """
-    Transcribe uploaded audio file to text
+    Transcribe uploaded audio file to text using hybrid sync/async pattern
     
     Parameters:
     - audio: Audio file (wav, mp3, flac, m4a, ogg, webm)
     - language: Language code (e.g., 'en', 'sw', 'fr') or 'auto' for auto-detection
-    """
+    - task_type: "transcribe" (same language) or "translate" (to English)
     
-    # Check if Whisper model is loaded
-    if not model_loader.is_model_ready("whisper"):
-        raise HTTPException(
-            status_code=503, 
-            detail="Whisper model not ready. Check /health/models for status."
-        )
+    Returns:
+    - 200 OK: Immediate result if processing completes within 10 seconds
+    - 202 Accepted: Task started, use /task/{task_id} to check status
+    """
     
     # Validate audio file
     if not audio.filename:
@@ -66,92 +67,132 @@ async def transcribe_audio(
             detail=f"File too large: {len(audio_bytes)/1024/1024:.1f}MB. Max: {max_size/1024/1024}MB"
         )
     
-    try:
-        start_time = datetime.now()
-        
-        # Get the loaded Whisper model
-        whisper_model = model_loader.models.get("whisper")
-        if not whisper_model:
-            raise HTTPException(
-                status_code=503,
-                detail="Whisper model not available"
-            )
-        
-        # Transcribe audio with language specification
-        transcript = whisper_model.transcribe_audio_bytes(audio_bytes, language=language)
-        
-        processing_time = (datetime.now() - start_time).total_seconds()
-        
-        # Get model info
-        model_info = whisper_model.get_model_info()
-        
-        # Audio info
-        audio_info = {
-            "filename": audio.filename,
-            "file_size_mb": round(len(audio_bytes) / (1024 * 1024), 2),
-            "format": file_extension,
-            "content_type": audio.content_type
-        }
-        
-        logger.info(f"🎙️ Transcribed {audio.filename} ({audio_info['file_size_mb']}MB) in {processing_time:.2f}s")
-        
-        return TranscriptionResponse(
-            transcript=transcript,
-            language=language,
-            processing_time=processing_time,
-            model_info=model_info,
-            timestamp=datetime.now().isoformat(),
-            audio_info=audio_info
+    # Validate task_type
+    if task_type not in ["transcribe", "translate"]:
+        raise HTTPException(
+            status_code=400,
+            detail="task_type must be 'transcribe' or 'translate'"
         )
+    
+    try:
+        # Start Celery task
+        task = whisper_transcribe_inference.delay(audio_bytes, language, task_type)
         
+        try:
+            # Try to get result quickly (10 second timeout)
+            result = task.get(timeout=10)
+            
+            # Add original filename and format info to result
+            result["audio_info"].update({
+                "filename": audio.filename,
+                "format": file_extension,
+                "content_type": audio.content_type
+            })
+            
+            logger.info(f"🎙️ Transcribed {audio.filename} immediately in {result['processing_time']:.2f}s")
+            
+            # Return immediate success (200 OK)
+            return TranscriptionResponse(**result)
+            
+        except CeleryTimeoutError:
+            # System is busy, return task ID for async polling (202 Accepted)
+            logger.info(f"⏰ Transcription queued for {audio.filename}, task_id: {task.id}")
+            
+            return JSONResponse(
+                status_code=202,
+                content={
+                    "status": "processing",
+                    "task_id": task.id,
+                    "message": "System busy, processing in background",
+                    "polling_url": f"/task/{task.id}",
+                    "estimated_time": "30-60 seconds",
+                    "audio_info": {
+                        "filename": audio.filename,
+                        "file_size_mb": round(len(audio_bytes) / (1024 * 1024), 2),
+                        "format": file_extension,
+                        "task_type": task_type,
+                        "language": language
+                    },
+                    "instructions": {
+                        "check_status": f"GET /task/{task.id}",
+                        "cancel_task": f"DELETE /task/{task.id}",
+                        "list_all_tasks": "GET /task/"
+                    }
+                }
+            )
+            
     except Exception as e:
-        logger.error(f"❌ Transcription failed for {audio.filename}: {e}")
+        logger.error(f"❌ Transcription task failed for {audio.filename}: {e}")
         raise HTTPException(
             status_code=500,
-            detail=f"Transcription failed: {str(e)}"
+            detail=f"Failed to start transcription task: {str(e)}"
         )
 
 @router.get("/info")
 async def get_whisper_info():
-    """Get Whisper model information"""
-    if not model_loader.is_model_ready("whisper"):
-        return {
-            "status": "not_ready",
-            "message": "Whisper model not loaded"
-        }
-    
-    whisper_model = model_loader.models.get("whisper")
-    if whisper_model:
-        return {
-            "status": "ready",
-            "model_info": whisper_model.get_model_info()
-        }
-    else:
+    """Get Whisper model information from Celery workers"""
+    try:
+        # Start task to get model info
+        task = whisper_get_info.delay()
+        
+        try:
+            # Try to get result quickly (5 second timeout)
+            result = task.get(timeout=5)
+            return result
+            
+        except CeleryTimeoutError:
+            # Workers are busy, return task ID
+            return JSONResponse(
+                status_code=202,
+                content={
+                    "status": "processing",
+                    "task_id": task.id,
+                    "message": "Retrieving model info from workers",
+                    "polling_url": f"/task/{task.id}"
+                }
+            )
+            
+    except Exception as e:
+        logger.error(f"❌ Failed to get Whisper info: {e}")
         return {
             "status": "error",
-            "message": "Whisper model not found"
+            "message": f"Failed to retrieve model info: {str(e)}"
         }
 
 @router.get("/languages")
 async def get_supported_languages():
-    """Get list of supported languages"""
-    if not model_loader.is_model_ready("whisper"):
+    """Get list of supported languages from Celery workers"""
+    try:
+        # Start task to get languages
+        task = whisper_get_languages.delay()
+        
+        try:
+            # Try to get result quickly (3 second timeout)
+            result = task.get(timeout=3)
+            
+            # Add usage information
+            if "supported_languages" in result:
+                result["usage"] = "Pass language code in request: language='sw' for Swahili"
+                result["translation_usage"] = "Use task_type='translate' to translate to English"
+            
+            return result
+            
+        except CeleryTimeoutError:
+            # Workers are busy, return task ID
+            return JSONResponse(
+                status_code=202,
+                content={
+                    "status": "processing", 
+                    "task_id": task.id,
+                    "message": "Retrieving supported languages from workers",
+                    "polling_url": f"/task/{task.id}"
+                }
+            )
+            
+    except Exception as e:
+        logger.error(f"❌ Failed to get supported languages: {e}")
         return {
-            "error": "Whisper model not ready",
-            "supported_languages": {}
-        }
-    
-    whisper_model = model_loader.models.get("whisper")
-    if whisper_model:
-        return {
-            "supported_languages": whisper_model.get_supported_languages(),
-            "total_supported": "99+ languages",
-            "note": "Whisper supports many more languages beyond this list",
-            "usage": "Pass language code in request: language='sw' for Swahili"
-        }
-    else:
-        return {
-            "error": "Whisper model not available",
+            "error": f"Failed to retrieve supported languages: {str(e)}",
             "supported_languages": {}
         }
 
@@ -163,15 +204,21 @@ async def whisper_demo():
             "endpoint": "/whisper/transcribe",
             "method": "POST",
             "required": "audio file (multipart/form-data)",
-            "optional": "language parameter",
+            "optional": ["language parameter", "task_type parameter"],
+            "hybrid_behavior": {
+                "fast_response": "Results returned immediately if processed within 10 seconds (200 OK)",
+                "busy_system": "Task queued for background processing (202 Accepted with task_id)",
+                "polling": "Use GET /task/{task_id} to check status of queued tasks"
+            },
             "examples": {
-                "auto_detect": "curl -X POST -F 'audio=@sample.wav' http://localhost:8123/whisper/transcribe",
-                "swahili": "curl -X POST -F 'audio=@sample.wav' -F 'language=sw' http://localhost:8123/whisper/transcribe",
-                "english": "curl -X POST -F 'audio=@sample.wav' -F 'language=en' http://localhost:8123/whisper/transcribe"
+                "transcribe_auto": "curl -X POST -F 'audio=@sample.wav' http://localhost:8123/whisper/transcribe",
+                "transcribe_swahili": "curl -X POST -F 'audio=@sample.wav' -F 'language=sw' http://localhost:8123/whisper/transcribe",
+                "translate_swahili_to_english": "curl -X POST -F 'audio=@sample.wav' -F 'language=sw' -F 'task_type=translate' http://localhost:8123/whisper/transcribe",
+                "check_task_status": "curl -X GET http://localhost:8123/task/{task_id}"
             },
             "supported_formats": [".wav", ".mp3", ".flac", ".m4a", ".ogg", ".webm"],
             "max_file_size": "100MB",
-            "task": "transcribe (not translate)",
+            "tasks_supported": ["transcribe (same language)", "translate (to English)"],
             "language_detection": "Auto-detect or specify language code"
         },
         "model_status": await get_whisper_info(),

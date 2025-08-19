@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 from .config.settings import settings
-from .api import health_routes, ner_routes, translator_routes, summarizer_routes, classifier_route, whisper_routes, audio_routes, call_session_routes, qa_route
+from .api import health_routes, ner_routes, translator_routes, summarizer_routes, classifier_route, whisper_routes, audio_routes, call_session_routes, qa_route, task_routes
 from .model_scripts.model_loader import model_loader
 from .core.resource_manager import resource_manager
 from .streaming.tcp_server import AsteriskTCPServer
@@ -125,6 +125,7 @@ app.include_router(whisper_routes.router)
 app.include_router(audio_routes.router)
 app.include_router(call_session_routes.router)
 app.include_router(qa_route.router)
+app.include_router(task_routes.router)
 
 @app.websocket("/audio/stream")
 async def websocket_audio_stream(websocket: WebSocket):
