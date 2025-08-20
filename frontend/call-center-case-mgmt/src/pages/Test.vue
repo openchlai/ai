@@ -11,21 +11,8 @@
     <div class="controls">
       <button @click="startAgent" :disabled="registered || starting">Start (Register)</button>
       <button @click="stopAgent" :disabled="!registered || stopping">Stop (Unregister)</button>
-      <button @click="toggleMute" :disabled="!inCall">{{ isMuted ? 'Unmute' : 'Mute' }}</button>
-      <button @click="hangup" :disabled="!inCall">Hangup</button>
     </div>
 
-    <div v-if="incomingCall" class="incoming">
-      <div><strong>Incoming call from:</strong> {{ callerId || 'Unknown' }}</div>
-      <button @click="answerCall">Answer</button>
-      <button @click="rejectCall">Reject</button>
-    </div>
-
-    <div v-if="inCall" class="call-info">
-      <div><strong>On call with:</strong> {{ remoteIdentity || 'Remote' }}</div>
-    </div>
-
-    <!-- Hidden audio element for remote audio -->
     <audio ref="remoteAudio" autoplay playsinline></audio>
   </div>
 </template>
@@ -38,192 +25,144 @@ export default {
   data() {
     return {
       ua: null,
-      session: null,
+      registerer: null,
       registered: false,
       connected: false,
+      extension: "101",
       starting: false,
-      stopping: false,
-      incomingCall: false,
-      inCall: false,
-      isMuted: false,
-      callerId: null,
-      remoteIdentity: null,
-      extension: "101"
+      stopping: false
     };
   },
   methods: {
-    
-    myinvitefunction(invitation) {
-      console.log("%c[onInvite] Incoming call received!", "color: green; font-weight: bold;");
-      console.log("Full Invitation Object:", invitation);
+async myinvitefunction(invitation) {
+  console.log("Incoming call:", invitation);
 
-      this.incomingCall = true;
-      this.session = invitation;
+  try {
+    // Use pre-fetched mic stream if possible
+    if (!this.localStream) {
+      this.localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    }
 
-      
-      this.callerId = invitation.remoteIdentity?.uri?.user || "Unknown";
-      this.remoteIdentity = invitation.remoteIdentity?.displayName || this.callerId;
+    await invitation.accept({
+      sessionDescriptionHandlerOptions: {
+        constraints: { audio: true, video: false },
+        localStream: this.localStream
+      }
+    });
 
-      console.log(`Caller ID: ${this.callerId}`);
-      console.log(`Remote Display Name: ${this.remoteIdentity}`);
+    const remoteAudio = this.$refs.remoteAudio;
 
-      
-      invitation.stateChange.addListener((state) => {
-        console.log(`[Session State Change] New state: ${state}`);
-        if (state === SIP.SessionState.Established) {
-          console.log("%c[Call Connected]", "color: blue; font-weight: bold;");
-        }
-        if (state === SIP.SessionState.Terminated) {
-          console.log("%c[Call Terminated]", "color: red; font-weight: bold;");
-          this.resetCallState();
-        }
-      });
-    },
+    invitation.stateChange.addListener((state) => {
+      if (state === SIP.SessionState.Established) {
+        const pc = invitation.sessionDescriptionHandler.peerConnection;
 
-    
-    async answerCall() {
-      if (!this.session) return;
+        // Ensure mic is in outbound stream
+        this.localStream.getTracks().forEach(track => {
+          pc.addTrack(track, this.localStream);
+        });
 
-      try {
-        console.log("[Answer Call] Attempting to answer...");
-        await this.session.accept({
-          sessionDescriptionHandlerOptions: {
-            constraints: { audio: true, video: false }
+        // Capture incoming audio
+        const inboundStream = new MediaStream();
+        pc.getReceivers().forEach((receiver) => {
+          if (receiver.track && receiver.track.kind === "audio") {
+            inboundStream.addTrack(receiver.track);
           }
         });
-
-        this.inCall = true;
-        this.incomingCall = false;
-
-        
-        const audioEl = this.$refs.remoteAudio;
-        this.session.sessionDescriptionHandler.on("addTrack", () => {
-          const pc = this.session.sessionDescriptionHandler.peerConnection;
-          const remoteStream = new MediaStream();
-          pc.getReceivers().forEach((receiver) => {
-            if (receiver.track) remoteStream.addTrack(receiver.track);
-          });
-          audioEl.srcObject = remoteStream;
-        });
-
-        console.log("%c[Answer Call] Call answered successfully", "color: green; font-weight: bold;");
-      } catch (err) {
-        console.error("[Answer Call] Failed to answer:", err);
+        remoteAudio.srcObject = inboundStream;
+        remoteAudio.play().catch(err => console.error("Play failed:", err));
       }
-    },
-
-    
-    async rejectCall() {
-      if (!this.session) return;
-      try {
-        await this.session.reject();
-        this.resetCallState();
-        console.log("%c[Reject Call] Call rejected", "color: orange; font-weight: bold;");
-      } catch (err) {
-        console.error("[Reject Call] Failed to reject:", err);
-      }
-    },
-
-    // Hang up active call
-    async hangup() {
-      if (!this.session) return;
-      try {
-        await this.session.terminate();
-        console.log("%c[Hangup] Call terminated", "color: red; font-weight: bold;");
-      } catch (err) {
-        console.error("[Hangup] Failed to terminate:", err);
-      }
-    },
-
-    // Toggle mute/unmute
-    toggleMute() {
-      if (!this.session) return;
-      const pc = this.session.sessionDescriptionHandler.peerConnection;
-      pc.getSenders().forEach((sender) => {
-        if (sender.track && sender.track.kind === "audio") {
-          sender.track.enabled = this.isMuted;
-        }
-      });
-      this.isMuted = !this.isMuted;
-      console.log(`[Mute] Audio ${this.isMuted ? "Muted" : "Unmuted"}`);
-    },
-
-    // Start SIP agent
-   startAgent() {
-  try {
-    const config = {
-      uri: "sip:101@demo-openchs.bitz-itc.com",
-      authorizationUsername: "101",
-      authorizationPassword: "23kdefrtgos09812100",
-       registerExpires: 300, // 5 minutes instead of 30 seconds
-  keepAliveInterval: 30,
-      displayName: "101",
-      transportOptions: {
-        server: "wss://demo-openchs.bitz-itc.com:8089/ws",
-        traceSip: true, // Enables SIP message tracing
-      },
-      log: { level: "log" },
-      delegate: { onInvite: this.myinvitefunction }
-    };
-
-    console.log("[SIP Agent] Starting with config:", config);
-
-    this.ua = new SIP.UserAgent(config);
-
-    // Listen for transport events
-    this.ua.transport.onConnect = () => {
-      console.log("[SIP Agent] Transport connected successfully");
-    };
-    this.ua.transport.onDisconnect = (error) => {
-      console.error("[SIP Agent] Transport disconnected", error || "");
-    };
-    this.ua.transport.onClosed = (event) => {
-      console.warn("[SIP Agent] Transport closed:", event);
-    };
-
-    // Start the UA
-    this.ua.start()
-      .then(() => {
-        console.log("[SIP Agent] SIP Agent started successfully");
-      })
-      .catch((err) => {
-        console.error("[SIP Agent] Failed to start SIP Agent:", err);
-      });
+    });
 
   } catch (err) {
-    console.error("[SIP Agent] Error starting SIP agent:", err);
+    console.error("Error handling incoming call:", err);
   }
-},
+}
 
-
-    // Stop SIP agent
-    async stopAgent() {
-      if (!this.ua) return;
+,
+    startAgent() {
+      this.starting = true;
       try {
-        this.stopping = true;
-        await this.ua.stop();
-        this.registered = false;
-        this.connected = false;
-        console.log("%c[SIP Agent] Stopped", "color: red; font-weight: bold;");
+        const uri = SIP.UserAgent.makeURI(`sip:${this.extension}@demo-openchs.bitz-itc.com`);
+        if (!uri) throw new Error("Invalid SIP URI");
+
+        const config = {
+          uri,
+          authorizationUsername: this.extension,
+          authorizationPassword: "23kdefrtgos09812100",
+          displayName: this.extension,
+          transportOptions: {
+            server: "wss://demo-openchs.bitz-itc.com:8089/ws",
+            traceSip: true,
+          },
+          log: { level: "log" },
+          delegate: {
+            onInvite: this.myinvitefunction
+          }
+        };
+
+        console.log("Starting SIP agent with config:", config);
+        this.ua = new SIP.UserAgent(config);
+
+        // Detect connection
+        this.ua.transport.onConnect = () => {
+          console.log("[SIP Agent] Transport connected");
+          this.connected = true;
+        };
+
+        // Detect disconnection
+        this.ua.transport.onDisconnect = (error) => {
+          console.warn("[SIP Agent] Transport disconnected", error);
+          this.connected = false;
+          this.registered = false;
+        };
+
+        this.ua.start()
+          .then(() => {
+            console.log("SIP Agent started");
+
+            // Create and track registerer
+            this.registerer = new SIP.Registerer(this.ua);
+
+            this.registerer.stateChange.addListener((state) => {
+              if (state === SIP.RegistererState.Registered) {
+                console.log("[SIP Agent] Registered");
+                this.registered = true;
+              } else if (state === SIP.RegistererState.Unregistered) {
+                console.log("[SIP Agent] Unregistered");
+                this.registered = false;
+              }
+            });
+
+            this.registerer.register();
+          })
+          .catch(err => console.error("Failed to start SIP agent:", err))
+          .finally(() => this.starting = false);
+
       } catch (err) {
-        console.error("[SIP Agent] Failed to stop:", err);
-      } finally {
-        this.stopping = false;
+        console.error("Error starting SIP agent:", err);
+        this.starting = false;
       }
     },
 
-    // Reset call-related state
-    resetCallState() {
-      this.session = null;
-      this.inCall = false;
-      this.incomingCall = false;
-      this.isMuted = false;
-      this.callerId = null;
-      this.remoteIdentity = null;
+    stopAgent() {
+      if (!this.registerer || !this.ua) return;
+      this.stopping = true;
+      this.registerer.unregister()
+        .then(() => {
+          console.log("[SIP Agent] Unregistered manually");
+          return this.ua.stop();
+        })
+        .then(() => {
+          this.connected = false;
+          this.registered = false;
+          this.ua = null;
+          this.registerer = null;
+        })
+        .catch(err => console.error("Error stopping SIP agent:", err))
+        .finally(() => this.stopping = false);
     }
   }
 };
-
 </script>
 
 <style scoped>
