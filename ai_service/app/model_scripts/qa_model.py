@@ -243,19 +243,20 @@ class QAModel:
         }
 
     
-    def predict(self, text: str, threshold: float = 0.5, return_raw: bool = False) -> Dict:
+    def predict(self, text: str, return_raw: bool = False) -> Dict:
         """
-        Predict QA metrics for a given transcript.
+        Predict QA metrics for a given transcript using 3-tier scoring.
         
         Args:
             text: Input transcript text
-            threshold: Threshold for binary classification (default: 0.5)
             return_raw: If True, return raw probabilities along with predictions
             
         Returns:
-            Dictionary containing predictions for each QA head
+            Dictionary containing predictions for each QA head with 3-tier scoring:
+            - score 0 (no): probability < 0.3333
+            - score 1 (partial): 0.3333 <= probability <= 0.75  
+            - score 2 (yes): probability > 0.75
         """
-        threshold = 0.5 if threshold is None else float(threshold)
 
         # Tokenize input
         encoding = self.tokenizer(
@@ -286,19 +287,24 @@ class QAModel:
             else:
                 probs_np = np.nan_to_num(probs.cpu().numpy()[0], nan=0.0)
 
-            preds = (probs_np > threshold).astype(int)
-
-
-
-            # preds = (probs_np > threshold).astype(int)
+            # Convert probabilities to 3-tier scores: 0 (no), 1 (partial), 2 (yes)
+            def get_tier_score(prob):
+                if prob < 0.3333:
+                    return 0  # no
+                elif prob <= 0.75:
+                    return 1  # partial
+                else:
+                    return 2  # yes
+            
             submetrics = HEAD_SUBMETRIC_LABELS.get(head, [f"Submetric {i+1}" for i in range(len(probs_np))])
             
             head_results = []
-            for i, (label, prob, pred) in enumerate(zip(submetrics, probs_np, preds)):
+            for label, prob in zip(submetrics, probs_np):
+                tier_score = get_tier_score(float(prob))
                 result_item = {
                     "submetric": label,
-                    "prediction": bool(pred),
-                    "score": "✓" if pred else "✗",
+                    "prediction": tier_score > 0,  # True for partial or yes
+                    "score": tier_score,
                     "probability": f"{float(prob) * 100:.0f}%"
                 }
                 if return_raw:

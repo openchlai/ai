@@ -436,7 +436,7 @@ def qa_inference(self, text: str, threshold: float = 0.5, return_raw: bool = Fal
         self.update_state(state="PROGRESS", meta={"progress": 50})
         
         # Perform QA scoring
-        qa_scores = qa_model.predict(text, threshold=threshold, return_raw=return_raw)
+        qa_scores = qa_model.predict(text, return_raw=return_raw)
         
         processing_time = (datetime.now() - start_time).total_seconds()
         

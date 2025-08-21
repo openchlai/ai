@@ -511,7 +511,7 @@ def _process_audio_sync_worker(
                     
                     qa_score_model = models.models.get("all_qa_distilbert_v1")
                     if qa_score_model:
-                        qa_score = qa_score_model.predict(translation, threshold=threshold, return_raw=return_raw)
+                        qa_score = qa_score_model.predict(translation, return_raw=return_raw)
                         qa_duration = (datetime.now() - qa_start).total_seconds()
                         
                         # Send QA update notification to agent immediately
@@ -706,7 +706,7 @@ def _process_audio_sync_worker(
             raise RuntimeError("QA model not available")
         # threshold = 0.5  # Default threshold
         # return_raw  = False  # Default to not return raw scores
-        qa_score = qa_score_model.predict(nlp_text, threshold=threshold, return_raw=return_raw)
+        qa_score = qa_score_model.predict(nlp_text, return_raw=return_raw)
         print(f"QA Score: {qa_score}")
         logger.info(f"QA Score: {qa_score}")
         logger.info(".........................................................................................................")
@@ -1330,7 +1330,7 @@ def process_post_call_audio_task(
             if not qa_score_model:
                 raise RuntimeError("QA model not available")
             
-            qa_scores = qa_score_model.predict(nlp_text, threshold=0.5, return_raw=False)
+            qa_scores = qa_score_model.predict(nlp_text, return_raw=False)
             qa_duration = (datetime.now() - step_start).total_seconds()
             
             logger.info(f"✅ [post-call] QA analysis completed: {qa_scores}")
