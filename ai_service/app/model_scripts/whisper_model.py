@@ -27,7 +27,6 @@ class WhisperModel:
             
         self.model = None
         self.processor = None
-        self.pipe = None
         self.device = None
         self.torch_dtype = None
         self.is_loaded = False
@@ -95,7 +94,7 @@ class WhisperModel:
         try:
             logger.info(f"🎙️ Loading Whisper model...")
             
-            from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
+            from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor
             
             self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
             self.torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
@@ -103,8 +102,9 @@ class WhisperModel:
             logger.info(f"🎙️ Using device: {self.device}, dtype: {self.torch_dtype}")
             logger.info(f"🎙️ Translation enabled: {self.enable_translation}, Target model: {self.model_version}")
             
-            # Try loading from local path first
-            if self._check_local_model_exists():
+            # FORCE use of HuggingFace model for translation to ensure quality
+            # Skip local model when translation is enabled
+            if False and self._check_local_model_exists():  # Disabled local loading
                 try:
                     logger.info(f"🎙️ Loading local Whisper model from {self.model_path}")
                     
@@ -146,15 +146,7 @@ class WhisperModel:
             # Move model to device
             self.model.to(self.device)
             
-            # Create pipeline
-            self.pipe = pipeline(
-                "automatic-speech-recognition",
-                model=self.model,
-                tokenizer=self.processor.tokenizer,
-                feature_extractor=self.processor.feature_extractor,
-                torch_dtype=self.torch_dtype,
-                device=self.device,
-            )
+            # No longer using pipeline - we'll use direct model calls for better control
             
             self.is_loaded = True
             self.error = None
@@ -167,7 +159,7 @@ class WhisperModel:
                 try:
                     logger.info(f"🌐 Local loading failed, downloading from HuggingFace Hub: {self.fallback_model_id}")
                     
-                    from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
+                    from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor
                     
                     self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
                         self.fallback_model_id, 
@@ -180,14 +172,7 @@ class WhisperModel:
                     self.processor = AutoProcessor.from_pretrained(self.fallback_model_id)
                     self.current_model_id = self.fallback_model_id
                     
-                    self.pipe = pipeline(
-                        "automatic-speech-recognition",
-                        model=self.model,
-                        tokenizer=self.processor.tokenizer,
-                        feature_extractor=self.processor.feature_extractor,
-                        torch_dtype=self.torch_dtype,
-                        device=self.device,
-                    )
+                    # No longer using pipeline - we'll use direct model calls for better control
                     
                     self.is_loaded = True
                     self.error = None
@@ -270,7 +255,7 @@ class WhisperModel:
             duration = len(audio_array) / sample_rate
             logger.info(f"🎙️ Audio duration: {duration:.1f} seconds")
             
-            # Prepare pipeline kwargs with task selection
+            # Prepare generation kwargs with task selection
             generate_kwargs = {
                 "task": task  # "transcribe" or "translate"
             }
@@ -279,32 +264,123 @@ class WhisperModel:
             if validated_language:
                 generate_kwargs["language"] = validated_language
             
-            # For audio longer than 30 seconds, enable timestamps and chunking
+            # Process audio using manual chunking for better control
+            transcriptions = []
+            
+            # Chunk audio into 30-second segments for processing
+            chunk_duration = 30  # seconds
+            chunk_samples = chunk_duration * sample_rate
+            audio_length = len(audio_array)
+            
             if duration > 30:
-                logger.info("🎙️ Long audio detected (>30s) - using chunked transcription")
-                result = self.pipe(
-                    audio_array,
-                    generate_kwargs=generate_kwargs,
-                    return_timestamps=True,  # Required for long-form audio
-                    chunk_length_s=30,      # Process in 30-second chunks
-                    stride_length_s=5       # 5-second overlap between chunks
-                )
+                logger.info(f"🎙️ Long audio detected ({duration:.1f}s) - using chunked transcription")
+                
+                for i in range(0, audio_length, chunk_samples):
+                    chunk_end = min(i + chunk_samples, audio_length)
+                    audio_chunk = audio_array[i:chunk_end]
+                    chunk_time = i / sample_rate
+                    chunk_num = i // chunk_samples + 1
+                    total_chunks = (audio_length + chunk_samples - 1) // chunk_samples
+                    
+                    logger.info(f"🎙️ Processing chunk {chunk_num}/{total_chunks} (time: {chunk_time:.1f}s)")
+                    
+                    # Process audio chunk
+                    inputs = self.processor(audio_chunk, sampling_rate=sample_rate, return_tensors="pt")
+                    input_features = inputs.input_features.to(device=self.device, dtype=self.torch_dtype)
+                    
+                    # Create attention mask for this chunk
+                    attention_mask = torch.ones(input_features.shape[:-1], dtype=torch.long, device=self.device)
+                    
+                    try:
+                        with torch.no_grad():
+                            predicted_ids = self.model.generate(
+                                input_features,
+                                attention_mask=attention_mask,
+                                max_length=448,
+                                num_beams=5,
+                                repetition_penalty=1.1,
+                                no_repeat_ngram_size=3,
+                                **generate_kwargs
+                            )
+                        
+                        # Decode the transcription
+                        chunk_transcription = self.processor.batch_decode(predicted_ids, skip_special_tokens=True)[0]
+                        transcriptions.append(chunk_transcription.strip())
+                        
+                    except torch.cuda.OutOfMemoryError:
+                        logger.warning("🎙️ CUDA out of memory, falling back to CPU for this chunk...")
+                        # Move model to CPU temporarily
+                        self.model.to("cpu")
+                        input_features = input_features.to(device="cpu", dtype=torch.float32)
+                        attention_mask = attention_mask.to("cpu")
+                        
+                        with torch.no_grad():
+                            predicted_ids = self.model.generate(
+                                input_features,
+                                attention_mask=attention_mask,
+                                max_length=448,
+                                num_beams=5,
+                                repetition_penalty=1.1,
+                                no_repeat_ngram_size=3,
+                                **generate_kwargs
+                            )
+                        
+                        chunk_transcription = self.processor.batch_decode(predicted_ids, skip_special_tokens=True)[0]
+                        transcriptions.append(chunk_transcription.strip())
+                        
+                        # Move model back to original device
+                        self.model.to(self.device)
+                
+                # Combine all transcriptions
+                transcript = " ".join(transcriptions)
+                
             else:
                 logger.info("🎙️ Short audio detected (≤30s) - using standard transcription")
-                result = self.pipe(
-                    audio_array,
-                    generate_kwargs=generate_kwargs,
-                    return_timestamps=False
-                )
-            
-            # Extract text from result
-            if isinstance(result, dict):
-                transcript = result["text"].strip()
-            elif isinstance(result, list):
-                # For chunked results, concatenate all text
-                transcript = " ".join([chunk["text"] for chunk in result]).strip()
-            else:
-                transcript = str(result).strip()
+                
+                # Process audio directly
+                inputs = self.processor(audio_array, sampling_rate=sample_rate, return_tensors="pt")
+                input_features = inputs.input_features.to(device=self.device, dtype=self.torch_dtype)
+                
+                # Create attention mask
+                attention_mask = torch.ones(input_features.shape[:-1], dtype=torch.long, device=self.device)
+                
+                try:
+                    with torch.no_grad():
+                        predicted_ids = self.model.generate(
+                            input_features,
+                            attention_mask=attention_mask,
+                            max_length=448,
+                            num_beams=5,
+                            repetition_penalty=1.1,
+                            no_repeat_ngram_size=3,
+                            **generate_kwargs
+                        )
+                    
+                    # Decode the transcription
+                    transcript = self.processor.batch_decode(predicted_ids, skip_special_tokens=True)[0].strip()
+                    
+                except torch.cuda.OutOfMemoryError:
+                    logger.warning("🎙️ CUDA out of memory, falling back to CPU...")
+                    # Move model to CPU temporarily
+                    self.model.to("cpu")
+                    input_features = input_features.to(device="cpu", dtype=torch.float32)
+                    attention_mask = attention_mask.to("cpu")
+                    
+                    with torch.no_grad():
+                        predicted_ids = self.model.generate(
+                            input_features,
+                            attention_mask=attention_mask,
+                            max_length=448,
+                            num_beams=5,
+                            repetition_penalty=1.1,
+                            no_repeat_ngram_size=3,
+                            **generate_kwargs
+                        )
+                    
+                    transcript = self.processor.batch_decode(predicted_ids, skip_special_tokens=True)[0].strip()
+                    
+                    # Move model back to original device
+                    self.model.to(self.device)
             
             task_desc = "Transcription" if task == "transcribe" else "Translation"
             logger.info(f"✅ {task_desc} completed: {len(transcript)} characters")
@@ -327,6 +403,8 @@ class WhisperModel:
         if not self.is_loaded:
             raise RuntimeError("Whisper model not loaded")
         
+        # Write audio bytes directly to temp file without conversion
+        # GSM files can be processed directly by librosa when saved as .wav
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_file:
             try:
                 temp_file.write(audio_bytes)
@@ -372,7 +450,7 @@ class WhisperModel:
     
     def is_ready(self) -> bool:
         """Check if model is ready for inference"""
-        return self.is_loaded and self.model is not None and self.pipe is not None
+        return self.is_loaded and self.model is not None and self.processor is not None
 
 # Global instances for different use cases
 whisper_model = WhisperModel(enable_translation=False)  # For transcription only (V3-Turbo)

@@ -30,11 +30,8 @@ def whisper_transcribe_inference(self, audio_bytes: bytes, language: Optional[st
     start_time = datetime.now()
     
     try:
-        # Update task state
-        self.update_state(
-            state="PROCESSING", 
-            meta={"progress": 10, "step": "loading_model"}
-        )
+        # Simple progress update - avoid complex meta
+        self.update_state(state="PROGRESS", meta={"progress": 10})
         
         # Get worker models
         models = get_worker_models()
@@ -56,10 +53,7 @@ def whisper_transcribe_inference(self, audio_bytes: bytes, language: Optional[st
             raise RuntimeError("Whisper model not available or not ready")
         
         # Update progress
-        self.update_state(
-            state="PROCESSING", 
-            meta={"progress": 30, "step": "transcribing"}
-        )
+        self.update_state(state="PROGRESS", meta={"progress": 30})
         
         # Perform transcription/translation
         if task_type == "translate" and hasattr(whisper_model, 'enable_translation') and whisper_model.enable_translation:
@@ -70,14 +64,15 @@ def whisper_transcribe_inference(self, audio_bytes: bytes, language: Optional[st
                 task="translate"
             )
         else:
-            # Regular transcription
+            # Regular transcription (force task_type to transcribe if model doesn't support translation)
+            if task_type == "translate":
+                logger.warning("Translation requested but model doesn't support it, falling back to transcription")
+                task_type = "transcribe"
+            
             transcript = whisper_model.transcribe_audio_bytes(audio_bytes, language=language)
         
         # Update progress
-        self.update_state(
-            state="PROCESSING", 
-            meta={"progress": 90, "step": "finalizing"}
-        )
+        self.update_state(state="PROGRESS", meta={"progress": 90})
         
         processing_time = (datetime.now() - start_time).total_seconds()
         model_info = whisper_model.get_model_info()
@@ -111,16 +106,9 @@ def whisper_transcribe_inference(self, audio_bytes: bytes, language: Optional[st
         error_msg = f"Whisper inference failed: {str(e)}"
         logger.error(f"❌ {error_msg}")
         
-        # Update task state with error
-        self.update_state(
-            state="FAILURE",
-            meta={
-                "error": error_msg,
-                "processing_time": processing_time,
-                "step": "failed"
-            }
-        )
-        raise RuntimeError(error_msg)
+        # Don't update state - let Celery handle the failure naturally
+        # Just raise a simple exception
+        raise Exception(error_msg)
 
 @celery_app.task(bind=True, name="whisper_get_info")
 def whisper_get_info(self):
@@ -203,10 +191,7 @@ def ner_extract_inference(self, text: str, flat: bool = False):
     start_time = datetime.now()
     
     try:
-        self.update_state(
-            state="PROCESSING",
-            meta={"progress": 20, "step": "loading_ner_model"}
-        )
+        self.update_state(state="PROGRESS", meta={"progress": 20})
         
         models = get_worker_models()
         if not models:
@@ -216,10 +201,7 @@ def ner_extract_inference(self, text: str, flat: bool = False):
         if not ner_model or not ner_model.is_ready():
             raise RuntimeError("NER model not available or not ready")
         
-        self.update_state(
-            state="PROCESSING",
-            meta={"progress": 50, "step": "extracting_entities"}
-        )
+        self.update_state(state="PROGRESS", meta={"progress": 50})
         
         # Extract entities
         entities = ner_model.extract_entities(text, flat=flat)
@@ -246,11 +228,8 @@ def ner_extract_inference(self, text: str, flat: bool = False):
         error_msg = f"NER inference failed: {str(e)}"
         logger.error(f"❌ {error_msg}")
         
-        self.update_state(
-            state="FAILURE",
-            meta={"error": error_msg, "processing_time": processing_time}
-        )
-        raise RuntimeError(error_msg)
+        # Let Celery handle the failure naturally
+        raise Exception(error_msg)
 
 # Translation Model Inference Task
 
@@ -270,10 +249,7 @@ def translator_inference(self, text: str, source_lang: str = "auto", target_lang
     start_time = datetime.now()
     
     try:
-        self.update_state(
-            state="PROCESSING",
-            meta={"progress": 20, "step": "loading_translator"}
-        )
+        self.update_state(state="PROGRESS", meta={"progress": 20})
         
         models = get_worker_models()
         if not models:
@@ -283,10 +259,7 @@ def translator_inference(self, text: str, source_lang: str = "auto", target_lang
         if not translator_model or not translator_model.is_ready():
             raise RuntimeError("Translator model not available or not ready")
         
-        self.update_state(
-            state="PROCESSING",
-            meta={"progress": 50, "step": "translating"}
-        )
+        self.update_state(state="PROGRESS", meta={"progress": 50})
         
         # Perform translation
         translation = translator_model.translate(text)
@@ -315,11 +288,8 @@ def translator_inference(self, text: str, source_lang: str = "auto", target_lang
         error_msg = f"Translation inference failed: {str(e)}"
         logger.error(f"❌ {error_msg}")
         
-        self.update_state(
-            state="FAILURE",
-            meta={"error": error_msg, "processing_time": processing_time}
-        )
-        raise RuntimeError(error_msg)
+        # Let Celery handle the failure naturally
+        raise Exception(error_msg)
 
 # Summarizer Model Inference Task
 
@@ -339,10 +309,7 @@ def summarizer_inference(self, text: str, max_length: Optional[int] = None, min_
     start_time = datetime.now()
     
     try:
-        self.update_state(
-            state="PROCESSING",
-            meta={"progress": 20, "step": "loading_summarizer"}
-        )
+        self.update_state(state="PROGRESS", meta={"progress": 20})
         
         models = get_worker_models()
         if not models:
@@ -352,10 +319,7 @@ def summarizer_inference(self, text: str, max_length: Optional[int] = None, min_
         if not summarizer_model or not summarizer_model.is_ready():
             raise RuntimeError("Summarizer model not available or not ready")
         
-        self.update_state(
-            state="PROCESSING",
-            meta={"progress": 50, "step": "summarizing"}
-        )
+        self.update_state(state="PROGRESS", meta={"progress": 50})
         
         # Perform summarization
         summary = summarizer_model.summarize(text)
@@ -383,11 +347,8 @@ def summarizer_inference(self, text: str, max_length: Optional[int] = None, min_
         error_msg = f"Summarization inference failed: {str(e)}"
         logger.error(f"❌ {error_msg}")
         
-        self.update_state(
-            state="FAILURE",
-            meta={"error": error_msg, "processing_time": processing_time}
-        )
-        raise RuntimeError(error_msg)
+        # Let Celery handle the failure naturally
+        raise Exception(error_msg)
 
 # Classifier Model Inference Task
 
@@ -405,10 +366,7 @@ def classifier_inference(self, text: str):
     start_time = datetime.now()
     
     try:
-        self.update_state(
-            state="PROCESSING",
-            meta={"progress": 20, "step": "loading_classifier"}
-        )
+        self.update_state(state="PROGRESS", meta={"progress": 20})
         
         models = get_worker_models()
         if not models:
@@ -418,10 +376,7 @@ def classifier_inference(self, text: str):
         if not classifier_model or not classifier_model.is_ready():
             raise RuntimeError("Classifier model not available or not ready")
         
-        self.update_state(
-            state="PROCESSING",
-            meta={"progress": 50, "step": "classifying"}
-        )
+        self.update_state(state="PROGRESS", meta={"progress": 50})
         
         # Perform classification
         classification = classifier_model.classify(text)
@@ -447,11 +402,8 @@ def classifier_inference(self, text: str):
         error_msg = f"Classification inference failed: {str(e)}"
         logger.error(f"❌ {error_msg}")
         
-        self.update_state(
-            state="FAILURE",
-            meta={"error": error_msg, "processing_time": processing_time}
-        )
-        raise RuntimeError(error_msg)
+        # Let Celery handle the failure naturally
+        raise Exception(error_msg)
 
 # QA Model Inference Task
 
@@ -471,10 +423,7 @@ def qa_inference(self, text: str, threshold: float = 0.5, return_raw: bool = Fal
     start_time = datetime.now()
     
     try:
-        self.update_state(
-            state="PROCESSING",
-            meta={"progress": 20, "step": "loading_qa_model"}
-        )
+        self.update_state(state="PROGRESS", meta={"progress": 20})
         
         models = get_worker_models()
         if not models:
@@ -484,10 +433,7 @@ def qa_inference(self, text: str, threshold: float = 0.5, return_raw: bool = Fal
         if not qa_model or not qa_model.is_ready():
             raise RuntimeError("QA model not available or not ready")
         
-        self.update_state(
-            state="PROCESSING",
-            meta={"progress": 50, "step": "analyzing_qa"}
-        )
+        self.update_state(state="PROGRESS", meta={"progress": 50})
         
         # Perform QA scoring
         qa_scores = qa_model.predict(text, threshold=threshold, return_raw=return_raw)
@@ -515,8 +461,5 @@ def qa_inference(self, text: str, threshold: float = 0.5, return_raw: bool = Fal
         error_msg = f"QA inference failed: {str(e)}"
         logger.error(f"❌ {error_msg}")
         
-        self.update_state(
-            state="FAILURE",
-            meta={"error": error_msg, "processing_time": processing_time}
-        )
-        raise RuntimeError(error_msg)
+        # Let Celery handle the failure naturally
+        raise Exception(error_msg)

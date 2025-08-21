@@ -969,29 +969,10 @@ def process_streaming_audio_task(
         
         if use_whisper_translation:
             # Use Whisper Large-V3 for direct translation (sw→en)
-            import soundfile as sf
-            import tempfile
-            import numpy as np
-            
-            # Convert raw PCM bytes to numpy array
-            audio_int16 = np.frombuffer(audio_bytes, dtype=np.int16)
-            audio_float32 = audio_int16.astype(np.float32) / 32768.0
-            
-            # Save as temporary WAV file
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_file:
-                sf.write(temp_file.name, audio_float32, sample_rate)
-                temp_file.flush()
-                
-                # Read back as bytes for transcribe_audio_bytes
-                with open(temp_file.name, 'rb') as wav_file:
-                    wav_bytes = wav_file.read()
-                
-                # Clean up temp file
-                os.unlink(temp_file.name)
-            
-            # Use Whisper translation (sw→en) for better quality
+            # Use audio bytes directly - no conversion needed
+            # GSM files can be processed directly by librosa when saved as .wav
             transcript = whisper_translation_model.transcribe_audio_bytes(
-                wav_bytes,
+                audio_bytes,  # Use original bytes directly
                 language="sw",  # Force Swahili source
                 task="translate"  # Force translation to English
             )
@@ -1001,29 +982,10 @@ def process_streaming_audio_task(
             # Fallback to regular transcription
             whisper_model = models.models.get("whisper")
             if whisper_model: 
-                import soundfile as sf
-                import tempfile
-                import numpy as np
-                
-                # Convert raw PCM bytes to numpy array
-                audio_int16 = np.frombuffer(audio_bytes, dtype=np.int16)
-                audio_float32 = audio_int16.astype(np.float32) / 32768.0
-                
-                # Save as temporary WAV file
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_file:
-                    sf.write(temp_file.name, audio_float32, sample_rate)
-                    temp_file.flush()
-                    
-                    # Read back as bytes for transcribe_audio_bytes
-                    with open(temp_file.name, 'rb') as wav_file:
-                        wav_bytes = wav_file.read()
-                    
-                    # Clean up temp file
-                    os.unlink(temp_file.name)
-                
-                # Use standard transcription method
+                # Use audio bytes directly - no conversion needed  
+                # GSM files can be processed directly by librosa when saved as .wav
                 transcript = whisper_model.transcribe_audio_bytes(
-                    wav_bytes,
+                    audio_bytes,  # Use original bytes directly
                     language=language
                 )
             else:
