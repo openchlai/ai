@@ -299,11 +299,10 @@ class QAModel:
                     "submetric": label,
                     "prediction": bool(pred),
                     "score": "✓" if pred else "✗",
-                    "probability": float(prob)  
+                    "probability": f"{float(prob) * 100:.0f}%"
                 }
                 if return_raw:
-                    # result_item["probability"] = float(prob)
-                    result_item["probability"] = float(prob if prob is not None else 0.0)
+                    result_item["probability"] = f"{float(prob if prob is not None else 0.0) * 100:.0f}%"
                 
                 head_results.append(result_item)
             
