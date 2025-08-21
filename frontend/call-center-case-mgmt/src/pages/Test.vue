@@ -1,174 +1,212 @@
-<template>
-  <div class="sip-client">
-    <h3>SIP Client (call center)</h3>
+<!-- src/views/UsersView.vue -->
+<script setup>
+import { ref, onMounted } from 'vue';
+import { useUserStore } from '@/stores/users';
 
-    <div class="status-row">
-      <div><strong>Registered:</strong> {{ registered ? 'Yes' : 'No' }}</div>
-      <div><strong>Agent:</strong> {{ extension }}</div>
-      <div><strong>Connection:</strong> {{ connected ? 'Connected' : 'Disconnected' }}</div>
-    </div>
+const userStore = useUserStore();
 
-    <div class="controls">
-      <button @click="startAgent" :disabled="registered || starting">Start (Register)</button>
-      <button @click="stopAgent" :disabled="!registered || stopping">Stop (Unregister)</button>
-    </div>
+// Filters for list, CSV, and pivot
+const filters = ref({
+  _a: '',
+  _c: 20,
+  phone: '',
+  email: ''
+});
 
-    <audio ref="remoteAudio" autoplay playsinline></audio>
-  </div>
-</template>
+// Pivot report data
+const pivotData = ref([]);
+const pivotColumns = ref([]);
 
-<script>
-import * as SIP from "sip.js";
+// Load initial user list
+onMounted(() => {
+  userStore.listUsers({ _c: filters.value._c });
+});
 
-export default {
-  name: "Test",
-  data() {
-    return {
-      ua: null,
-      registerer: null,
-      registered: false,
-      connected: false,
-      extension: "101",
-      starting: false,
-      stopping: false
-    };
-  },
-  methods: {
-async myinvitefunction(invitation) {
-  console.log("Incoming call:", invitation);
-
+// View User details
+const handleViewUser = async (userId) => {
   try {
-    // Use pre-fetched mic stream if possible
-    if (!this.localStream) {
-      this.localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    }
-
-    await invitation.accept({
-      sessionDescriptionHandlerOptions: {
-        constraints: { audio: true, video: false },
-        localStream: this.localStream
-      }
-    });
-
-    const remoteAudio = this.$refs.remoteAudio;
-
-    invitation.stateChange.addListener((state) => {
-      if (state === SIP.SessionState.Established) {
-        const pc = invitation.sessionDescriptionHandler.peerConnection;
-
-        // Ensure mic is in outbound stream
-        this.localStream.getTracks().forEach(track => {
-          pc.addTrack(track, this.localStream);
-        });
-
-        // Capture incoming audio
-        const inboundStream = new MediaStream();
-        pc.getReceivers().forEach((receiver) => {
-          if (receiver.track && receiver.track.kind === "audio") {
-            inboundStream.addTrack(receiver.track);
-          }
-        });
-        remoteAudio.srcObject = inboundStream;
-        remoteAudio.play().catch(err => console.error("Play failed:", err));
-      }
-    });
-
+    const details = await userStore.viewUser(userId);
+    alert(JSON.stringify(details, null, 2));
   } catch (err) {
-    console.error("Error handling incoming call:", err);
+    console.error('Failed to view user:', err.message);
   }
-}
+};
 
-,
-    startAgent() {
-      this.starting = true;
-      try {
-        const uri = SIP.UserAgent.makeURI(`sip:${this.extension}@demo-openchs.bitz-itc.com`);
-        if (!uri) throw new Error("Invalid SIP URI");
+// Create a new user (mock data for demo)
+const handleCreateUser = async () => {
+  const payload = {
+    usn: 'newuser',
+    exten: '8123',
+    photo: '123244554556',
+    fname: 'Jane',
+    lname: 'Doe',
+    phone: '0700000000',
+    email: 'jane.doe@example.com'
+  };
+  try {
+    const created = await userStore.createUser(payload);
+    alert('User Created: ' + JSON.stringify(created, null, 2));
+    userStore.listUsers({ _c: filters.value._c });
+  } catch (err) {
+    console.error('Create failed:', err.message);
+  }
+};
 
-        const config = {
-          uri,
-          authorizationUsername: this.extension,
-          authorizationPassword: "23kdefrtgos09812100",
-          displayName: this.extension,
-          transportOptions: {
-            server: "wss://demo-openchs.bitz-itc.com:8089/ws",
-            traceSip: true,
-          },
-          log: { level: "log" },
-          delegate: {
-            onInvite: this.myinvitefunction
-          }
-        };
+// Edit a user (mock data for demo)
+const handleEditUser = async (userId) => {
+  const payload = { fname: 'UpdatedName' };
+  try {
+    const updated = await userStore.editUser(userId, payload);
+    alert('User Updated: ' + JSON.stringify(updated, null, 2));
+    userStore.listUsers({ _c: filters.value._c });
+  } catch (err) {
+    console.error('Edit failed:', err.message);
+  }
+};
 
-        console.log("Starting SIP agent with config:", config);
-        this.ua = new SIP.UserAgent(config);
+// Download CSV
+const handleDownloadCSV = async () => {
+  try {
+    const blob = await userStore.downloadCSV(filters.value);
+    const url = window.URL.createObjectURL(new Blob([blob], { type: 'text/csv' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'users.csv');
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error('CSV Download failed:', err.message);
+  }
+};
 
-        // Detect connection
-        this.ua.transport.onConnect = () => {
-          console.log("[SIP Agent] Transport connected");
-          this.connected = true;
-        };
-
-        // Detect disconnection
-        this.ua.transport.onDisconnect = (error) => {
-          console.warn("[SIP Agent] Transport disconnected", error);
-          this.connected = false;
-          this.registered = false;
-        };
-
-        this.ua.start()
-          .then(() => {
-            console.log("SIP Agent started");
-
-            // Create and track registerer
-            this.registerer = new SIP.Registerer(this.ua);
-
-            this.registerer.stateChange.addListener((state) => {
-              if (state === SIP.RegistererState.Registered) {
-                console.log("[SIP Agent] Registered");
-                this.registered = true;
-              } else if (state === SIP.RegistererState.Unregistered) {
-                console.log("[SIP Agent] Unregistered");
-                this.registered = false;
-              }
-            });
-
-            this.registerer.register();
-          })
-          .catch(err => console.error("Failed to start SIP agent:", err))
-          .finally(() => this.starting = false);
-
-      } catch (err) {
-        console.error("Error starting SIP agent:", err);
-        this.starting = false;
-      }
-    },
-
-    stopAgent() {
-      if (!this.registerer || !this.ua) return;
-      this.stopping = true;
-      this.registerer.unregister()
-        .then(() => {
-          console.log("[SIP Agent] Unregistered manually");
-          return this.ua.stop();
-        })
-        .then(() => {
-          this.connected = false;
-          this.registered = false;
-          this.ua = null;
-          this.registerer = null;
-        })
-        .catch(err => console.error("Error stopping SIP agent:", err))
-        .finally(() => this.stopping = false);
+// Get Pivot Report
+const handlePivotReport = async () => {
+  try {
+    const data = await userStore.getPivotReport({
+      ...filters.value,
+      xaxis: 'role',
+      yaxis: 'enabled'
+    });
+    if (Array.isArray(data) && data.length > 0) {
+      pivotColumns.value = Object.keys(data[0]);
+      pivotData.value = data;
+    } else {
+      pivotColumns.value = [];
+      pivotData.value = [];
     }
+  } catch (err) {
+    console.error('Pivot report fetch failed:', err.message);
   }
 };
 </script>
 
+<template>
+  <section class="users-view">
+    <h2>Users List</h2>
+
+    <!-- Filters -->
+    <div class="filters">
+      <input v-model="filters._a" placeholder="Start position (_a)" />
+      <input v-model.number="filters._c" type="number" placeholder="Count (_c)" />
+      <input v-model="filters.phone" placeholder="Phone" />
+      <input v-model="filters.email" placeholder="Email" />
+      <button @click="userStore.listUsers(filters)">Apply Filters</button>
+      <button @click="handleDownloadCSV">Download CSV</button>
+      <button @click="handlePivotReport">Get Pivot Report</button>
+    </div>
+
+    <!-- Error and Loading states -->
+    <p v-if="userStore.loading">Loading…</p>
+    <p v-else-if="userStore.error" class="error">{{ userStore.error }}</p>
+
+    <!-- Users Table -->
+    <div v-else>
+      <h3>Total Users: {{ userStore.users.length }}</h3>
+
+      <table v-if="userStore.users.length">
+        <thead>
+          <tr>
+            <th v-for="(meta, key) in userStore.users_k" :key="key">
+              {{ meta[3] || key }}
+            </th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="user in userStore.users" :key="user[0]">
+            <td v-for="(meta, key) in userStore.users_k" :key="key">
+              {{ user[parseInt(meta[0])] }}
+            </td>
+            <td>
+              <button @click="handleViewUser(user[0])">View</button>
+              <button @click="handleEditUser(user[0])">Edit</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div v-else>
+        <p>No users available.</p>
+      </div>
+
+      <!-- Pivot Table -->
+      <div v-if="pivotData.length" class="pivot-section">
+        <h3>Pivot Report</h3>
+        <table>
+          <thead>
+            <tr>
+              <th v-for="col in pivotColumns" :key="col">{{ col }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(row, idx) in pivotData" :key="idx">
+              <td v-for="col in pivotColumns" :key="col">{{ row[col] }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</template>
+
 <style scoped>
-.sip-client { padding: 12px; border: 1px solid #ddd; border-radius: 6px; max-width:420px; }
-.status-row { display:flex; gap:12px; margin-bottom:8px; }
-.controls button { margin-right:8px; }
-.incoming { margin-top:12px; padding:8px; border:1px dashed #f39; background:#fff6f6 }
-.call-info { margin-top:8px; padding:8px; border:1px solid #cfc; background:#f6fff6 }
+.users-view {
+  padding: 1rem;
+}
+.filters {
+  margin-bottom: 1rem;
+}
+.filters input {
+  margin-right: 8px;
+}
+.filters button {
+  margin-right: 8px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+}
+th, td {
+  border: 1px solid #ccc;
+  padding: 6px 8px;
+  text-align: left;
+}
+button {
+  margin-right: 5px;
+  padding: 4px 8px;
+  cursor: pointer;
+  background: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+}
+button:hover {
+  background: #45a049;
+}
+.error {
+  color: #e74c3c;
+}
 </style>
