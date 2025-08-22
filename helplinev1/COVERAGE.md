@@ -1,23 +1,21 @@
 # 📊 Code Coverage Report - HelplineV1
 
-**Branch:** 272/merge
-**Commit:** [\`de0b5f2\`](https://github.com/openchlai/ai/commit/de0b5f2ecc26d5d811d929e4912fd19aefe6f936)
-**Generated:** 2025-08-17 20:11:55 UTC
+**Branch:** 275/merge
+**Commit:** [\`44350c9\`](https://github.com/openchlai/ai/commit/44350c9a96b8b85a579b8173836ad0658747549f)
+**Generated:** 2025-08-22 08:09:23 UTC
 **PHP Version:** 8.3
-**Workflow:** [\`17025356989\`](https://github.com/openchlai/ai/actions/runs/17025356989)
 
 ## 🎯 Coverage Summary
 
 ![Coverage](https://img.shields.io/badge/Coverage-59%25-orange)
 ![Tests](https://img.shields.io/badge/Tests-PHPUnit-blue)
 
-| Metric | Value | Status |
-|--------|-------|--------|
-| **Coverage** | 59% | ❌ Fail |
-| **Threshold** | 80% | Target |
-| **Generated** | 2025-08-17 20:11:55 UTC | |
-| **Branch** | 272/merge | |
-| **PHP Version** | 8.3 | |
+| Metric | Value |
+|--------| ------|
+| **Coverage** | 59% |
+| **Generated** | 2025-08-22 08:09:23 UTC |
+| **Branch** | 275/merge |
+| **PHP Version** | 8.3 |
 
 ## 📈 Detailed Coverage Analysis
 
@@ -327,27 +325,5 @@ rest_uri_response_error - 404
 { "errors":[["error","The requested URL \/ was not found on this server"]]}
 ```
 
-## 📁 Generated Files
-
-- `coverage.xml` - XML coverage report for CI/CD integration
-- `coverage-html/` - HTML coverage report for detailed browsing
-- `coverage-analysis.txt` - Detailed coverage analysis
-- `test-summary.txt` - Test execution summary
-
-## 🔍 How to View Coverage
-
-### HTML Report (Recommended)
-Open `helplinev1/rest_api/coverage-html/index.html` in your browser for an interactive view.
-
-### Command Line
-```bash
-cd helplinev1/rest_api
-./vendor/bin/phpunit --coverage-text
-```
-
-### XML Integration
-Use `coverage.xml` for integration with code coverage services like Codecov.
-
 ---
 *Report generated automatically by GitHub Actions*
-*Access this report at: [COVERAGE.md](https://github.com/openchlai/ai/blob/272/merge/helplinev1/COVERAGE.md)*
