@@ -1,23 +1,22 @@
 # 📊 Code Coverage Report - HelplineV1
 
-**Branch:** 272/merge
-**Commit:** [\`de0b5f2\`](https://github.com/openchlai/ai/commit/de0b5f2ecc26d5d811d929e4912fd19aefe6f936)
-**Generated:** 2025-08-17 20:11:55 UTC
+**Branch:** 275/merge
+**Commit:** [\`df0b2c1\`](https://github.com/openchlai/ai/commit/df0b2c1abd6c680b675e42bfe43d8700a922e717)
+**Generated:** 2025-08-18 08:41:14 UTC
 **PHP Version:** 8.3
-**Workflow:** [\`17025356989\`](https://github.com/openchlai/ai/actions/runs/17025356989)
+**Workflow:** [\`17035549609\`](https://github.com/openchlai/ai/actions/runs/17035549609)
 
 ## 🎯 Coverage Summary
 
 ![Coverage](https://img.shields.io/badge/Coverage-59%25-orange)
 ![Tests](https://img.shields.io/badge/Tests-PHPUnit-blue)
 
-| Metric | Value | Status |
-|--------|-------|--------|
-| **Coverage** | 59% | ❌ Fail |
-| **Threshold** | 80% | Target |
-| **Generated** | 2025-08-17 20:11:55 UTC | |
-| **Branch** | 272/merge | |
-| **PHP Version** | 8.3 | |
+| Metric | Value |
+|--------| ------|
+| **Coverage** | 59% |
+| **Generated** | 2025-08-18 08:41:14 UTC |
+| **Branch** | 275/merge |
+| **PHP Version** | 8.3 |
 
 ## 📈 Detailed Coverage Analysis
 
@@ -350,4 +349,4 @@ Use `coverage.xml` for integration with code coverage services like Codecov.
 
 ---
 *Report generated automatically by GitHub Actions*
-*Access this report at: [COVERAGE.md](https://github.com/openchlai/ai/blob/272/merge/helplinev1/COVERAGE.md)*
+*Access this report at: [COVERAGE.md](https://github.com/openchlai/ai/blob/275/merge/helplinev1/COVERAGE.md)*
