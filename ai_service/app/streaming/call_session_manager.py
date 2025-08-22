@@ -796,7 +796,7 @@ class CallSessionManager:
             logger.info(f"📥 [download] Starting SCP audio download for call {call_id}")
             
             # Use SCP downloader with GSM to WAV conversion
-            from utils.scp_audio_downloader import download_and_convert_audio
+            from ..utils.scp_audio_downloader import download_and_convert_audio
             
             audio_bytes, download_info = await download_and_convert_audio(
                 call_id=call_id, 

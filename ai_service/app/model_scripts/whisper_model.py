@@ -104,7 +104,7 @@ class WhisperModel:
             
             # FORCE use of HuggingFace model for translation to ensure quality
             # Skip local model when translation is enabled
-            if False and self._check_local_model_exists():  # Disabled local loading
+            if self._check_local_model_exists():  # Enable local loading for Docker
                 try:
                     logger.info(f"🎙️ Loading local Whisper model from {self.model_path}")
                     
