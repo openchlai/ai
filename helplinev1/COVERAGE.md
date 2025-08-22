@@ -1,10 +1,9 @@
 # 📊 Code Coverage Report - HelplineV1
 
 **Branch:** 275/merge
-**Commit:** [\`df0b2c1\`](https://github.com/openchlai/ai/commit/df0b2c1abd6c680b675e42bfe43d8700a922e717)
-**Generated:** 2025-08-18 08:41:14 UTC
+**Commit:** [\`44350c9\`](https://github.com/openchlai/ai/commit/44350c9a96b8b85a579b8173836ad0658747549f)
+**Generated:** 2025-08-22 08:09:23 UTC
 **PHP Version:** 8.3
-**Workflow:** [\`17035549609\`](https://github.com/openchlai/ai/actions/runs/17035549609)
 
 ## 🎯 Coverage Summary
 
@@ -14,7 +13,7 @@
 | Metric | Value |
 |--------| ------|
 | **Coverage** | 59% |
-| **Generated** | 2025-08-18 08:41:14 UTC |
+| **Generated** | 2025-08-22 08:09:23 UTC |
 | **Branch** | 275/merge |
 | **PHP Version** | 8.3 |
 
@@ -326,27 +325,5 @@ rest_uri_response_error - 404
 { "errors":[["error","The requested URL \/ was not found on this server"]]}
 ```
 
-## 📁 Generated Files
-
-- `coverage.xml` - XML coverage report for CI/CD integration
-- `coverage-html/` - HTML coverage report for detailed browsing
-- `coverage-analysis.txt` - Detailed coverage analysis
-- `test-summary.txt` - Test execution summary
-
-## 🔍 How to View Coverage
-
-### HTML Report (Recommended)
-Open `helplinev1/rest_api/coverage-html/index.html` in your browser for an interactive view.
-
-### Command Line
-```bash
-cd helplinev1/rest_api
-./vendor/bin/phpunit --coverage-text
-```
-
-### XML Integration
-Use `coverage.xml` for integration with code coverage services like Codecov.
-
 ---
 *Report generated automatically by GitHub Actions*
-*Access this report at: [COVERAGE.md](https://github.com/openchlai/ai/blob/275/merge/helplinev1/COVERAGE.md)*
