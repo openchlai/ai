@@ -1197,6 +1197,16 @@
 
 <script setup>
 import { ref, onMounted, computed, nextTick } from 'vue'
+import { useCaseStore } from "@/stores/cases";
+
+const casesStore = useCaseStore();
+
+
+// Load cases on mount
+onMounted(() => {
+  casesStore.listCases();
+  console.log("Cases loaded:", casesStore.raw);
+});
 
 const isSidebarCollapsed = ref(false)
 const mobileOpen = ref(false)

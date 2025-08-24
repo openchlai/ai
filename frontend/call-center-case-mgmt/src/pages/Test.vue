@@ -1,212 +1,163 @@
-<!-- src/views/UsersView.vue -->
-<script setup>
-import { ref, onMounted } from 'vue';
-import { useUserStore } from '@/stores/users';
-
-const userStore = useUserStore();
-
-// Filters for list, CSV, and pivot
-const filters = ref({
-  _a: '',
-  _c: 20,
-  phone: '',
-  email: ''
-});
-
-// Pivot report data
-const pivotData = ref([]);
-const pivotColumns = ref([]);
-
-// Load initial user list
-onMounted(() => {
-  userStore.listUsers({ _c: filters.value._c });
-});
-
-// View User details
-const handleViewUser = async (userId) => {
-  try {
-    const details = await userStore.viewUser(userId);
-    alert(JSON.stringify(details, null, 2));
-  } catch (err) {
-    console.error('Failed to view user:', err.message);
-  }
-};
-
-// Create a new user (mock data for demo)
-const handleCreateUser = async () => {
-  const payload = {
-    usn: 'newuser',
-    exten: '8123',
-    photo: '123244554556',
-    fname: 'Jane',
-    lname: 'Doe',
-    phone: '0700000000',
-    email: 'jane.doe@example.com'
-  };
-  try {
-    const created = await userStore.createUser(payload);
-    alert('User Created: ' + JSON.stringify(created, null, 2));
-    userStore.listUsers({ _c: filters.value._c });
-  } catch (err) {
-    console.error('Create failed:', err.message);
-  }
-};
-
-// Edit a user (mock data for demo)
-const handleEditUser = async (userId) => {
-  const payload = { fname: 'UpdatedName' };
-  try {
-    const updated = await userStore.editUser(userId, payload);
-    alert('User Updated: ' + JSON.stringify(updated, null, 2));
-    userStore.listUsers({ _c: filters.value._c });
-  } catch (err) {
-    console.error('Edit failed:', err.message);
-  }
-};
-
-// Download CSV
-const handleDownloadCSV = async () => {
-  try {
-    const blob = await userStore.downloadCSV(filters.value);
-    const url = window.URL.createObjectURL(new Blob([blob], { type: 'text/csv' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', 'users.csv');
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
-  } catch (err) {
-    console.error('CSV Download failed:', err.message);
-  }
-};
-
-// Get Pivot Report
-const handlePivotReport = async () => {
-  try {
-    const data = await userStore.getPivotReport({
-      ...filters.value,
-      xaxis: 'role',
-      yaxis: 'enabled'
-    });
-    if (Array.isArray(data) && data.length > 0) {
-      pivotColumns.value = Object.keys(data[0]);
-      pivotData.value = data;
-    } else {
-      pivotColumns.value = [];
-      pivotData.value = [];
-    }
-  } catch (err) {
-    console.error('Pivot report fetch failed:', err.message);
-  }
-};
-</script>
-
 <template>
-  <section class="users-view">
-    <h2>Users List</h2>
+  <div class="cascade">
+    <label class="lbl">Location</label>
 
-    <!-- Filters -->
-    <div class="filters">
-      <input v-model="filters._a" placeholder="Start position (_a)" />
-      <input v-model.number="filters._c" type="number" placeholder="Count (_c)" />
-      <input v-model="filters.phone" placeholder="Phone" />
-      <input v-model="filters.email" placeholder="Email" />
-      <button @click="userStore.listUsers(filters)">Apply Filters</button>
-      <button @click="handleDownloadCSV">Download CSV</button>
-      <button @click="handlePivotReport">Get Pivot Report</button>
+    <!-- Input (trigger/display) -->
+    <div class="input-box" @click="toggleDropdown">
+      <span>{{ fullLocation || 'Select Location' }}</span>
+      <span class="arrow">▼</span>
     </div>
 
-    <!-- Error and Loading states -->
-    <p v-if="userStore.loading">Loading…</p>
-    <p v-else-if="userStore.error" class="error">{{ userStore.error }}</p>
-
-    <!-- Users Table -->
-    <div v-else>
-      <h3>Total Users: {{ userStore.users.length }}</h3>
-
-      <table v-if="userStore.users.length">
-        <thead>
-          <tr>
-            <th v-for="(meta, key) in userStore.users_k" :key="key">
-              {{ meta[3] || key }}
-            </th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="user in userStore.users" :key="user[0]">
-            <td v-for="(meta, key) in userStore.users_k" :key="key">
-              {{ user[parseInt(meta[0])] }}
-            </td>
-            <td>
-              <button @click="handleViewUser(user[0])">View</button>
-              <button @click="handleEditUser(user[0])">Edit</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div v-else>
-        <p>No users available.</p>
+    <!-- Dropdown (expanding options) -->
+    <div v-if="open" class="dropdown">
+      <div class="breadcrumb">
+        <span v-for="(name, i) in breadcrumb" :key="i">
+          {{ name }}
+          <span v-if="i < breadcrumb.length - 1"> > </span>
+        </span>
       </div>
 
-      <!-- Pivot Table -->
-      <div v-if="pivotData.length" class="pivot-section">
-        <h3>Pivot Report</h3>
-        <table>
-          <thead>
-            <tr>
-              <th v-for="col in pivotColumns" :key="col">{{ col }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(row, idx) in pivotData" :key="idx">
-              <td v-for="col in pivotColumns" :key="col">{{ row[col] }}</td>
-            </tr>
-          </tbody>
-        </table>
+      <ul class="options">
+        <li v-for="opt in currentOptions" :key="opt.id" @click.stop="selectOption(opt)">
+          {{ opt.name }}
+        </li>
+      </ul>
+
+      <!-- Controls -->
+      <div class="controls">
+        <button class="btn back" v-if="path.length" @click="goBack">← Back</button>
+        <button class="btn reset" v-if="path.length" @click="resetCascade">Reset</button>
       </div>
     </div>
-  </section>
+  </div>
 </template>
 
+<script setup>
+import { ref, computed, onMounted } from "vue";
+import { useCategoryStore } from "@/stores/categories";
+
+const store = useCategoryStore();
+
+const open = ref(false);
+const path = ref([]);       // chosen path [{id, name}]
+const levels = ref([]);     // options at each depth
+
+function toggleDropdown() {
+  open.value = !open.value;
+}
+
+function getIndexes(k = store.subcategories_k) {
+  const idIdx = Number(k?.id?.[0] ?? 0);
+  const nameIdx = Number(k?.name?.[0] ?? 5);
+  return { idIdx, nameIdx };
+}
+
+function mapRows(rows, k = store.subcategories_k) {
+  const { idIdx, nameIdx } = getIndexes(k);
+  return (rows || []).map(r => ({ id: r?.[idIdx], name: r?.[nameIdx] }));
+}
+
+async function loadLevelByParentId(parentId) {
+  await store.viewCategory(parentId);
+  return mapRows(store.subcategories, store.subcategories_k);
+}
+
+async function selectOption(opt) {
+  path.value.push(opt);
+  const next = await loadLevelByParentId(opt.id);
+
+  if (next.length) {
+    levels.value.push(next);
+  } else {
+    // End of tree
+    open.value = false;
+  }
+}
+
+function goBack() {
+  path.value.pop();
+  levels.value.pop();
+}
+
+function resetCascade() {
+  path.value = [];
+  levels.value = [];
+  init();
+}
+
+const currentOptions = computed(() => {
+  if (!levels.value.length) return [];
+  return levels.value[levels.value.length - 1];
+});
+
+const breadcrumb = computed(() => path.value.map(p => p.name));
+
+const fullLocation = computed(() => breadcrumb.value.join(" > "));
+
+async function init() {
+  const first = await loadLevelByParentId(88); // Root category
+  levels.value = [first];
+}
+
+onMounted(init);
+</script>
+
 <style scoped>
-.users-view {
-  padding: 1rem;
-}
-.filters {
-  margin-bottom: 1rem;
-}
-.filters input {
-  margin-right: 8px;
-}
-.filters button {
-  margin-right: 8px;
-}
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 8px;
-}
-th, td {
-  border: 1px solid #ccc;
-  padding: 6px 8px;
-  text-align: left;
-}
-button {
-  margin-right: 5px;
-  padding: 4px 8px;
+.cascade { max-width: 420px; position: relative; }
+.lbl { display: block; font-weight: 600; margin-bottom: 6px; }
+.input-box {
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  padding: 8px;
+  display: flex;
+  justify-content: space-between;
   cursor: pointer;
-  background: #4caf50;
-  color: white;
-  border: none;
+}
+.dropdown {
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  margin-top: 4px;
+  background: #fff;
+  padding: 6px;
+  max-height: 300px;
+  overflow-y: auto;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.breadcrumb {
+  font-size: 14px;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+.options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.options li {
+  padding: 6px;
+  cursor: pointer;
   border-radius: 4px;
 }
-button:hover {
-  background: #45a049;
+.options li:hover {
+  background: #f2f2f2;
 }
-.error {
-  color: #e74c3c;
+.controls {
+  margin-top: 8px;
+  display: flex;
+  gap: 6px;
 }
+.btn {
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: 1px solid #888;
+  background: #f7f7f7;
+  cursor: pointer;
+  font-size: 13px;
+}
+.btn:hover {
+  background: #efefef;
+}
+.back { color: #333; }
+.reset { color: #b00; }
+.arrow { font-size: 12px; }
 </style>
