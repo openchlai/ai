@@ -309,19 +309,6 @@ def _process_audio_sync_worker(
     
     # Check if this is pre-transcribed text data
     transcript = None
-    is_pretranscribed = False
-    try:
-        # Try to decode as JSON to check for pre-transcribed flag
-        data_str = audio_bytes.decode('utf-8')
-        transcript_data = json.loads(data_str)
-        if isinstance(transcript_data, dict) and transcript_data.get('is_pretranscribed'):
-            transcript = transcript_data.get('transcript', '')
-            is_pretranscribed = True
-            language = transcript_data.get('language', language)
-            logger.info(f"🎯 Processing pre-transcribed text: {len(transcript)} characters")
-    except (UnicodeDecodeError, json.JSONDecodeError):
-        # Not pre-transcribed data, continue with normal audio processing
-        pass
     
     # Initialize streaming (sync wrapper for async streaming service)
     import asyncio
@@ -376,39 +363,21 @@ def _process_audio_sync_worker(
     
     step_start = datetime.now()
     
-    if is_pretranscribed:
-        # Skip transcription for pre-transcribed text
-        publish_update("transcription", 30, "Using pre-transcribed text...")
-        transcription_duration = 0.01  # Minimal time for pre-transcribed
-        logger.info(f"✅ Using existing transcript: {len(transcript)} characters")
-    else:
-        # Normal audio transcription
-        publish_update("transcription", 10, "Starting audio transcription...")
-        
-        whisper_model = models.models.get("whisper")
-        if not whisper_model:
-            publish_update("transcription_error", 10, "Whisper model not available")
-            raise RuntimeError("Whisper model not available in worker")
-        
-        # Check if model supports streaming transcription
-        if hasattr(whisper_model, 'transcribe_streaming'):
-            # Stream partial transcription results
-            transcript = ""
-            for partial_transcript, progress_pct in whisper_model.transcribe_streaming(audio_bytes, language=language):
-                transcript = partial_transcript
-                stream_progress = 10 + int(progress_pct * 0.2)  # 10-30% range
-                publish_update(
-                    "transcription", 
-                    stream_progress, 
-                    f"Transcribing... ({progress_pct:.1f}%)",
-                    partial_result={"transcript": transcript, "is_final": False}
-                )
-        else:
-            # Fallback to regular transcription
-            transcript = whisper_model.transcribe_audio_bytes(audio_bytes, language=language)
-        
-        # Calculate transcription duration for normal processing
-        transcription_duration = (datetime.now() - step_start).total_seconds()
+
+    # Normal audio transcription
+    publish_update("transcription", 10, "Starting audio transcription...")
+    
+    whisper_model = models.models.get("whisper")
+    if not whisper_model:
+        publish_update("transcription_error", 10, "Whisper model not available")
+        raise RuntimeError("Whisper model not available in worker")
+    
+
+    # Fallback to regular transcription
+    transcript = whisper_model.transcribe_audio_bytes(audio_bytes, language=language)
+    
+    # Calculate transcription duration for normal processing
+    transcription_duration = (datetime.now() - step_start).total_seconds()
     
     # Publish final transcription
     publish_update(
@@ -893,8 +862,6 @@ def _generate_insights(transcript: str, translation: Optional[str],
         }
     }
     
-# Add to app/tasks/audio_tasks.py
-
 @celery_app.task(bind=True, name="process_streaming_audio_task")
 def process_streaming_audio_task(
     self,
