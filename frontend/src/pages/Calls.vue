@@ -1,189 +1,397 @@
 <template>
-<div>
-  <!-- SidePanel Component -->
-  <SidePanel 
-    :userRole="userRole"
-    :isInQueue="isInQueue"
-    :isProcessingQueue="isProcessingQueue"
-    :currentCall="currentCall"
-    @toggle-queue="handleQueueToggle"
-    @logout="handleLogout"
-    @sidebar-toggle="handleSidebarToggle"
-  />
+  <div>
+    <!-- SidePanel Component -->
+    <SidePanel
+      :userRole="userRole"
+      :isInQueue="isInQueue"
+      :isProcessingQueue="isProcessingQueue"
+      :currentCall="currentCall"
+      @toggle-queue="handleQueueToggle"
+      @logout="handleLogout"
+      @sidebar-toggle="handleSidebarToggle"
+    />
 
-  <!-- Main Content -->
-  <div class="main-content">
-    <div class="calls-container">
-      <div class="header">
-        <h1 class="page-title">Calls</h1>
-        <div class="header-actions">
-          <button class="theme-toggle" @click="toggleTheme" id="theme-toggle">
-            <svg v-if="currentTheme === 'dark'" id="moon-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <svg v-else id="sun-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <line x1="12" y1="1" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <line x1="12" y1="21" x2="12" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <line x1="1" y1="12" x2="3" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <line x1="21" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <span id="theme-text">{{ currentTheme === 'dark' ? 'Light Mode' : 'Dark Mode' }}</span>
-          </button>
+    <!-- Main Content -->
+    <div class="main-content">
+      <div class="calls-container">
+        <div class="header">
+          <h1 class="page-title">Calls</h1>
+          <div class="header-actions">
+            <button class="theme-toggle" @click="toggleTheme" id="theme-toggle">
+              <svg
+                v-if="currentTheme === 'dark'"
+                id="moon-icon"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              <svg
+                v-else
+                id="sun-icon"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="5"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <line
+                  x1="12"
+                  y1="1"
+                  x2="12"
+                  y2="3"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <line
+                  x1="12"
+                  y1="21"
+                  x2="12"
+                  y2="23"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <line
+                  x1="4.22"
+                  y1="4.22"
+                  x2="5.64"
+                  y2="5.64"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <line
+                  x1="18.36"
+                  y1="18.36"
+                  x2="19.78"
+                  y2="19.78"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <line
+                  x1="1"
+                  y1="12"
+                  x2="3"
+                  y2="12"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <line
+                  x1="21"
+                  y1="12"
+                  x2="23"
+                  y2="12"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <line
+                  x1="4.22"
+                  y1="19.78"
+                  x2="5.64"
+                  y2="18.36"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <line
+                  x1="18.36"
+                  y1="5.64"
+                  x2="19.78"
+                  y2="4.22"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              <span id="theme-text">{{
+                currentTheme === "dark" ? "Light Mode" : "Dark Mode"
+              }}</span>
+            </button>
+          </div>
         </div>
-      </div>
-      
-      <div class="view-tabs">
-        <div class="view-tab" :class="{ active: activeView === 'timeline' }" @click="activeView = 'timeline'">Timeline</div>
-        <div class="view-tab" :class="{ active: activeView === 'table' }" @click="activeView = 'table'">Table View</div>
-        <div class="view-tab" :class="{ active: activeView === 'queue' }" @click="activeView = 'queue'">Call Queue</div>
-      </div>
 
-      <!-- Status Cards - Horizontal Layout -->
-      <div class="status-cards">
-        <div class="status-card" v-for="status in statusItems" :key="status.label">
-          <div class="status-card-header">
-            <div class="status-card-label">{{ status.label }}</div>
-            <div class="status-card-count">{{ status.count }}</div>
+        <div class="view-tabs">
+          <div
+            class="view-tab"
+            :class="{ active: activeView === 'timeline' }"
+            @click="activeView = 'timeline'"
+          >
+            Timeline
           </div>
-          <div class="status-card-progress">
-            <div class="status-card-progress-fill" :style="{ width: status.percentage + '%' }"></div>
+          <div
+            class="view-tab"
+            :class="{ active: activeView === 'table' }"
+            @click="activeView = 'table'"
+          >
+            Table View
+          </div>
+          <div
+            class="view-tab"
+            :class="{ active: activeView === 'queue' }"
+            @click="activeView = 'queue'"
+          >
+            Call Queue
           </div>
         </div>
-      </div>
-      
-      <!-- Timeline View -->
-      <div class="view-container" v-show="activeView === 'timeline'">
-        <div class="time-section" v-for="(group, label) in groupedCalls" :key="label">
+
+        <!-- Status Cards - Horizontal Layout -->
+        <div class="status-cards">
+          <div
+            class="status-card"
+            v-for="status in statusItems"
+            :key="status.label"
+          >
+            <div class="status-card-header">
+              <div class="status-card-label">{{ status.label }}</div>
+              <div class="status-card-count">{{ status.count }}</div>
+            </div>
+            <div class="status-card-progress">
+              <div
+                class="status-card-progress-fill"
+                :style="{ width: status.percentage + '%' }"
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Timeline View -->
+         <div class="view-container" v-show="activeView === 'timeline'">
+        <div
+          class="time-section"
+          v-for="(group, label) in groupedCalls"
+          :key="label"
+        >
           <h2 class="time-section-title">{{ label }}</h2>
           <div class="call-list">
-            <div 
-              v-for="(call, index) in group" 
-              :key="call.id" 
-              class="call-item glass-card fine-border" 
-              :class="{ 
-                selected: call.id === selectedCallId,
-                'timeline-connector': index < group.length - 1
-              }" 
-              @click="selectCall(call.id)"
+            <div
+              v-for="(call, index) in callsStore.calls"
+              :key="index"
+              class="call-item glass-card fine-border"
+              @click="selectCall(call[callsStore.calls_k?.uniqueid?.[0]])"
             >
               <div class="call-icon">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M22 16.92V19C22 20.1046 21.1046 21 20 21C10.6112 21 3 13.3888 3 4C3 2.89543 3.89543 2 5 2H7.08C7.55607 2 7.95823 2.33718 8.02513 2.80754L8.7 7.5C8.76694 7.97036 8.53677 8.42989 8.12 8.67L6.5 9.5C7.84 12.16 11.84 16.16 14.5 17.5L15.33 15.88C15.5701 15.4632 16.0296 15.2331 16.5 15.3L21.1925 16.0249C21.6628 16.0918 22 16.4939 22 16.97V16.92Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M22 16.92V19C22 20.1046 21.1046 21 20 21C10.6112 21 3 13.3888 3 4C3 2.89543 3.89543 2 5 2H7.08C7.55607 2 7.95823 2.33718 8.02513 2.80754L8.7 7.5C8.76694 7.97036 8.53677 8.42989 8.12 8.67L6.5 9.5C7.84 12.16 11.84 16.16 14.5 17.5L15.33 15.88C15.5701 15.4632 16.0296 15.2331 16.5 15.3L21.1925 16.0249C21.6628 16.0918 22 16.4939 22 16.97V16.92Z"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
                 </svg>
               </div>
               <div class="call-details">
-                <div class="call-type">{{ call.title }}</div>
-                <div class="call-time">{{ call.time }}</div>
+                <div class="call-type">
+                  Call ID: {{ call[callsStore.calls_k?.uniqueid?.[0]] }}
+                </div>
+                <div class="call-time">
+                  {{
+                    call[callsStore.calls_k?.dth?.[0]]
+                      ? new Date(
+                          call[callsStore.calls_k.dth[0]] * 1000
+                        ).toLocaleString()
+                      : "N/A"
+                  }}
+                </div>
                 <div class="call-meta">
-                  <span class="case-link">Case: #{{ call.caseId }}</span>
+                  <span class="case-link">
+                    Agent:
+                    {{ call[callsStore.calls_k?.user_name?.[0]] || "Unknown" }}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-      
-      <!-- Table View -->
-      <div class="view-container" v-show="activeView === 'table'">
-        <div class="calls-table-container">
-          <table class="calls-table">
-            <thead>
-              <tr>
-                <th>Call ID</th>
-                <th>Case ID</th>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Status</th>
-                <th>Agent</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr 
-                v-for="call in allCalls" 
-                :key="call.id" 
-                :class="{ selected: call.id === selectedCallId }" 
-                @click="selectCall(call.id)"
-              >
-                <td>
-                  <span class="call-id">#{{ call.id }}</span>
-                </td>
-                <td>
-                  <span class="case-link">#{{ call.caseId }}</span>
-                </td>
-                <td>{{ call.dateLabel }}</td>
-                <td>{{ call.time }}</td>
-                <td>
-                  <span :class="['status-badge', getStatusClass(call.status)]">{{ call.status }}</span>
-                </td>
-                <td>{{ call.agent || 'Unassigned' }}</td>
-                <td>
-                  <div class="table-actions">
-                    <button class="action-btn view-btn" @click.stop="viewCallDetails(call.id)" title="View Details">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+</div>
+        <!-- Table View -->
+        <div class="view-container" v-show="activeView === 'table'">
+          <div class="calls-table-container">
+            <table class="calls-table">
+              <thead>
+                <tr>
+                  <th>Call ID</th>
+                  <th>Case ID</th>
+                  <th>Date</th>
+                  <th>Time</th>
+                  <th>Status</th>
+                  <th>Agent</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+  <tr
+    v-for="call in callsStore.calls"
+    :key="call[callsStore.calls_k.uniqueid?.[0]]"
+    :class="{ selected: call[callsStore.calls_k.uniqueid?.[0]] === selectedCallId }"
+    @click="selectCall(call[callsStore.calls_k.uniqueid?.[0]])"
+  >
+    <!-- Call ID -->
+    <td>
+      <span class="call-id">
+        #{{ call[callsStore.calls_k.uniqueid?.[0]] || 'N/A' }}
+      </span>
+    </td>
+
+    <!-- Case ID -->
+    <td>
+      <span class="case-link">
+        #{{ call[callsStore.calls_k.has_case_id?.[0]] || 'N/A' }}
+      </span>
+    </td>
+
+    <!-- Date -->
+    <td>
+      {{
+        call[callsStore.calls_k.dth?.[0]]
+          ? new Date(call[callsStore.calls_k.dth[0]] * 1000).toLocaleDateString()
+          : 'N/A'
+      }}
+    </td>
+
+    <!-- Time -->
+    <td>
+      {{
+        call[callsStore.calls_k.dth?.[0]]
+          ? new Date(call[callsStore.calls_k.dth[0]] * 1000).toLocaleTimeString()
+          : 'N/A'
+      }}
+    </td>
+
+    <!-- Status -->
+    <td>
+      <span
+        :class="['status-badge', getStatusClass(call[callsStore.calls_k.status?.[0]])]"
+      >
+        {{ call[callsStore.calls_k.status?.[0]] || 'Unknown' }}
+      </span>
+    </td>
+
+    <!-- Agent -->
+    <td>
+      {{ call[callsStore.calls_k.user_name?.[0]] || 'Unassigned' }}
+    </td>
+
+    <!-- Actions -->
+    <td>
+      <div class="table-actions">
+        <button
+          class="action-btn view-btn"
+          @click.stop="viewCallDetails(call[callsStore.calls_k.uniqueid?.[0]])"
+          title="View Details"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M1 12S5 4 12 4s11 8 11 8-4 8-11 8S1 12 1 12z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                       </svg>
-                    </button>
-                    <button class="action-btn link-btn" @click.stop="linkToCase(call.id)" title="Link to Case">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        </button>
+        <button
+          class="action-btn link-btn"
+          @click.stop="linkToCase(call[callsStore.calls_k.uniqueid?.[0]])"
+          title="Link to Case"
+        >
+         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M10 13C10.4295 13.5741 10.9774 14.0491 11.6066 14.3929C12.2357 14.7367 12.9315 14.9411 13.6467 14.9923C14.3618 15.0435 15.0796 14.9403 15.7513 14.6897C16.4231 14.4392 17.0331 14.047 17.54 13.54L20.54 10.54C21.4508 9.59695 21.9548 8.33394 21.9434 7.02296C21.932 5.71198 21.4061 4.45791 20.4791 3.53087C19.5521 2.60383 18.298 2.07799 16.987 2.0666C15.676 2.0552 14.413 2.55918 13.47 3.47L11.75 5.18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         <path d="M14 11C13.5705 10.4259 13.0226 9.95085 12.3934 9.60706C11.7643 9.26327 11.0685 9.05885 10.3533 9.00769C9.63819 8.95653 8.92037 9.05973 8.24864 9.31028C7.5769 9.56084 6.9669 9.95303 6.46 10.46L3.46 13.46C2.54918 14.403 2.04520 15.6661 2.0566 16.9771C2.06799 18.288 2.59383 19.5421 3.52087 20.4691C4.44791 21.3962 5.70198 21.922 7.01296 21.9334C8.32394 21.9448 9.58695 21.4408 10.53 20.53L12.24 18.82" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                       </svg>
-                    </button>
-                    <button class="action-btn case-btn" @click.stop="viewCase(call.caseId)" title="View Case">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        </button>
+        <button
+          class="action-btn case-btn"
+          @click.stop="viewCase(call[callsStore.calls_k.case_id?.[0]])"
+          title="View Case"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         <polyline points="14,2 14,8 20,8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                       </svg>
+        </button>
+      </div>
+    </td>
+  </tr>
+</tbody>
+
+            </table>
+          </div>
+        </div>
+
+        <!-- Queue View -->
+        <div class="view-container" v-show="activeView === 'queue'">
+          <div class="queue-section">
+            <h2 class="queue-title">Call Queue Management</h2>
+            <div class="queue-stats">
+              <div class="queue-stat">
+                <div class="stat-value">{{ queueStats.waiting }}</div>
+                <div class="stat-label">Waiting</div>
+              </div>
+              <div class="queue-stat">
+                <div class="stat-value">{{ queueStats.active }}</div>
+                <div class="stat-label">Active</div>
+              </div>
+              <div class="queue-stat">
+                <div class="stat-value">{{ queueStats.agents }}</div>
+                <div class="stat-label">Agents Online</div>
+              </div>
+            </div>
+
+            <div class="queue-calls">
+              <h3 class="queue-subtitle">Pending Calls</h3>
+              <div class="queue-call-list">
+                <div
+                  v-for="call in queueCalls"
+                  :key="call.id"
+                  class="queue-call-item"
+                >
+                  <div class="queue-call-info">
+                    <div class="queue-call-type">{{ call.type }}</div>
+                    <div class="queue-call-details">
+                      <span>Wait Time: {{ call.waitTime }}</span>
+                      <span>Case: #{{ call.caseId }}</span>
+                    </div>
+                  </div>
+                  <div class="queue-call-actions">
+                    <button
+                      class="queue-action-btn accept"
+                      @click="acceptQueueCall(call.id)"
+                      v-if="isInQueue"
+                    >
+                      Accept
                     </button>
                   </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Queue View -->
-      <div class="view-container" v-show="activeView === 'queue'">
-        <div class="queue-section">
-          <h2 class="queue-title">Call Queue Management</h2>
-          <div class="queue-stats">
-            <div class="queue-stat">
-              <div class="stat-value">{{ queueStats.waiting }}</div>
-              <div class="stat-label">Waiting</div>
-            </div>
-            <div class="queue-stat">
-              <div class="stat-value">{{ queueStats.active }}</div>
-              <div class="stat-label">Active</div>
-            </div>
-            <div class="queue-stat">
-              <div class="stat-value">{{ queueStats.agents }}</div>
-              <div class="stat-label">Agents Online</div>
-            </div>
-          </div>
-          
-          <div class="queue-calls">
-            <h3 class="queue-subtitle">Pending Calls</h3>
-            <div class="queue-call-list">
-              <div v-for="call in queueCalls" :key="call.id" class="queue-call-item">
-                <div class="queue-call-info">
-                  <div class="queue-call-type">{{ call.type }}</div>
-                  <div class="queue-call-details">
-                    <span>Wait Time: {{ call.waitTime }}</span>
-                    <span>Case: #{{ call.caseId }}</span>
-                  </div>
-                </div>
-                <div class="queue-call-actions">
-                  <button class="queue-action-btn accept" @click="acceptQueueCall(call.id)" v-if="isInQueue">
-                    Accept
-                  </button>
                 </div>
               </div>
             </div>
@@ -191,1744 +399,2495 @@
         </div>
       </div>
     </div>
-  </div>
-  
-  <!-- Call Details Panel -->
-  <div class="call-details-panel" :class="{ active: showCallDetails }" id="call-details-panel">
-    <div class="call-details-header">
-      <div class="call-details-title">{{ selectedCallDetails?.title || 'Call Details' }}</div>
-      <button class="close-details" @click="closeCallDetails">×</button>
+
+    <!-- Call Details Panel -->
+    <div
+  class="call-details-panel"
+  :class="{ active: showCallDetails }"
+  id="call-details-panel"
+>
+  <div class="call-details-header">
+    <div class="call-details-title">
+      Call Details
     </div>
-    <div class="call-details-content" v-if="selectedCallDetails">
-      <div class="detail-item">
-        <div class="detail-label">Call ID</div>
-        <div class="detail-value">#{{ selectedCallDetails.id }}</div>
-      </div>
-      <div class="detail-item">
-        <div class="detail-label">Case ID</div>
-        <div class="detail-value">
-          <a href="#" @click.prevent="viewCase(selectedCallDetails.caseId)" class="case-link">
-            #{{ selectedCallDetails.caseId }}
-          </a>
-        </div>
-      </div>
-      <div class="detail-item">
-        <div class="detail-label">Call Title</div>
-        <div class="detail-value">{{ selectedCallDetails.callTitle }}</div>
-      </div>
-      <div class="detail-item">
-        <div class="detail-label">Caller</div>
-        <div class="detail-value">{{ selectedCallDetails.callerName }}</div>
-      </div>
-      <div class="detail-item">
-        <div class="detail-label">Duration</div>
-        <div class="detail-value">{{ selectedCallDetails.duration }}</div>
-      </div>
-      <div class="detail-item">
-        <div class="detail-label">Call Start</div>
-        <div class="detail-value">{{ selectedCallDetails.callStart }}</div>
-      </div>
-      <div class="detail-item">
-        <div class="detail-label">Call End</div>
-        <div class="detail-value">{{ selectedCallDetails.callEnd }}</div>
-      </div>
-      <div class="detail-item">
-        <div class="detail-label">Disposition</div>
-        <div class="detail-value">{{ selectedCallDetails.disposition }}</div>
-      </div>
-      <div class="detail-item">
-        <div class="detail-label">Date</div>
-        <div class="detail-value">{{ selectedCallDetails.date }}</div>
-      </div>
-      <div class="detail-item">
-        <div class="detail-label">Escalated to</div>
-        <div class="detail-value">{{ selectedCallDetails.escalatedTo }}</div>
-      </div>
-      <div class="detail-item">
-        <div class="detail-label">Priority</div>
-        <div class="detail-value">
-          <span class="priority-badge" :class="selectedCallDetails.priority">{{ selectedCallDetails.priority }}</span>
-        </div>
-      </div>
-    </div>
+    <button class="close-details" @click="closeCallDetails">×</button>
   </div>
 
-  <!-- Queue Popup Modal -->
-  <div v-if="showQueuePopup" class="modal-overlay" @click="closeQueuePopup">
-    <div class="queue-popup" @click.stop>
-      <div class="queue-popup-header">
-        <h3>Queue Members</h3>
-        <button class="modal-close" @click="closeQueuePopup">×</button>
-      </div>
-      <div class="queue-members">
-        <div v-for="member in queueMembers" :key="member.id" class="queue-member-card" @click="confirmJoinQueue">
-          <div class="member-avatar">
-            <img :src="member.avatar" :alt="member.name" />
-            <div class="status-indicator" :class="member.status"></div>
-          </div>
-          <div class="member-info">
-            <div class="member-name">{{ member.name }}</div>
-            <div class="member-role">{{ member.role }}</div>
-            <div class="member-status">{{ member.statusText }}</div>
-          </div>
-        </div>
-      </div>
-      <div class="queue-popup-footer">
-        <button class="btn-primary" @click="confirmJoinQueue">Join Queue</button>
+  <div class="call-details-content" v-if="selectedCallDetails">
+    <div class="detail-item">
+      <div class="detail-label">Call ID</div>
+      <div class="detail-value">
+        #{{ selectedCallDetails[callsStore.calls_k.uniqueid?.[0]] }}
       </div>
     </div>
-  </div>
 
-  <!-- Ringing Call Interface -->
-  <div v-if="showRingingInterface && ringingCall" class="ringing-overlay">
-    <div class="ringing-container">
-      <div class="ringing-header">
-        <div class="call-type-badge" :class="ringingCall.priority">
-          {{ ringingCall.type }}
-        </div>
-      </div>
-      
-      <div class="caller-info">
-        <div class="caller-avatar">
-          <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-        <div class="caller-name">{{ ringingCall.callerName }}</div>
-        <div class="caller-number">{{ ringingCall.number || 'Unknown Number' }}</div>
-        <div class="call-duration">{{ ringingDuration }}</div>
-      </div>
-
-      <div class="ringing-animation">
-        <div class="pulse-ring"></div>
-        <div class="pulse-ring delay-1"></div>
-        <div class="pulse-ring delay-2"></div>
-      </div>
-
-      <div class="call-actions">
-        <button class="call-btn decline" @click="declineCall">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M22 16.92V19C22 20.1046 21.1046 21 20 21C10.6112 21 3 13.3888 3 4C3 2.89543 3.89543 2 5 2H7.08C7.55607 2 7.95823 2.33718 8.02513 2.80754L8.7 7.5C8.76694 7.97036 8.53677 8.42989 8.12 8.67L6.5 9.5C7.84 12.16 11.84 16.16 14.5 17.5L15.33 15.88C15.5701 15.4632 16.0296 15.2331 16.5 15.3L21.1925 16.0249C21.6628 16.0918 22 16.4939 22 16.97V16.92Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-        <button class="call-btn answer" @click="answerCall">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M22 16.92V19C22 20.1046 21.1046 21 20 21C10.6112 21 3 13.3888 3 4C3 2.89543 3.89543 2 5 2H7.08C7.55607 2 7.95823 2.33718 8.02513 2.80754L8.7 7.5C8.76694 7.97036 8.53677 8.42989 8.12 8.67L6.5 9.5C7.84 12.16 11.84 16.16 14.5 17.5L15.33 15.88C15.5701 15.4632 16.0296 15.2331 16.5 15.3L21.1925 16.0249C21.6628 16.0918 22 16.4939 22 16.97V16.92Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
+    <div class="detail-item">
+      <div class="detail-label">Case ID</div>
+      <div class="detail-value">
+        <a
+          href="#"
+          @click.prevent="viewCase(selectedCallDetails[callsStore.calls_k.has_case_id?.[0]])"
+          class="case-link"
+        >
+          #{{ selectedCallDetails[callsStore.calls_k.case_id?.[0]] }}
+        </a>
       </div>
     </div>
-  </div>
 
-  <!-- Case Options Modal - Shows after answering call -->
-  <div v-if="showCaseOptions" class="modal-overlay" @click="closeCaseOptions">
-    <div class="case-options-modal" @click.stop>
-      <div class="modal-header">
-        <h3>Case Management Options</h3>
-        <div class="call-timer-header">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-            <polyline points="12,6 12,12 16,14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          {{ callDuration }}
-        </div>
-      </div>
-      <div class="modal-body">
-        <div class="case-options-grid">
-          <div class="case-option-card" @click="selectCaseOption('new')">
-            <div class="option-icon new-case">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <div class="option-content">
-              <div class="option-title">Open New Case</div>
-              <div class="option-description">Create a new case for this call and start documenting the incident</div>
-            </div>
-            <div class="option-arrow">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-          </div>
-
-          <div class="case-option-card" @click="selectCaseOption('existing')">
-            <div class="option-icon existing-case">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <polyline points="14,2 14,8 20,8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M16 13H8M16 17H8M10 9H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <div class="option-content">
-              <div class="option-title">Open Existing Case</div>
-              <div class="option-description">Link this call to an existing case and edit case details</div>
-            </div>
-            <div class="option-arrow">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-          </div>
-
-          <div class="case-option-card" @click="selectCaseOption('disposition')">
-            <div class="option-icon disposition-call">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <div class="option-content">
-              <div class="option-title">Disposition Call</div>
-              <div class="option-description">Complete call disposition and end the call with proper documentation</div>
-            </div>
-            <div class="option-arrow">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-          </div>
-        </div>
+    <div class="detail-item">
+      <div class="detail-label">Caller</div>
+      <div class="detail-value">
+        {{ selectedCallDetails[callsStore.calls_k.caller_name?.[0]] || "Unknown" }}
       </div>
     </div>
-  </div>
 
-  <!-- Existing Case Search Modal -->
-  <div v-if="showExistingCaseSearch" class="modal-overlay" @click="closeExistingCaseSearch">
-    <div class="existing-case-modal" @click.stop>
-      <div class="modal-header">
-        <h3>Select Existing Case</h3>
-        <div class="call-timer-header">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-            <polyline points="12,6 12,12 16,14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          {{ callDuration }}
-        </div>
-        <button class="modal-close" @click="closeExistingCaseSearch">×</button>
-      </div>
-      <div class="modal-body">
-        <div class="case-search">
-          <input 
-            type="text" 
-            v-model="caseSearchQuery"
-            placeholder="Search cases by ID, name, or client..." 
-            class="search-input"
-          />
-        </div>
-        <div class="existing-cases-list">
-          <div 
-            v-for="existingCase in filteredExistingCases" 
-            :key="existingCase.id" 
-            class="existing-case-item"
-            @click="selectExistingCase(existingCase)"
-          >
-            <div class="case-info">
-              <div class="case-header">
-                <div class="case-id">#{{ existingCase.id }}</div>
-                <div class="case-priority" :class="existingCase.priority.toLowerCase()">{{ existingCase.priority }}</div>
-              </div>
-              <div class="case-title">{{ existingCase.title }}</div>
-              <div class="case-meta">
-                <span class="case-client">Client: {{ existingCase.client }}</span>
-                <span class="case-date">{{ existingCase.date }}</span>
-              </div>
-              <div class="case-status">
-                <span class="status-badge" :class="existingCase.status.toLowerCase()">{{ existingCase.status }}</span>
-              </div>
-            </div>
-            <div class="case-select-arrow">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-          </div>
-        </div>
+    <div class="detail-item">
+      <div class="detail-label">Duration</div>
+      <div class="detail-value">
+        {{ selectedCallDetails[callsStore.calls_k.talk_time?.[0]] || "N/A" }}
       </div>
     </div>
-  </div>
 
-  <!-- Case Form During Call -->
-  <div v-if="showCaseForm" class="case-form-overlay">
-    <div class="case-form-container">
-      <div class="case-form-header">
-        <div class="form-title">
-          <h3>{{ caseFormMode === 'new' ? 'Create New Case' : 'Edit Case' }}</h3>
-          <div class="case-id">Case #{{ currentCaseId }}</div>
-        </div>
-        <div class="call-timer">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-            <polyline points="12,6 12,12 16,14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          {{ callDuration }}
-        </div>
-        <button class="minimize-btn" @click="minimizeCaseForm">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-      </div>
-
-      <div class="case-form-content">
-        <form @submit.prevent="saveCaseForm">
-          <div class="form-section">
-            <div class="section-title">Basic Information</div>
-            <div class="form-group">
-              <label for="case-name">Case Name*</label>
-              <input 
-                v-model="caseFormData.caseName"
-                class="form-control" 
-                id="case-name" 
-                placeholder="Enter case name" 
-                required 
-                type="text"
-              />
-            </div>
-            <div class="form-group">
-              <label for="case-description">Description*</label>
-              <textarea 
-                v-model="caseFormData.description"
-                class="form-control" 
-                id="case-description" 
-                placeholder="Enter case description" 
-                required
-                rows="3"
-              ></textarea>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="case-priority">Priority*</label>
-                <select 
-                  v-model="caseFormData.priority"
-                  class="form-control" 
-                  id="case-priority" 
-                  required
-                >
-                  <option value="">Select priority</option>
-                  <option value="Critical">Critical</option>
-                  <option value="High">High</option>
-                  <option value="Medium">Medium</option>
-                  <option value="Low">Low</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="case-type">Type*</label>
-                <select 
-                  v-model="caseFormData.type"
-                  class="form-control" 
-                  id="case-type" 
-                  required
-                >
-                  <option value="">Select type</option>
-                  <option value="Domestic Violence">Domestic Violence</option>
-                  <option value="Sexual Assault">Sexual Assault</option>
-                  <option value="Human Trafficking">Human Trafficking</option>
-                  <option value="Child Abuse">Child Abuse</option>
-                  <option value="Elder Abuse">Elder Abuse</option>
-                  <option value="Stalking">Stalking</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-group">
-              <label for="caller-info">Caller Information</label>
-              <textarea 
-                v-model="caseFormData.callerInfo"
-                class="form-control" 
-                id="caller-info" 
-                placeholder="Enter caller information and notes"
-                rows="3"
-              ></textarea>
-            </div>
-            <div class="form-group">
-              <label for="incident-details">Incident Details</label>
-              <textarea 
-                v-model="caseFormData.incidentDetails"
-                class="form-control" 
-                id="incident-details" 
-                placeholder="Enter incident details"
-                rows="4"
-              ></textarea>
-            </div>
-          </div>
-          
-          <div class="form-actions">
-            <button type="button" class="btn-secondary" @click="saveDraft">Save Draft</button>
-            <button type="submit" class="btn-primary">{{ caseFormMode === 'new' ? 'Create Case' : 'Update Case' }}</button>
-          </div>
-        </form>
+    <div class="detail-item">
+      <div class="detail-label">Call Start</div>
+      <div class="detail-value">
+        {{ selectedCallDetails[callsStore.calls_k.start_time?.[0]] 
+          ? new Date(selectedCallDetails[callsStore.calls_k.start_time[0]] * 1000).toLocaleString() 
+          : 'N/A' }}
       </div>
     </div>
-  </div>
 
-  <!-- Minimized Case Form -->
-  <div v-if="caseFormMinimized" class="minimized-case-form" @click="restoreCaseForm">
-    <div class="minimized-content">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      <span>Case #{{ currentCaseId }}</span>
-      <span class="timer">{{ callDuration }}</span>
-    </div>
-  </div>
-
-  <!-- Call Disposition Modal -->
-  <div v-if="showDisposition" class="modal-overlay" @click="closeDisposition">
-    <div class="disposition-modal" @click.stop>
-      <div class="modal-header">
-        <h3>Call Disposition</h3>
-        <div class="call-timer-header">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-            <polyline points="12,6 12,12 16,14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          {{ callDuration }}
-        </div>
-        <button class="modal-close" @click="closeDisposition">×</button>
-      </div>
-      <div class="modal-body">
-        <form @submit.prevent="submitDisposition">
-          <div class="disposition-grid">
-            <div class="form-group">
-              <label>Call Outcome*</label>
-              <select v-model="disposition.outcome" required class="form-control">
-                <option value="">Select Outcome</option>
-                <option value="resolved">Resolved</option>
-                <option value="escalated">Escalated</option>
-                <option value="follow-up">Follow-up Required</option>
-                <option value="referred">Referred</option>
-                <option value="incomplete">Incomplete</option>
-                <option value="prank">Prank Call</option>
-                <option value="blank">Blank/Silent Call</option>
-                <option value="wrong-number">Wrong Number</option>
-                <option value="test-call">Test Call</option>
-                <option value="hang-up">Hang Up</option>
-              </select>
-            </div>
-            
-            <div class="form-group">
-              <label>Call Category*</label>
-              <select v-model="disposition.category" required class="form-control">
-                <option value="">Select Category</option>
-                <option value="domestic-violence">Domestic Violence</option>
-                <option value="sexual-assault">Sexual Assault</option>
-                <option value="mental-health">Mental Health Crisis</option>
-                <option value="substance-abuse">Substance Abuse</option>
-                <option value="child-abuse">Child Abuse</option>
-                <option value="elder-abuse">Elder Abuse</option>
-                <option value="human-trafficking">Human Trafficking</option>
-                <option value="stalking">Stalking/Harassment</option>
-                <option value="information">Information Request</option>
-                <option value="resource-referral">Resource Referral</option>
-                <option value="safety-planning">Safety Planning</option>
-                <option value="legal-advocacy">Legal Advocacy</option>
-                <option value="housing">Housing Assistance</option>
-                <option value="financial">Financial Assistance</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label>Priority Level*</label>
-              <select v-model="disposition.priority" required class="form-control">
-                <option value="">Select Priority</option>
-                <option value="critical">Critical - Immediate Danger</option>
-                <option value="high">High - Urgent Response Needed</option>
-                <option value="medium">Medium - Standard Response</option>
-                <option value="low">Low - Information/Follow-up</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label>Call Duration</label>
-              <input 
-                type="text" 
-                :value="callDuration" 
-                readonly 
-                class="form-control duration-display"
-              />
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Disposition Reason*</label>
-            <select v-model="disposition.reason" required class="form-control">
-              <option value="">Select Reason</option>
-              <optgroup label="Completed Calls">
-                <option value="crisis-resolved">Crisis Resolved</option>
-                <option value="information-provided">Information Provided</option>
-                <option value="referral-made">Referral Made</option>
-                <option value="safety-plan-created">Safety Plan Created</option>
-                <option value="follow-up-scheduled">Follow-up Scheduled</option>
-                <option value="escalated-supervisor">Escalated to Supervisor</option>
-                <option value="escalated-emergency">Escalated to Emergency Services</option>
-              </optgroup>
-              <optgroup label="Incomplete Calls">
-                <option value="caller-disconnected">Caller Disconnected</option>
-                <option value="caller-hung-up">Caller Hung Up</option>
-                <option value="technical-issues">Technical Issues</option>
-                <option value="language-barrier">Language Barrier</option>
-                <option value="caller-not-ready">Caller Not Ready to Talk</option>
-              </optgroup>
-              <optgroup label="Non-Crisis Calls">
-                <option value="prank-call">Prank Call</option>
-                <option value="blank-call">Blank/Silent Call</option>
-                <option value="wrong-number">Wrong Number</option>
-                <option value="test-call">Test Call</option>
-                <option value="misdial">Accidental Dial</option>
-                <option value="non-crisis">Non-Crisis Call</option>
-              </optgroup>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Call Notes*</label>
-            <textarea 
-              v-model="disposition.notes" 
-              rows="4" 
-              placeholder="Enter detailed notes about the call, actions taken, and any follow-up needed..."
-              required
-              class="form-control"
-            ></textarea>
-          </div>
-
-          <div class="form-group" v-if="disposition.outcome === 'escalated'">
-            <label>Escalated To</label>
-            <select v-model="disposition.escalatedTo" class="form-control">
-              <option value="">Select Escalation Target</option>
-              <option value="supervisor">Supervisor</option>
-              <option value="police">Police/Law Enforcement</option>
-              <option value="ems">Emergency Medical Services</option>
-              <option value="cps">Child Protective Services</option>
-              <option value="aps">Adult Protective Services</option>
-              <option value="mental-health">Mental Health Crisis Team</option>
-              <option value="legal-advocate">Legal Advocate</option>
-              <option value="other-agency">Other Agency</option>
-            </select>
-          </div>
-
-          <div class="form-group" v-if="disposition.outcome === 'referred'">
-            <label>Referred To</label>
-            <input 
-              type="text" 
-              v-model="disposition.referredTo"
-              placeholder="Enter organization or service referred to"
-              class="form-control"
-            />
-          </div>
-
-          <div class="disposition-summary" v-if="disposition.outcome && disposition.category && disposition.priority">
-            <h4>Call Summary</h4>
-            <div class="summary-grid">
-              <div class="summary-item">
-                <span class="summary-label">Outcome:</span>
-                <span class="summary-value">{{ disposition.outcome }}</span>
-              </div>
-              <div class="summary-item">
-                <span class="summary-label">Category:</span>
-                <span class="summary-value">{{ disposition.category }}</span>
-              </div>
-              <div class="summary-item">
-                <span class="summary-label">Priority:</span>
-                <span class="summary-value priority-indicator" :class="disposition.priority">{{ disposition.priority }}</span>
-              </div>
-              <div class="summary-item">
-                <span class="summary-label">Duration:</span>
-                <span class="summary-value">{{ callDuration }}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="form-actions">
-            <button type="button" class="btn-secondary" @click="closeDisposition">Cancel</button>
-            <button type="submit" class="btn-primary">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              Complete Call Disposition
-            </button>
-          </div>
-        </form>
+    <div class="detail-item">
+      <div class="detail-label">Call End</div>
+      <div class="detail-value">
+        {{ selectedCallDetails[callsStore.calls_k.end_time?.[0]] 
+          ? new Date(selectedCallDetails[callsStore.calls_k.end_time[0]] * 1000).toLocaleString() 
+          : 'N/A' }}
       </div>
     </div>
-  </div>
 
-  <!-- Case Link Modal -->
-  <div v-if="showCaseLink" class="modal-overlay" @click="closeCaseLink">
-    <div class="modal-content" @click.stop>
-      <div class="modal-header">
-        <h3>Link Call to Different Case</h3>
-        <button class="modal-close" @click="closeCaseLink">×</button>
-      </div>
-      <div class="modal-body">
-        <div class="case-link-options">
-          <div class="case-option" @click="selectCaseLinkOption('existing')">
-            <div class="option-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M10 13C10.4295 13.5741 10.9774 14.0491 11.6066 14.3929C12.2357 14.7367 12.9315 14.9411 13.6467 14.9923C14.3618 15.0435 15.0796 14.9403 15.7513 14.6897C16.4231 14.4392 17.0331 14.047 17.54 13.54L20.54 10.54C21.4508 9.59695 21.9548 8.33394 21.9434 7.02296C21.932 5.71198 21.4061 4.45791 20.4791 3.53087C19.5521 2.60383 18.298 2.07799 16.987 2.0666C15.676 2.0552 14.413 2.55918 13.47 3.47L11.75 5.18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M14 11C13.5705 10.4259 13.0226 9.95085 12.3934 9.60706C11.7643 9.26327 11.0685 9.05885 10.3533 9.00769C9.63819 8.95653 8.92037 9.05973 8.24864 9.31028C7.5769 9.56084 6.9669 9.95303 6.46 10.46L3.46 13.46C2.54918 14.403 2.04520 15.6661 2.0566 16.9771C2.06799 18.288 2.59383 19.5421 3.52087 20.4691C4.44791 21.3962 5.70198 21.922 7.01296 21.9334C8.32394 21.9448 9.58695 21.4408 10.53 20.53L12.24 18.82" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <div class="option-content">
-              <div class="option-title">Link to Existing Case</div>
-              <div class="option-description">Connect this call to a different existing case</div>
-            </div>
-          </div>
-          <div class="case-option" @click="selectCaseLinkOption('new')">
-            <div class="option-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <div class="option-content">
-              <div class="option-title">Create New Case</div>
-              <div class="option-description">Create a new case and link this call to it</div>
-            </div>
-          </div>
-        </div>
+    <div class="detail-item">
+      <div class="detail-label">Disposition</div>
+      <div class="detail-value">
+        {{ selectedCallDetails[callsStore.calls_k.dispositions?.[0]] || "N/A" }}
       </div>
     </div>
-  </div>
 
-  <!-- Call Options Modal -->
-  <div v-if="showCallOptions" class="modal-overlay" @click="closeCallOptions">
-    <div class="modal-content call-options-modal" @click.stop>
-      <div class="modal-header">
-        <h3>Make a Call</h3>
-        <button class="modal-close" @click="closeCallOptions">×</button>
-      </div>
-      <div class="modal-body">
-        <div class="call-options">
-          <div class="call-option" @click="selectCallOption('contacts')">
-            <div class="option-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M16 3.13C16.8604 3.35031 17.623 3.85071 18.1676 4.55232C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89318 18.7122 8.75608 18.1676 9.45769C17.623 10.1593 16.8604 10.6597 16 10.88" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <div class="option-content">
-              <div class="option-title">Call from Contacts</div>
-              <div class="option-description">Select a contact from your saved list</div>
-            </div>
-          </div>
-          <div class="call-option" @click="selectCallOption('new')">
-            <div class="option-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M22 16.92V19C22 20.1046 21.1046 21 20 21C10.6112 21 3 13.3888 3 4C3 2.89543 3.89543 2 5 2H7.08C7.55607 2 7.95823 2.33718 8.02513 2.80754L8.7 7.5C8.76694 7.97036 8.53677 8.42989 8.12 8.67L6.5 9.5C7.84 12.16 11.84 16.16 14.5 17.5L15.33 15.88C15.5701 15.4632 16.0296 15.2331 16.5 15.3L21.1925 16.0249C21.6628 16.0918 22 16.4939 22 16.97V16.92Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <div class="option-content">
-              <div class="option-title">Make New Call</div>
-              <div class="option-description">Enter a phone number to call</div>
-            </div>
-          </div>
-        </div>
+    <div class="detail-item">
+      <div class="detail-label">Agent</div>
+      <div class="detail-value">
+        {{ selectedCallDetails[callsStore.calls_k.user_name?.[0]] || "Unassigned" }}
       </div>
     </div>
-  </div>
 
-  <!-- Contacts Modal -->
-  <div v-if="showContactsModal" class="modal-overlay" @click="closeCallOptions">
-    <div class="modal-content contacts-modal" @click.stop>
-      <div class="modal-header">
-        <h3>Select Contact</h3>
-        <button class="modal-close" @click="closeCallOptions">×</button>
+    <div class="detail-item">
+      <div class="detail-label">Priority</div>
+      <div class="detail-value">
+        <span
+          class="priority-badge"
+          :class="selectedCallDetails[callsStore.calls_k.priority?.[0]]"
+        >
+          {{ selectedCallDetails[callsStore.calls_k.priority?.[0]] || "Normal" }}
+        </span>
       </div>
-      <div class="modal-body">
-        <div class="contacts-search">
-          <input 
-            type="text" 
-            placeholder="Search contacts..." 
-            class="search-input"
-          />
-        </div>
-        <div class="contacts-list">
-          <div 
-            v-for="contact in contacts" 
-            :key="contact.id" 
-            class="contact-item"
-            @click="callContact(contact)"
-          >
-            <div class="contact-avatar">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <div class="contact-info">
-              <div class="contact-name">{{ contact.name }}</div>
-              <div class="contact-phone">{{ contact.phone }}</div>
-              <div class="contact-meta">
-                <span class="contact-type">{{ contact.type }}</span>
-                <span class="contact-last-call">Last call: {{ contact.lastCall }}</span>
-              </div>
-            </div>
-            <div class="contact-priority">
-              <span class="priority-indicator" :class="contact.priority"></span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- New Call Modal -->
-  <div v-if="showNewCallModal" class="modal-overlay" @click="closeCallOptions">
-    <div class="modal-content new-call-modal" @click.stop>
-      <div class="modal-header">
-        <h3>Make New Call</h3>
-        <button class="modal-close" @click="closeCallOptions">×</button>
-      </div>
-      <div class="modal-body">
-        <form @submit.prevent="makeNewCall">
-          <div class="form-group">
-            <label for="phone-number">Phone Number*</label>
-            <input 
-              v-model="newCallNumber"
-              type="tel" 
-              id="phone-number"
-              placeholder="Enter phone number (e.g., +1 555 123 4567)"
-              required
-              class="phone-input"
-            />
-          </div>
-          <div class="call-info">
-            <div class="info-item">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-                <polyline points="12,6 12,12 16,14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              <span>Call will be initiated immediately</span>
-            </div>
-            <div class="info-item">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              <span>A new case will be created automatically</span>
-            </div>
-          </div>
-          <div class="form-actions">
-            <button type="button" class="btn-secondary" @click="closeCallOptions">Cancel</button>
-            <button type="submit" class="btn-primary">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M22 16.92V19C22 20.1046 21.1046 21 20 21C10.6112 21 3 13.3888 3 4C3 2.89543 3.89543 2 5 2H7.08C7.55607 2 7.95823 2.33718 8.02513 2.80754L8.7 7.5C8.76694 7.97036 8.53677 8.42989 8.12 8.67L6.5 9.5C7.84 12.16 11.84 16.16 14.5 17.5L15.33 15.88C15.5701 15.4632 16.0296 15.2331 16.5 15.3L21.1925 16.0249C21.6628 16.0918 22 16.4939 22 16.97V16.92Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              Call Now
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- Success/Info Notification -->
-  <div v-if="showNotification" class="notification-overlay">
-    <div class="notification-container" :class="notificationType">
-      <div class="notification-icon">
-        <svg v-if="notificationType === 'success'" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <svg v-else-if="notificationType === 'info'" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-          <line x1="12" y1="16" x2="12" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <line x1="12" y1="8" x2="12.01" y2="8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <svg v-else width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-          <line x1="15" y1="9" x2="9" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <line x1="9" y1="9" x2="15" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </div>
-      <div class="notification-content">
-        <div class="notification-message">{{ notificationMessage }}</div>
-      </div>
-      <button class="notification-close" @click="showNotification = false">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
     </div>
   </div>
 </div>
+
+
+    <!-- Queue Popup Modal -->
+    <div v-if="showQueuePopup" class="modal-overlay" @click="closeQueuePopup">
+      <div class="queue-popup" @click.stop>
+        <div class="queue-popup-header">
+          <h3>Queue Members</h3>
+          <button class="modal-close" @click="closeQueuePopup">×</button>
+        </div>
+        <div class="queue-members">
+          <div
+            v-for="member in queueMembers"
+            :key="member.id"
+            class="queue-member-card"
+            @click="confirmJoinQueue"
+          >
+            <div class="member-avatar">
+              <img :src="member.avatar" :alt="member.name" />
+              <div class="status-indicator" :class="member.status"></div>
+            </div>
+            <div class="member-info">
+              <div class="member-name">{{ member.name }}</div>
+              <div class="member-role">{{ member.role }}</div>
+              <div class="member-status">{{ member.statusText }}</div>
+            </div>
+          </div>
+        </div>
+        <div class="queue-popup-footer">
+          <button class="btn-primary" @click="confirmJoinQueue">
+            Join Queue
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ringing Call Interface -->
+    <div v-if="showRingingInterface && ringingCall" class="ringing-overlay">
+      <div class="ringing-container">
+        <div class="ringing-header">
+          <div class="call-type-badge" :class="ringingCall.priority">
+            {{ ringingCall.type }}
+          </div>
+        </div>
+
+        <div class="caller-info">
+          <div class="caller-avatar">
+            <svg
+              width="60"
+              height="60"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <circle
+                cx="12"
+                cy="7"
+                r="4"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          <div class="caller-name">{{ ringingCall.callerName }}</div>
+          <div class="caller-number">
+            {{ ringingCall.number || "Unknown Number" }}
+          </div>
+          <div class="call-duration">{{ ringingDuration }}</div>
+        </div>
+
+        <div class="ringing-animation">
+          <div class="pulse-ring"></div>
+          <div class="pulse-ring delay-1"></div>
+          <div class="pulse-ring delay-2"></div>
+        </div>
+
+        <div class="call-actions">
+          <button class="call-btn decline" @click="declineCall">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M22 16.92V19C22 20.1046 21.1046 21 20 21C10.6112 21 3 13.3888 3 4C3 2.89543 3.89543 2 5 2H7.08C7.55607 2 7.95823 2.33718 8.02513 2.80754L8.7 7.5C8.76694 7.97036 8.53677 8.42989 8.12 8.67L6.5 9.5C7.84 12.16 11.84 16.16 14.5 17.5L15.33 15.88C15.5701 15.4632 16.0296 15.2331 16.5 15.3L21.1925 16.0249C21.6628 16.0918 22 16.4939 22 16.97V16.92Z"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+          <button class="call-btn answer" @click="answerCall">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M22 16.92V19C22 20.1046 21.1046 21 20 21C10.6112 21 3 13.3888 3 4C3 2.89543 3.89543 2 5 2H7.08C7.55607 2 7.95823 2.33718 8.02513 2.80754L8.7 7.5C8.76694 7.97036 8.53677 8.42989 8.12 8.67L6.5 9.5C7.84 12.16 11.84 16.16 14.5 17.5L15.33 15.88C15.5701 15.4632 16.0296 15.2331 16.5 15.3L21.1925 16.0249C21.6628 16.0918 22 16.4939 22 16.97V16.92Z"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Case Options Modal - Shows after answering call -->
+    <div v-if="showCaseOptions" class="modal-overlay" @click="closeCaseOptions">
+      <div class="case-options-modal" @click.stop>
+        <div class="modal-header">
+          <h3>Case Management Options</h3>
+          <div class="call-timer-header">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="2"
+              />
+              <polyline
+                points="12,6 12,12 16,14"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            {{ callDuration }}
+          </div>
+        </div>
+        <div class="modal-body">
+          <div class="case-options-grid">
+            <div class="case-option-card" @click="selectCaseOption('new')">
+              <div class="option-icon new-case">
+                <svg
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M12 5V19M5 12H19"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+              <div class="option-content">
+                <div class="option-title">Open New Case</div>
+                <div class="option-description">
+                  Create a new case for this call and start documenting the
+                  incident
+                </div>
+              </div>
+              <div class="option-arrow">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M9 18L15 12L9 6"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+            </div>
+
+            <div class="case-option-card" @click="selectCaseOption('existing')">
+              <div class="option-icon existing-case">
+                <svg
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <polyline
+                    points="14,2 14,8 20,8"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M16 13H8M16 17H8M10 9H8"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+              <div class="option-content">
+                <div class="option-title">Open Existing Case</div>
+                <div class="option-description">
+                  Link this call to an existing case and edit case details
+                </div>
+              </div>
+              <div class="option-arrow">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M9 18L15 12L9 6"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+            </div>
+
+            <div
+              class="case-option-card"
+              @click="selectCaseOption('disposition')"
+            >
+              <div class="option-icon disposition-call">
+                <svg
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M9 12L11 14L15 10"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+              <div class="option-content">
+                <div class="option-title">Disposition Call</div>
+                <div class="option-description">
+                  Complete call disposition and end the call with proper
+                  documentation
+                </div>
+              </div>
+              <div class="option-arrow">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M9 18L15 12L9 6"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Existing Case Search Modal -->
+    <div
+      v-if="showExistingCaseSearch"
+      class="modal-overlay"
+      @click="closeExistingCaseSearch"
+    >
+      <div class="existing-case-modal" @click.stop>
+        <div class="modal-header">
+          <h3>Select Existing Case</h3>
+          <div class="call-timer-header">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="2"
+              />
+              <polyline
+                points="12,6 12,12 16,14"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            {{ callDuration }}
+          </div>
+          <button class="modal-close" @click="closeExistingCaseSearch">
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="case-search">
+            <input
+              type="text"
+              v-model="caseSearchQuery"
+              placeholder="Search cases by ID, name, or client..."
+              class="search-input"
+            />
+          </div>
+          <div class="existing-cases-list">
+            <div
+              v-for="existingCase in filteredExistingCases"
+              :key="existingCase.id"
+              class="existing-case-item"
+              @click="selectExistingCase(existingCase)"
+            >
+              <div class="case-info">
+                <div class="case-header">
+                  <div class="case-id">#{{ existingCase.id }}</div>
+                  <div
+                    class="case-priority"
+                    :class="existingCase.priority.toLowerCase()"
+                  >
+                    {{ existingCase.priority }}
+                  </div>
+                </div>
+                <div class="case-title">{{ existingCase.title }}</div>
+                <div class="case-meta">
+                  <span class="case-client"
+                    >Client: {{ existingCase.client }}</span
+                  >
+                  <span class="case-date">{{ existingCase.date }}</span>
+                </div>
+                <div class="case-status">
+                  <span
+                    class="status-badge"
+                    :class="existingCase.status.toLowerCase()"
+                    >{{ existingCase.status }}</span
+                  >
+                </div>
+              </div>
+              <div class="case-select-arrow">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M9 18L15 12L9 6"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Case Form During Call -->
+    <div v-if="showCaseForm" class="case-form-overlay">
+      <div class="case-form-container">
+        <div class="case-form-header">
+          <div class="form-title">
+            <h3>
+              {{ caseFormMode === "new" ? "Create New Case" : "Edit Case" }}
+            </h3>
+            <div class="case-id">Case #{{ currentCaseId }}</div>
+          </div>
+          <div class="call-timer">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="2"
+              />
+              <polyline
+                points="12,6 12,12 16,14"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            {{ callDuration }}
+          </div>
+          <button class="minimize-btn" @click="minimizeCaseForm">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M6 9L12 15L18 9"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <div class="case-form-content">
+          <form @submit.prevent="saveCaseForm">
+            <div class="form-section">
+              <div class="section-title">Basic Information</div>
+              <div class="form-group">
+                <label for="case-name">Case Name*</label>
+                <input
+                  v-model="caseFormData.caseName"
+                  class="form-control"
+                  id="case-name"
+                  placeholder="Enter case name"
+                  required
+                  type="text"
+                />
+              </div>
+              <div class="form-group">
+                <label for="case-description">Description*</label>
+                <textarea
+                  v-model="caseFormData.description"
+                  class="form-control"
+                  id="case-description"
+                  placeholder="Enter case description"
+                  required
+                  rows="3"
+                ></textarea>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="case-priority">Priority*</label>
+                  <select
+                    v-model="caseFormData.priority"
+                    class="form-control"
+                    id="case-priority"
+                    required
+                  >
+                    <option value="">Select priority</option>
+                    <option value="Critical">Critical</option>
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="case-type">Type*</label>
+                  <select
+                    v-model="caseFormData.type"
+                    class="form-control"
+                    id="case-type"
+                    required
+                  >
+                    <option value="">Select type</option>
+                    <option value="Domestic Violence">Domestic Violence</option>
+                    <option value="Sexual Assault">Sexual Assault</option>
+                    <option value="Human Trafficking">Human Trafficking</option>
+                    <option value="Child Abuse">Child Abuse</option>
+                    <option value="Elder Abuse">Elder Abuse</option>
+                    <option value="Stalking">Stalking</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="caller-info">Caller Information</label>
+                <textarea
+                  v-model="caseFormData.callerInfo"
+                  class="form-control"
+                  id="caller-info"
+                  placeholder="Enter caller information and notes"
+                  rows="3"
+                ></textarea>
+              </div>
+              <div class="form-group">
+                <label for="incident-details">Incident Details</label>
+                <textarea
+                  v-model="caseFormData.incidentDetails"
+                  class="form-control"
+                  id="incident-details"
+                  placeholder="Enter incident details"
+                  rows="4"
+                ></textarea>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn-secondary" @click="saveDraft">
+                Save Draft
+              </button>
+              <button type="submit" class="btn-primary">
+                {{ caseFormMode === "new" ? "Create Case" : "Update Case" }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Minimized Case Form -->
+    <div
+      v-if="caseFormMinimized"
+      class="minimized-case-form"
+      @click="restoreCaseForm"
+    >
+      <div class="minimized-content">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        <span>Case #{{ currentCaseId }}</span>
+        <span class="timer">{{ callDuration }}</span>
+      </div>
+    </div>
+
+    <!-- Call Disposition Modal -->
+    <div v-if="showDisposition" class="modal-overlay" @click="closeDisposition">
+      <div class="disposition-modal" @click.stop>
+        <div class="modal-header">
+          <h3>Call Disposition</h3>
+          <div class="call-timer-header">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="2"
+              />
+              <polyline
+                points="12,6 12,12 16,14"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            {{ callDuration }}
+          </div>
+          <button class="modal-close" @click="closeDisposition">×</button>
+        </div>
+        <div class="modal-body">
+          <form @submit.prevent="submitDisposition">
+            <div class="disposition-grid">
+              <div class="form-group">
+                <label>Call Outcome*</label>
+                <select
+                  v-model="disposition.outcome"
+                  required
+                  class="form-control"
+                >
+                  <option value="">Select Outcome</option>
+                  <option value="resolved">Resolved</option>
+                  <option value="escalated">Escalated</option>
+                  <option value="follow-up">Follow-up Required</option>
+                  <option value="referred">Referred</option>
+                  <option value="incomplete">Incomplete</option>
+                  <option value="prank">Prank Call</option>
+                  <option value="blank">Blank/Silent Call</option>
+                  <option value="wrong-number">Wrong Number</option>
+                  <option value="test-call">Test Call</option>
+                  <option value="hang-up">Hang Up</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Call Category*</label>
+                <select
+                  v-model="disposition.category"
+                  required
+                  class="form-control"
+                >
+                  <option value="">Select Category</option>
+                  <option value="domestic-violence">Domestic Violence</option>
+                  <option value="sexual-assault">Sexual Assault</option>
+                  <option value="mental-health">Mental Health Crisis</option>
+                  <option value="substance-abuse">Substance Abuse</option>
+                  <option value="child-abuse">Child Abuse</option>
+                  <option value="elder-abuse">Elder Abuse</option>
+                  <option value="human-trafficking">Human Trafficking</option>
+                  <option value="stalking">Stalking/Harassment</option>
+                  <option value="information">Information Request</option>
+                  <option value="resource-referral">Resource Referral</option>
+                  <option value="safety-planning">Safety Planning</option>
+                  <option value="legal-advocacy">Legal Advocacy</option>
+                  <option value="housing">Housing Assistance</option>
+                  <option value="financial">Financial Assistance</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Priority Level*</label>
+                <select
+                  v-model="disposition.priority"
+                  required
+                  class="form-control"
+                >
+                  <option value="">Select Priority</option>
+                  <option value="critical">Critical - Immediate Danger</option>
+                  <option value="high">High - Urgent Response Needed</option>
+                  <option value="medium">Medium - Standard Response</option>
+                  <option value="low">Low - Information/Follow-up</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Call Duration</label>
+                <input
+                  type="text"
+                  :value="callDuration"
+                  readonly
+                  class="form-control duration-display"
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Disposition Reason*</label>
+              <select
+                v-model="disposition.reason"
+                required
+                class="form-control"
+              >
+                <option value="">Select Reason</option>
+                <optgroup label="Completed Calls">
+                  <option value="crisis-resolved">Crisis Resolved</option>
+                  <option value="information-provided">
+                    Information Provided
+                  </option>
+                  <option value="referral-made">Referral Made</option>
+                  <option value="safety-plan-created">
+                    Safety Plan Created
+                  </option>
+                  <option value="follow-up-scheduled">
+                    Follow-up Scheduled
+                  </option>
+                  <option value="escalated-supervisor">
+                    Escalated to Supervisor
+                  </option>
+                  <option value="escalated-emergency">
+                    Escalated to Emergency Services
+                  </option>
+                </optgroup>
+                <optgroup label="Incomplete Calls">
+                  <option value="caller-disconnected">
+                    Caller Disconnected
+                  </option>
+                  <option value="caller-hung-up">Caller Hung Up</option>
+                  <option value="technical-issues">Technical Issues</option>
+                  <option value="language-barrier">Language Barrier</option>
+                  <option value="caller-not-ready">
+                    Caller Not Ready to Talk
+                  </option>
+                </optgroup>
+                <optgroup label="Non-Crisis Calls">
+                  <option value="prank-call">Prank Call</option>
+                  <option value="blank-call">Blank/Silent Call</option>
+                  <option value="wrong-number">Wrong Number</option>
+                  <option value="test-call">Test Call</option>
+                  <option value="misdial">Accidental Dial</option>
+                  <option value="non-crisis">Non-Crisis Call</option>
+                </optgroup>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Call Notes*</label>
+              <textarea
+                v-model="disposition.notes"
+                rows="4"
+                placeholder="Enter detailed notes about the call, actions taken, and any follow-up needed..."
+                required
+                class="form-control"
+              ></textarea>
+            </div>
+
+            <div class="form-group" v-if="disposition.outcome === 'escalated'">
+              <label>Escalated To</label>
+              <select v-model="disposition.escalatedTo" class="form-control">
+                <option value="">Select Escalation Target</option>
+                <option value="supervisor">Supervisor</option>
+                <option value="police">Police/Law Enforcement</option>
+                <option value="ems">Emergency Medical Services</option>
+                <option value="cps">Child Protective Services</option>
+                <option value="aps">Adult Protective Services</option>
+                <option value="mental-health">Mental Health Crisis Team</option>
+                <option value="legal-advocate">Legal Advocate</option>
+                <option value="other-agency">Other Agency</option>
+              </select>
+            </div>
+
+            <div class="form-group" v-if="disposition.outcome === 'referred'">
+              <label>Referred To</label>
+              <input
+                type="text"
+                v-model="disposition.referredTo"
+                placeholder="Enter organization or service referred to"
+                class="form-control"
+              />
+            </div>
+
+            <div
+              class="disposition-summary"
+              v-if="
+                disposition.outcome &&
+                disposition.category &&
+                disposition.priority
+              "
+            >
+              <h4>Call Summary</h4>
+              <div class="summary-grid">
+                <div class="summary-item">
+                  <span class="summary-label">Outcome:</span>
+                  <span class="summary-value">{{ disposition.outcome }}</span>
+                </div>
+                <div class="summary-item">
+                  <span class="summary-label">Category:</span>
+                  <span class="summary-value">{{ disposition.category }}</span>
+                </div>
+                <div class="summary-item">
+                  <span class="summary-label">Priority:</span>
+                  <span
+                    class="summary-value priority-indicator"
+                    :class="disposition.priority"
+                    >{{ disposition.priority }}</span
+                  >
+                </div>
+                <div class="summary-item">
+                  <span class="summary-label">Duration:</span>
+                  <span class="summary-value">{{ callDuration }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button
+                type="button"
+                class="btn-secondary"
+                @click="closeDisposition"
+              >
+                Cancel
+              </button>
+              <button type="submit" class="btn-primary">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M9 12L11 14L15 10"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                Complete Call Disposition
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Case Link Modal -->
+    <div v-if="showCaseLink" class="modal-overlay" @click="closeCaseLink">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3>Link Call to Different Case</h3>
+          <button class="modal-close" @click="closeCaseLink">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="case-link-options">
+            <div class="case-option" @click="selectCaseLinkOption('existing')">
+              <div class="option-icon">
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M10 13C10.4295 13.5741 10.9774 14.0491 11.6066 14.3929C12.2357 14.7367 12.9315 14.9411 13.6467 14.9923C14.3618 15.0435 15.0796 14.9403 15.7513 14.6897C16.4231 14.4392 17.0331 14.047 17.54 13.54L20.54 10.54C21.4508 9.59695 21.9548 8.33394 21.9434 7.02296C21.932 5.71198 21.4061 4.45791 20.4791 3.53087C19.5521 2.60383 18.298 2.07799 16.987 2.0666C15.676 2.0552 14.413 2.55918 13.47 3.47L11.75 5.18"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M14 11C13.5705 10.4259 13.0226 9.95085 12.3934 9.60706C11.7643 9.26327 11.0685 9.05885 10.3533 9.00769C9.63819 8.95653 8.92037 9.05973 8.24864 9.31028C7.5769 9.56084 6.9669 9.95303 6.46 10.46L3.46 13.46C2.54918 14.403 2.04520 15.6661 2.0566 16.9771C2.06799 18.288 2.59383 19.5421 3.52087 20.4691C4.44791 21.3962 5.70198 21.922 7.01296 21.9334C8.32394 21.9448 9.58695 21.4408 10.53 20.53L12.24 18.82"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+              <div class="option-content">
+                <div class="option-title">Link to Existing Case</div>
+                <div class="option-description">
+                  Connect this call to a different existing case
+                </div>
+              </div>
+            </div>
+            <div class="case-option" @click="selectCaseLinkOption('new')">
+              <div class="option-icon">
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M12 5V19M5 12H19"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+              <div class="option-content">
+                <div class="option-title">Create New Case</div>
+                <div class="option-description">
+                  Create a new case and link this call to it
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Call Options Modal -->
+    <div v-if="showCallOptions" class="modal-overlay" @click="closeCallOptions">
+      <div class="modal-content call-options-modal" @click.stop>
+        <div class="modal-header">
+          <h3>Make a Call</h3>
+          <button class="modal-close" @click="closeCallOptions">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="call-options">
+            <div class="call-option" @click="selectCallOption('contacts')">
+              <div class="option-icon">
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <circle
+                    cx="9"
+                    cy="7"
+                    r="4"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M16 3.13C16.8604 3.35031 17.623 3.85071 18.1676 4.55232C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89318 18.7122 8.75608 18.1676 9.45769C17.623 10.1593 16.8604 10.6597 16 10.88"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+              <div class="option-content">
+                <div class="option-title">Call from Contacts</div>
+                <div class="option-description">
+                  Select a contact from your saved list
+                </div>
+              </div>
+            </div>
+            <div class="call-option" @click="selectCallOption('new')">
+              <div class="option-icon">
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M22 16.92V19C22 20.1046 21.1046 21 20 21C10.6112 21 3 13.3888 3 4C3 2.89543 3.89543 2 5 2H7.08C7.55607 2 7.95823 2.33718 8.02513 2.80754L8.7 7.5C8.76694 7.97036 8.53677 8.42989 8.12 8.67L6.5 9.5C7.84 12.16 11.84 16.16 14.5 17.5L15.33 15.88C15.5701 15.4632 16.0296 15.2331 16.5 15.3L21.1925 16.0249C21.6628 16.0918 22 16.4939 22 16.97V16.92Z"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+              <div class="option-content">
+                <div class="option-title">Make New Call</div>
+                <div class="option-description">
+                  Enter a phone number to call
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contacts Modal -->
+    <div
+      v-if="showContactsModal"
+      class="modal-overlay"
+      @click="closeCallOptions"
+    >
+      <div class="modal-content contacts-modal" @click.stop>
+        <div class="modal-header">
+          <h3>Select Contact</h3>
+          <button class="modal-close" @click="closeCallOptions">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="contacts-search">
+            <input
+              type="text"
+              placeholder="Search contacts..."
+              class="search-input"
+            />
+          </div>
+          <div class="contacts-list">
+            <div
+              v-for="contact in contacts"
+              :key="contact.id"
+              class="contact-item"
+              @click="callContact(contact)"
+            >
+              <div class="contact-avatar">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <circle
+                    cx="12"
+                    cy="7"
+                    r="4"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+              <div class="contact-info">
+                <div class="contact-name">{{ contact.name }}</div>
+                <div class="contact-phone">{{ contact.phone }}</div>
+                <div class="contact-meta">
+                  <span class="contact-type">{{ contact.type }}</span>
+                  <span class="contact-last-call"
+                    >Last call: {{ contact.lastCall }}</span
+                  >
+                </div>
+              </div>
+              <div class="contact-priority">
+                <span
+                  class="priority-indicator"
+                  :class="contact.priority"
+                ></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- New Call Modal -->
+    <div
+      v-if="showNewCallModal"
+      class="modal-overlay"
+      @click="closeCallOptions"
+    >
+      <div class="modal-content new-call-modal" @click.stop>
+        <div class="modal-header">
+          <h3>Make New Call</h3>
+          <button class="modal-close" @click="closeCallOptions">×</button>
+        </div>
+        <div class="modal-body">
+          <form @submit.prevent="makeNewCall">
+            <div class="form-group">
+              <label for="phone-number">Phone Number*</label>
+              <input
+                v-model="newCallNumber"
+                type="tel"
+                id="phone-number"
+                placeholder="Enter phone number (e.g., +1 555 123 4567)"
+                required
+                class="phone-input"
+              />
+            </div>
+            <div class="call-info">
+              <div class="info-item">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
+                  <polyline
+                    points="12,6 12,12 16,14"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                <span>Call will be initiated immediately</span>
+              </div>
+              <div class="info-item">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                <span>A new case will be created automatically</span>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button
+                type="button"
+                class="btn-secondary"
+                @click="closeCallOptions"
+              >
+                Cancel
+              </button>
+              <button type="submit" class="btn-primary">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M22 16.92V19C22 20.1046 21.1046 21 20 21C10.6112 21 3 13.3888 3 4C3 2.89543 3.89543 2 5 2H7.08C7.55607 2 7.95823 2.33718 8.02513 2.80754L8.7 7.5C8.76694 7.97036 8.53677 8.42989 8.12 8.67L6.5 9.5C7.84 12.16 11.84 16.16 14.5 17.5L15.33 15.88C15.5701 15.4632 16.0296 15.2331 16.5 15.3L21.1925 16.0249C21.6628 16.0918 22 16.4939 22 16.97V16.92Z"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                Call Now
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Success/Info Notification -->
+    <div v-if="showNotification" class="notification-overlay">
+      <div class="notification-container" :class="notificationType">
+        <div class="notification-icon">
+          <svg
+            v-if="notificationType === 'success'"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M9 12L11 14L15 10"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <circle
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          <svg
+            v-else-if="notificationType === 'info'"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <circle
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="2"
+            />
+            <line
+              x1="12"
+              y1="16"
+              x2="12"
+              y2="12"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <line
+              x1="12"
+              y1="8"
+              x2="12.01"
+              y2="8"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          <svg
+            v-else
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <circle
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="2"
+            />
+            <line
+              x1="15"
+              y1="9"
+              x2="9"
+              y2="15"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <line
+              x1="9"
+              y1="9"
+              x2="15"
+              y2="15"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </div>
+        <div class="notification-content">
+          <div class="notification-message">{{ notificationMessage }}</div>
+        </div>
+        <button class="notification-close" @click="showNotification = false">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <line
+              x1="18"
+              y1="6"
+              x2="6"
+              y2="18"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <line
+              x1="6"
+              y1="6"
+              x2="18"
+              y2="18"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
-import SidePanel from '@/components/SidePanel.vue'
+import { ref, computed, onMounted, onUnmounted } from "vue";
+import { useRouter } from "vue-router";
+import SidePanel from "@/components/SidePanel.vue";
+import { useCallStore } from "@/stores/calls";
 
-const router = useRouter()
-const isSidebarCollapsed = ref(false)
+const callsStore = useCallStore();
+
+onMounted(async () => {
+  try {
+    console.log("Fetching calls...");
+    await callsStore.listCalls(); 
+    console.log("Calls fetched:", callsStore.calls);
+  } catch (err) {
+    console.error("Error fetching calls:", err);
+  }
+});
+
+const selectedCallDetails = ref(null);
+
+function selectCall(callId) {
+  selectedCallId.value = callId;
+  const call = callsStore.calls.find(
+    (c) => c[callsStore.calls_k?.uniqueid?.[0]] === callId
+  );
+  selectedCallDetails.value = call || null;
+}
+
+// Group calls by date label for the timeline
+const groupedCalls = computed(() => {
+  if (!callsStore.calls || !Array.isArray(callsStore.calls)) return {};
+
+  const groups = {};
+  const index = callsStore.calls_k?.dth?.[0]; // timestamp column index
+  if (index === undefined) return groups;
+
+  callsStore.calls.forEach((call) => {
+    const timestamp = call[index];
+    const date = new Date(timestamp * 1000).toLocaleDateString();
+    if (!groups[date]) groups[date] = [];
+    groups[date].push(call);
+  });
+
+  return groups;
+});
+
+const selectedCallId = ref(null);
+
+
+
+
+// const selectCall = (id) => {
+//   console.log('Selected call ID:', id);
+// };
+const router = useRouter();
+const isSidebarCollapsed = ref(false);
 function handleSidebarToggle(collapsed) {
-  isSidebarCollapsed.value = collapsed
+  isSidebarCollapsed.value = collapsed;
 }
 
 // Reactive state
-const activeView = ref('timeline')
-const selectedCallId = ref('1348456')
-const currentTheme = ref('dark')
-const selectedTimeRange = ref('all')
-const showCallDetails = ref(true)
-const userRole = ref('super-admin')
+const activeView = ref("timeline");
+//const selectedCallId = ref('1348456')
+const currentTheme = ref("dark");
+const selectedTimeRange = ref("all");
+const showCallDetails = ref(false);
+const userRole = ref("super-admin");
 
 // Queue management state
-const isInQueue = ref(false)
-const isProcessingQueue = ref(false)
-const currentCall = ref(null)
-const callStartTime = ref(null)
-const callDuration = ref('00:00')
+const isInQueue = ref(false);
+const isProcessingQueue = ref(false);
+const currentCall = ref(null);
+const callStartTime = ref(null);
+const callDuration = ref("00:00");
 
 // New modal states
-const showQueuePopup = ref(false)
-const showRingingInterface = ref(false)
-const showCaseForm = ref(false)
-const caseFormMinimized = ref(false)
+const showQueuePopup = ref(false);
+const showRingingInterface = ref(false);
+const showCaseForm = ref(false);
+const caseFormMinimized = ref(false);
 
 // Case options modal states
-const showCaseOptions = ref(false)
-const showExistingCaseSearch = ref(false)
-const caseSearchQuery = ref('')
-const caseFormMode = ref('new') // 'new' or 'edit'
+const showCaseOptions = ref(false);
+const showExistingCaseSearch = ref(false);
+const caseSearchQuery = ref("");
+const caseFormMode = ref("new"); // 'new' or 'edit'
 
 // Modal states
-const showDisposition = ref(false)
-const showCaseLink = ref(false)
-const selectedCallForLink = ref(null)
+const showDisposition = ref(false);
+const showCaseLink = ref(false);
+const selectedCallForLink = ref(null);
 
 // Call initiation modal states
-const showCallOptions = ref(false)
-const showContactsModal = ref(false)
-const showNewCallModal = ref(false)
-const newCallNumber = ref('')
-const selectedContact = ref(null)
+const showCallOptions = ref(false);
+const showContactsModal = ref(false);
+const showNewCallModal = ref(false);
+const newCallNumber = ref("");
+const selectedContact = ref(null);
 
 // Notification state
-const showNotification = ref(false)
-const notificationMessage = ref('')
-const notificationType = ref('success') // 'success', 'error', 'info'
+const showNotification = ref(false);
+const notificationMessage = ref("");
+const notificationType = ref("success"); // 'success', 'error', 'info'
 
 // Sample existing cases for search
 const existingCases = ref([
   {
-    id: 'CASE-2025-1001',
-    title: 'Domestic Violence Support - Jane Doe',
-    client: 'Jane Doe',
-    priority: 'High',
-    status: 'Open',
-    date: '2025-01-15',
-    description: 'Ongoing domestic violence case requiring immediate attention'
+    id: "CASE-2025-1001",
+    title: "Domestic Violence Support - Jane Doe",
+    client: "Jane Doe",
+    priority: "High",
+    status: "Open",
+    date: "2025-01-15",
+    description: "Ongoing domestic violence case requiring immediate attention",
   },
   {
-    id: 'CASE-2025-1002',
-    title: 'Child Abuse Investigation',
-    client: 'Anonymous',
-    priority: 'Critical',
-    status: 'In Progress',
-    date: '2025-01-14',
-    description: 'Child welfare investigation case'
+    id: "CASE-2025-1002",
+    title: "Child Abuse Investigation",
+    client: "Anonymous",
+    priority: "Critical",
+    status: "In Progress",
+    date: "2025-01-14",
+    description: "Child welfare investigation case",
   },
   {
-    id: 'CASE-2025-1003',
-    title: 'Mental Health Crisis Support',
-    client: 'John Smith',
-    priority: 'Medium',
-    status: 'Open',
-    date: '2025-01-13',
-    description: 'Mental health crisis intervention and support'
+    id: "CASE-2025-1003",
+    title: "Mental Health Crisis Support",
+    client: "John Smith",
+    priority: "Medium",
+    status: "Open",
+    date: "2025-01-13",
+    description: "Mental health crisis intervention and support",
   },
   {
-    id: 'CASE-2025-1004',
-    title: 'Elder Abuse Report',
-    client: 'Mary Johnson',
-    priority: 'High',
-    status: 'Pending',
-    date: '2025-01-12',
-    description: 'Elder abuse investigation and support services'
+    id: "CASE-2025-1004",
+    title: "Elder Abuse Report",
+    client: "Mary Johnson",
+    priority: "High",
+    status: "Pending",
+    date: "2025-01-12",
+    description: "Elder abuse investigation and support services",
   },
   {
-    id: 'CASE-2025-1005',
-    title: 'Sexual Assault Support',
-    client: 'Anonymous',
-    priority: 'Critical',
-    status: 'Open',
-    date: '2025-01-11',
-    description: 'Sexual assault survivor support and advocacy'
-  }
-])
+    id: "CASE-2025-1005",
+    title: "Sexual Assault Support",
+    client: "Anonymous",
+    priority: "Critical",
+    status: "Open",
+    date: "2025-01-11",
+    description: "Sexual assault survivor support and advocacy",
+  },
+]);
 
 // Computed property for filtered existing cases
 const filteredExistingCases = computed(() => {
-  if (!caseSearchQuery.value) return existingCases.value
-  
-  const query = caseSearchQuery.value.toLowerCase()
-  return existingCases.value.filter(caseItem => 
-    caseItem.id.toLowerCase().includes(query) ||
-    caseItem.title.toLowerCase().includes(query) ||
-    caseItem.client.toLowerCase().includes(query)
-  )
-})
+  if (!caseSearchQuery.value) return existingCases.value;
+
+  const query = caseSearchQuery.value.toLowerCase();
+  return existingCases.value.filter(
+    (caseItem) =>
+      caseItem.id.toLowerCase().includes(query) ||
+      caseItem.title.toLowerCase().includes(query) ||
+      caseItem.client.toLowerCase().includes(query)
+  );
+});
 
 // Sample contacts data
 const contacts = ref([
   {
     id: 1,
-    name: 'Sarah Johnson',
-    phone: '+1 (555) 123-4567',
-    type: 'Client',
-    lastCall: '2 days ago',
-    priority: 'high'
+    name: "Sarah Johnson",
+    phone: "+1 (555) 123-4567",
+    type: "Client",
+    lastCall: "2 days ago",
+    priority: "high",
   },
   {
     id: 2,
-    name: 'Michael Brown',
-    phone: '+1 (555) 987-6543',
-    type: 'Emergency Contact',
-    lastCall: '1 week ago',
-    priority: 'critical'
+    name: "Michael Brown",
+    phone: "+1 (555) 987-6543",
+    type: "Emergency Contact",
+    lastCall: "1 week ago",
+    priority: "critical",
   },
   {
     id: 3,
-    name: 'Emily Davis',
-    phone: '+1 (555) 456-7890',
-    type: 'Family Member',
-    lastCall: '3 days ago',
-    priority: 'medium'
+    name: "Emily Davis",
+    phone: "+1 (555) 456-7890",
+    type: "Family Member",
+    lastCall: "3 days ago",
+    priority: "medium",
   },
   {
     id: 4,
-    name: 'Robert Wilson',
-    phone: '+1 (555) 321-0987',
-    type: 'Legal Advocate',
-    lastCall: '5 days ago',
-    priority: 'high'
+    name: "Robert Wilson",
+    phone: "+1 (555) 321-0987",
+    type: "Legal Advocate",
+    lastCall: "5 days ago",
+    priority: "high",
   },
   {
     id: 5,
-    name: 'Lisa Anderson',
-    phone: '+1 (555) 654-3210',
-    type: 'Counselor',
-    lastCall: '1 day ago',
-    priority: 'medium'
-  }
-])
+    name: "Lisa Anderson",
+    phone: "+1 (555) 654-3210",
+    type: "Counselor",
+    lastCall: "1 day ago",
+    priority: "medium",
+  },
+]);
 
 // Ringing call state
-const ringingCall = ref(null)
-const ringingDuration = ref('00:00')
-const ringingStartTime = ref(null)
+const ringingCall = ref(null);
+const ringingDuration = ref("00:00");
+const ringingStartTime = ref(null);
 
 // Case form data
-const currentCaseId = ref('')
+const currentCaseId = ref("");
 const caseFormData = ref({
-  caseName: '',
-  description: '',
-  priority: '',
-  type: '',
-  callerInfo: '',
-  incidentDetails: ''
-})
+  caseName: "",
+  description: "",
+  priority: "",
+  type: "",
+  callerInfo: "",
+  incidentDetails: "",
+});
 
 // Disposition form
 const disposition = ref({
-  outcome: '',
-  category: '',
-  priority: '',
-  reason: '',
-  notes: '',
-  escalatedTo: '',
-  referredTo: ''
-})
+  outcome: "",
+  category: "",
+  priority: "",
+  reason: "",
+  notes: "",
+  escalatedTo: "",
+  referredTo: "",
+});
 
 // Queue members data
 const queueMembers = ref([
   {
     id: 1,
-    name: 'Sarah Davis',
-    role: 'Senior Crisis Counselor',
-    status: 'available',
-    statusText: 'Available',
-    avatar: '/placeholder.svg?height=40&width=40'
+    name: "Sarah Davis",
+    role: "Senior Crisis Counselor",
+    status: "available",
+    statusText: "Available",
+    avatar: "/placeholder.svg?height=40&width=40",
   },
   {
     id: 2,
-    name: 'Mark Reynolds',
-    role: 'Crisis Counselor',
-    status: 'busy',
-    statusText: 'On Call',
-    avatar: '/placeholder.svg?height=40&width=40'
+    name: "Mark Reynolds",
+    role: "Crisis Counselor",
+    status: "busy",
+    statusText: "On Call",
+    avatar: "/placeholder.svg?height=40&width=40",
   },
   {
     id: 3,
-    name: 'Emily Chan',
-    role: 'Mental Health Specialist',
-    status: 'available',
-    statusText: 'Available',
-    avatar: '/placeholder.svg?height=40&width=40'
+    name: "Emily Chan",
+    role: "Mental Health Specialist",
+    status: "available",
+    statusText: "Available",
+    avatar: "/placeholder.svg?height=40&width=40",
   },
   {
     id: 4,
-    name: 'David Lee',
-    role: 'Legal Advocate',
-    status: 'away',
-    statusText: 'Break',
-    avatar: '/placeholder.svg?height=40&width=40'
+    name: "David Lee",
+    role: "Legal Advocate",
+    status: "away",
+    statusText: "Break",
+    avatar: "/placeholder.svg?height=40&width=40",
   },
   {
     id: 5,
-    name: 'Sophia Clark',
-    role: 'Housing Specialist',
-    status: 'available',
-    statusText: 'Available',
-    avatar: '/placeholder.svg?height=40&width=40'
+    name: "Sophia Clark",
+    role: "Housing Specialist",
+    status: "available",
+    statusText: "Available",
+    avatar: "/placeholder.svg?height=40&width=40",
   },
   {
     id: 6,
-    name: 'Dr. Lisa Chen',
-    role: 'Supervisor',
-    status: 'busy',
-    statusText: 'In Meeting',
-    avatar: '/placeholder.svg?height=40&width=40'
-  }
-])
+    name: "Dr. Lisa Chen",
+    role: "Supervisor",
+    status: "busy",
+    statusText: "In Meeting",
+    avatar: "/placeholder.svg?height=40&width=40",
+  },
+]);
 
 // Queue stats
 const queueStats = ref({
   waiting: 3,
   active: 12,
-  agents: 8
-})
+  agents: 8,
+});
 
 // Queue calls with auto-generated case IDs
 const queueCalls = ref([
   {
-    id: 'queue_001',
-    type: 'Emergency Crisis: Domestic Violence',
-    waitTime: '2m 15s',
-    priority: 'critical',
-    callerName: 'Anonymous',
-    caseId: generateCaseId()
+    id: "queue_001",
+    type: "Emergency Crisis: Domestic Violence",
+    waitTime: "2m 15s",
+    priority: "critical",
+    callerName: "Anonymous",
+    caseId: generateCaseId(),
   },
   {
-    id: 'queue_002',
-    type: 'Mental Health Support',
-    waitTime: '5m 30s',
-    priority: 'high',
-    callerName: 'Sarah M.',
-    caseId: generateCaseId()
+    id: "queue_002",
+    type: "Mental Health Support",
+    waitTime: "5m 30s",
+    priority: "high",
+    callerName: "Sarah M.",
+    caseId: generateCaseId(),
   },
   {
-    id: 'queue_003',
-    type: 'Information Request',
-    waitTime: '1m 45s',
-    priority: 'medium',
-    callerName: 'John D.',
-    caseId: generateCaseId()
-  }
-])
+    id: "queue_003",
+    type: "Information Request",
+    waitTime: "1m 45s",
+    priority: "medium",
+    callerName: "John D.",
+    caseId: generateCaseId(),
+  },
+]);
 
 // Helper function to generate case IDs
 function generateCaseId() {
-  const year = new Date().getFullYear()
-  const randomNum = Math.floor(Math.random() * 9000) + 1000
-  return `CASE-${year}-${randomNum}`
+  const year = new Date().getFullYear();
+  const randomNum = Math.floor(Math.random() * 9000) + 1000;
+  return `CASE-${year}-${randomNum}`;
 }
 
 // Call data with auto-generated case IDs
 const callData = ref({
-  '1348456': {
-    id: '1348456',
-    title: 'Emergency Crisis: Domestic Violence',
-    time: '09:00AM',
-    dateLabel: 'Today',
-    status: 'In Progress',
-    agent: 'Sarah Davis',
-    callTitle: 'Emergency call',
-    callerName: 'Nelson Adega',
-    duration: '3min 5 sec',
-    callStart: '09:00 am',
-    callEnd: '09:03 am',
-    disposition: 'Abusive Call',
-    date: '15th Aug 2025',
-    escalatedTo: 'Ntaate Kimani',
-    group: 'Today',
-    caseId: 'CASE-2025-1001',
-    priority: 'critical'
+  1348456: {
+    id: "1348456",
+    title: "Emergency Crisis: Domestic Violence",
+    time: "09:00AM",
+    dateLabel: "Today",
+    status: "In Progress",
+    agent: "Sarah Davis",
+    callTitle: "Emergency call",
+    callerName: "Nelson Adega",
+    duration: "3min 5 sec",
+    callStart: "09:00 am",
+    callEnd: "09:03 am",
+    disposition: "Abusive Call",
+    date: "15th Aug 2025",
+    escalatedTo: "Ntaate Kimani",
+    group: "Today",
+    caseId: "CASE-2025-1001",
+    priority: "critical",
   },
-  '1348457': {
-    id: '1348457',
-    title: 'Survivor Follow-Up: Safety Planning',
-    time: '10:30AM',
-    dateLabel: 'Today',
-    status: 'Pending',
+  1348457: {
+    id: "1348457",
+    title: "Survivor Follow-Up: Safety Planning",
+    time: "10:30AM",
+    dateLabel: "Today",
+    status: "Pending",
     agent: null,
-    callTitle: 'Follow-up call',
-    callerName: 'Maria Johnson',
-    duration: '15min 20 sec',
-    callStart: '10:30 am',
-    callEnd: '10:45 am',
-    disposition: 'Completed',
-    date: '15th Aug 2025',
-    escalatedTo: 'David Lee',
-    group: 'Today',
-    caseId: 'CASE-2025-1002',
-    priority: 'high'
+    callTitle: "Follow-up call",
+    callerName: "Maria Johnson",
+    duration: "15min 20 sec",
+    callStart: "10:30 am",
+    callEnd: "10:45 am",
+    disposition: "Completed",
+    date: "15th Aug 2025",
+    escalatedTo: "David Lee",
+    group: "Today",
+    caseId: "CASE-2025-1002",
+    priority: "high",
   },
-  '1348458': {
-    id: '1348458',
-    title: 'Scheduled Support: Therapy Session',
-    time: '02:00PM',
-    dateLabel: 'Today',
-    status: 'In Progress',
-    agent: 'Mark Reynolds',
-    callTitle: 'Therapy Session',
-    callerName: 'James Wilson',
-    duration: '45min 10 sec',
-    callStart: '02:00 pm',
-    callEnd: '02:45 pm',
-    disposition: 'Completed',
-    date: '15th Aug 2025',
-    escalatedTo: 'Dr. Lisa Chen',
-    group: 'Today',
-    caseId: 'CASE-2025-1003',
-    priority: 'medium'
+  1348458: {
+    id: "1348458",
+    title: "Scheduled Support: Therapy Session",
+    time: "02:00PM",
+    dateLabel: "Today",
+    status: "In Progress",
+    agent: "Mark Reynolds",
+    callTitle: "Therapy Session",
+    callerName: "James Wilson",
+    duration: "45min 10 sec",
+    callStart: "02:00 pm",
+    callEnd: "02:45 pm",
+    disposition: "Completed",
+    date: "15th Aug 2025",
+    escalatedTo: "Dr. Lisa Chen",
+    group: "Today",
+    caseId: "CASE-2025-1003",
+    priority: "medium",
   },
-  '1348459': {
-    id: '1348459',
-    title: 'Resource Request: Shelter Information',
-    time: '04:45PM',
-    dateLabel: 'Today',
-    status: 'Unassigned',
+  1348459: {
+    id: "1348459",
+    title: "Resource Request: Shelter Information",
+    time: "04:45PM",
+    dateLabel: "Today",
+    status: "Unassigned",
     agent: null,
-    callTitle: 'Shelter Information',
-    callerName: 'Anonymous',
-    duration: '8min 30 sec',
-    callStart: '04:45 pm',
-    callEnd: '04:53 pm',
-    disposition: 'Information Provided',
-    date: '15th Aug 2025',
-    escalatedTo: 'Unassigned',
-    group: 'Today',
-    caseId: 'CASE-2025-1004',
-    priority: 'low'
+    callTitle: "Shelter Information",
+    callerName: "Anonymous",
+    duration: "8min 30 sec",
+    callStart: "04:45 pm",
+    callEnd: "04:53 pm",
+    disposition: "Information Provided",
+    date: "15th Aug 2025",
+    escalatedTo: "Unassigned",
+    group: "Today",
+    caseId: "CASE-2025-1004",
+    priority: "low",
   },
-  '1348460': {
-    id: '1348460',
-    title: 'Wellness Check-In: Mental Health Support',
-    time: '11:15AM',
-    dateLabel: 'Yesterday',
-    status: 'Completed',
-    agent: 'Emily Chan',
-    callTitle: 'Mental Health Support',
-    callerName: 'Rebecca Taylor',
-    duration: '22min 15 sec',
-    callStart: '11:15 am',
-    callEnd: '11:37 am',
-    disposition: 'Completed',
-    date: '14th Aug 2025',
-    escalatedTo: 'Dr. Michael Brown',
-    group: 'Yesterday',
-    caseId: 'CASE-2025-1005',
-    priority: 'medium'
+  1348460: {
+    id: "1348460",
+    title: "Wellness Check-In: Mental Health Support",
+    time: "11:15AM",
+    dateLabel: "Yesterday",
+    status: "Completed",
+    agent: "Emily Chan",
+    callTitle: "Mental Health Support",
+    callerName: "Rebecca Taylor",
+    duration: "22min 15 sec",
+    callStart: "11:15 am",
+    callEnd: "11:37 am",
+    disposition: "Completed",
+    date: "14th Aug 2025",
+    escalatedTo: "Dr. Michael Brown",
+    group: "Yesterday",
+    caseId: "CASE-2025-1005",
+    priority: "medium",
   },
-  '1348461': {
-    id: '1348461',
-    title: 'Appointment Booking: Legal Advocacy',
-    time: '01:30PM',
-    dateLabel: 'Yesterday',
-    status: 'Completed',
-    agent: 'David Lee',
-    callTitle: 'Legal Advocacy',
-    callerName: 'Thomas Garcia',
-    duration: '12min 40 sec',
-    callStart: '01:30 pm',
-    callEnd: '01:42 pm',
-    disposition: 'Appointment Scheduled',
-    date: '14th Aug 2025',
-    escalatedTo: 'Legal Team',
-    group: 'Yesterday',
-    caseId: 'CASE-2025-1006',
-    priority: 'high'
+  1348461: {
+    id: "1348461",
+    title: "Appointment Booking: Legal Advocacy",
+    time: "01:30PM",
+    dateLabel: "Yesterday",
+    status: "Completed",
+    agent: "David Lee",
+    callTitle: "Legal Advocacy",
+    callerName: "Thomas Garcia",
+    duration: "12min 40 sec",
+    callStart: "01:30 pm",
+    callEnd: "01:42 pm",
+    disposition: "Appointment Scheduled",
+    date: "14th Aug 2025",
+    escalatedTo: "Legal Team",
+    group: "Yesterday",
+    caseId: "CASE-2025-1006",
+    priority: "high",
   },
-  '1348462': {
-    id: '1348462',
-    title: 'Call Back: Housing Assistance Follow-up',
-    time: '05:00PM',
-    dateLabel: 'Yesterday',
-    status: 'Completed',
-    agent: 'Sophia Clark',
-    callTitle: 'Housing Assistance',
-    callerName: 'Jennifer Lopez',
-    duration: '18min 22 sec',
-    callStart: '05:00 pm',
-    callEnd: '05:18 pm',
-    disposition: 'Completed',
-    date: '14th Aug 2025',
-    escalatedTo: 'Housing Department',
-    group: 'Yesterday',
-    caseId: 'CASE-2025-1007',
-    priority: 'medium'
-  }
-})
+  1348462: {
+    id: "1348462",
+    title: "Call Back: Housing Assistance Follow-up",
+    time: "05:00PM",
+    dateLabel: "Yesterday",
+    status: "Completed",
+    agent: "Sophia Clark",
+    callTitle: "Housing Assistance",
+    callerName: "Jennifer Lopez",
+    duration: "18min 22 sec",
+    callStart: "05:00 pm",
+    callEnd: "05:18 pm",
+    disposition: "Completed",
+    date: "14th Aug 2025",
+    escalatedTo: "Housing Department",
+    group: "Yesterday",
+    caseId: "CASE-2025-1007",
+    priority: "medium",
+  },
+});
 
 // Status data
 const statusItems = ref([
-  { label: 'Unassigned', count: 16, percentage: 53 },
-  { label: 'Pending', count: 5, percentage: 17 },
-  { label: 'In Progress', count: 24, percentage: 80 },
-  { label: 'Completed', count: 8, percentage: 27 }
-])
+  { label: "Unassigned", count: 16, percentage: 53 },
+  { label: "Pending", count: 5, percentage: 17 },
+  { label: "In Progress", count: 24, percentage: 80 },
+  { label: "Completed", count: 8, percentage: 27 },
+]);
 
 // Computed properties
 const allCalls = computed(() => {
-  return Object.values(callData.value)
-})
+  return Object.values(callData.value);
+});
 
-const groupedCalls = computed(() => {
-  const groups = {}
+// const groupedCalls = computed(() => {
+//   const groups = {}
 
-  allCalls.value.forEach(call => {
-    if (!groups[call.group]) {
-      groups[call.group] = []
-    }
-    groups[call.group].push(call)
-  })
+//   allCalls.value.forEach(call => {
+//     if (!groups[call.group]) {
+//       groups[call.group] = []
+//     }
+//     groups[call.group].push(call)
+//   })
 
-  return groups
-})
+//   return groups
+// })
 
-const selectedCallDetails = computed(() => {
-  return callData.value[selectedCallId.value] || null
-})
+// const selectedCallDetails = computed(() => {
+//   return callData.value[selectedCallId.value] || null
+// })
 
 // Methods
 const handleQueueToggle = async () => {
   if (currentCall.value) {
-    endCall()
-    return
+    endCall();
+    return;
   }
 
-  isProcessingQueue.value = true
+  isProcessingQueue.value = true;
 
   try {
     if (isInQueue.value) {
       // Leave queue
-      isInQueue.value = false
-      
+      isInQueue.value = false;
+
       // Show leave queue notification
-      showNotification.value = true
-      notificationMessage.value = 'Left the queue successfully!'
-      notificationType.value = 'info'
-      
+      showNotification.value = true;
+      notificationMessage.value = "Left the queue successfully!";
+      notificationType.value = "info";
+
       // Auto-hide notification after 3 seconds
       setTimeout(() => {
-        showNotification.value = false
-      }, 3000)
-      
-      console.log('Left queue')
+        showNotification.value = false;
+      }, 3000);
+
+      console.log("Left queue");
     } else {
       // Join queue - show queue popup first
-      showQueuePopup.value = true
+      showQueuePopup.value = true;
     }
   } finally {
-    isProcessingQueue.value = false
+    isProcessingQueue.value = false;
   }
-}
+};
 
 const handleLogout = () => {
-  console.log('Logging out...')
-  alert('Logged out successfully!')
-}
+  console.log("Logging out...");
+  alert("Logged out successfully!");
+};
 
 const closeQueuePopup = () => {
-  showQueuePopup.value = false
-}
+  showQueuePopup.value = false;
+};
 
 const confirmJoinQueue = () => {
-  isInQueue.value = true
-  showQueuePopup.value = false
-  
+  isInQueue.value = true;
+  showQueuePopup.value = false;
+
   // Show success notification instead of alert
-  showNotification.value = true
-  notificationMessage.value = 'Joined the queue successfully! Waiting for incoming calls...'
-  notificationType.value = 'success'
-  
+  showNotification.value = true;
+  notificationMessage.value =
+    "Joined the queue successfully! Waiting for incoming calls...";
+  notificationType.value = "success";
+
   // Auto-hide notification after 3 seconds
   setTimeout(() => {
-    showNotification.value = false
-  }, 3000)
-  
-  console.log('Joined queue successfully')
+    showNotification.value = false;
+  }, 3000);
+
+  console.log("Joined queue successfully");
 
   // Simulate receiving a call after joining queue (3 seconds delay)
   setTimeout(() => {
     if (isInQueue.value && !currentCall.value) {
-      console.log('Simulating incoming call...')
-      simulateIncomingCall()
+      console.log("Simulating incoming call...");
+      simulateIncomingCall();
     }
-  }, 3000)
-}
+  }, 3000);
+};
 
 const initiateNewCall = () => {
-  showCallOptions.value = true
-}
+  showCallOptions.value = true;
+};
 
 const closeCallOptions = () => {
-  showCallOptions.value = false
-  showContactsModal.value = false
-  showNewCallModal.value = false
-  newCallNumber.value = ''
-  selectedContact.value = null
-}
+  showCallOptions.value = false;
+  showContactsModal.value = false;
+  showNewCallModal.value = false;
+  newCallNumber.value = "";
+  selectedContact.value = null;
+};
 
 const selectCallOption = (option) => {
-  if (option === 'contacts') {
-    showCallOptions.value = false
-    showContactsModal.value = true
-  } else if (option === 'new') {
-    showCallOptions.value = false
-    showNewCallModal.value = true
+  if (option === "contacts") {
+    showCallOptions.value = false;
+    showContactsModal.value = true;
+  } else if (option === "new") {
+    showCallOptions.value = false;
+    showNewCallModal.value = true;
   }
-}
+};
 
 const callContact = (contact) => {
-  selectedContact.value = contact
-  showContactsModal.value = false
-  
+  selectedContact.value = contact;
+  showContactsModal.value = false;
+
   // Initiate call with contact
   const outgoingCall = {
     id: `CALL-OUT-${Date.now()}`,
-    type: 'Outgoing Call',
+    type: "Outgoing Call",
     callerName: contact.name,
     number: contact.phone,
-    status: 'outgoing',
+    status: "outgoing",
     priority: contact.priority,
-    caseId: generateCaseId()
-  }
+    caseId: generateCaseId(),
+  };
 
-  ringingCall.value = outgoingCall
-  showRingingInterface.value = true
-  ringingStartTime.value = new Date()
-  startRingingTimer()
-}
+  ringingCall.value = outgoingCall;
+  showRingingInterface.value = true;
+  ringingStartTime.value = new Date();
+  startRingingTimer();
+};
 
 const makeNewCall = () => {
   if (!newCallNumber.value.trim()) {
-    alert('Please enter a phone number')
-    return
+    alert("Please enter a phone number");
+    return;
   }
 
-  showNewCallModal.value = false
-  
+  showNewCallModal.value = false;
+
   // Initiate call with new number
   const outgoingCall = {
     id: `CALL-OUT-${Date.now()}`,
-    type: 'Outgoing Call',
-    callerName: 'Unknown Contact',
+    type: "Outgoing Call",
+    callerName: "Unknown Contact",
     number: newCallNumber.value,
-    status: 'outgoing',
-    priority: 'medium',
-    caseId: generateCaseId()
-  }
+    status: "outgoing",
+    priority: "medium",
+    caseId: generateCaseId(),
+  };
 
-  ringingCall.value = outgoingCall
-  showRingingInterface.value = true
-  ringingStartTime.value = new Date()
-  startRingingTimer()
-  
-  newCallNumber.value = ''
-}
+  ringingCall.value = outgoingCall;
+  showRingingInterface.value = true;
+  ringingStartTime.value = new Date();
+  startRingingTimer();
+
+  newCallNumber.value = "";
+};
 
 const simulateIncomingCall = () => {
-  console.log('Creating incoming call...')
-  const caseId = generateCaseId()
+  console.log("Creating incoming call...");
+  const caseId = generateCaseId();
   const incomingCall = {
     id: `CALL-${Date.now()}`,
-    type: 'Emergency Crisis: Domestic Violence',
-    callerName: 'Anonymous Caller',
-    number: '+1 (555) 987-6543',
-    status: 'incoming',
-    priority: 'critical',
-    caseId: caseId
-  }
+    type: "Emergency Crisis: Domestic Violence",
+    callerName: "Anonymous Caller",
+    number: "+1 (555) 987-6543",
+    status: "incoming",
+    priority: "critical",
+    caseId: caseId,
+  };
 
-  ringingCall.value = incomingCall
-  showRingingInterface.value = true
-  ringingStartTime.value = new Date()
-  startRingingTimer()
-  
-  console.log('Incoming call interface should now be visible')
-}
+  ringingCall.value = incomingCall;
+  showRingingInterface.value = true;
+  ringingStartTime.value = new Date();
+  startRingingTimer();
+
+  console.log("Incoming call interface should now be visible");
+};
 
 const startRingingTimer = () => {
   const timer = setInterval(() => {
     if (!ringingStartTime.value || !showRingingInterface.value) {
-      clearInterval(timer)
-      return
+      clearInterval(timer);
+      return;
     }
-    
-    const now = new Date()
-    const diff = now - ringingStartTime.value
-    const minutes = Math.floor(diff / 60000)
-    const seconds = Math.floor((diff % 60000) / 1000)
-    ringingDuration.value = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
-  }, 1000)
-}
+
+    const now = new Date();
+    const diff = now - ringingStartTime.value;
+    const minutes = Math.floor(diff / 60000);
+    const seconds = Math.floor((diff % 60000) / 1000);
+    ringingDuration.value = `${minutes.toString().padStart(2, "0")}:${seconds
+      .toString()
+      .padStart(2, "0")}`;
+  }, 1000);
+};
 
 // Modified answerCall to show case options
 const answerCall = () => {
   if (ringingCall.value) {
     currentCall.value = {
       ...ringingCall.value,
-      status: 'active'
-    }
-    
-    callStartTime.value = new Date()
-    currentCaseId.value = ringingCall.value.caseId
-    
-    showRingingInterface.value = false
-    showCaseOptions.value = true // Show case options instead of case form
-    startCallTimer()
-    
+      status: "active",
+    };
+
+    callStartTime.value = new Date();
+    currentCaseId.value = ringingCall.value.caseId;
+
+    showRingingInterface.value = false;
+    showCaseOptions.value = true; // Show case options instead of case form
+    startCallTimer();
+
     // Add call to call data
-    const newCallId = currentCall.value.id
+    const newCallId = currentCall.value.id;
     callData.value[newCallId] = {
       id: newCallId,
       title: currentCall.value.type,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      dateLabel: 'Today',
-      status: 'In Progress',
-      agent: 'Current User',
+      time: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      dateLabel: "Today",
+      status: "In Progress",
+      agent: "Current User",
       callTitle: currentCall.value.type,
       callerName: currentCall.value.callerName,
-      duration: '0min 0 sec',
-      callStart: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      callEnd: '',
-      disposition: '',
+      duration: "0min 0 sec",
+      callStart: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      callEnd: "",
+      disposition: "",
       date: new Date().toLocaleDateString(),
-      escalatedTo: '',
-      group: 'Today',
+      escalatedTo: "",
+      group: "Today",
       caseId: currentCall.value.caseId,
-      priority: currentCall.value.priority
-    }
+      priority: currentCall.value.priority,
+    };
   }
 
-  ringingCall.value = null
-  ringingStartTime.value = null
-  ringingDuration.value = '00:00'
-}
+  ringingCall.value = null;
+  ringingStartTime.value = null;
+  ringingDuration.value = "00:00";
+};
 
 // Case options methods
 const closeCaseOptions = () => {
-  showCaseOptions.value = false
-}
+  showCaseOptions.value = false;
+};
 
 const selectCaseOption = (option) => {
-  showCaseOptions.value = false
-  
-  if (option === 'new') {
+  showCaseOptions.value = false;
+
+  if (option === "new") {
     // Open new case creation form
-    caseFormMode.value = 'new'
-    currentCaseId.value = generateCaseId()
-    
+    caseFormMode.value = "new";
+    currentCaseId.value = generateCaseId();
+
     // Initialize case form data with call info
     caseFormData.value = {
-      caseName: currentCall.value?.type || '',
-      description: '',
-      priority: currentCall.value?.priority || '',
-      type: '',
-      callerInfo: `Caller: ${currentCall.value?.callerName || 'Unknown'}\nNumber: ${currentCall.value?.number || 'Unknown'}`,
-      incidentDetails: ''
-    }
-    
-    showCaseForm.value = true
-  } else if (option === 'existing') {
+      caseName: currentCall.value?.type || "",
+      description: "",
+      priority: currentCall.value?.priority || "",
+      type: "",
+      callerInfo: `Caller: ${
+        currentCall.value?.callerName || "Unknown"
+      }\nNumber: ${currentCall.value?.number || "Unknown"}`,
+      incidentDetails: "",
+    };
+
+    showCaseForm.value = true;
+  } else if (option === "existing") {
     // Open existing case search
-    showExistingCaseSearch.value = true
-    caseSearchQuery.value = ''
-  } else if (option === 'disposition') {
+    showExistingCaseSearch.value = true;
+    caseSearchQuery.value = "";
+  } else if (option === "disposition") {
     // Open disposition form directly
-    showDisposition.value = true
+    showDisposition.value = true;
   }
-}
+};
 
 const closeExistingCaseSearch = () => {
-  showExistingCaseSearch.value = false
-  caseSearchQuery.value = ''
-}
+  showExistingCaseSearch.value = false;
+  caseSearchQuery.value = "";
+};
 
 const selectExistingCase = (existingCase) => {
   // Link call to existing case and open edit form
-  currentCaseId.value = existingCase.id
-  caseFormMode.value = 'edit'
-  
+  currentCaseId.value = existingCase.id;
+  caseFormMode.value = "edit";
+
   // Pre-populate form with existing case data
   caseFormData.value = {
     caseName: existingCase.title,
     description: existingCase.description,
     priority: existingCase.priority,
-    type: '', // Would need to add type to existing cases data
-    callerInfo: `Caller: ${currentCall.value?.callerName || 'Unknown'}\nNumber: ${currentCall.value?.number || 'Unknown'}\n\nLinked to existing case for: ${existingCase.client}`,
-    incidentDetails: ''
-  }
-  
-  showExistingCaseSearch.value = false
-  showCaseForm.value = true
-  
+    type: "", // Would need to add type to existing cases data
+    callerInfo: `Caller: ${
+      currentCall.value?.callerName || "Unknown"
+    }\nNumber: ${
+      currentCall.value?.number || "Unknown"
+    }\n\nLinked to existing case for: ${existingCase.client}`,
+    incidentDetails: "",
+  };
+
+  showExistingCaseSearch.value = false;
+  showCaseForm.value = true;
+
   // Update call data to link to selected case
   if (currentCall.value && callData.value[currentCall.value.id]) {
-    callData.value[currentCall.value.id].caseId = existingCase.id
+    callData.value[currentCall.value.id].caseId = existingCase.id;
   }
-}
+};
 
 const declineCall = () => {
-  showRingingInterface.value = false
-  ringingCall.value = null
-  ringingStartTime.value = null
-  ringingDuration.value = '00:00'
-}
+  showRingingInterface.value = false;
+  ringingCall.value = null;
+  ringingStartTime.value = null;
+  ringingDuration.value = "00:00";
+};
 
 const endCall = () => {
   if (currentCall.value) {
-    const callId = currentCall.value.id
-    
+    const callId = currentCall.value.id;
+
     // Update call data
     if (callData.value[callId]) {
-      callData.value[callId].status = 'Completed'
-      callData.value[callId].callEnd = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      callData.value[callId].duration = callDuration.value
+      callData.value[callId].status = "Completed";
+      (callData.value[callId].callEnd = new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })),
+        (callData.value[callId].duration = callDuration.value);
     }
-    
-    currentCall.value = null
-    callStartTime.value = null
-    callDuration.value = '00:00'
-    showCaseForm.value = false
-    caseFormMinimized.value = false
+
+    currentCall.value = null;
+    callStartTime.value = null;
+    callDuration.value = "00:00";
+    showCaseForm.value = false;
+    caseFormMinimized.value = false;
   }
-}
+};
 
 const startCallTimer = () => {
   const timer = setInterval(() => {
     if (!callStartTime.value || !currentCall.value) {
-      clearInterval(timer)
-      return
+      clearInterval(timer);
+      return;
     }
-    
-    const now = new Date()
-    const diff = now - callStartTime.value
-    const minutes = Math.floor(diff / 60000)
-    const seconds = Math.floor((diff % 60000) / 1000)
-    callDuration.value = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
-  }, 1000)
-}
+
+    const now = new Date();
+    const diff = now - callStartTime.value;
+    const minutes = Math.floor(diff / 60000);
+    const seconds = Math.floor((diff % 60000) / 1000);
+    callDuration.value = `${minutes.toString().padStart(2, "0")}:${seconds
+      .toString()
+      .padStart(2, "0")}`;
+  }, 1000);
+};
 
 const minimizeCaseForm = () => {
-  showCaseForm.value = false
-  caseFormMinimized.value = true
-}
+  showCaseForm.value = false;
+  caseFormMinimized.value = true;
+};
 
 const restoreCaseForm = () => {
-  caseFormMinimized.value = false
-  showCaseForm.value = true
-}
+  caseFormMinimized.value = false;
+  showCaseForm.value = true;
+};
 
 const saveCaseForm = () => {
-  console.log('Saving case form:', caseFormData.value)
-  alert(`Case ${caseFormMode.value === 'new' ? 'created' : 'updated'} successfully!`)
-  
+  console.log("Saving case form:", caseFormData.value);
+  alert(
+    `Case ${caseFormMode.value === "new" ? "created" : "updated"} successfully!`
+  );
+
   // In a real app, this would save to the backend
   // For demo, we'll just close the form
-  showCaseForm.value = false
-  caseFormMinimized.value = false
-}
+  showCaseForm.value = false;
+  caseFormMinimized.value = false;
+};
 
 const saveDraft = () => {
-  console.log('Saving draft:', caseFormData.value)
-  alert('Draft saved successfully!')
-}
+  console.log("Saving draft:", caseFormData.value);
+  alert("Draft saved successfully!");
+};
 
 const acceptQueueCall = (callId) => {
-  const queueCall = queueCalls.value.find(call => call.id === callId)
+  const queueCall = queueCalls.value.find((call) => call.id === callId);
   if (queueCall && isInQueue.value) {
     ringingCall.value = {
       id: `CALL-${Date.now()}`,
       type: queueCall.type,
       callerName: queueCall.callerName,
-      number: '+1 (555) 123-4567',
-      status: 'incoming',
+      number: "+1 (555) 123-4567",
+      status: "incoming",
       priority: queueCall.priority,
-      caseId: queueCall.caseId
-    }
-    
-    showRingingInterface.value = true
-    ringingStartTime.value = new Date()
-    startRingingTimer()
-    
+      caseId: queueCall.caseId,
+    };
+
+    showRingingInterface.value = true;
+    ringingStartTime.value = new Date();
+    startRingingTimer();
+
     // Remove from queue
-    queueCalls.value = queueCalls.value.filter(call => call.id !== callId)
-    queueStats.value.waiting--
+    queueCalls.value = queueCalls.value.filter((call) => call.id !== callId);
+    queueStats.value.waiting--;
   }
-}
+};
 
 const closeDisposition = () => {
-  showDisposition.value = false
+  showDisposition.value = false;
   disposition.value = {
-    outcome: '',
-    category: '',
-    priority: '',
-    reason: '',
-    notes: '',
-    escalatedTo: '',
-    referredTo: ''
-  }
-}
+    outcome: "",
+    category: "",
+    priority: "",
+    reason: "",
+    notes: "",
+    escalatedTo: "",
+    referredTo: "",
+  };
+};
 
 const submitDisposition = () => {
-  console.log('Submitting disposition:', disposition.value)
+  console.log("Submitting disposition:", disposition.value);
 
   // Update the call's case with disposition information
   if (currentCall.value && callData.value[currentCall.value.id]) {
-    callData.value[currentCall.value.id].disposition = disposition.value.reason
-    callData.value[currentCall.value.id].priority = disposition.value.priority
+    callData.value[currentCall.value.id].disposition = disposition.value.reason;
+    callData.value[currentCall.value.id].priority = disposition.value.priority;
   }
 
   // End the call after disposition
-  endCall()
-  closeDisposition()
-  alert('Call disposition saved and call ended successfully!')
-}
+  endCall();
+  closeDisposition();
+  alert("Call disposition saved and call ended successfully!");
+};
 
 const viewCallDetails = (callId) => {
-  selectedCallId.value = callId
-  showCallDetails.value = true
-}
+  selectedCallId.value = callId;
+  selectedCallDetails.value = callsStore.calls.find(
+    call => call[callsStore.calls_k.uniqueid?.[0]] === callId
+  );
+  showCallDetails.value = true;
+};
+
+
 
 const linkToCase = (callId) => {
-  selectedCallForLink.value = callId
-  showCaseLink.value = true
-}
+  selectedCallForLink.value = callId;
+  showCaseLink.value = true;
+};
 
 const closeCaseLink = () => {
-  showCaseLink.value = false
-  selectedCallForLink.value = null
-}
+  showCaseLink.value = false;
+  selectedCallForLink.value = null;
+};
 
 const selectCaseLinkOption = (option) => {
-  if (option === 'existing') {
+  if (option === "existing") {
     // In a real app, this would open a case search modal
-    const caseId = prompt('Enter existing case ID:')
+    const caseId = prompt("Enter existing case ID:");
     if (caseId && selectedCallForLink.value) {
-      callData.value[selectedCallForLink.value].caseId = caseId
-      alert(`Call linked to case ${caseId}`)
+      callData.value[selectedCallForLink.value].caseId = caseId;
+      alert(`Call linked to case ${caseId}`);
     }
-  } else if (option === 'new') {
+  } else if (option === "new") {
     // Navigate to case creation
-    router.push('/case-creation')
+    router.push("/case-creation");
   }
-  closeCaseLink()
-}
+  closeCaseLink();
+};
 
 const viewCase = (caseId) => {
-  console.log('Viewing case:', caseId)
+  console.log("Viewing case:", caseId);
   // Navigate to cases page
-  router.push('/cases')
-}
+  router.push("/cases");
+};
 
 const applyTheme = (theme) => {
-  const root = document.documentElement
+  const root = document.documentElement;
 
-  if (theme === 'light') {
-    root.style.setProperty('--background-color', '#f5f5f5')
-    root.style.setProperty('--sidebar-bg', '#ffffff')
-    root.style.setProperty('--content-bg', '#ffffff')
-    root.style.setProperty('--text-color', '#333')
-    root.style.setProperty('--text-secondary', '#666')
-    root.style.setProperty('--border-color', '#ddd')
-    root.style.setProperty('--card-bg', '#ffffff')
-    root.style.setProperty('--logo-bg', '#ffffff')
-    root.style.setProperty('--logo-color', '#333')
-    root.style.setProperty('--header-bg', '#f0f0f0')
-    root.style.setProperty('--input-bg', '#ffffff')
-    root.setAttribute('data-theme', 'light')
+  if (theme === "light") {
+    root.style.setProperty("--background-color", "#f5f5f5");
+    root.style.setProperty("--sidebar-bg", "#ffffff");
+    root.style.setProperty("--content-bg", "#ffffff");
+    root.style.setProperty("--text-color", "#333");
+    root.style.setProperty("--text-secondary", "#666");
+    root.style.setProperty("--border-color", "#ddd");
+    root.style.setProperty("--card-bg", "#ffffff");
+    root.style.setProperty("--logo-bg", "#ffffff");
+    root.style.setProperty("--logo-color", "#333");
+    root.style.setProperty("--header-bg", "#f0f0f0");
+    root.style.setProperty("--input-bg", "#ffffff");
+    root.setAttribute("data-theme", "light");
   } else {
-    root.style.setProperty('--background-color', '#0a0a0a')
-    root.style.setProperty('--sidebar-bg', '#111')
-    root.style.setProperty('--content-bg', '#222')
-    root.style.setProperty('--text-color', '#fff')
-    root.style.setProperty('--text-secondary', '#aaa')
-    root.style.setProperty('--border-color', '#333')
-    root.style.setProperty('--card-bg', '#222')
-    root.style.setProperty('--logo-bg', '#fff')
-    root.style.setProperty('--logo-color', '#0a0a0a')
-    root.style.setProperty('--header-bg', '#333')
-    root.style.setProperty('--input-bg', '#333')
-    root.setAttribute('data-theme', 'dark')
+    root.style.setProperty("--background-color", "#0a0a0a");
+    root.style.setProperty("--sidebar-bg", "#111");
+    root.style.setProperty("--content-bg", "#222");
+    root.style.setProperty("--text-color", "#fff");
+    root.style.setProperty("--text-secondary", "#aaa");
+    root.style.setProperty("--border-color", "#333");
+    root.style.setProperty("--card-bg", "#222");
+    root.style.setProperty("--logo-bg", "#fff");
+    root.style.setProperty("--logo-color", "#0a0a0a");
+    root.style.setProperty("--header-bg", "#333");
+    root.style.setProperty("--input-bg", "#333");
+    root.setAttribute("data-theme", "dark");
   }
 
   // Set common variables
-  root.style.setProperty('--accent-color', '#964B00')
-  root.style.setProperty('--accent-hover', '#b25900')
-  root.style.setProperty('--danger-color', '#ff3b30')
-  root.style.setProperty('--success-color', '#4CAF50')
-  root.style.setProperty('--pending-color', '#FFA500')
-  root.style.setProperty('--unassigned-color', '#808080')
-  root.style.setProperty('--highlight-color', '#ff3b30')
-  root.style.setProperty('--critical-color', '#ff3b30')
-  root.style.setProperty('--high-color', '#ff9500')
-  root.style.setProperty('--medium-color', '#007aff')
-  root.style.setProperty('--low-color', '#34c759')
-}
+  root.style.setProperty("--accent-color", "#964B00");
+  root.style.setProperty("--accent-hover", "#b25900");
+  root.style.setProperty("--danger-color", "#ff3b30");
+  root.style.setProperty("--success-color", "#4CAF50");
+  root.style.setProperty("--pending-color", "#FFA500");
+  root.style.setProperty("--unassigned-color", "#808080");
+  root.style.setProperty("--highlight-color", "#ff3b30");
+  root.style.setProperty("--critical-color", "#ff3b30");
+  root.style.setProperty("--high-color", "#ff9500");
+  root.style.setProperty("--medium-color", "#007aff");
+  root.style.setProperty("--low-color", "#34c759");
+};
 
 const toggleTheme = () => {
-  currentTheme.value = currentTheme.value === 'dark' ? 'light' : 'dark'
-  localStorage.setItem('theme', currentTheme.value)
-  applyTheme(currentTheme.value)
-}
+  currentTheme.value = currentTheme.value === "dark" ? "light" : "dark";
+  localStorage.setItem("theme", currentTheme.value);
+  applyTheme(currentTheme.value);
+};
 
-const selectCall = (callId) => {
-  selectedCallId.value = callId
-  showCallDetails.value = true
-}
+// const selectCall = (callId) => {
+//   selectedCallId.value = callId
+//   showCallDetails.value = true
+// }
 
 const closeCallDetails = () => {
-  showCallDetails.value = false
+  showCallDetails.value = false;
+};
+
+function getStatusClass(status) {
+  if (!status || typeof status !== "string") {
+    return "status-unknown"; // default class
+  }
+
+  switch (status.toLowerCase()) {
+    case "completed":
+      return "status-completed";
+    case "pending":
+      return "status-pending";
+    case "failed":
+      return "status-failed";
+    default:
+      return "status-other";
+  }
 }
 
-const getStatusClass = (status) => {
-  return status.toLowerCase().replace(/\s+/g, '-')
-}
 
 // Lifecycle
 onMounted(() => {
   // Load saved theme
-  const savedTheme = localStorage.getItem('theme')
+  const savedTheme = localStorage.getItem("theme");
   if (savedTheme) {
-    currentTheme.value = savedTheme
+    currentTheme.value = savedTheme;
   }
 
   // Apply theme immediately
-  applyTheme(currentTheme.value)
-})
+  applyTheme(currentTheme.value);
+});
 
 onUnmounted(() => {
   // Clean up any timers
   if (callStartTime.value) {
-    callStartTime.value = null
+    callStartTime.value = null;
   }
   if (ringingStartTime.value) {
-    ringingStartTime.value = null
+    ringingStartTime.value = null;
   }
-})
+});
 </script>
 
 <style scoped>
 :root {
-  --accent-color: #FF8C00;
+  --accent-color: #ff8c00;
 }
 .main-content {
   transition: margin-left 0.3s, width 0.3s;
@@ -1961,7 +2920,7 @@ onUnmounted(() => {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 body {
@@ -2050,7 +3009,7 @@ body {
 
 .theme-toggle:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .theme-toggle svg {
@@ -2078,7 +3037,7 @@ body {
 .new-call-btn:hover {
   background-color: #45a049;
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .new-call-btn svg {
@@ -2114,7 +3073,7 @@ body {
   font-weight: 700;
   background: rgba(255, 140, 0, 0.12); /* subtle glassmorphic accent */
   border-radius: 16px 16px 0 0;
-  box-shadow: 0 4px 16px 0 rgba(255,140,0,0.08);
+  box-shadow: 0 4px 16px 0 rgba(255, 140, 0, 0.08);
 }
 
 .view-tab.active::after {
@@ -2244,7 +3203,7 @@ body {
 }
 
 .timeline-connector::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 45px;
   left: 30px;
@@ -2411,7 +3370,7 @@ body {
 
 .queue-call-item:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .queue-call-info {
@@ -3922,7 +4881,7 @@ body {
   .header-actions {
     gap: 12px;
   }
-  
+
   .theme-toggle {
     padding: 6px 12px;
     font-size: 13px;
@@ -3986,7 +4945,7 @@ body {
   background: var(--success-color);
   color: #fff;
   border-radius: 50px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
   padding: 16px 24px;
   display: flex;
   align-items: center;
@@ -3999,7 +4958,7 @@ body {
 }
 .fab-new-call:hover {
   background: #45a049;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.22);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
 }
 @media (max-width: 768px) {
   .fab-new-call {
@@ -4010,45 +4969,147 @@ body {
   }
 }
 
-.calls-container, .calls-container * {
+.calls-container,
+.calls-container * {
   color: #222 !important;
 }
-.status-card-label, .status-card-count, .status-card-progress, .queue-title, .queue-stat, .queue-subtitle, .queue-call-type, .queue-call-details, .queue-call-info, .queue-call-actions, .call-type, .call-time, .call-meta, .case-link, .call-id, .status-badge, .table-actions, .view-tab, .page-title, .header, .header-actions, .main-content, .call-details-title, .call-details-header, .call-details-panel {
+.status-card-label,
+.status-card-count,
+.status-card-progress,
+.queue-title,
+.queue-stat,
+.queue-subtitle,
+.queue-call-type,
+.queue-call-details,
+.queue-call-info,
+.queue-call-actions,
+.call-type,
+.call-time,
+.call-meta,
+.case-link,
+.call-id,
+.status-badge,
+.table-actions,
+.view-tab,
+.page-title,
+.header,
+.header-actions,
+.main-content,
+.call-details-title,
+.call-details-header,
+.call-details-panel {
   color: #222 !important;
 }
 
 /* Dark mode overrides */
-:root.dark .calls-container, :root.dark .calls-container *,
-body.dark .calls-container, body.dark .calls-container * {
+:root.dark .calls-container,
+:root.dark .calls-container *,
+body.dark .calls-container,
+body.dark .calls-container * {
   color: #fff !important;
 }
-:root.dark .call-type, :root.dark .call-time, :root.dark .call-meta, :root.dark .case-link, :root.dark .status-card-label, :root.dark .status-card-count, :root.dark .queue-title, :root.dark .queue-stat, :root.dark .queue-subtitle, :root.dark .queue-call-type, :root.dark .queue-call-details, :root.dark .queue-call-info, :root.dark .queue-call-actions, :root.dark .status-badge, :root.dark .table-actions, :root.dark .view-tab, :root.dark .page-title, :root.dark .header, :root.dark .header-actions, :root.dark .main-content, :root.dark .call-details-title, :root.dark .call-details-header, :root.dark .call-details-panel {
+:root.dark .call-type,
+:root.dark .call-time,
+:root.dark .call-meta,
+:root.dark .case-link,
+:root.dark .status-card-label,
+:root.dark .status-card-count,
+:root.dark .queue-title,
+:root.dark .queue-stat,
+:root.dark .queue-subtitle,
+:root.dark .queue-call-type,
+:root.dark .queue-call-details,
+:root.dark .queue-call-info,
+:root.dark .queue-call-actions,
+:root.dark .status-badge,
+:root.dark .table-actions,
+:root.dark .view-tab,
+:root.dark .page-title,
+:root.dark .header,
+:root.dark .header-actions,
+:root.dark .main-content,
+:root.dark .call-details-title,
+:root.dark .call-details-header,
+:root.dark .call-details-panel {
   color: #fff !important;
   opacity: 1 !important;
 }
-body.dark .call-type, body.dark .call-time, body.dark .call-meta, body.dark .case-link, body.dark .status-card-label, body.dark .status-card-count, body.dark .queue-title, body.dark .queue-stat, body.dark .queue-subtitle, body.dark .queue-call-type, body.dark .queue-call-details, body.dark .queue-call-info, body.dark .queue-call-actions, body.dark .status-badge, body.dark .table-actions, body.dark .view-tab, body.dark .page-title, body.dark .header, body.dark .header-actions, body.dark .main-content, body.dark .call-details-title, body.dark .call-details-header, body.dark .call-details-panel {
+body.dark .call-type,
+body.dark .call-time,
+body.dark .call-meta,
+body.dark .case-link,
+body.dark .status-card-label,
+body.dark .status-card-count,
+body.dark .queue-title,
+body.dark .queue-stat,
+body.dark .queue-subtitle,
+body.dark .queue-call-type,
+body.dark .queue-call-details,
+body.dark .queue-call-info,
+body.dark .queue-call-actions,
+body.dark .status-badge,
+body.dark .table-actions,
+body.dark .view-tab,
+body.dark .page-title,
+body.dark .header,
+body.dark .header-actions,
+body.dark .main-content,
+body.dark .call-details-title,
+body.dark .call-details-header,
+body.dark .call-details-panel {
   color: #fff !important;
   opacity: 1 !important;
 }
-[data-theme="dark"] .call-type, [data-theme="dark"] .call-time, [data-theme="dark"] .call-meta, [data-theme="dark"] .case-link, [data-theme="dark"] .status-card-label, [data-theme="dark"] .status-card-count, [data-theme="dark"] .queue-title, [data-theme="dark"] .queue-stat, [data-theme="dark"] .queue-subtitle, [data-theme="dark"] .queue-call-type, [data-theme="dark"] .queue-call-details, [data-theme="dark"] .queue-call-info, [data-theme="dark"] .queue-call-actions, [data-theme="dark"] .status-badge, [data-theme="dark"] .table-actions, [data-theme="dark"] .view-tab, [data-theme="dark"] .page-title, [data-theme="dark"] .header, [data-theme="dark"] .header-actions, [data-theme="dark"] .main-content, [data-theme="dark"] .call-details-title, [data-theme="dark"] .call-details-header, [data-theme="dark"] .call-details-panel {
+[data-theme="dark"] .call-type,
+[data-theme="dark"] .call-time,
+[data-theme="dark"] .call-meta,
+[data-theme="dark"] .case-link,
+[data-theme="dark"] .status-card-label,
+[data-theme="dark"] .status-card-count,
+[data-theme="dark"] .queue-title,
+[data-theme="dark"] .queue-stat,
+[data-theme="dark"] .queue-subtitle,
+[data-theme="dark"] .queue-call-type,
+[data-theme="dark"] .queue-call-details,
+[data-theme="dark"] .queue-call-info,
+[data-theme="dark"] .queue-call-actions,
+[data-theme="dark"] .status-badge,
+[data-theme="dark"] .table-actions,
+[data-theme="dark"] .view-tab,
+[data-theme="dark"] .page-title,
+[data-theme="dark"] .header,
+[data-theme="dark"] .header-actions,
+[data-theme="dark"] .main-content,
+[data-theme="dark"] .call-details-title,
+[data-theme="dark"] .call-details-header,
+[data-theme="dark"] .call-details-panel {
   color: #fff !important;
   opacity: 1 !important;
 }
 
 /* Dark mode overrides */
-:root.dark .calls-container, :root.dark .calls-container *,
-body.dark .calls-container, body.dark .calls-container *,
-[data-theme="dark"] .calls-container, [data-theme="dark"] .calls-container * {
+:root.dark .calls-container,
+:root.dark .calls-container *,
+body.dark .calls-container,
+body.dark .calls-container *,
+[data-theme="dark"] .calls-container,
+[data-theme="dark"] .calls-container * {
   color: #fff !important;
 }
-:root.dark .calls-table th, :root.dark .calls-table td,
-body.dark .calls-table th, body.dark .calls-table td,
-[data-theme="dark"] .calls-table th, [data-theme="dark"] .calls-table td {
+:root.dark .calls-table th,
+:root.dark .calls-table td,
+body.dark .calls-table th,
+body.dark .calls-table td,
+[data-theme="dark"] .calls-table th,
+[data-theme="dark"] .calls-table td {
   color: #fff !important;
 }
-:root.dark .queue-section, :root.dark .queue-section *,
-body.dark .queue-section, body.dark .queue-section *,
-[data-theme="dark"] .queue-section, [data-theme="dark"] .queue-section * {
+:root.dark .queue-section,
+:root.dark .queue-section *,
+body.dark .queue-section,
+body.dark .queue-section *,
+[data-theme="dark"] .queue-section,
+[data-theme="dark"] .queue-section * {
   color: #fff !important;
 }
 </style>
