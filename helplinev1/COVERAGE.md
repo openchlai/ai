@@ -1,8 +1,8 @@
 # Code Coverage Report - HelplineV1
 
-**Branch:** 275/merge
-**Commit:** [eaf5184](https://github.com/openchlai/ai/commit/eaf51845169c835c586f55e7e009187436761a9a)
-**Generated:** 2025-08-26 12:28:32 UTC
+**Branch:** 292/merge
+**Commit:** [5d8a6c7](https://github.com/openchlai/ai/commit/5d8a6c7d484267e8aa14c1e03545bb892df24bd5)
+**Generated:** 2025-08-26 15:29:34 UTC
 **PHP Version:** 8.3
 
 ## Coverage Summary
@@ -13,8 +13,8 @@
 | Metric | Value |
 |--------| ------|
 | **Coverage** | 59% |
-| **Generated** | 2025-08-26 12:28:32 UTC |
-| **Branch** | 275/merge |
+| **Generated** | 2025-08-26 15:29:34 UTC |
+| **Branch** | 292/merge |
 | **PHP Version** | 8.3 |
 
 ## Detailed Coverage Analysis
