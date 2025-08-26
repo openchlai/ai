@@ -1,11 +1,11 @@
-# 📊 Code Coverage Report - HelplineV1
+# Code Coverage Report - HelplineV1
 
 **Branch:** 275/merge
-**Commit:** [\`44350c9\`](https://github.com/openchlai/ai/commit/44350c9a96b8b85a579b8173836ad0658747549f)
-**Generated:** 2025-08-22 08:09:23 UTC
+**Commit:** [\`35d8719\`](https://github.com/openchlai/ai/commit/35d87199a07351ec29612029b6045ea1ae60dca4)
+**Generated:** 2025-08-26 11:36:39 UTC
 **PHP Version:** 8.3
 
-## 🎯 Coverage Summary
+## Coverage Summary
 
 ![Coverage](https://img.shields.io/badge/Coverage-59%25-orange)
 ![Tests](https://img.shields.io/badge/Tests-PHPUnit-blue)
@@ -13,11 +13,11 @@
 | Metric | Value |
 |--------| ------|
 | **Coverage** | 59% |
-| **Generated** | 2025-08-22 08:09:23 UTC |
+| **Generated** | 2025-08-26 11:36:39 UTC |
 | **Branch** | 275/merge |
 | **PHP Version** | 8.3 |
 
-## 📈 Detailed Coverage Analysis
+## Detailed Coverage Analysis
 
 ```
 === Real Code Coverage Analysis ===
@@ -44,7 +44,7 @@ Estimated Line Coverage: 59%
 ✅ PASS: Coverage (59%) meets minimum 40% requirement
 ```
 
-## 🧪 Test Summary
+## Test Summary
 
 ```
 PHPUnit 9.6.23 by Sebastian Bergmann and contributors.
