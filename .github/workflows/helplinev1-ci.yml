@@ -8,11 +8,11 @@ on:
   push:
     paths:
       - 'helplinev1/**'
-    branches: [main, develop, justphyl]
+    branches: [main, justphyl]
   pull_request:
     paths:
       - 'helplinev1/**'
-    branches: [main, develop]
+    branches: [main]
   workflow_dispatch:
 
 env:
@@ -130,273 +130,7 @@ jobs:
           git commit -m "Update coverage report [skip ci]" || echo "No changes to commit"
           git push origin HEAD:${GITHUB_HEAD_REF}
 
-  # Build and Push Docker Images - Now runs on all branches after successful tests
-  build-images:
-    runs-on: ubuntu-latest
-    needs: unit-tests
-    if: needs.unit-tests.result == 'success'
-    
-    outputs:
-      php-image-tag: ${{ steps.php-tags.outputs.tag }}
-      nginx-image-tag: ${{ steps.nginx-tags.outputs.tag }}
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Debug repository structure
-        run: |
-          echo "Current directory:"
-          pwd
-          echo ""
-          echo "Repository root:"
-          ls -la
-          echo ""
-          echo "HelplineV1 directory:"
-          ls -la helplinev1/
-          echo ""
-          echo "Docker directory:"
-          ls -la helplinev1/docker/
-          echo ""
-          echo "PHP Docker files:"
-          ls -la helplinev1/docker/php/
-          echo ""
-          echo "Nginx Docker files:"
-          ls -la helplinev1/docker/nginx/
-
-      - name: Test local Docker builds
-        working-directory: helplinev1
-        run: |
-          echo "Testing PHP build locally..."
-          docker build -t test-helpline-php ./docker/php
-          echo "PHP build successful!"
-          
-          echo "Testing Nginx build locally..."
-          docker build -t test-helpline-nginx ./docker/nginx
-          echo "Nginx build successful!"
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Generate PHP image tags
-        id: php-tags
-        run: |
-          TAG="${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PHP }}:${{ github.ref_name }}-${{ github.sha }}"
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "PHP_IMAGE_TAG=$TAG" >> $GITHUB_ENV
-          echo "Generated PHP tag: $TAG"
-
-      - name: Generate Nginx image tags
-        id: nginx-tags
-        run: |
-          TAG="${{ env.REGISTRY }}/${{ env.IMAGE_NAME_NGINX }}:${{ github.ref_name }}-${{ github.sha }}"
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "NGINX_IMAGE_TAG=$TAG" >> $GITHUB_ENV
-          echo "Generated Nginx tag: $TAG"
-
-      - name: Build and push PHP image
-        working-directory: helplinev1
-        run: |
-          echo "Building PHP image with tag: ${{ env.PHP_IMAGE_TAG }}"
-          docker build -t ${{ env.PHP_IMAGE_TAG }} ./docker/php
-          docker push ${{ env.PHP_IMAGE_TAG }}
-          echo "PHP image pushed successfully"
-
-      - name: Build and push Nginx image
-        working-directory: helplinev1
-        run: |
-          echo "Building Nginx image with tag: ${{ env.NGINX_IMAGE_TAG }}"
-          docker build -t ${{ env.NGINX_IMAGE_TAG }} ./docker/nginx
-          docker push ${{ env.NGINX_IMAGE_TAG }}
-          echo "Nginx image pushed successfully"
-
-  # Deploy to Staging
-  deploy-staging:
-    runs-on: ubuntu-latest
-    needs: [unit-tests, build-images]
-    if: (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch') && needs.build-images.result == 'success'
-    environment: staging
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.STAGING_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Create application files archive
-        working-directory: helplinev1
-        run: |
-          tar -czf helplinev1-files.tar.gz application/ rest_api/ docker/config/
-          ls -la helplinev1-files.tar.gz
-
-      - name: Copy files to staging server
-        run: |
-          scp helplinev1/helplinev1-files.tar.gz ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }}:/tmp/
-
-      - name: Deploy to staging
-        run: |
-          ssh ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }} << 'EOF'
-          set -e
-          
-          echo "Starting deployment to staging..."
-          
-          # Variables
-          DEPLOY_DIR="/opt/helplinev1"
-          BACKUP_DIR="/opt/backups/helplinev1-$(date +%Y%m%d-%H%M%S)"
-          PHP_IMAGE="${{ needs.build-images.outputs.php-image-tag }}"
-          NGINX_IMAGE="${{ needs.build-images.outputs.nginx-image-tag }}"
-          
-          # Create backup
-          echo "Creating backup..."
-          sudo mkdir -p /opt/backups
-          if [ -d "$DEPLOY_DIR" ]; then
-            sudo cp -r "$DEPLOY_DIR" "$BACKUP_DIR"
-          fi
-          
-          # Prepare deployment
-          sudo mkdir -p "$DEPLOY_DIR"
-          cd "$DEPLOY_DIR"
-          
-          # Extract application files
-          sudo tar -xzf /tmp/helplinev1-files.tar.gz
-          
-          # Login to registry
-          echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          
-          # Pull images
-          echo "Pulling images..."
-          sudo docker pull $PHP_IMAGE
-          sudo docker pull $NGINX_IMAGE
-          
-          # Stop existing containers
-          echo "Stopping existing containers..."
-          sudo docker-compose down 2>/dev/null || true
-          
-          # Create staging docker-compose file
-          cat > docker-compose.yml << 'COMPOSE_EOF'
-          services:
-            database:
-              image: mysql:8.0
-              container_name: helpline-db-staging
-              environment:
-                MYSQL_ROOT_PASSWORD: ${{ secrets.STAGING_DB_ROOT_PASSWORD }}
-                MYSQL_DATABASE: helpline_staging
-                MYSQL_USER: ${{ secrets.STAGING_DB_USER }}
-                MYSQL_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
-              ports:
-                - "3307:3306"
-              volumes:
-                - db_data_staging:/var/lib/mysql
-                - ./rest_api/config/uchl.sql:/docker-entrypoint-initdb.d/01-complete-schema.sql
-                - ./docker/mysql/init-user.sql:/docker-entrypoint-initdb.d/02-init-user.sql
-                - ./docker/mysql/03-missing-columns.sql:/docker-entrypoint-initdb.d/03-missing-columns.sql
-              restart: unless-stopped
-              networks:
-                - helpline-network
-          
-            php-api:
-              image: $PHP_IMAGE
-              container_name: helpline-php-staging
-              volumes:
-                - ./application:/var/www/html/helpline
-                - ./rest_api/api:/var/www/html/helpline/api
-                - ./rest_api/lib:/var/www/html/helpline/lib
-                - ./docker/config/config-docker.php:/var/www/html/helpline/config.php
-                - ./docker/config/config-docker.php:/var/www/html/helpline/api/config.php
-              depends_on:
-                - database
-              environment:
-                - DB_HOST=database
-                - DB_NAME=helpline_staging
-                - DB_USER=${{ secrets.STAGING_DB_USER }}
-                - DB_PASS=${{ secrets.STAGING_DB_PASSWORD }}
-              restart: unless-stopped
-              networks:
-                - helpline-network
-          
-            nginx:
-              image: $NGINX_IMAGE
-              container_name: helpline-nginx-staging
-              ports:
-                - "8888:80"
-                - "8443:443"
-              volumes:
-                - ./application:/var/www/html/helpline
-                - ./rest_api/api:/var/www/html/helpline/api
-                - ./rest_api/lib:/var/www/html/helpline/lib
-                - ./docker/config/config-docker.php:/var/www/html/helpline/config.php
-              depends_on:
-                - php-api
-              restart: unless-stopped
-              networks:
-                - helpline-network
-          
-          volumes:
-            db_data_staging:
-          
-          networks:
-            helpline-network:
-              driver: bridge
-          COMPOSE_EOF
-          
-          # Start services
-          echo "Starting services..."
-          sudo docker-compose up -d
-          
-          # Wait for services
-          echo "Waiting for services to initialize..."
-          sleep 60
-          
-          # Health checks
-          echo "Performing health checks..."
-          
-          # Check if containers are running
-          if ! sudo docker ps | grep helpline-nginx-staging; then
-            echo "Nginx container failed to start"
-            exit 1
-          fi
-          
-          if ! sudo docker ps | grep helpline-php-staging; then
-            echo "PHP container failed to start"
-            exit 1
-          fi
-          
-          # Check web endpoint
-          for i in {1..15}; do
-            if curl -f -s http://localhost:8888 > /dev/null; then
-              echo "Web endpoint is responding!"
-              break
-            fi
-            echo "Health check attempt $i failed, retrying..."
-            sleep 10
-            if [ $i -eq 15 ]; then
-              echo "Health checks failed after 15 attempts"
-              sudo docker-compose logs
-              exit 1
-            fi
-          done
-          
-          # Final success message
-          echo "Deployment successful!"
-          echo "Application is running at: http://${{ secrets.STAGING_HOST }}:8888"
-          
-          # Cleanup old images
-          sudo docker image prune -f || true
-          EOF
-
-  # Build and Push Docker Images
+  # Build Docker Images - runs on all pushes when tests pass
   build-images:
     runs-on: ubuntu-latest
     needs: unit-tests
@@ -449,41 +183,181 @@ jobs:
         run: |
           echo "php-tag=${{ env.PHP_IMAGE_TAG }}" >> $GITHUB_OUTPUT
           echo "nginx-tag=${{ env.NGINX_IMAGE_TAG }}" >> $GITHUB_OUTPUT
-          echo "Build completed:"
-          echo "- PHP: ${{ env.PHP_IMAGE_TAG }}"
-          echo "- Nginx: ${{ env.NGINX_IMAGE_TAG }}"
 
-  # Deployment Summary
+  # Deploy to Staging - ONLY on main branch
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: [unit-tests, build-images]
+    if: github.ref == 'refs/heads/main' && needs.build-images.result == 'success'
+    environment: staging
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.STAGING_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Create application archive
+        working-directory: helplinev1
+        run: |
+          tar -czf helplinev1-files.tar.gz application/ rest_api/ docker/config/
+
+      - name: Copy files to server
+        run: |
+          scp helplinev1/helplinev1-files.tar.gz ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }}:/tmp/
+
+      - name: Deploy to staging server
+        run: |
+          ssh ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }} << 'EOF'
+          set -e
+          
+          echo "Starting staging deployment..."
+          
+          # Variables
+          DEPLOY_DIR="/opt/helplinev1"
+          BACKUP_DIR="/opt/backups/helplinev1-$(date +%Y%m%d-%H%M%S)"
+          PHP_IMAGE="${{ needs.build-images.outputs.php-image-tag }}"
+          NGINX_IMAGE="${{ needs.build-images.outputs.nginx-image-tag }}"
+          
+          # Create backup
+          sudo mkdir -p /opt/backups
+          if [ -d "$DEPLOY_DIR" ]; then
+            sudo cp -r "$DEPLOY_DIR" "$BACKUP_DIR"
+          fi
+          
+          # Setup deployment directory
+          sudo mkdir -p "$DEPLOY_DIR"
+          cd "$DEPLOY_DIR"
+          
+          # Extract files
+          sudo tar -xzf /tmp/helplinev1-files.tar.gz
+          
+          # Login to registry
+          echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          
+          # Pull images
+          sudo docker pull $PHP_IMAGE
+          sudo docker pull $NGINX_IMAGE
+          
+          # Stop existing containers
+          sudo docker-compose down 2>/dev/null || true
+          
+          # Create docker-compose file for staging
+          cat > docker-compose.yml << 'COMPOSE_EOF'
+          services:
+            database:
+              image: mysql:8.0
+              container_name: helpline-db-staging
+              environment:
+                MYSQL_ROOT_PASSWORD: ${{ secrets.STAGING_DB_ROOT_PASSWORD }}
+                MYSQL_DATABASE: helpline_staging
+                MYSQL_USER: ${{ secrets.STAGING_DB_USER }}
+                MYSQL_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
+              ports:
+                - "3307:3306"
+              volumes:
+                - db_data_staging:/var/lib/mysql
+                - ./rest_api/config/uchl.sql:/docker-entrypoint-initdb.d/01-complete-schema.sql
+              restart: unless-stopped
+              networks:
+                - helpline-network
+          
+            php-api:
+              image: $PHP_IMAGE
+              container_name: helpline-php-staging
+              volumes:
+                - ./application:/var/www/html/helpline
+                - ./rest_api/api:/var/www/html/helpline/api
+                - ./rest_api/lib:/var/www/html/helpline/lib
+                - ./docker/config/config-docker.php:/var/www/html/helpline/config.php
+                - ./docker/config/config-docker.php:/var/www/html/helpline/api/config.php
+              depends_on:
+                - database
+              environment:
+                - DB_HOST=database
+                - DB_NAME=helpline_staging
+                - DB_USER=${{ secrets.STAGING_DB_USER }}
+                - DB_PASS=${{ secrets.STAGING_DB_PASSWORD }}
+              restart: unless-stopped
+              networks:
+                - helpline-network
+          
+            nginx:
+              image: $NGINX_IMAGE
+              container_name: helpline-nginx-staging
+              ports:
+                - "8888:80"
+                - "8443:443"
+              volumes:
+                - ./application:/var/www/html/helpline
+                - ./rest_api/api:/var/www/html/helpline/api
+                - ./rest_api/lib:/var/www/html/helpline/lib
+                - ./docker/config/config-docker.php:/var/www/html/helpline/config.php
+              depends_on:
+                - php-api
+              restart: unless-stopped
+              networks:
+                - helpline-network
+          
+          volumes:
+            db_data_staging:
+          
+          networks:
+            helpline-network:
+              driver: bridge
+          COMPOSE_EOF
+          
+          # Start services
+          sudo docker-compose up -d
+          
+          # Wait and health check
+          sleep 60
+          
+          if curl -f http://localhost:8888 > /dev/null 2>&1; then
+            echo "Deployment successful! Running at http://${{ secrets.STAGING_HOST }}:8888"
+          else
+            echo "Deployment failed - rolling back"
+            sudo docker-compose down
+            if [ -d "$BACKUP_DIR" ]; then
+              sudo rm -rf "$DEPLOY_DIR"
+              sudo mv "$BACKUP_DIR" "$DEPLOY_DIR"
+            fi
+            exit 1
+          fi
+          EOF
+
+  # Summary
   deployment-summary:
     runs-on: ubuntu-latest
     needs: [unit-tests, build-images, deploy-staging]
     if: always()
     
     steps:
-      - name: Generate deployment summary
+      - name: Generate summary
         run: |
-          echo "## HelplineV1 CI/CD Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## HelplineV1 Pipeline Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
           echo "**Commit:** [\`${GITHUB_SHA:0:7}\`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
-          echo "### Job Results" >> $GITHUB_STEP_SUMMARY
-          echo "| Job | Status | Coverage |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----|--------|----------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Unit Tests | ${{ needs.unit-tests.result }} | ${{ needs.unit-tests.outputs.coverage-percentage }}% |" >> $GITHUB_STEP_SUMMARY
-          echo "| Build Images | ${{ needs.build-images.result }} | - |" >> $GITHUB_STEP_SUMMARY
-          echo "| Deploy Staging | ${{ needs.deploy-staging.result }} | - |" >> $GITHUB_STEP_SUMMARY
+          echo "### Results" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Unit Tests | ${{ needs.unit-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build Images | ${{ needs.build-images.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Deploy Staging | ${{ needs.deploy-staging.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
           if [ "${{ needs.deploy-staging.result }}" == "success" ]; then
-            echo "### Staging Deployment Successful!" >> $GITHUB_STEP_SUMMARY
-            echo "**Application URL:** http://${{ secrets.STAGING_HOST }}:8888" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "### Docker Images Built:" >> $GITHUB_STEP_SUMMARY
-            echo "- **PHP:** \`${{ needs.build-images.outputs.php-image-tag }}\`" >> $GITHUB_STEP_SUMMARY
-            echo "- **Nginx:** \`${{ needs.build-images.outputs.nginx-image-tag }}\`" >> $GITHUB_STEP_SUMMARY
-          elif [ "${{ needs.build-images.result }}" == "success" ]; then
-            echo "### Images Built Successfully!" >> $GITHUB_STEP_SUMMARY
-            echo "Ready for deployment to staging environment" >> $GITHUB_STEP_SUMMARY
+            echo "### Staging Deployed Successfully!" >> $GITHUB_STEP_SUMMARY
+            echo "Application: http://${{ secrets.STAGING_HOST }}:8888" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ github.ref }}" != "refs/heads/main" ]; then
+            echo "### Feature Branch Testing Complete" >> $GITHUB_STEP_SUMMARY
+            echo "Ready for merge to main branch" >> $GITHUB_STEP_SUMMARY
           fi
