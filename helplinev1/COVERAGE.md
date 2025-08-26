@@ -1,11 +1,12 @@
-# Code Coverage Report - HelplineV1
+# 📊 Code Coverage Report - HelplineV1
 
 **Branch:** 275/merge
-**Commit:** [\`35d8719\`](https://github.com/openchlai/ai/commit/35d87199a07351ec29612029b6045ea1ae60dca4)
-**Generated:** 2025-08-26 11:36:39 UTC
+**Commit:** [\`f372c90\`](https://github.com/openchlai/ai/commit/f372c90c44e886a12bbb420bcab9a7f73de1ddb9)
+**Generated:** 2025-08-26 11:46:00 UTC
 **PHP Version:** 8.3
+**Workflow:** [\`17237093566\`](https://github.com/openchlai/ai/actions/runs/17237093566)
 
-## Coverage Summary
+## 🎯 Coverage Summary
 
 ![Coverage](https://img.shields.io/badge/Coverage-59%25-orange)
 ![Tests](https://img.shields.io/badge/Tests-PHPUnit-blue)
@@ -13,11 +14,11 @@
 | Metric | Value |
 |--------| ------|
 | **Coverage** | 59% |
-| **Generated** | 2025-08-26 11:36:39 UTC |
+| **Generated** | 2025-08-26 11:46:00 UTC |
 | **Branch** | 275/merge |
 | **PHP Version** | 8.3 |
 
-## Detailed Coverage Analysis
+## 📈 Detailed Coverage Analysis
 
 ```
 === Real Code Coverage Analysis ===
@@ -44,7 +45,7 @@ Estimated Line Coverage: 59%
 ✅ PASS: Coverage (59%) meets minimum 40% requirement
 ```
 
-## Test Summary
+## 🧪 Test Summary
 
 ```
 PHPUnit 9.6.23 by Sebastian Bergmann and contributors.
@@ -325,5 +326,27 @@ rest_uri_response_error - 404
 { "errors":[["error","The requested URL \/ was not found on this server"]]}
 ```
 
+## 📁 Generated Files
+
+- `coverage.xml` - XML coverage report for CI/CD integration
+- `coverage-html/` - HTML coverage report for detailed browsing
+- `coverage-analysis.txt` - Detailed coverage analysis
+- `test-summary.txt` - Test execution summary
+
+## 🔍 How to View Coverage
+
+### HTML Report (Recommended)
+Open `helplinev1/rest_api/coverage-html/index.html` in your browser for an interactive view.
+
+### Command Line
+```bash
+cd helplinev1/rest_api
+./vendor/bin/phpunit --coverage-text
+```
+
+### XML Integration
+Use `coverage.xml` for integration with code coverage services like Codecov.
+
 ---
 *Report generated automatically by GitHub Actions*
+*Access this report at: [COVERAGE.md](https://github.com/openchlai/ai/blob/275/merge/helplinev1/COVERAGE.md)*
