@@ -157,7 +157,9 @@ jobs:
       - name: Build and push PHP image
         working-directory: helplinev1
         run: |
-          PHP_TAG="${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PHP }}:${{ github.ref_name }}-${{ github.sha }}"
+          # Clean branch name for Docker tag (replace slashes and invalid characters)
+          CLEAN_BRANCH=$(echo "${{ github.ref_name }}" | sed 's/[^a-zA-Z0-9._-]/-/g')
+          PHP_TAG="${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PHP }}:${CLEAN_BRANCH}-${{ github.sha }}"
           echo "Building PHP image: $PHP_TAG"
           
           docker build -t $PHP_TAG ./docker/php
@@ -169,7 +171,9 @@ jobs:
       - name: Build and push Nginx image
         working-directory: helplinev1
         run: |
-          NGINX_TAG="${{ env.REGISTRY }}/${{ env.IMAGE_NAME_NGINX }}:${{ github.ref_name }}-${{ github.sha }}"
+          # Clean branch name for Docker tag (replace slashes and invalid characters)
+          CLEAN_BRANCH=$(echo "${{ github.ref_name }}" | sed 's/[^a-zA-Z0-9._-]/-/g')
+          NGINX_TAG="${{ env.REGISTRY }}/${{ env.IMAGE_NAME_NGINX }}:${CLEAN_BRANCH}-${{ github.sha }}"
           echo "Building Nginx image: $NGINX_TAG"
           
           docker build -t $NGINX_TAG ./docker/nginx
