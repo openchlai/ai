@@ -5,7 +5,7 @@ import logging
 from datetime import datetime
 import os
 
-from ..models.model_loader import model_loader
+from ..model_scripts.model_loader import model_loader
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/whisper", tags=["whisper"])

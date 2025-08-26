@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
     libfreetype6-dev \
     libonig-dev \
     libxml2-dev \
+    git \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) \
         mysqli \
@@ -23,6 +24,12 @@ RUN apt-get update && apt-get install -y \
         opcache \
     && rm -rf /var/lib/apt/lists/*
 
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Install PCOV for code coverage
+RUN pecl install pcov && docker-php-ext-enable pcov
+
 # Configure PHP-FPM pool
 RUN echo "listen = 9000" >> /usr/local/etc/php-fpm.d/zz-docker.conf && \
     echo "pm.max_children = 50" >> /usr/local/etc/php-fpm.d/zz-docker.conf && \
@@ -34,7 +41,8 @@ RUN echo "listen = 9000" >> /usr/local/etc/php-fpm.d/zz-docker.conf && \
 WORKDIR /var/www/html
 
 # Copy PHP configuration
-COPY docker/php/php.ini /usr/local/etc/php/conf.d/custom.ini
+COPY php.ini /usr/local/etc/php/conf.d/custom.ini
+
 
 # Create data directory and set permissions
 RUN mkdir -p /var/www/html/helpline/data && \

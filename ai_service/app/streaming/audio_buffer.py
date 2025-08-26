@@ -6,7 +6,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 class AsteriskAudioBuffer:
-    """Simple buffer for 16kHz 16-bit mono audio from Asterisk"""
+    """Simple buffer for 16kHz 16-bit mixed-mono audio from Asterisk"""
     
     def __init__(self):
         self.sample_rate = 16000
@@ -14,11 +14,17 @@ class AsteriskAudioBuffer:
         self.buffer = bytearray()
         self.offset = 0
         self.chunk_count = 0
+        self.expected_chunk_size = 320  # 10ms chunks: 160 samples * 2 bytes = 320 bytes
         
     def add_chunk(self, chunk: bytes) -> Optional[np.ndarray]:
         """
-        Add 20ms chunk (640 bytes), return audio array when 5-second window ready
+        Add 10ms chunk (320 bytes), return audio array when 5-second window ready
+        Mixed-mono audio contains both caller and agent voices in one channel
         """
+        # Validate chunk size (log warning if unexpected)
+        if len(chunk) != self.expected_chunk_size:
+            logger.warning(f"⚠️ Unexpected chunk size: {len(chunk)} bytes (expected {self.expected_chunk_size})")
+        
         self.buffer.extend(chunk)
         self.chunk_count += 1
         current_size = len(self.buffer)

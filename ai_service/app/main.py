@@ -8,8 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 from .config.settings import settings
-from .api import health_routes, queue_routes, ner_routes, translator_routes, summarizer_routes, classifier_route, whisper_routes, audio_routes, call_session_routes, qa_route
-from .models.model_loader import model_loader
+from .api import health_routes, ner_routes, translator_routes, summarizer_routes, classifier_route, whisper_routes, audio_routes, call_session_routes, qa_route
+from .model_scripts.model_loader import model_loader
 from .core.resource_manager import resource_manager
 from .streaming.tcp_server import AsteriskTCPServer
 from .streaming.websocket_server import websocket_manager
@@ -117,7 +117,6 @@ app.add_middleware(
 
 # Include routers
 app.include_router(health_routes.router)
-app.include_router(queue_routes.router)
 app.include_router(ner_routes.router)
 app.include_router(translator_routes.router)
 app.include_router(summarizer_routes.router)

@@ -4,7 +4,7 @@ from typing import List, Dict, Union, Optional
 import logging
 from datetime import datetime
 
-from ..models.model_loader import model_loader
+from ..model_scripts.model_loader import model_loader
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/ner", tags=["ner"])

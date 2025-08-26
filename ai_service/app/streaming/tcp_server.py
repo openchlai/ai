@@ -36,8 +36,8 @@ class AsteriskTCPServer:
         try:
             packet_count = 0
             while True:
-                # Receive 20ms SLIN (640 bytes)
-                data = await reader.read(640)
+                # Receive 10ms SLIN (320 bytes) - mixed-mono with both parties
+                data = await reader.read(320)
                 packet_count += 1
                 
                 if not data:
@@ -185,7 +185,8 @@ class AsteriskTCPServer:
         return {
             "server_running": self.server is not None,
             "active_calls": len(self.active_connections),
+            "active_connections": len(self.active_connections),
             "call_sessions": connection_stats,
-            "transcription_method": "celery_workers_with_session_tracking",
+            "transcription_method": "celery_workers",
             "tcp_port": 8300
         }
