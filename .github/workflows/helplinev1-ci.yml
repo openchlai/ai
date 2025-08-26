@@ -8,21 +8,13 @@ on:
   push:
     paths:
       - 'helplinev1/**'
-    branches: [main, develop, staging]
+    branches: [main, develop, justphyl]
   pull_request:
     paths:
       - 'helplinev1/**'
     branches: [main, develop]
   workflow_dispatch:
     inputs:
-      environment:
-        description: 'Target deployment environment'
-        required: true
-        default: 'staging'
-        type: choice
-        options:
-        - staging
-        - production
       force_deploy:
         description: 'Force deployment even if tests fail'
         required: false
@@ -58,12 +50,12 @@ jobs:
       coverage-percentage: ${{ steps.coverage.outputs.percentage }}
 
     steps:
-      - name: 🛎️ Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: 🐘 Setup PHP
+      - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
@@ -71,7 +63,7 @@ jobs:
           tools: composer:v2
           coverage: pcov
 
-      - name: 📦 Cache Composer packages
+      - name: Cache Composer packages
         uses: actions/cache@v4
         with:
           path: helplinev1/rest_api/vendor
@@ -79,24 +71,24 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-php-${{ matrix.php-version }}-
 
-      - name: 🔧 Install dependencies
+      - name: Install dependencies
         working-directory: helplinev1/rest_api
         run: composer install --prefer-dist --no-progress --no-suggest
 
-      - name: 🗃️ Setup test database
+      - name: Setup test database
         run: |
           mysql -h 127.0.0.1 -u root -prootpassword -e "CREATE DATABASE IF NOT EXISTS helpline_test;"
           mysql -h 127.0.0.1 -u root -prootpassword helpline_test < helplinev1/rest_api/config/uchl.sql || echo "Schema file not found, proceeding with tests"
 
-      - name: 🧪 Run tests with coverage
+      - name: Run tests with coverage
         working-directory: helplinev1/rest_api
         run: |
           ./vendor/bin/phpunit --coverage-text --coverage-clover=coverage.xml --coverage-html=coverage-html || {
-            echo "⚠️ Tests failed. Creating fallback coverage.xml"
+            echo "Tests failed. Creating fallback coverage.xml"
             printf '<?xml version="1.0"?>\n<coverage version="6.0" timestamp="1" lines-valid="100" lines-covered="0" line-rate="0.0">\n<sources><source>./</source></sources>\n<packages></packages>\n</coverage>\n' > coverage.xml
           }
 
-      - name: 📊 Generate coverage report
+      - name: Generate coverage report
         id: coverage
         working-directory: helplinev1/rest_api
         run: |
@@ -111,13 +103,13 @@ jobs:
           else COLOR="red"; fi
           echo "COVERAGE_COLOR=$COLOR" >> $GITHUB_ENV
 
-      - name: 📝 Generate coverage report
+      - name: Create coverage report
         working-directory: helplinev1/rest_api
         run: |
           COVERAGE_DETAILS=$(cat coverage-analysis.txt 2>/dev/null || echo "No coverage analysis available")
           TEST_DETAILS=$(./vendor/bin/phpunit --testdox 2>&1 || echo "No test details available")
           
-          printf '# 📊 Code Coverage Report - HelplineV1\n\n**Branch:** %s\n**Commit:** [\`%s\`](%s)\n**Generated:** %s\n**PHP Version:** %s\n\n## 🎯 Coverage Summary\n\n![Coverage](https://img.shields.io/badge/Coverage-%s%%25-%s)\n![Tests](https://img.shields.io/badge/Tests-PHPUnit-blue)\n\n| Metric | Value |\n|--------| ------|\n| **Coverage** | %s%% |\n| **Generated** | %s |\n| **Branch** | %s |\n| **PHP Version** | %s |\n\n## 📈 Detailed Coverage Analysis\n\n```\n%s\n```\n\n## 🧪 Test Summary\n\n```\n%s\n```\n\n---\n*Report generated automatically by GitHub Actions*\n' \
+          printf '# Code Coverage Report - HelplineV1\n\n**Branch:** %s\n**Commit:** [\`%s\`](%s)\n**Generated:** %s\n**PHP Version:** %s\n\n## Coverage Summary\n\n![Coverage](https://img.shields.io/badge/Coverage-%s%%25-%s)\n![Tests](https://img.shields.io/badge/Tests-PHPUnit-blue)\n\n| Metric | Value |\n|--------| ------|\n| **Coverage** | %s%% |\n| **Generated** | %s |\n| **Branch** | %s |\n| **PHP Version** | %s |\n\n## Detailed Coverage Analysis\n\n```\n%s\n```\n\n## Test Summary\n\n```\n%s\n```\n\n---\n*Report generated automatically by GitHub Actions*\n' \
             "${{ github.ref_name }}" \
             "${GITHUB_SHA:0:7}" \
             "https://github.com/${{ github.repository }}/commit/${{ github.sha }}" \
@@ -132,7 +124,7 @@ jobs:
             "${COVERAGE_DETAILS}" \
             "${TEST_DETAILS}" > ../COVERAGE.md
 
-      - name: 💾 Commit coverage report (PR only)
+      - name: Commit coverage report (PR only)
         if: github.event_name == 'pull_request' && matrix.php-version == '8.3'
         working-directory: helplinev1
         run: |
@@ -141,10 +133,10 @@ jobs:
           git fetch origin "${GITHUB_HEAD_REF}:${GITHUB_HEAD_REF}" || true
           git checkout "${GITHUB_HEAD_REF}" || true
           git add COVERAGE.md
-          git commit -m "📊 Update coverage report [skip ci]" || echo "No changes to commit"
+          git commit -m "Update coverage report [skip ci]" || echo "No changes to commit"
           git push origin HEAD:${GITHUB_HEAD_REF}
 
-      - name: 📤 Upload coverage to Codecov
+      - name: Upload coverage to Codecov
         if: always()
         uses: codecov/codecov-action@v3
         with:
@@ -153,7 +145,7 @@ jobs:
           name: helplinev1-coverage-php${{ matrix.php-version }}
           fail_ci_if_error: false
 
-      - name: 📦 Archive test results
+      - name: Archive test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -168,29 +160,27 @@ jobs:
   build-images:
     runs-on: ubuntu-latest
     needs: unit-tests
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/staging' || github.event_name == 'workflow_dispatch'
+    if: always() && needs.unit-tests.result == 'success'
     
     outputs:
       php-image: ${{ steps.meta-php.outputs.tags }}
       nginx-image: ${{ steps.meta-nginx.outputs.tags }}
-      php-digest: ${{ steps.build-php.outputs.digest }}
-      nginx-digest: ${{ steps.build-nginx.outputs.digest }}
 
     steps:
-      - name: 🛎️ Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: 🐳 Set up Docker Buildx
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: 🔐 Log in to Container Registry
+      - name: Log in to Container Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 🏷️ Extract PHP metadata
+      - name: Extract PHP metadata
         id: meta-php
         uses: docker/metadata-action@v5
         with:
@@ -201,7 +191,7 @@ jobs:
             type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: 🏷️ Extract Nginx metadata
+      - name: Extract Nginx metadata
         id: meta-nginx
         uses: docker/metadata-action@v5
         with:
@@ -212,8 +202,7 @@ jobs:
             type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: 🔨 Build and push PHP image
-        id: build-php
+      - name: Build and push PHP image
         uses: docker/build-push-action@v5
         with:
           context: helplinev1/docker/php
@@ -224,8 +213,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: 🔨 Build and push Nginx image
-        id: build-nginx
+      - name: Build and push Nginx image
         uses: docker/build-push-action@v5
         with:
           context: helplinev1/docker/nginx
@@ -236,21 +224,21 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: 🔍 Run Trivy vulnerability scanner on PHP
+      - name: Run vulnerability scan on PHP
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ steps.meta-php.outputs.tags }}
           format: 'sarif'
           output: 'php-trivy-results.sarif'
 
-      - name: 🔍 Run Trivy vulnerability scanner on Nginx
+      - name: Run vulnerability scan on Nginx
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ steps.meta-nginx.outputs.tags }}
           format: 'sarif'
           output: 'nginx-trivy-results.sarif'
 
-      - name: 📤 Upload Trivy scan results
+      - name: Upload scan results
         uses: github/codeql-action/upload-sarif@v2
         if: always()
         with:
@@ -260,59 +248,60 @@ jobs:
   deploy-staging:
     runs-on: ubuntu-latest
     needs: [unit-tests, build-images]
-    if: github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+    if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     environment: staging
     
     steps:
-      - name: 🛎️ Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: 🔐 Setup SSH
+      - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.STAGING_HOST }} >> ~/.ssh/known_hosts
 
-      - name: 📋 Create deployment script
+      - name: Create deployment script
         run: |
           cat > deploy-staging.sh << 'EOF'
           #!/bin/bash
           set -e
           
-          echo "🚀 Starting deployment to staging..."
+          echo "Starting deployment to staging..."
           
-          # Define variables
+          # Variables
           DEPLOY_DIR="/opt/helplinev1"
           BACKUP_DIR="/opt/backups/helplinev1-$(date +%Y%m%d-%H%M%S)"
           PHP_IMAGE="${{ needs.build-images.outputs.php-image }}"
           NGINX_IMAGE="${{ needs.build-images.outputs.nginx-image }}"
           
           # Create backup
-          echo "📦 Creating backup..."
+          echo "Creating backup..."
           sudo mkdir -p /opt/backups
           if [ -d "$DEPLOY_DIR" ]; then
             sudo cp -r "$DEPLOY_DIR" "$BACKUP_DIR"
           fi
           
-          # Create deployment directory
+          # Prepare deployment directory
           sudo mkdir -p "$DEPLOY_DIR"
           cd "$DEPLOY_DIR"
           
           # Login to GitHub Container Registry
           echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
           
-          # Pull latest images
-          echo "📥 Pulling Docker images..."
-          sudo docker pull $PHP_IMAGE
-          sudo docker pull $NGINX_IMAGE
+          # Pull images
+          echo "Pulling Docker images..."
+          sudo docker pull ${PHP_IMAGE} || sudo docker pull ${PHP_IMAGE%:*}:latest
+          sudo docker pull ${NGINX_IMAGE} || sudo docker pull ${NGINX_IMAGE%:*}:latest
           
           # Stop existing containers
-          echo "🛑 Stopping existing containers..."
-          sudo docker-compose down || true
+          echo "Stopping existing containers..."
+          sudo docker-compose -f docker-compose.staging.yml down 2>/dev/null || true
           
-          # Create docker-compose.staging.yml
+          # Create staging compose file
           cat > docker-compose.staging.yml << 'COMPOSE_EOF'
+          version: '3.8'
           services:
             database:
               image: mysql:8.0
@@ -331,12 +320,11 @@ jobs:
                 - helpline-network
           
             php-api:
-              image: $PHP_IMAGE
+              image: ${PHP_IMAGE}
               container_name: helpline-php-staging
               volumes:
-                - ./application:/var/www/html/helpline
-                - ./rest_api/api:/var/www/html/helpline/api
-                - ./rest_api/lib:/var/www/html/helpline/lib
+                - ./application:/var/www/html/helpline/application:ro
+                - ./rest_api:/var/www/html/helpline/rest_api:ro
               depends_on:
                 - database
               environment:
@@ -349,15 +337,14 @@ jobs:
                 - helpline-network
           
             nginx:
-              image: $NGINX_IMAGE
+              image: ${NGINX_IMAGE}
               container_name: helpline-nginx-staging
               ports:
                 - "8888:80"
                 - "8443:443"
               volumes:
-                - ./application:/var/www/html/helpline
-                - ./rest_api/api:/var/www/html/helpline/api
-                - ./rest_api/lib:/var/www/html/helpline/lib
+                - ./application:/var/www/html/helpline/application:ro
+                - ./rest_api:/var/www/html/helpline/rest_api:ro
               depends_on:
                 - php-api
               restart: unless-stopped
@@ -372,258 +359,75 @@ jobs:
               driver: bridge
           COMPOSE_EOF
           
-          # Start services
-          echo "🚀 Starting services..."
-          sudo docker-compose -f docker-compose.staging.yml up -d
-          
-          # Wait for services to be ready
-          echo "⏳ Waiting for services to be ready..."
-          sleep 30
-          
-          # Health check
-          echo "🏥 Performing health check..."
-          if curl -f http://localhost:8888/api/ > /dev/null 2>&1; then
-            echo "✅ Deployment successful!"
-            echo "🌐 Application is running at http://${{ secrets.STAGING_HOST }}:8888"
-          else
-            echo "❌ Health check failed!"
-            echo "🔄 Rolling back..."
-            sudo docker-compose -f docker-compose.staging.yml down
-            if [ -d "$BACKUP_DIR" ]; then
-              sudo rm -rf "$DEPLOY_DIR"
-              sudo mv "$BACKUP_DIR" "$DEPLOY_DIR"
-            fi
-            exit 1
+          # Copy application files if they don't exist
+          if [ ! -d "./application" ]; then
+            echo "Copying application files..."
+            sudo git clone https://github.com/${{ github.repository }}.git temp_repo
+            sudo cp -r temp_repo/helplinev1/application ./
+            sudo cp -r temp_repo/helplinev1/rest_api ./
+            sudo rm -rf temp_repo
           fi
           
-          # Cleanup old images
-          echo "🧹 Cleaning up old images..."
-          sudo docker image prune -f || true
+          # Start services
+          echo "Starting services..."
+          sudo docker-compose -f docker-compose.staging.yml up -d
           
-          echo "✅ Staging deployment completed!"
+          # Wait for services
+          echo "Waiting for services to start..."
+          sleep 45
+          
+          # Health check
+          echo "Performing health check..."
+          for i in {1..10}; do
+            if curl -f http://localhost:8888 > /dev/null 2>&1; then
+              echo "Deployment successful!"
+              echo "Application running at http://${{ secrets.STAGING_HOST }}:8888"
+              exit 0
+            fi
+            echo "Health check attempt $i failed, retrying in 10 seconds..."
+            sleep 10
+          done
+          
+          echo "Health check failed after 10 attempts!"
+          echo "Rolling back..."
+          sudo docker-compose -f docker-compose.staging.yml down
+          if [ -d "$BACKUP_DIR" ]; then
+            sudo rm -rf "$DEPLOY_DIR"
+            sudo mv "$BACKUP_DIR" "$DEPLOY_DIR"
+          fi
+          exit 1
           EOF
 
-      - name: 🚀 Deploy to staging
+      - name: Deploy to staging
         run: |
           chmod +x deploy-staging.sh
           scp deploy-staging.sh ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }}:/tmp/
           ssh ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }} "bash /tmp/deploy-staging.sh"
 
-      - name: 📊 Update deployment status
-        if: always()
-        run: |
-          if [ $? -eq 0 ]; then
-            echo "✅ Staging deployment successful"
-            echo "STAGING_STATUS=success" >> $GITHUB_ENV
-          else
-            echo "❌ Staging deployment failed"
-            echo "STAGING_STATUS=failure" >> $GITHUB_ENV
-          fi
-
-  # Deploy to Production
-  deploy-production:
-    runs-on: ubuntu-latest
-    needs: [unit-tests, build-images, deploy-staging]
-    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production')
-    environment: production
-    
-    steps:
-      - name: 🛎️ Checkout code
-        uses: actions/checkout@v4
-
-      - name: 🔐 Setup SSH for multiple servers
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.PRODUCTION_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          
-          # Add all production servers to known_hosts
-          IFS=',' read -ra SERVERS <<< "${{ secrets.PRODUCTION_HOSTS }}"
-          for server in "${SERVERS[@]}"; do
-            ssh-keyscan -H "$server" >> ~/.ssh/known_hosts
-          done
-
-      - name: 📋 Create production deployment script
-        run: |
-          cat > deploy-production.sh << 'EOF'
-          #!/bin/bash
-          set -e
-          
-          SERVER_HOST="$1"
-          echo "🚀 Starting deployment to production server: $SERVER_HOST"
-          
-          # Define variables
-          DEPLOY_DIR="/opt/helplinev1"
-          BACKUP_DIR="/opt/backups/helplinev1-$(date +%Y%m%d-%H%M%S)"
-          PHP_IMAGE="${{ needs.build-images.outputs.php-image }}"
-          NGINX_IMAGE="${{ needs.build-images.outputs.nginx-image }}"
-          
-          # Create backup
-          echo "📦 Creating backup..."
-          sudo mkdir -p /opt/backups
-          if [ -d "$DEPLOY_DIR" ]; then
-            sudo cp -r "$DEPLOY_DIR" "$BACKUP_DIR"
-          fi
-          
-          # Create deployment directory
-          sudo mkdir -p "$DEPLOY_DIR"
-          cd "$DEPLOY_DIR"
-          
-          # Login to GitHub Container Registry
-          echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          
-          # Pull latest images
-          echo "📥 Pulling Docker images..."
-          sudo docker pull $PHP_IMAGE
-          sudo docker pull $NGINX_IMAGE
-          
-          # Stop existing containers
-          echo "🛑 Stopping existing containers..."
-          sudo docker-compose down || true
-          
-          # Create production docker-compose file
-          cat > docker-compose.production.yml << 'COMPOSE_EOF'
-          services:
-            database:
-              image: mysql:8.0
-              container_name: helpline-db-prod
-              environment:
-                MYSQL_ROOT_PASSWORD: ${{ secrets.PRODUCTION_DB_ROOT_PASSWORD }}
-                MYSQL_DATABASE: helpline
-                MYSQL_USER: ${{ secrets.PRODUCTION_DB_USER }}
-                MYSQL_PASSWORD: ${{ secrets.PRODUCTION_DB_PASSWORD }}
-              ports:
-                - "3307:3306"
-              volumes:
-                - db_data_prod:/var/lib/mysql
-              restart: unless-stopped
-              networks:
-                - helpline-network
-          
-            php-api:
-              image: $PHP_IMAGE
-              container_name: helpline-php-prod
-              volumes:
-                - ./application:/var/www/html/helpline
-                - ./rest_api/api:/var/www/html/helpline/api
-                - ./rest_api/lib:/var/www/html/helpline/lib
-              depends_on:
-                - database
-              environment:
-                - DB_HOST=database
-                - DB_NAME=helpline
-                - DB_USER=${{ secrets.PRODUCTION_DB_USER }}
-                - DB_PASS=${{ secrets.PRODUCTION_DB_PASSWORD }}
-              restart: unless-stopped
-              networks:
-                - helpline-network
-          
-            nginx:
-              image: $NGINX_IMAGE
-              container_name: helpline-nginx-prod
-              ports:
-                - "80:80"
-                - "443:443"
-              volumes:
-                - ./application:/var/www/html/helpline
-                - ./rest_api/api:/var/www/html/helpline/api
-                - ./rest_api/lib:/var/www/html/helpline/lib
-              depends_on:
-                - php-api
-              restart: unless-stopped
-              networks:
-                - helpline-network
-          
-          volumes:
-            db_data_prod:
-          
-          networks:
-            helpline-network:
-              driver: bridge
-          COMPOSE_EOF
-          
-          # Start services
-          echo "🚀 Starting services..."
-          sudo docker-compose -f docker-compose.production.yml up -d
-          
-          # Wait for services to be ready
-          echo "⏳ Waiting for services to be ready..."
-          sleep 30
-          
-          # Health check
-          echo "🏥 Performing health check..."
-          if curl -f http://localhost/api/ > /dev/null 2>&1; then
-            echo "✅ Deployment successful on $SERVER_HOST!"
-          else
-            echo "❌ Health check failed on $SERVER_HOST!"
-            echo "🔄 Rolling back..."
-            sudo docker-compose -f docker-compose.production.yml down
-            if [ -d "$BACKUP_DIR" ]; then
-              sudo rm -rf "$DEPLOY_DIR"
-              sudo mv "$BACKUP_DIR" "$DEPLOY_DIR"
-            fi
-            exit 1
-          fi
-          
-          # Cleanup old images
-          echo "🧹 Cleaning up old images..."
-          sudo docker image prune -f || true
-          
-          echo "✅ Production deployment completed on $SERVER_HOST!"
-          EOF
-
-      - name: 🚀 Deploy to all production servers
-        run: |
-          chmod +x deploy-production.sh
-          
-          # Split the comma-separated server list
-          IFS=',' read -ra SERVERS <<< "${{ secrets.PRODUCTION_HOSTS }}"
-          
-          # Deploy to each server
-          for server in "${SERVERS[@]}"; do
-            echo "🚀 Deploying to $server..."
-            scp deploy-production.sh ${{ secrets.PRODUCTION_USER }}@$server:/tmp/
-            ssh ${{ secrets.PRODUCTION_USER }}@$server "bash /tmp/deploy-production.sh $server" || {
-              echo "❌ Deployment failed on $server"
-              exit 1
-            }
-          done
-
-  # Deployment Summary
+  # Summary
   deployment-summary:
     runs-on: ubuntu-latest
-    needs: [unit-tests, build-images, deploy-staging, deploy-production]
+    needs: [unit-tests, build-images, deploy-staging]
     if: always()
     
     steps:
-      - name: 📋 Generate deployment summary
+      - name: Generate summary
         run: |
-          echo "## 🚀 HelplineV1 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## HelplineV1 CI/CD Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
           echo "**Commit:** [\`${GITHUB_SHA:0:7}\`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})" >> $GITHUB_STEP_SUMMARY
-          echo "**Triggered by:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
-          echo "### 📊 Job Status" >> $GITHUB_STEP_SUMMARY
+          echo "### Job Status" >> $GITHUB_STEP_SUMMARY
           echo "| Job | Status | Coverage |" >> $GITHUB_STEP_SUMMARY
           echo "|-----|--------|----------|" >> $GITHUB_STEP_SUMMARY
           echo "| Unit Tests | ${{ needs.unit-tests.result }} | ${{ needs.unit-tests.outputs.coverage-percentage }}% |" >> $GITHUB_STEP_SUMMARY
           echo "| Build Images | ${{ needs.build-images.result }} | - |" >> $GITHUB_STEP_SUMMARY
           echo "| Deploy Staging | ${{ needs.deploy-staging.result }} | - |" >> $GITHUB_STEP_SUMMARY
-          echo "| Deploy Production | ${{ needs.deploy-production.result }} | - |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
-          if [ "${{ needs.deploy-production.result }}" == "success" ]; then
-            echo "### ✅ Production Deployment Successful!" >> $GITHUB_STEP_SUMMARY
-            echo "🌐 **Application URLs:**" >> $GITHUB_STEP_SUMMARY
-            echo "- Production: Multiple servers deployed" >> $GITHUB_STEP_SUMMARY
-          elif [ "${{ needs.deploy-staging.result }}" == "success" ]; then
-            echo "### ✅ Staging Deployment Successful!" >> $GITHUB_STEP_SUMMARY
-            echo "🌐 **Application URL:** http://${{ secrets.STAGING_HOST }}:8888" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ needs.deploy-staging.result }}" == "success" ]; then
+            echo "### Staging Deployment Successful!" >> $GITHUB_STEP_SUMMARY
+            echo "Application URL: http://${{ secrets.STAGING_HOST }}:8888" >> $GITHUB_STEP_SUMMARY
           fi
-          
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📦 Docker Images" >> $GITHUB_STEP_SUMMARY
-          echo "- **PHP:** \`${{ needs.build-images.outputs.php-image }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **Nginx:** \`${{ needs.build-images.outputs.nginx-image }}\`" >> $GITHUB_STEP_SUMMARY
