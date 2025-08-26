@@ -2,12 +2,12 @@
 
 ## 1. Model Overview
 
-The summarizer model is a sequence-to-sequence model that is designed to generate concise summaries of long texts. It can be used to quickly understand the main points of a document without having to read the entire text.
+The summarizer model is a sequence-to-sequence model that is designed to generate concise summaries of long texts. It can be used to quickly understand the main points of a helpline's call transcript  without having to read the entire text.
 
 ## 2. Model Details
 
 *   **Model Architecture:** The model is based on the T5 (Text-to-Text Transfer Transformer) architecture.
-*   **Training Data:** The model was pre-trained on a large corpus of text and then fine-tuned on a summarization dataset.
+*   **Training Data:** The model was pre-trained on a large corpus of text and then fine-tuned on English translated helpline call transcripts summarization dataset.
 
 ## 3. API Endpoints
 
@@ -15,7 +15,7 @@ The summarizer model is a sequence-to-sequence model that is designed to generat
 
 *   **Method:** `POST`
 *   **Path:** `/summarizer/summarize`
-*   **Description:** Generates a summary of a given text.
+*   **Description:** Generates a summary of a given English call transcript.
 *   **Request Body:** A JSON object with a `text` field.
 *   **Response:** A JSON object with the summary.
 
@@ -53,7 +53,7 @@ The response from the `/summarizer/summarize` endpoint is a JSON object with the
 ```bash
 curl -X POST \
   -H "Content-Type: application/json" \
-  -d '{"text": "This is a long article about the history of artificial intelligence."}' \
+  -d '{"text": "Hello, is this 116? Yes, thank you for your call. Who am I speaking with? My name is Ahmed, and I'm calling from Mombasa. I have a problem that requires immediate attention. A friend of mine has a daughter, only 5 years old, who is being forced into child labor at a local factory. This sounds dire, Ahmed. Thank you for bringing this to our notice. Has anyone else noticed this? Sadly, no one seems to care. She looks exhausted and malnourished. I'm worried sick. I understand your concern. The best thing you can do is report it to the Mombasa Child Welfare Society and also to the police. We can follow up on this case too. Please don't hesitate to call again."}'\
   http://localhost:8123/summarizer/summarize
 ```
 
