@@ -1,214 +1,220 @@
 <template>
-  <div class="sip-client">
-    <h3>SIP Client (call center)</h3>
-
-    <div class="status-row">
-      <div><strong>Registered:</strong> {{ registered ? 'Yes' : 'No' }}</div>
-      <div><strong>Agent:</strong> {{ extension }}</div>
-      <div><strong>Connection:</strong> {{ connected ? 'Connected' : 'Disconnected' }}</div>
+  <div class="analytics-card">
+    <div class="card-header">
+      <div class="section-title">Case Analytics</div>
+      <select class="time-filter" v-model="selectedTimeframe">
+        <option value="h">Hourly</option>
+        <option value="dt">Daily</option>
+        <option value="wk">Weekly</option>
+        <option value="mn">Monthly</option>
+        <option value="yr">Yearly</option>
+      </select>
     </div>
 
-    <div class="controls">
-      <button @click="startAgent" :disabled="registered || starting">Start (Register)</button>
-      <button @click="stopAgent" :disabled="!registered || stopping">Stop (Unregister)</button>
-      <button @click="toggleMute" :disabled="!inCall">{{ isMuted ? 'Unmute' : 'Mute' }}</button>
-      <button @click="hangup" :disabled="!inCall">Hangup</button>
-    </div>
+    <div class="chart-container">
+      <div class="chart-scroll">
+        <svg :width="svgWidth" :height="svgHeight">
+          <!-- Horizontal gridlines -->
+          <g v-for="tick in yTicks" :key="'grid-' + tick">
+            <line
+              :x1="margin.left"
+              :x2="svgWidth - margin.right"
+              :y1="yScale(tick)"
+              :y2="yScale(tick)"
+              stroke="#ddd"
+              stroke-width="1"
+            />
+          </g>
 
-    <div v-if="incomingCall" class="incoming">
-      <div><strong>Incoming call from:</strong> {{ callerId || 'Unknown' }}</div>
-      <button @click="answerCall">Answer</button>
-      <button @click="rejectCall">Reject</button>
-    </div>
+          <!-- Bars -->
+          <g v-for="(bar, index) in chartData" :key="'bar-' + index">
+            <rect
+              :x="margin.left + index * (barWidth + barSpacing)"
+              :y="yScale(bar.rawValue)"
+              :width="barWidth"
+              :height="svgHeight - margin.bottom - yScale(bar.rawValue)"
+              fill="url(#barGradient)"
+            />
+            <!-- X-axis labels (timestamps) -->
+            <text
+              :x="margin.left + index * (barWidth + barSpacing) + barWidth / 2"
+              :y="svgHeight - margin.bottom + 15"
+              text-anchor="middle"
+              font-size="10"
+            >
+              {{ formatLabel(bar.label) }}
+            </text>
+          </g>
 
-    <div v-if="inCall" class="call-info">
-      <div><strong>On call with:</strong> {{ remoteIdentity || 'Remote' }}</div>
-    </div>
+          <!-- Y-axis labels -->
+          <g v-for="tick in yTicks" :key="'label-' + tick">
+            <text
+              :x="margin.left - 5"
+              :y="yScale(tick) + 3"
+              text-anchor="end"
+              font-size="10"
+            >
+              {{ tick }}
+            </text>
+          </g>
 
-    <!-- Hidden audio element for remote audio -->
-    <audio ref="remoteAudio" autoplay playsinline></audio>
+          <!-- X-axis line -->
+          <line
+            :x1="margin.left"
+            :x2="svgWidth - margin.right"
+            :y1="svgHeight - margin.bottom"
+            :y2="svgHeight - margin.bottom"
+            stroke="#333"
+            stroke-width="1.2"
+          />
+
+          <!-- Y-axis line -->
+          <line
+            :x1="margin.left"
+            :x2="margin.left"
+            :y1="margin.top"
+            :y2="svgHeight - margin.bottom"
+            stroke="#333"
+            stroke-width="1.2"
+          />
+
+          <!-- Gradient for bars -->
+          <defs>
+            <linearGradient id="barGradient" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="var(--accent-color)" />
+              <stop offset="100%" stop-color="#ff7700" />
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+    </div>
   </div>
 </template>
 
-<script>
-import * as SIP from "sip.js";
+<script setup>
+import { ref, watch, onMounted, computed } from 'vue'
+import { useCaseStore } from '@/stores/cases'
 
-export default {
-  name: "Test",
-  data() {
-    return {
-      ua: null,
-      session: null,
-      registered: false,
-      connected: false,
-      starting: false,
-      stopping: false,
-      incomingCall: false,
-      inCall: false,
-      isMuted: false,
-      callerId: null,
-      remoteIdentity: null,
-      extension: "101"
-    };
-  },
-  methods: {
-    // Handle incoming call
-    myinvitefunction(invitation) {
-      console.log("Incoming call:", invitation);
+const casesStore = useCaseStore()
+const selectedTimeframe = ref('dt') // default daily
+const chartData = ref([])
 
-      this.incomingCall = true;
-      this.session = invitation;
-      this.callerId = invitation.remoteIdentity.uri.user;
-      this.remoteIdentity = invitation.remoteIdentity.displayName || this.callerId;
+// Chart dimensions & spacing
+const margin = { top: 20, right: 20, bottom: 40, left: 40 }
+const barWidth = 30
+const barSpacing = 15
+const svgHeight = 300
 
-      // Attach session end events
-      invitation.stateChange.addListener((state) => {
-        if (state === SIP.SessionState.Terminated) {
-          this.resetCallState();
-        }
-      });
-    },
+// Dynamic width based on data count
+const svgWidth = computed(() =>
+  Math.max(chartData.value.length * (barWidth + barSpacing) + margin.left + margin.right, 400)
+)
 
-    // Answer incoming call
-    async answerCall() {
-      if (!this.session) return;
-
-      try {
-        await this.session.accept({
-          sessionDescriptionHandlerOptions: {
-            constraints: { audio: true, video: false }
-          }
-        });
-
-        this.inCall = true;
-        this.incomingCall = false;
-
-        // Play remote audio
-        const audioEl = this.$refs.remoteAudio;
-        this.session.sessionDescriptionHandler.on("addTrack", () => {
-          const pc = this.session.sessionDescriptionHandler.peerConnection;
-          const remoteStream = new MediaStream();
-          pc.getReceivers().forEach((receiver) => {
-            if (receiver.track) remoteStream.addTrack(receiver.track);
-          });
-          audioEl.srcObject = remoteStream;
-        });
-
-        console.log("Call answered");
-      } catch (err) {
-        console.error("Failed to answer call:", err);
-      }
-    },
-
-    // Reject incoming call
-    async rejectCall() {
-      if (!this.session) return;
-      try {
-        await this.session.reject();
-        this.resetCallState();
-        console.log("Call rejected");
-      } catch (err) {
-        console.error("Failed to reject call:", err);
-      }
-    },
-
-    // Hang up active call
-    async hangup() {
-      if (!this.session) return;
-      try {
-        await this.session.terminate();
-        console.log("Call terminated");
-      } catch (err) {
-        console.error("Failed to terminate call:", err);
-      }
-    },
-
-    // Toggle mute/unmute
-    toggleMute() {
-      if (!this.session) return;
-      const pc = this.session.sessionDescriptionHandler.peerConnection;
-      pc.getSenders().forEach((sender) => {
-        if (sender.track && sender.track.kind === "audio") {
-          sender.track.enabled = this.isMuted;
-        }
-      });
-      this.isMuted = !this.isMuted;
-    },
-
-    // Start SIP agent
-    async startAgent() {
-      try {
-        this.starting = true;
-        const config = {
-          uri: "sip:101@demo-openchs.bitz-itc.com",
-          authorizationUsername: "101",
-          authorizationPassword: "23kdefrtgos09812100",
-          displayName: "101",
-          transportOptions: {
-            server: "wss://demo-openchs.bitz-itc.com:8089/ws",
-            traceSip: true,
-          },
-          log: { level: "log" },
-          delegate: { onInvite: this.myinvitefunction }
-        };
-
-        console.log("Starting SIP agent with config:", config);
-
-        this.ua = new SIP.UserAgent(config);
-
-        this.ua.delegate = {
-          onConnect: () => {
-            this.connected = true;
-            this.registered = true;
-          },
-          onDisconnect: () => {
-            this.connected = false;
-            this.registered = false;
-          }
-        };
-
-        await this.ua.start();
-        console.log("SIP Agent started successfully");
-      } catch (err) {
-        console.error("Failed to start SIP agent:", err);
-      } finally {
-        this.starting = false;
-      }
-    },
-
-    // Stop SIP agent
-    async stopAgent() {
-      if (!this.ua) return;
-      try {
-        this.stopping = true;
-        await this.ua.stop();
-        this.registered = false;
-        this.connected = false;
-        console.log("SIP Agent stopped");
-      } catch (err) {
-        console.error("Failed to stop SIP agent:", err);
-      } finally {
-        this.stopping = false;
-      }
-    },
-
-    // Reset call-related state
-    resetCallState() {
-      this.session = null;
-      this.inCall = false;
-      this.incomingCall = false;
-      this.isMuted = false;
-      this.callerId = null;
-      this.remoteIdentity = null;
-    }
+// Fetch data
+async function fetchCases() {
+  console.log('[Analytics] fetching cases with xaxis=', selectedTimeframe.value)
+  try {
+    await casesStore.listCases({
+      xaxis: selectedTimeframe.value,
+      yaxis: 'status',
+      metrics: 'case_count'
+    })
+    processCases(casesStore.cases)
+  } catch (err) {
+    console.error('[Analytics] fetchCases error', err)
+    chartData.value = []
   }
-};
+}
+
+// Process data
+function processCases(rawRows = []) {
+  const grouped = {}
+  rawRows.forEach(row => {
+    if (!Array.isArray(row)) return
+    let xVal, count
+    if (row.length === 3) {
+      xVal = String(row[0])
+      count = Number(row[2]) || 0
+    } else if (row.length === 2) {
+      xVal = String(row[0])
+      count = Number(row[1]) || 0
+    } else {
+      xVal = String(row[0])
+      count = Number(row[row.length - 1]) || 0
+    }
+    grouped[xVal] = (grouped[xVal] || 0) + count
+  })
+
+  const entries = Object.entries(grouped)
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => {
+      const na = Number(a.label), nb = Number(b.label)
+      if (!isNaN(na) && !isNaN(nb)) return na - nb
+      return String(a.label).localeCompare(String(b.label))
+    })
+
+  chartData.value = entries.map(e => ({
+    label: e.label,
+    rawValue: e.value
+  }))
+}
+
+// Y scale & ticks
+const maxValue = computed(() => Math.max(...chartData.value.map(d => d.rawValue), 1))
+const yScale = (value) =>
+  svgHeight - margin.bottom - (value / maxValue.value) * (svgHeight - margin.top - margin.bottom)
+
+// Generate 5 ticks including 0
+const yTicks = computed(() => {
+  const steps = 5
+  const stepValue = Math.ceil(maxValue.value / steps)
+  return Array.from({ length: steps + 1 }, (_, i) => i * stepValue)
+})
+
+// Format label based on timeframe
+function formatLabel(label) {
+  switch (selectedTimeframe.value) {
+    case 'h': return `${label}:00`
+    case 'dt': return label // assume date string
+    case 'wk': return `W${label}`
+    case 'mn': return `M${label}`
+    case 'yr': return label
+    default: return label
+  }
+}
+
+onMounted(fetchCases)
+watch(selectedTimeframe, fetchCases)
 </script>
 
 <style scoped>
-.sip-client { padding: 12px; border: 1px solid #ddd; border-radius: 6px; max-width:420px; }
-.status-row { display:flex; gap:12px; margin-bottom:8px; }
-.controls button { margin-right:8px; }
-.incoming { margin-top:12px; padding:8px; border:1px dashed #f39; background:#fff6f6 }
-.call-info { margin-top:8px; padding:8px; border:1px solid #cfc; background:#f6fff6 }
+.analytics-card {
+  background-color: var(--card-bg);
+  border-radius: 30px;
+  padding: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s;
+}
+
+.time-filter {
+  padding: 8px 12px;
+  background: var(--background-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-color);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.chart-container {
+  margin-top: 20px;
+  overflow-x: auto;
+}
+
+.chart-scroll {
+  display: inline-block;
+  min-width: 100%;
+}
 </style>
