@@ -13,7 +13,8 @@
     "date-fns": "^4.1.0",
     "jssip": "^3.10.1",
     "pinia": "^3.0.3",
-    "vue": "^3.4.15",
+    "sip.js": "^0.21.2",
+    "vue": "^3.5.17",
     "vue-router": "^4.5.1"
   },
   "devDependencies": {
