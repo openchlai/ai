@@ -1,0 +1,5 @@
+outs:
+- md5: a723d9605980240308e2db0d02a93a70
+  size: 6994028
+  hash: md5
+  path: luganda_parallel.jsonl
