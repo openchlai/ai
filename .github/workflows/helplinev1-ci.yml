@@ -201,10 +201,42 @@ jobs:
 
       - name: Setup SSH
         run: |
+          echo "Setting up SSH connection..."
           mkdir -p ~/.ssh
-          echo "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 700 ~/.ssh
+          
+          # Check if SSH key secret exists
+          if [ -z "${{ secrets.EC2_KEY }}" ]; then
+            echo "Error: EC2_KEY secret is not set"
+            exit 1
+          fi
+          
+          # Write SSH key to file
+          echo "${{ secrets.EC2_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.STAGING_HOST }} >> ~/.ssh/known_hosts
+          
+          # Verify key format
+          if ! ssh-keygen -l -f ~/.ssh/id_rsa > /dev/null 2>&1; then
+            echo "Error: SSH key format is invalid"
+            echo "Make sure the key includes the full content with BEGIN/END markers"
+            exit 1
+          fi
+          
+          # Test SSH connection and add to known_hosts
+          echo "Testing SSH connection to ${{ secrets.EC2_HOST }}..."
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || {
+            echo "Warning: Could not add host to known_hosts, trying direct connection test"
+          }
+          
+          # Test actual SSH connection
+          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "echo 'SSH connection successful'" || {
+            echo "Error: Cannot connect to EC2 instance"
+            echo "Please verify:"
+            echo "1. EC2_HOST is correct: ${{ secrets.EC2_HOST }}"
+            echo "2. EC2_USER has SSH access: ${{ secrets.EC2_USER }}"
+            echo "3. SSH key is authorized on the server"
+            exit 1
+          }
 
       - name: Create application archive
         working-directory: helplinev1
@@ -213,11 +245,11 @@ jobs:
 
       - name: Copy files to server
         run: |
-          scp helplinev1/helplinev1-files.tar.gz ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }}:/tmp/
+          scp helplinev1/helplinev1-files.tar.gz ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/tmp/
 
       - name: Deploy to staging server
         run: |
-          ssh ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }} << 'EOF'
+          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
           set -e
           
           echo "Starting staging deployment..."
@@ -360,7 +392,7 @@ jobs:
           
           if [ "${{ needs.deploy-staging.result }}" == "success" ]; then
             echo "### Staging Deployed Successfully!" >> $GITHUB_STEP_SUMMARY
-            echo "Application: http://${{ secrets.STAGING_HOST }}:8888" >> $GITHUB_STEP_SUMMARY
+            echo "Application: http://${{ secrets.EC2_HOST }}:8888" >> $GITHUB_STEP_SUMMARY
           elif [ "${{ github.ref }}" != "refs/heads/main" ]; then
             echo "### Feature Branch Testing Complete" >> $GITHUB_STEP_SUMMARY
             echo "Ready for merge to main branch" >> $GITHUB_STEP_SUMMARY
