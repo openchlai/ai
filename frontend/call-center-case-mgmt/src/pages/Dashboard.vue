@@ -258,9 +258,9 @@
             {{
               casesStore.cases_k?.dt
                         ? new Date(
-                            call[casesStore.cases_k.dt[0]] < 10000000000
-                              ? call[casesStore.cases_k.dt[0]] * 1000
-                              : call[casesStore.cases_k.dt[0]] * 3600 * 1000
+                            call[casesStore.cases_k.hr[0]] < 10000000000
+                              ? call[casesStore.cases_k.hr[0]] * 1000
+                              : call[casesStore.cases_k.hr[0]] * 3600 * 1000
                           ).toLocaleString()
                         : "No Date"
             }}

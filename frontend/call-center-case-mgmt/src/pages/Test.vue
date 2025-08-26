@@ -1,163 +1,220 @@
 <template>
-  <div class="cascade">
-    <label class="lbl">Location</label>
-
-    <!-- Input (trigger/display) -->
-    <div class="input-box" @click="toggleDropdown">
-      <span>{{ fullLocation || 'Select Location' }}</span>
-      <span class="arrow">▼</span>
+  <div class="analytics-card">
+    <div class="card-header">
+      <div class="section-title">Case Analytics</div>
+      <select class="time-filter" v-model="selectedTimeframe">
+        <option value="h">Hourly</option>
+        <option value="dt">Daily</option>
+        <option value="wk">Weekly</option>
+        <option value="mn">Monthly</option>
+        <option value="yr">Yearly</option>
+      </select>
     </div>
 
-    <!-- Dropdown (expanding options) -->
-    <div v-if="open" class="dropdown">
-      <div class="breadcrumb">
-        <span v-for="(name, i) in breadcrumb" :key="i">
-          {{ name }}
-          <span v-if="i < breadcrumb.length - 1"> > </span>
-        </span>
-      </div>
+    <div class="chart-container">
+      <div class="chart-scroll">
+        <svg :width="svgWidth" :height="svgHeight">
+          <!-- Horizontal gridlines -->
+          <g v-for="tick in yTicks" :key="'grid-' + tick">
+            <line
+              :x1="margin.left"
+              :x2="svgWidth - margin.right"
+              :y1="yScale(tick)"
+              :y2="yScale(tick)"
+              stroke="#ddd"
+              stroke-width="1"
+            />
+          </g>
 
-      <ul class="options">
-        <li v-for="opt in currentOptions" :key="opt.id" @click.stop="selectOption(opt)">
-          {{ opt.name }}
-        </li>
-      </ul>
+          <!-- Bars -->
+          <g v-for="(bar, index) in chartData" :key="'bar-' + index">
+            <rect
+              :x="margin.left + index * (barWidth + barSpacing)"
+              :y="yScale(bar.rawValue)"
+              :width="barWidth"
+              :height="svgHeight - margin.bottom - yScale(bar.rawValue)"
+              fill="url(#barGradient)"
+            />
+            <!-- X-axis labels (timestamps) -->
+            <text
+              :x="margin.left + index * (barWidth + barSpacing) + barWidth / 2"
+              :y="svgHeight - margin.bottom + 15"
+              text-anchor="middle"
+              font-size="10"
+            >
+              {{ formatLabel(bar.label) }}
+            </text>
+          </g>
 
-      <!-- Controls -->
-      <div class="controls">
-        <button class="btn back" v-if="path.length" @click="goBack">← Back</button>
-        <button class="btn reset" v-if="path.length" @click="resetCascade">Reset</button>
+          <!-- Y-axis labels -->
+          <g v-for="tick in yTicks" :key="'label-' + tick">
+            <text
+              :x="margin.left - 5"
+              :y="yScale(tick) + 3"
+              text-anchor="end"
+              font-size="10"
+            >
+              {{ tick }}
+            </text>
+          </g>
+
+          <!-- X-axis line -->
+          <line
+            :x1="margin.left"
+            :x2="svgWidth - margin.right"
+            :y1="svgHeight - margin.bottom"
+            :y2="svgHeight - margin.bottom"
+            stroke="#333"
+            stroke-width="1.2"
+          />
+
+          <!-- Y-axis line -->
+          <line
+            :x1="margin.left"
+            :x2="margin.left"
+            :y1="margin.top"
+            :y2="svgHeight - margin.bottom"
+            stroke="#333"
+            stroke-width="1.2"
+          />
+
+          <!-- Gradient for bars -->
+          <defs>
+            <linearGradient id="barGradient" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="var(--accent-color)" />
+              <stop offset="100%" stop-color="#ff7700" />
+            </linearGradient>
+          </defs>
+        </svg>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
-import { useCategoryStore } from "@/stores/categories";
+import { ref, watch, onMounted, computed } from 'vue'
+import { useCaseStore } from '@/stores/cases'
 
-const store = useCategoryStore();
+const casesStore = useCaseStore()
+const selectedTimeframe = ref('dt') // default daily
+const chartData = ref([])
 
-const open = ref(false);
-const path = ref([]);       // chosen path [{id, name}]
-const levels = ref([]);     // options at each depth
+// Chart dimensions & spacing
+const margin = { top: 20, right: 20, bottom: 40, left: 40 }
+const barWidth = 30
+const barSpacing = 15
+const svgHeight = 300
 
-function toggleDropdown() {
-  open.value = !open.value;
-}
+// Dynamic width based on data count
+const svgWidth = computed(() =>
+  Math.max(chartData.value.length * (barWidth + barSpacing) + margin.left + margin.right, 400)
+)
 
-function getIndexes(k = store.subcategories_k) {
-  const idIdx = Number(k?.id?.[0] ?? 0);
-  const nameIdx = Number(k?.name?.[0] ?? 5);
-  return { idIdx, nameIdx };
-}
-
-function mapRows(rows, k = store.subcategories_k) {
-  const { idIdx, nameIdx } = getIndexes(k);
-  return (rows || []).map(r => ({ id: r?.[idIdx], name: r?.[nameIdx] }));
-}
-
-async function loadLevelByParentId(parentId) {
-  await store.viewCategory(parentId);
-  return mapRows(store.subcategories, store.subcategories_k);
-}
-
-async function selectOption(opt) {
-  path.value.push(opt);
-  const next = await loadLevelByParentId(opt.id);
-
-  if (next.length) {
-    levels.value.push(next);
-  } else {
-    // End of tree
-    open.value = false;
+// Fetch data
+async function fetchCases() {
+  console.log('[Analytics] fetching cases with xaxis=', selectedTimeframe.value)
+  try {
+    await casesStore.listCases({
+      xaxis: selectedTimeframe.value,
+      yaxis: 'status',
+      metrics: 'case_count'
+    })
+    processCases(casesStore.cases)
+  } catch (err) {
+    console.error('[Analytics] fetchCases error', err)
+    chartData.value = []
   }
 }
 
-function goBack() {
-  path.value.pop();
-  levels.value.pop();
+// Process data
+function processCases(rawRows = []) {
+  const grouped = {}
+  rawRows.forEach(row => {
+    if (!Array.isArray(row)) return
+    let xVal, count
+    if (row.length === 3) {
+      xVal = String(row[0])
+      count = Number(row[2]) || 0
+    } else if (row.length === 2) {
+      xVal = String(row[0])
+      count = Number(row[1]) || 0
+    } else {
+      xVal = String(row[0])
+      count = Number(row[row.length - 1]) || 0
+    }
+    grouped[xVal] = (grouped[xVal] || 0) + count
+  })
+
+  const entries = Object.entries(grouped)
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => {
+      const na = Number(a.label), nb = Number(b.label)
+      if (!isNaN(na) && !isNaN(nb)) return na - nb
+      return String(a.label).localeCompare(String(b.label))
+    })
+
+  chartData.value = entries.map(e => ({
+    label: e.label,
+    rawValue: e.value
+  }))
 }
 
-function resetCascade() {
-  path.value = [];
-  levels.value = [];
-  init();
+// Y scale & ticks
+const maxValue = computed(() => Math.max(...chartData.value.map(d => d.rawValue), 1))
+const yScale = (value) =>
+  svgHeight - margin.bottom - (value / maxValue.value) * (svgHeight - margin.top - margin.bottom)
+
+// Generate 5 ticks including 0
+const yTicks = computed(() => {
+  const steps = 5
+  const stepValue = Math.ceil(maxValue.value / steps)
+  return Array.from({ length: steps + 1 }, (_, i) => i * stepValue)
+})
+
+// Format label based on timeframe
+function formatLabel(label) {
+  switch (selectedTimeframe.value) {
+    case 'h': return `${label}:00`
+    case 'dt': return label // assume date string
+    case 'wk': return `W${label}`
+    case 'mn': return `M${label}`
+    case 'yr': return label
+    default: return label
+  }
 }
 
-const currentOptions = computed(() => {
-  if (!levels.value.length) return [];
-  return levels.value[levels.value.length - 1];
-});
-
-const breadcrumb = computed(() => path.value.map(p => p.name));
-
-const fullLocation = computed(() => breadcrumb.value.join(" > "));
-
-async function init() {
-  const first = await loadLevelByParentId(88); // Root category
-  levels.value = [first];
-}
-
-onMounted(init);
+onMounted(fetchCases)
+watch(selectedTimeframe, fetchCases)
 </script>
 
 <style scoped>
-.cascade { max-width: 420px; position: relative; }
-.lbl { display: block; font-weight: 600; margin-bottom: 6px; }
-.input-box {
-  border: 1px solid #bbb;
-  border-radius: 6px;
-  padding: 8px;
-  display: flex;
-  justify-content: space-between;
-  cursor: pointer;
+.analytics-card {
+  background-color: var(--card-bg);
+  border-radius: 30px;
+  padding: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s;
 }
-.dropdown {
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  margin-top: 4px;
-  background: #fff;
-  padding: 6px;
-  max-height: 300px;
-  overflow-y: auto;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-}
-.breadcrumb {
+
+.time-filter {
+  padding: 8px 12px;
+  background: var(--background-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
   font-size: 14px;
-  margin-bottom: 6px;
   font-weight: 500;
-}
-.options {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.options li {
-  padding: 6px;
+  color: var(--text-color);
   cursor: pointer;
-  border-radius: 4px;
+  transition: all 0.3s ease;
 }
-.options li:hover {
-  background: #f2f2f2;
+
+.chart-container {
+  margin-top: 20px;
+  overflow-x: auto;
 }
-.controls {
-  margin-top: 8px;
-  display: flex;
-  gap: 6px;
+
+.chart-scroll {
+  display: inline-block;
+  min-width: 100%;
 }
-.btn {
-  padding: 6px 10px;
-  border-radius: 4px;
-  border: 1px solid #888;
-  background: #f7f7f7;
-  cursor: pointer;
-  font-size: 13px;
-}
-.btn:hover {
-  background: #efefef;
-}
-.back { color: #333; }
-.reset { color: #b00; }
-.arrow { font-size: 12px; }
 </style>
