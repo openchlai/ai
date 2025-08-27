@@ -17,9 +17,9 @@
         <div class="header">
           <h1 class="page-title">Calls</h1>
           <div class="header-actions">
-            <button class="theme-toggle" @click="toggleTheme" id="theme-toggle">
+            <!-- Theme toggle removed; use global controller in App.vue -->
               <svg
-                v-if="currentTheme === 'dark'"
+                v-if="false"
                 id="moon-icon"
                 width="24"
                 height="24"
@@ -134,10 +134,7 @@
                   stroke-linejoin="round"
                 />
               </svg>
-              <span id="theme-text">{{
-                currentTheme === "dark" ? "Light Mode" : "Dark Mode"
-              }}</span>
-            </button>
+              <span id="theme-text"></span>
           </div>
         </div>
 
@@ -171,6 +168,8 @@
             class="status-card"
             v-for="status in statusItems"
             :key="status.label"
+            :class="{ clickable: true, active: selectedStatusFilter === status.label }"
+            @click="setStatusFilter(status.label)"
           >
             <div class="status-card-header">
               <div class="status-card-label">{{ status.label }}</div>
@@ -256,7 +255,7 @@
               </thead>
               <tbody>
   <tr
-    v-for="call in callsStore.calls"
+    v-for="call in filteredCalls"
     :key="call[callsStore.calls_k.uniqueid?.[0]]"
     :class="{ selected: call[callsStore.calls_k.uniqueid?.[0]] === selectedCallId }"
     @click="selectCall(call[callsStore.calls_k.uniqueid?.[0]])"
@@ -2296,15 +2295,40 @@ const callData = ref({
 
 // Status data
 const statusItems = ref([
-  { label: "Unassigned", count: 16, percentage: 53 },
-  { label: "Pending", count: 5, percentage: 17 },
-  { label: "In Progress", count: 24, percentage: 80 },
-  { label: "Completed", count: 8, percentage: 27 },
+  { label: "Agents", count: 12, percentage: 70 },
+  { label: "Wrap-up", count: 4, percentage: 20 },
+  { label: "Idle", count: 7, percentage: 40 },
+  { label: "IVR", count: 10, percentage: 60 },
+  { label: "Waiting", count: 3, percentage: 15 },
 ]);
+
+// Active status filter
+const selectedStatusFilter = ref("");
+
+function setStatusFilter(label) {
+  selectedStatusFilter.value = selectedStatusFilter.value === label ? "" : label;
+}
 
 // Computed properties
 const allCalls = computed(() => {
   return Object.values(callData.value);
+});
+
+const filteredCalls = computed(() => {
+  if (!selectedStatusFilter.value) return callsStore.calls;
+  const statusIndex = callsStore.calls_k?.status?.[0];
+  if (statusIndex == null) return callsStore.calls;
+  // Map clicked labels to backend status values if needed
+  const label = selectedStatusFilter.value.toLowerCase();
+  const map = {
+    'agents': 'agent',
+    'wrap-up': 'wrapup',
+    'idle': 'idle',
+    'ivr': 'ivr',
+    'waiting': 'waiting'
+  };
+  const target = map[label] || label;
+  return callsStore.calls.filter(call => (call[statusIndex] || '').toString().toLowerCase().includes(target));
 });
 
 // const groupedCalls = computed(() => {
@@ -2829,11 +2853,7 @@ const applyTheme = (theme) => {
   root.style.setProperty("--low-color", "#34c759");
 };
 
-const toggleTheme = () => {
-  currentTheme.value = currentTheme.value === "dark" ? "light" : "dark";
-  localStorage.setItem("theme", currentTheme.value);
-  applyTheme(currentTheme.value);
-};
+// Theme toggling handled globally in App.vue
 
 // const selectCall = (callId) => {
 //   selectedCallId.value = callId
@@ -2865,13 +2885,8 @@ function getStatusClass(status) {
 // Lifecycle
 onMounted(() => {
   // Load saved theme
-  const savedTheme = localStorage.getItem("theme");
-  if (savedTheme) {
-    currentTheme.value = savedTheme;
-  }
-
-  // Apply theme immediately
-  applyTheme(currentTheme.value);
+  const savedTheme = localStorage.getItem("theme") || "dark";
+  currentTheme.value = savedTheme;
 });
 
 onUnmounted(() => {

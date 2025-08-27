@@ -88,6 +88,18 @@
             </div>
             <div class="nav-text">Wallboard</div>
           </router-link>
+
+          <router-link to="/reports" class="nav-item" :class="{ active: $route.path === '/reports' }">
+            <div class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 3H21V21H3V3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M7 7H17V9H7V7Z" fill="currentColor"/>
+                <path d="M7 11H17V13H7V11Z" fill="currentColor"/>
+                <path d="M7 15H13V17H7V15Z" fill="currentColor"/>
+              </svg>
+            </div>
+            <div class="nav-text">Reports</div>
+          </router-link>
           
           <router-link to="/settings" class="nav-item" :class="{ active: $route.path === '/settings' }">
             <div class="nav-icon">

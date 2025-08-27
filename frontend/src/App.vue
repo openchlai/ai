@@ -1,6 +1,14 @@
 <template>
   <router-view />
   <button
+    class="theme-fab"
+    @click="toggleTheme"
+    :aria-label="currentTheme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'"
+  >
+    <span v-if="currentTheme === 'dark'">🌙</span>
+    <span v-else>☀️</span>
+  </button>
+  <button
     class="read-aloud-fab"
     @click="readAloud"
     :aria-pressed="isReading"
@@ -12,10 +20,12 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import './assets/glassmorphic.css'
+import { applyTheme, getCurrentTheme } from '@/utils/theme.js'
 
 const isReading = ref(false)
+const currentTheme = ref('dark')
 
 function readAloud() {
   if (!window.speechSynthesis) return;
@@ -41,6 +51,18 @@ function readAloud() {
     window.speechSynthesis.speak(utterance);
   }
 }
+
+function toggleTheme() {
+  currentTheme.value = currentTheme.value === 'dark' ? 'light' : 'dark'
+  localStorage.setItem('theme', currentTheme.value)
+  applyTheme(currentTheme.value)
+}
+
+onMounted(() => {
+  const saved = localStorage.getItem('theme') || getCurrentTheme() || 'dark'
+  currentTheme.value = saved
+  applyTheme(currentTheme.value)
+})
 </script>
 
 <style>
@@ -50,6 +72,21 @@ body, #app {
   min-height: 100vh;
   margin: 0;
   padding: 0;
+}
+.theme-fab {
+  position: fixed;
+  bottom: 92px;
+  right: 32px;
+  z-index: 9999;
+  background: var(--content-bg, #181818);
+  color: var(--text-color, #fff);
+  border: 1px solid var(--border-color, #333);
+  border-radius: 50px;
+  padding: 10px 14px;
+  font-size: 1rem;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+  cursor: pointer;
 }
 .read-aloud-fab {
   position: fixed;

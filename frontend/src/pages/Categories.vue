@@ -244,7 +244,7 @@ const isSidebarCollapsed = ref(false)
 const isOnline = ref(true)
 const isInQueue = ref(false)
 const searchQuery = ref('')
-const currentView = ref('grid')
+const currentView = ref('table')
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 const showModal = ref(false)
@@ -272,9 +272,9 @@ const navigationItems = [
 
 // View options
 const viewOptions = [
-  { id: 'grid', label: 'Grid View' },
+  { id: 'table', label: 'Table View' },
   { id: 'timeline', label: 'Timeline' },
-  { id: 'table', label: 'Table View' }
+  { id: 'grid', label: 'Grid View' }
 ]
 
 // Computed

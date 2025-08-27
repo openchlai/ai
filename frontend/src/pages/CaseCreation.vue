@@ -152,7 +152,8 @@
               </p>
 
               <div class="search-section">
-                <div class="search-box">
+                <div class="search-row">
+                  <div class="search-box">
                   <svg
                     width="18"
                     height="18"
@@ -176,15 +177,42 @@
                   <input
                     v-model="searchQuery"
                     type="text"
-                    placeholder="Search existing contacts..."
+                    placeholder="Search by name or phone..."
                     class="search-input"
                   />
+                  <!-- Live suggestions -->
+                  <ul
+                    class="search-suggestions"
+                    v-if="debouncedQuery && filteredContacts.length"
+                    :style="{ width: suggestionWidth }"
+                  >
+                    <li
+                      v-for="contact in filteredContacts.slice(0, 8)"
+                      :key="contact[casesStore.cases_k.id[0]]"
+                      class="suggestion-item"
+                      @click="selectExistingReporter(contact)"
+                    >
+                      <span class="suggestion-name">{{ contact[casesStore.cases_k.reporter_fullname[0]] || 'Unnamed' }}</span>
+                      <span class="suggestion-phone">{{ contact[casesStore.cases_k.reporter_phone[0]] || '' }}</span>
+                    </li>
+                  </ul>
+                  <div
+                    class="search-empty"
+                    v-else-if="debouncedQuery && !filteredContacts.length"
+                    :style="{ width: suggestionWidth }"
+                  >
+                    No matches found
+                  </div>
                 </div>
+                <button type="button" class="create-reporter-btn" @click="createNewReporter">
+                  + New Reporter
+                </button>
+              </div>
               </div>
 
-              <div class="contacts-grid">
+              <div class="contacts-grid" v-if="searchQuery && filteredContacts.length">
                 <div
-                  v-for="contact in casesStore.cases"
+                  v-for="contact in filteredContacts"
                   :key="contact[casesStore.cases_k.id[0]]"
                   class="contact-card"
                   @click="selectExistingReporter(contact)"
@@ -207,22 +235,22 @@
                       }}
                     </div>
                     <div class="contact-details">
-        <span class="contact-tag">{{ contact[casesStore.cases_k.reporter_age[0]] }}y</span>
-        <span class="contact-tag">{{ contact[casesStore.cases_k.reporter_sex[0]]}}</span>
-      </div>
-      <div class="contact-meta">
-        <div class="contact-location">📍 {{ contact[casesStore.cases_k.reporter_location[0]]}}</div>
-        <div class="contact-phone">📞 {{ contact[casesStore.cases_k.reporter_phone[0]] }}</div>
-      </div>
-      <div class="contact-timestamp"> {{ new Date(contact[casesStore.cases_k.dt[0]] * 1000).toLocaleString('en-US') }}</div>
-    </div>
-    <div class="contact-select-indicator">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <polyline points="9,18 15,12 9,6" stroke="currentColor" stroke-width="2"/>
-      </svg>
-    </div>
-  </div>
-</div>
+                      <span class="contact-tag">{{ contact[casesStore.cases_k.reporter_age[0]] }}y</span>
+                      <span class="contact-tag">{{ contact[casesStore.cases_k.reporter_sex[0]]}}</span>
+                    </div>
+                    <div class="contact-meta">
+                      <div class="contact-location">📍 {{ contact[casesStore.cases_k.reporter_location[0]]}}</div>
+                      <div class="contact-phone">📞 {{ contact[casesStore.cases_k.reporter_phone[0]] }}</div>
+                    </div>
+                    <div class="contact-timestamp"> {{ new Date(contact[casesStore.cases_k.dt[0]] * 1000).toLocaleString('en-US') }}</div>
+                  </div>
+                  <div class="contact-select-indicator">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <polyline points="9,18 15,12 9,6" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
 
               <div class="action-buttons">
                 <button
@@ -248,27 +276,7 @@
                   Continue with {{ selectedReporter?.[casesStore.cases_k.reporter_fullname[0]] }}
                 </button>
                <!-- <div v-if="selectedReporter">  {{ selectedReporter.value }}</div> -->
-                <button
-                  type="button"
-                  class="btn btn-secondary btn-large"
-                  @click="createNewReporter"
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M12 5v14M5 12h14"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                    />
-                  </svg>
-                  Create New Reporter
-                </button>
+                
               </div>
             </div>
             <div class="form-actions">
@@ -1013,6 +1021,16 @@
             <div class="ai-preview-title">
               AI Insights <span class="ai-badge">LIVE</span>
             </div>
+            <div class="ai-upload-controls">
+              <label class="upload-btn">
+                <input type="file" accept="audio/*" @change="onAudioSelected" hidden />
+                Upload Audio
+              </label>
+              <label class="upload-btn secondary">
+                <input type="file" accept="application/json" @change="onJsonPayloadSelected" hidden />
+                Import JSON Payload
+              </label>
+            </div>
           </div>
           <div class="ai-preview-content">
             <!-- Audio Transcription Results -->
@@ -1531,7 +1549,7 @@
 </template>
 
 <script>
-import { ref, reactive, computed, onMounted } from "vue";
+import { ref, reactive, computed, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useCaseStore } from "@/stores/cases";
 
@@ -1566,6 +1584,7 @@ onMounted(async () => {
     // AI Data from audio transcription
     const transcriptionData = ref(null);
     const aiInsights = ref(null);
+    const processingMeta = ref(null);
 
     const contacts = computed(() => casesStore.cases);
     // Mock contacts data - updated with sample data
@@ -1712,14 +1731,26 @@ onMounted(async () => {
     ];
 
     // Computed
+    const debouncedQuery = ref('')
+    const suggestionWidth = '100%'
+    let debounceTimer = null
+    watch(searchQuery, (val) => {
+      clearTimeout(debounceTimer)
+      debounceTimer = setTimeout(() => { debouncedQuery.value = val.trim() }, 200)
+    })
+
     const filteredContacts = computed(() => {
-  if (!searchQuery.value) return contacts.value;
-  return contacts.value.filter(
-    (contact) =>
-      contact.reporter_fullname?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      contact.reporter_phone?.includes(searchQuery.value)
-  );
-});
+      if (!debouncedQuery.value) return []
+      const q = debouncedQuery.value.toLowerCase()
+      const nameIdx = casesStore.cases_k?.reporter_fullname?.[0]
+      const phoneIdx = casesStore.cases_k?.reporter_phone?.[0]
+      if (nameIdx == null && phoneIdx == null) return []
+      return contacts.value.filter((contact) => {
+        const name = nameIdx != null ? (contact[nameIdx] || '').toString().toLowerCase() : ''
+        const phone = phoneIdx != null ? (contact[phoneIdx] || '').toString() : ''
+        return name.includes(q) || phone.includes(debouncedQuery.value)
+      })
+    })
 
 
     // Methods
@@ -2009,6 +2040,88 @@ onMounted(async () => {
         },
       };
     };
+
+    // Handlers for AI payloads
+    const onJsonPayloadSelected = async (e) => {
+      const file = e.target.files?.[0]
+      if (!file) return
+      try {
+        const text = await file.text()
+        const payload = JSON.parse(text)
+        mapAIPayload(payload)
+      } catch (err) {
+        console.error('Invalid JSON payload', err)
+        alert('Invalid JSON payload')
+      } finally {
+        e.target.value = ''
+      }
+    }
+
+    const onAudioSelected = (e) => {
+      const file = e.target.files?.[0]
+      if (!file) return
+      // Placeholder: integrate upload to backend and poll for results
+      console.log('Audio selected:', file.name)
+      alert('Audio selected. Implement upload to backend to process.')
+      e.target.value = ''
+    }
+
+    function mapAIPayload(payload) {
+      try {
+        // Save metadata
+        processingMeta.value = {
+          callId: payload.call_id,
+          method: payload.processing_method,
+          duration: payload.metadata?.total_duration,
+          message: payload.message,
+          timestamp: payload.timestamp,
+        }
+
+        const result = payload.result || {}
+        // Map summary
+        aiInsights.value = aiInsights.value || {}
+        aiInsights.value.case_summary = result.summary || ''
+
+        // Map entities
+        aiInsights.value.named_entities = {
+          persons: result.entities?.persons || [],
+          organizations: result.entities?.organizations || [],
+          locations: result.entities?.locations || [],
+          contact_information: result.entities?.contacts || []
+        }
+
+        // Map risk assessment
+        aiInsights.value.risk_assessment = {
+          red_flags: result.risk_assessment?.red_flags || [],
+          protective_factors: result.risk_assessment?.protective_factors || []
+        }
+
+        // Map classification to suggestions
+        const cls = result.classification || {}
+        transcriptionData.value = {
+          transcript: result.translation || '',
+          summary: result.summary || '',
+          summary_entities: [
+            ...(aiInsights.value.named_entities.persons || []).map(p => ({ text: p, label: 'PERSON' })),
+            ...(aiInsights.value.named_entities.locations || []).map(l => ({ text: l, label: 'LOCATION' }))
+          ],
+          summary_classification: {
+            sub_category: cls.sub_category || '',
+            priority: cls.priority_numeric || 3,
+            intervention: (result.case_insights?.recommended_intervention) || ''
+          }
+        }
+
+        // Inform user
+        showNotification.value = true
+        notificationMessage.value = 'AI payload imported successfully'
+        notificationType.value = 'success'
+        setTimeout(() => { showNotification.value = false }, 2000)
+      } catch (err) {
+        console.error('Failed to map payload', err)
+        alert('Failed to map AI payload')
+      }
+    }
 
     // AI Suggestion Usage Methods
     const useTranscription = () => {
@@ -2698,9 +2811,16 @@ textarea.form-control {
   margin-bottom: 20px;
 }
 
+.search-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
 .search-box {
   position: relative;
-  max-width: 400px;
+  width: 520px;
+  max-width: 100%;
 }
 
 .search-box svg {
@@ -2725,6 +2845,58 @@ textarea.form-control {
 .search-input:focus {
   outline: none;
   border-color: var(--accent-color);
+}
+
+.create-reporter-btn {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--content-bg);
+  color: var(--text-color);
+  cursor: pointer;
+}
+
+.create-reporter-btn:hover {
+  background: var(--border-color);
+}
+
+.search-suggestions {
+  position: absolute;
+  top: 42px;
+  left: 0;
+  right: 0;
+  background: var(--content-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 20;
+}
+
+.suggestion-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.suggestion-item:hover {
+  background: var(--border-color);
+}
+
+.suggestion-name { font-weight: 600; }
+.suggestion-phone { color: var(--text-secondary); font-size: 12px; }
+
+.search-empty {
+  position: absolute;
+  top: 42px;
+  left: 0;
+  right: 0;
+  background: var(--content-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--text-secondary);
 }
 
 .contacts-grid {
@@ -3249,6 +3421,23 @@ textarea.form-control {
   align-items: center;
   gap: 8px;
 }
+
+.ai-upload-controls {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+
+.upload-btn {
+  border: 1px solid var(--border-color);
+  background: var(--content-bg);
+  color: var(--text-color);
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.upload-btn.secondary { opacity: 0.9; }
 
 .ai-badge {
   background-color: var(--accent-color);
