@@ -21,7 +21,7 @@ env:
   IMAGE_NAME_NGINX: ${{ github.repository }}/helpline-nginx
 
 jobs:
-  # Unit Tests and Code Coverage
+  # Unit Tests and Code Coverage (unchanged)
   unit-tests:
     runs-on: ubuntu-latest
     strategy:
@@ -130,7 +130,7 @@ jobs:
           git commit -m "Update coverage report [skip ci]" || echo "No changes to commit"
           git push origin HEAD:${GITHUB_HEAD_REF}
 
-  # Build Docker Images - runs on all pushes when tests pass
+  # Build Docker Images
   build-images:
     runs-on: ubuntu-latest
     needs: unit-tests
@@ -157,7 +157,6 @@ jobs:
       - name: Build and push PHP image
         working-directory: helplinev1
         run: |
-          # Clean branch name for Docker tag (replace slashes and invalid characters)
           CLEAN_BRANCH=$(echo "${{ github.ref_name }}" | sed 's/[^a-zA-Z0-9._-]/-/g')
           PHP_TAG="${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PHP }}:${CLEAN_BRANCH}-${{ github.sha }}"
           echo "Building PHP image: $PHP_TAG"
@@ -171,7 +170,6 @@ jobs:
       - name: Build and push Nginx image
         working-directory: helplinev1
         run: |
-          # Clean branch name for Docker tag (replace slashes and invalid characters)
           CLEAN_BRANCH=$(echo "${{ github.ref_name }}" | sed 's/[^a-zA-Z0-9._-]/-/g')
           NGINX_TAG="${{ env.REGISTRY }}/${{ env.IMAGE_NAME_NGINX }}:${CLEAN_BRANCH}-${{ github.sha }}"
           echo "Building Nginx image: $NGINX_TAG"
@@ -188,7 +186,7 @@ jobs:
           echo "php-tag=${{ env.PHP_IMAGE_TAG }}" >> $GITHUB_OUTPUT
           echo "nginx-tag=${{ env.NGINX_IMAGE_TAG }}" >> $GITHUB_OUTPUT
 
-  # Deploy to Staging - ONLY on main branch
+  # Deploy to Staging - completely rewritten to avoid SSH issues
   deploy-staging:
     runs-on: ubuntu-latest
     needs: [unit-tests, build-images]
@@ -201,90 +199,41 @@ jobs:
 
       - name: Setup SSH
         run: |
-          echo "Setting up SSH connection..."
           mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          
-          # Check if SSH key secret exists
-          if [ -z "${{ secrets.EC2_KEY }}" ]; then
-            echo "Error: EC2_KEY secret is not set"
-            exit 1
-          fi
-          
-          # Write SSH key to file
           echo "${{ secrets.EC2_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          
-          # Verify key format
-          if ! ssh-keygen -l -f ~/.ssh/id_rsa > /dev/null 2>&1; then
-            echo "Error: SSH key format is invalid"
-            echo "Make sure the key includes the full content with BEGIN/END markers"
-            exit 1
-          fi
-          
-          # Test SSH connection and add to known_hosts
-          echo "Testing SSH connection to ${{ secrets.EC2_HOST }}..."
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || {
-            echo "Warning: Could not add host to known_hosts, trying direct connection test"
-          }
-          
-          # Test actual SSH connection
-          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "echo 'SSH connection successful'" || {
-            echo "Error: Cannot connect to EC2 instance"
-            echo "Please verify:"
-            echo "1. EC2_HOST is correct: ${{ secrets.EC2_HOST }}"
-            echo "2. EC2_USER has SSH access: ${{ secrets.EC2_USER }}"
-            echo "3. SSH key is authorized on the server"
-            exit 1
-          }
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Create application archive
+      - name: Install Docker on EC2
+        run: |
+          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'sudo yum update -y && sudo yum install -y docker && sudo systemctl start docker && sudo systemctl enable docker && sudo usermod -a -G docker ec2-user'
+
+      - name: Install Docker Compose on EC2
+        run: |
+          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-Linux-x86_64" -o /usr/local/bin/docker-compose && sudo chmod +x /usr/local/bin/docker-compose'
+
+      - name: Create deployment directory
+        run: |
+          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'sudo mkdir -p /opt/helplinev1 && sudo chown ec2-user:ec2-user /opt/helplinev1'
+
+      - name: Copy application files
         working-directory: helplinev1
         run: |
-          tar -czf helplinev1-files.tar.gz application/ rest_api/ docker/config/
+          tar -czf deployment.tar.gz application/ rest_api/ docker/config/
+          scp deployment.tar.gz ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/opt/helplinev1/
+          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'cd /opt/helplinev1 && tar -xzf deployment.tar.gz'
 
-      - name: Copy files to server
+      - name: Login to registry on EC2
         run: |
-          scp helplinev1/helplinev1-files.tar.gz ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/tmp/
+          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin'
 
-      - name: Deploy to staging server
+      - name: Pull Docker images
         run: |
-          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-          set -e
-          
-          echo "Starting staging deployment..."
-          
-          # Variables
-          DEPLOY_DIR="/opt/helplinev1"
-          BACKUP_DIR="/opt/backups/helplinev1-$(date +%Y%m%d-%H%M%S)"
-          PHP_IMAGE="${{ needs.build-images.outputs.php-image-tag }}"
-          NGINX_IMAGE="${{ needs.build-images.outputs.nginx-image-tag }}"
-          
-          # Create backup
-          sudo mkdir -p /opt/backups
-          if [ -d "$DEPLOY_DIR" ]; then
-            sudo cp -r "$DEPLOY_DIR" "$BACKUP_DIR"
-          fi
-          
-          # Setup deployment directory
-          sudo mkdir -p "$DEPLOY_DIR"
-          cd "$DEPLOY_DIR"
-          
-          # Extract files
-          sudo tar -xzf /tmp/helplinev1-files.tar.gz
-          
-          # Login to registry
-          echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          
-          # Pull images
-          sudo docker pull $PHP_IMAGE
-          sudo docker pull $NGINX_IMAGE
-          
-          # Stop existing containers
-          sudo docker-compose down 2>/dev/null || true
-          
-          # Create docker-compose file for staging
-          cat > docker-compose.yml << 'COMPOSE_EOF'
+          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'docker pull ${{ needs.build-images.outputs.php-image-tag }} && docker pull ${{ needs.build-images.outputs.nginx-image-tag }}'
+
+      - name: Create docker-compose file
+        run: |
+          cat > docker-compose-staging.yml << 'EOF'
           services:
             database:
               image: mysql:8.0
@@ -304,7 +253,7 @@ jobs:
                 - helpline-network
           
             php-api:
-              image: $PHP_IMAGE
+              image: ${{ needs.build-images.outputs.php-image-tag }}
               container_name: helpline-php-staging
               volumes:
                 - ./application:/var/www/html/helpline
@@ -324,7 +273,7 @@ jobs:
                 - helpline-network
           
             nginx:
-              image: $NGINX_IMAGE
+              image: ${{ needs.build-images.outputs.nginx-image-tag }}
               container_name: helpline-nginx-staging
               ports:
                 - "8888:80"
@@ -346,26 +295,21 @@ jobs:
           networks:
             helpline-network:
               driver: bridge
-          COMPOSE_EOF
-          
-          # Start services
-          sudo docker-compose up -d
-          
-          # Wait and health check
-          sleep 60
-          
-          if curl -f http://localhost:8888 > /dev/null 2>&1; then
-            echo "Deployment successful! Running at http://${{ secrets.STAGING_HOST }}:8888"
-          else
-            echo "Deployment failed - rolling back"
-            sudo docker-compose down
-            if [ -d "$BACKUP_DIR" ]; then
-              sudo rm -rf "$DEPLOY_DIR"
-              sudo mv "$BACKUP_DIR" "$DEPLOY_DIR"
-            fi
-            exit 1
-          fi
           EOF
+          scp docker-compose-staging.yml ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/opt/helplinev1/docker-compose.yml
+
+      - name: Stop existing containers
+        run: |
+          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'cd /opt/helplinev1 && docker-compose down || true'
+
+      - name: Start new containers
+        run: |
+          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'cd /opt/helplinev1 && docker-compose up -d'
+
+      - name: Wait and health check
+        run: |
+          sleep 60
+          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'curl -f http://localhost:8888 && echo "Deployment successful!"'
 
   # Summary
   deployment-summary:
