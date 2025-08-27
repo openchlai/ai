@@ -1,5 +1,5 @@
 services:
-  # MySQL ........................sql sql....sql...
+  # MySQL ........................sql sql....sql......
 
   database:
     image: mysql:8.0

@@ -307,18 +307,30 @@ jobs:
 
       - name: Start staging environment
         run: |
-          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'cd ~/helplinev1-staging && docker-compose up -d'
+          ssh -o ServerAliveInterval=60 -o ServerAliveCountMax=3 -T ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'cd ~/helplinev1-staging && nohup docker-compose up -d > docker-compose.log 2>&1 && echo "Containers started in background"'
 
-      - name: Verify deployment
+      - name: Wait for containers to initialize
         run: |
-          echo "Waiting 90 seconds for services to initialize..."
-          sleep 90
+          echo "Waiting for containers to fully start..."
+          sleep 30
+
+      - name: Check container status
+        run: |
+          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'docker ps --filter name=helpline-staging --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"'
+
+      - name: Verify deployment with health check
+        run: |
+          echo "Performing health check..."
+          sleep 60
           
-          # Check if containers are running
-          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'docker ps --filter name=helpline-staging'
-          
-          # Health check
-          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'curl -f http://localhost:8890 && echo "Staging health check passed"'
+          # Check if web service responds
+          if ssh -T ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'curl -f http://localhost:8890'; then
+            echo "Staging deployment successful!"
+          else
+            echo "Health check failed, checking container logs..."
+            ssh -T ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'cd ~/helplinev1-staging && docker-compose logs --tail=20'
+            exit 1
+          fi
 
       - name: Display staging information
         run: |
