@@ -193,17 +193,12 @@ class ModelLoader:
                 
                 model_status.load_time = datetime.now()
                 
-                # Also load Whisper translation model if translation is needed
-                from .whisper_model import whisper_translation_model
-                try:
-                    translation_success = whisper_translation_model.load()
-                    if translation_success:
-                        self.models["whisper_translation"] = whisper_translation_model
-                        logger.info("✅ Whisper translation model loaded successfully")
-                    else:
-                        logger.warning(f"⚠️ Whisper translation model failed to load: {whisper_translation_model.error}")
-                except Exception as e:
-                    logger.warning(f"⚠️ Failed to load Whisper translation model: {e}")
+                # Since whisper_translation_model is the same instance as whisper_model,
+                # we just need to register it under both names if whisper_model loaded successfully
+                if model_status.loaded:
+                    from .whisper_model import whisper_translation_model
+                    self.models["whisper_translation"] = whisper_translation_model
+                    logger.info("✅ Whisper translation model registered (same as whisper_model)")
                 
                 return
             

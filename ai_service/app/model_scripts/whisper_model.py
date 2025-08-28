@@ -452,6 +452,6 @@ class WhisperModel:
         """Check if model is ready for inference"""
         return self.is_loaded and self.model is not None and self.processor is not None
 
-# Global instances for different use cases
-whisper_model = WhisperModel(enable_translation=False)  # For transcription only (V3-Turbo)
-whisper_translation_model = WhisperModel(enable_translation=True)  # For translation (V3)
+# Global instances - use single Whisper Large model for both transcription and translation
+whisper_model = WhisperModel(enable_translation=True)  # Single Whisper Large model for both tasks
+whisper_translation_model = whisper_model  # Same instance for translation tasks

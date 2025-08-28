@@ -37,6 +37,7 @@ services:
       - STREAMING_HOST=${STREAMING_HOST:-0.0.0.0}
       - REDIS_STREAMING_DB=${REDIS_STREAMING_DB:-2}  # Separate Redis DB for streaming
     volumes:
+      - ./models:/app/models
       - ./logs:/app/logs
       - ./temp:/app/temp
       - ./logs/streaming:/app/logs/streaming
@@ -77,6 +78,7 @@ services:
       - REDIS_TASK_DB=1
       - DOCKER_CONTAINER=true
     volumes:
+      - ./models:/app/models
       - ./logs:/app/logs
       - ./temp:/app/temp
     command: celery -A app.celery_app worker --loglevel=info -E --pool=solo --hostname=worker@%h

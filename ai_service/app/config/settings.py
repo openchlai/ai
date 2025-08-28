@@ -64,7 +64,21 @@ class Settings(BaseSettings):
     
     def initialize_paths(self):
         """Initialize paths - called explicitly, not at import time"""
-        # Convert to absolute paths
+        # Auto-detect environment and adjust paths
+        if os.getenv("DOCKER_CONTAINER") or os.path.exists("/.dockerenv"):
+            # Docker environment - use absolute paths
+            self.models_path = "/app/models"
+            self.logs_path = "/app/logs" 
+            self.temp_path = "/app/temp"
+            print("🐳 Docker environment detected - using container paths")
+        else:
+            # Local development - use relative paths
+            self.models_path = "./models"
+            self.logs_path = "./logs"
+            self.temp_path = "./temp"
+            print("💻 Local development environment detected - using relative paths")
+        
+        # Convert to absolute paths for consistency
         self.models_path = os.path.abspath(self.models_path)
         self.logs_path = os.path.abspath(self.logs_path)
         self.temp_path = os.path.abspath(self.temp_path)

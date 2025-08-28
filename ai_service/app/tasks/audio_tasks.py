@@ -436,12 +436,9 @@ def _process_audio_sync_worker(
         
         step_start = datetime.now()
         try:
-            # Check if we should use Whisper for translation (if available and enabled)
-            whisper_translation_model = models.models.get("whisper_translation")
-            use_whisper_translation = (whisper_translation_model and 
-                                       whisper_translation_model.is_ready() and 
-                                       hasattr(whisper_translation_model, 'enable_translation') and
-                                       whisper_translation_model.enable_translation)
+            # Use Whisper Large model for translation (same model for both transcription and translation)
+            whisper_translation_model = models.models.get("whisper_translation") or models.models.get("whisper")
+            use_whisper_translation = (whisper_translation_model and whisper_translation_model.is_ready())
             
             if use_whisper_translation:
                 # Use Whisper Large-V3 for translation
@@ -960,12 +957,9 @@ def process_streaming_audio_task(
         # Simple processing - no VAD for now (can add Silero VAD later)
         vad_info = {"vad_enabled": False, "note": "VAD not implemented in this branch"}
         
-        # Quick transcription/translation for streaming (prioritize Whisper translation)
-        whisper_translation_model = models.models.get("whisper_translation")
-        use_whisper_translation = (whisper_translation_model and 
-                                   whisper_translation_model.is_ready() and 
-                                   hasattr(whisper_translation_model, 'enable_translation') and
-                                   whisper_translation_model.enable_translation)
+        # Quick transcription/translation for streaming using Whisper Large model
+        whisper_translation_model = models.models.get("whisper_translation") or models.models.get("whisper")
+        use_whisper_translation = (whisper_translation_model and whisper_translation_model.is_ready())
         
         if use_whisper_translation:
             # Use Whisper Large-V3 for direct translation (sw→en)
@@ -1226,26 +1220,47 @@ def process_post_call_audio_task(
         
         step_start = datetime.now()
         
-        whisper_translation_model = models.models.get("whisper_translation")
-        if not whisper_translation_model or not whisper_translation_model.is_ready():
-            raise RuntimeError("Whisper translation model not available")
+        # Use Whisper Large model for direct translation (sw→en)
+        # Debug: Check what models are available in the worker
+        logger.info(f"🔍 [debug] Available models in worker: {list(models.models.keys()) if models and hasattr(models, 'models') else 'None'}")
+        logger.info(f"🔍 [debug] Models object: {models}")
+        
+        # Since we only have one Whisper model, try both whisper_translation and whisper references
+        whisper_translation_model = models.models.get("whisper_translation") if models and hasattr(models, 'models') else None
+        whisper_regular_model = models.models.get("whisper") if models and hasattr(models, 'models') else None
+        
+        logger.info(f"🔍 [debug] whisper_translation model: {whisper_translation_model}")
+        logger.info(f"🔍 [debug] whisper model: {whisper_regular_model}")
+        
+        whisper_model = whisper_translation_model or whisper_regular_model
+        
+        if not whisper_model:
+            logger.error("❌ [debug] No Whisper model found in models.models")
+            raise RuntimeError("Whisper model not available for translation - no model found")
+        
+        if not whisper_model.is_ready():
+            logger.error(f"❌ [debug] Whisper model not ready: {whisper_model}")
+            logger.error(f"❌ [debug] Model error: {getattr(whisper_model, 'error', 'No error info')}")
+            raise RuntimeError("Whisper model not available for translation - model not ready")
+        
+        logger.info("🎯 [post-call] Using Whisper Large for direct translation (sw→en)")
         
         # Debug model info
-        model_info = whisper_translation_model.get_model_info()
-        logger.info(f"🔍 [debug] Whisper translation model info:")
+        model_info = whisper_model.get_model_info()
+        logger.info(f"🔍 [debug] Whisper model info:")
         logger.info(f"   - Version: {model_info.get('version', 'unknown')}")
         logger.info(f"   - Model ID: {model_info.get('current_model_id', 'unknown')}")
         logger.info(f"   - Translation enabled: {model_info.get('translation_enabled', False)}")
         logger.info(f"   - Device: {model_info.get('device', 'unknown')}")
         logger.info(f"   - Is loaded: {model_info.get('is_loaded', False)}")
         
-        # Use Whisper Large-V3 for direct translation (sw→en)
         logger.info(f"🎯 [debug] Calling transcribe_audio_bytes with language='sw', task='translate'")
-        translation = whisper_translation_model.transcribe_audio_bytes(
+        translation = whisper_model.transcribe_audio_bytes(
             audio_bytes, 
             language="sw",        # Force Swahili source
             task="translate"      # Force translation to English
         )
+        translation_method = "whisper_large_translation"
         
         logger.info(f"🎯 [debug] Whisper translation result: '{translation[:200]}...' ({len(translation)} chars)")
         
@@ -1258,7 +1273,7 @@ def process_post_call_audio_task(
             30, 
             "Translation completed successfully",
             result_data={"translation": translation, "language_pair": "sw→en"},
-            metadata={"duration": translation_duration, "method": "whisper_large_v3"}
+            metadata={"duration": translation_duration, "method": translation_method}
         )
         
         # Use translated text for all downstream processing

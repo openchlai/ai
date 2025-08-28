@@ -166,33 +166,13 @@ def generate_case_insights(
             }
         }
     
-    # Use pre-computed results when available, otherwise compute them
-    if summary is None:
-        try:
-            summary = summarization_model.summarize(transcript)
-        except Exception as e:
-            logger.error(f"Summarization failed: {e}")
-            summary = transcript[:1000]  # fallback: truncate raw transcript
-
+    # Only compute NER results - let Mistral handle classification and summarization
     if entities is None:
         try:
             entities = ner_model.extract_entities(transcript)
         except Exception as e:
             logger.error(f"NER failed: {e}")
             entities = {}
-
-    if classification is None:
-        try:
-            case_classification = classifier_model.classify(transcript)
-        except Exception as e:
-            logger.error(f"Classification failed: {e}")
-            case_classification = {
-                "category": [],
-                "interventions_needed": [],
-                "priority_level": "medium"
-            }
-    else:
-        case_classification = classification
 
     # Build enhanced prompt with quality assessment and pre-computed data
     quality_context = f"""TRANSCRIPT QUALITY ASSESSMENT:
@@ -256,16 +236,13 @@ Generate a comprehensive JSON response with the following structure:
   "cultural_considerations": []
 }}
 
-Case Summary:
-{summary}
+TRANSCRIPT/TRANSLATION:
+{transcript}
 
-Named Entities:
+NAMED ENTITIES (Reference only - generate your own comprehensive analysis):
 {json.dumps(entities, indent=2)}
 
-Classification:
-{json.dumps(case_classification, indent=2)}
-
-Context: Respond with JSON only. Avoid additional explanations.
+Context: Analyze the transcript directly to generate your own classification and summarization. The provided entities are for reference only. Respond with JSON only. Avoid additional explanations.
 """
 
     session = requests.Session()
@@ -274,7 +251,7 @@ Context: Respond with JSON only. Avoid additional explanations.
 
     try:
         response = session.post(
-            'http://127.0.0.1:11434/api/generate',
+            'http://192.168.8.18:11434/api/generate',
             json={
                 'model': 'mistral',
                 'prompt': prompt,
@@ -304,10 +281,10 @@ Context: Respond with JSON only. Avoid additional explanations.
             "quality_level": content_quality["quality"],
             "quality_issues": content_quality.get("issues", []),
             "used_precomputed_data": {
-                "summary": summary is not None,
                 "entities": entities is not None, 
-                "classification": classification is not None,
-                "qa_scores": qa_scores is not None
+                "qa_scores": qa_scores is not None,
+                "mistral_generated_classification": True,
+                "mistral_generated_summary": True
             },
             "processing_timestamp": datetime.now().isoformat()
         }
@@ -434,19 +411,13 @@ ENHANCED TRANSCRIPT (Complete Audio):
 TRANSLATION:
 {translation}
 
-NAMED ENTITIES:
+NAMED ENTITIES (Reference only - generate your own comprehensive analysis):
 {json.dumps(entities, indent=2)}
-
-CLASSIFICATION:
-{json.dumps(classification, indent=2)}
 
 QA SCORES:
 {json.dumps(qa_scores, indent=2)}
 
-SUMMARY:
-{summary}
-
-Context: This analysis is based on complete high-quality audio recording with both parties clearly captured. Provide comprehensive JSON response only."""
+Context: This analysis is based on complete high-quality audio recording with both parties clearly captured. Analyze the transcript and translation directly to generate your own classification and summarization. The provided entities are for reference only. Provide comprehensive JSON response only."""
 
     session = requests.Session()
     retries = Retry(total=3, backoff_factor=5, status_forcelist=[502, 503, 504])
@@ -454,7 +425,7 @@ Context: This analysis is based on complete high-quality audio recording with bo
 
     try:
         response = session.post(
-            'http://127.0.0.1:11434/api/generate',
+            'http://192.168.8.18:11434/api/generate',
             json={
                 'model': 'mistral',
                 'prompt': prompt,
