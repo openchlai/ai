@@ -1,4 +1,3 @@
-image.png
 <template>
   <div>
     <!-- SidePanel Component -->
@@ -15,106 +14,171 @@ image.png
     <!-- Main Content -->
     <div class="main-content">
       <div class="cases-container">
-        <!-- Header -->
-        <div class="header">
-          <div class="header-left">
-            <h1>Cases</h1>
-            <router-link to="/case-creation" class="add-new-case-btn">
-              Add New Case
-            </router-link>
+        <!-- Cleaned up header section with better structure and spacing -->
+        <header class="page-header">
+          <div class="header-top">
+            <div class="header-left">
+              <h1 class="page-title">Cases</h1>
+              <router-link to="/case-creation" class="add-new-case-btn">
+                Add New Case
+              </router-link>
+            </div>
+            <button class="theme-toggle" @click="toggleTheme">
+              <svg
+                v-show="currentTheme === 'dark'"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+              </svg>
+              <svg
+                v-show="currentTheme === 'light'"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="12" cy="12" r="5"/>
+                <path d="m21 21-4.35-4.35"/>
+              </svg>
+              <span class="theme-toggle-text">Dark Mode</span>
+            </button>
           </div>
-          <button class="theme-toggle" @click="toggleTheme">
-            <svg
-              v-show="currentTheme === 'dark'"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
+          
+          <!-- Combined search and view toggle into single horizontal row -->
+          <div class="search-and-controls-section">
+            <div class="search-container">
+              <input
+                v-model="searchQuery"
+                type="text"
+                placeholder="Search case by title, assignee, or filter..."
+                class="search-input"
               />
-            </svg>
-            <svg
-              v-show="currentTheme === 'light'"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
+            </div>
+            
+            <div class="view-toggle">
+              <button
+                :class="['view-btn', { active: currentView === 'table' }]"
+                @click="currentView = 'table'"
+              >
+                Table View
+              </button>
+              <button
+                :class="['view-btn', { active: currentView === 'timeline' }]"
+                @click="currentView = 'timeline'"
+              >
+                Timeline
+              </button>
+            </div>
+          </div>
+
+          <!-- Moved filter tabs to separate section -->
+          <div class="filter-section">
+            <button
+              v-for="filter in filters"
+              :key="filter.id"
+              :class="['filter-tab', { active: activeFilter === filter.id }]"
+              @click="setActiveFilter(filter.id)"
             >
-              <circle
-                cx="12"
-                cy="12"
-                r="5"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-            <span>{{
-              currentTheme === "dark" ? "Light Mode" : "Dark Mode"
-            }}</span>
-          </button>
+              {{ filter.name }}
+            </button>
+          </div>
+        </header>
+
+        <!-- Added conditional rendering for table view and timeline view -->
+        <!-- Table View -->
+        <div v-if="currentView === 'table'" class="cases-table-container">
+          <div class="cases-table-wrapper">
+            <table class="cases-table">
+              <thead>
+                <tr>
+                  <!-- Improved table headers with better labels and spacing -->
+                  <th class="case-id-header">Case ID</th>
+                  <th class="created-by-header">Created By</th>
+                  <th class="created-on-header">Created On</th>
+                  <th class="source-header">Source</th>
+                  <th class="priority-header">Priority</th>
+                  <th class="status-header">Status</th>
+                  <th class="actions-header">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="caseItem in filteredCases"
+                  :key="casesStore.cases_k?.id ? caseItem[casesStore.cases_k.id[0]] : caseItem.id"
+                  :class="['table-row', {
+                    selected: selectedCaseId === (casesStore.cases_k?.id ? caseItem[casesStore.cases_k.id[0]] : caseItem.id)
+                  }]"
+                  @click="selectCase(casesStore.cases_k?.id ? caseItem[casesStore.cases_k.id[0]] : caseItem.id)"
+                >
+                  <td class="case-id-cell">
+                    {{ casesStore.cases_k?.id ? caseItem[casesStore.cases_k.id[0]] : caseItem.id || 'N/A' }}
+                  </td>
+                  <td class="created-by-cell">
+                    {{ casesStore.cases_k?.created_by ? caseItem[casesStore.cases_k.created_by[0]] || 'N/A' : 'N/A' }}
+                  </td>
+                  <td class="created-on-cell">
+                    {{ casesStore.cases_k?.dt ? new Date(
+                      caseItem[casesStore.cases_k.dt[0]] < 10000000000
+                        ? caseItem[casesStore.cases_k.dt[0]] * 1000
+                        : caseItem[casesStore.cases_k.dt[0]] * 3600 * 1000
+                    ).toLocaleDateString() : 'N/A' }}
+                  </td>
+                  <td class="source-cell">
+                    {{ casesStore.cases_k?.source ? caseItem[casesStore.cases_k.source[0]] || 'N/A' : 'N/A' }}
+                  </td>
+                  <td class="priority-cell">
+                    <span class="priority-badge" :class="(casesStore.cases_k?.priority ? caseItem[casesStore.cases_k.priority[0]] || 'normal' : 'normal').toLowerCase()">
+                      <span
+                        :class="['priority-dot', (casesStore.cases_k?.priority ? caseItem[casesStore.cases_k.priority[0]] || '' : '').toLowerCase()]"
+                      />
+                      {{ casesStore.cases_k?.priority ? caseItem[casesStore.cases_k.priority[0]] || 'Normal' : 'Normal' }}
+                    </span>
+                  </td>
+                  <td class="status-cell">
+                    <span class="status-badge" :class="(casesStore.cases_k?.status ? caseItem[casesStore.cases_k.status[0]] || 'open' : 'open').toLowerCase()">
+                      {{ casesStore.cases_k?.status ? caseItem[casesStore.cases_k.status[0]] || 'Open' : 'Open' }}
+                    </span>
+                  </td>
+                  <td class="actions-cell">
+                    <button class="action-btn view-btn" @click.stop="selectCase(casesStore.cases_k?.id ? caseItem[casesStore.cases_k.id[0]] : caseItem.id)">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        <!-- Search -->
-        <div class="search-container" style="position: relative;">
-          <span class="search-icon">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          </span>
-          <input 
-            v-model="searchQuery"
-            class="search-input" 
-            placeholder="Search case by title, assignee, or filer..." 
-            type="text"
-            @input="handleSearch"
-          />
-        </div>
-
-        <!-- Filters -->
-        <div class="filter-tabs">
-          <button
-            v-for="filter in filters"
-            :key="filter.id"
-            :class="['filter-tab', { active: activeFilter === filter.id }]"
-            @click="setActiveFilter(filter.id)"
-          >
-            {{ filter.name }}
-          </button>
-        </div>
-
-        <!-- Cases List -->
-        <div class="cases-container-inner">
+        <!-- Timeline View (Original Card Layout) -->
+        <div v-else class="cases-container-inner">
           <div class="cases-list">
             <h2 class="cases-title">Cases</h2>
 
             <div
               v-for="caseItem in filteredCases"
-              :key="
-                casesStore.cases_k?.id
-                  ? caseItem[casesStore.cases_k.id[0]]
-                  : caseItem.id
-              "
+              :key="casesStore.cases_k?.id ? caseItem[casesStore.cases_k.id[0]] : caseItem.id"
               :class="[
                 'case-item glass-card fine-border',
                 {
-                  selected:
-                    selectedCaseId ===
-                    (casesStore.cases_k?.id
-                      ? caseItem[casesStore.cases_k.id[0]]
-                      : caseItem.id),
+                  selected: selectedCaseId === (casesStore.cases_k?.id ? caseItem[casesStore.cases_k.id[0]] : caseItem.id),
                 },
               ]"
-              @click="
-                selectCase(
-                  casesStore.cases_k?.id
-                    ? caseItem[casesStore.cases_k.id[0]]
-                    : caseItem.id
-                )
-              "
+              @click="selectCase(casesStore.cases_k?.id ? caseItem[casesStore.cases_k.id[0]] : caseItem.id)"
             >
               <div class="case-icon">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -136,165 +200,98 @@ image.png
               </div>
               <div class="case-details">
                 <div class="case-title">
-                  {{
-                    casesStore.cases_k?.cat_1
-                      ? caseItem[casesStore.cases_k.cat_1[0]]
-                      : "Untitled Case"
-                  }}
+                  {{ casesStore.cases_k?.cat_1 ? caseItem[casesStore.cases_k.cat_1[0]] : "Untitled Case" }}
                 </div>
                 <div class="case-meta">
                   <span class="case-priority">
                     <span
-                      :class="[
-                        'priority-dot',
-                        (
-                          (casesStore.cases_k?.priority
-                            ? caseItem[casesStore.cases_k.priority[0]]
-                            : '') || ''
-                        ).toLowerCase(),
-                      ]"
+                      :class="['priority-dot', (casesStore.cases_k?.priority ? caseItem[casesStore.cases_k.priority[0]] || '' : '').toLowerCase()]"
                     />
-                    {{
-                      casesStore.cases_k?.priority
-                        ? caseItem[casesStore.cases_k.priority[0]] || "Normal"
-                        : "Normal"
-                    }}
+                    {{ casesStore.cases_k?.priority ? caseItem[casesStore.cases_k.priority[0]] || "Normal" : "Normal" }}
                     priority
                   </span>
                   <span class="case-date">
-                    {{
-                      casesStore.cases_k?.dt
-                        ? new Date(
-                            caseItem[casesStore.cases_k.dt[0]] < 10000000000
-                              ? caseItem[casesStore.cases_k.dt[0]] * 1000
-                              : caseItem[casesStore.cases_k.dt[0]] * 3600 * 1000
-                          ).toLocaleString()
-                        : "No Date"
-                    }}
+                    {{ casesStore.cases_k?.dt ? new Date(
+                      caseItem[casesStore.cases_k.dt[0]] < 10000000000
+                        ? caseItem[casesStore.cases_k.dt[0]] * 1000
+                        : caseItem[casesStore.cases_k.dt[0]] * 3600 * 1000
+                    ).toLocaleString() : "No Date" }}
                   </span>
-
                   <span class="case-assigned">
-                    {{
-                      casesStore.cases_k?.assigned_to &&
-                      caseItem[casesStore.cases_k.assigned_to[0]]
-                        ? `Assigned: ${
-                            caseItem[casesStore.cases_k.assigned_to[0]]
-                          }`
-                        : "Unassigned"
-                    }}
+                    {{ casesStore.cases_k?.assigned_to && caseItem[casesStore.cases_k.assigned_to[0]]
+                      ? `Assigned: ${caseItem[casesStore.cases_k.assigned_to[0]]}`
+                      : "Unassigned" }}
                   </span>
                 </div>
               </div>
             </div>
           </div>
+        </div>
 
-          <!-- Case Detail Drawer -->
-          <div class="case-detail-drawer" v-if="selectedCaseDetails">
-            <div class="case-detail-drawer-header">
-              <div class="case-detail-title">
-                {{
-                  casesStore.cases_k?.cat_1
-                    ? selectedCaseDetails[casesStore.cases_k.cat_1[0]]
-                    : "Case Details"
-                }}
-              </div>
-              <div class="case-detail-id">
-                Case ID:
-                {{
-                  casesStore.cases_k?.id
-                    ? selectedCaseDetails[casesStore.cases_k.id[0]]
-                    : ""
-                }}
-              </div>
-              <button class="close-details" @click="selectedCaseId = null">
-                ×
-              </button>
+        <!-- Case Detail Drawer (unchanged) -->
+        <div class="case-detail-drawer" v-if="selectedCaseDetails">
+          <div class="case-detail-drawer-header">
+            <div class="case-detail-title">
+              {{ casesStore.cases_k?.cat_1 ? selectedCaseDetails[casesStore.cases_k.cat_1[0]] : "Case Details" }}
             </div>
-            <div class="case-detail-content">
-              <div class="detail-item">
-                <div class="detail-label">Case Filler</div>
-                <div class="detail-value">
-                  {{
-                    casesStore.cases_k?.created_by
-                      ? selectedCaseDetails[casesStore.cases_k.created_by[0]] ||
-                        "N/A"
-                      : "N/A"
-                  }}
-                </div>
+            <div class="case-detail-id">
+              Case ID: {{ casesStore.cases_k?.id ? selectedCaseDetails[casesStore.cases_k.id[0]] : "" }}
+            </div>
+            <button class="close-details" @click="selectedCaseId = null">×</button>
+          </div>
+          <div class="case-detail-content">
+            <div class="detail-item">
+              <div class="detail-label">Case Filler</div>
+              <div class="detail-value">
+                {{ casesStore.cases_k?.created_by ? selectedCaseDetails[casesStore.cases_k.created_by[0]] || "N/A" : "N/A" }}
               </div>
-              <div class="detail-item">
-                <div class="detail-label">Assigned To</div>
-                <div class="detail-value">
-                  {{
-                    casesStore.cases_k?.assigned_to
-                      ? selectedCaseDetails[
-                          casesStore.cases_k.assigned_to[0]
-                        ] || "Unassigned"
-                      : "Unassigned"
-                  }}
-                </div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Assigned To</div>
+              <div class="detail-value">
+                {{ casesStore.cases_k?.assigned_to ? selectedCaseDetails[casesStore.cases_k.assigned_to[0]] || "Unassigned" : "Unassigned" }}
               </div>
-              <div class="detail-item">
-                <div class="detail-label">Priority</div>
-                <div
-                  :class="[
-                    'detail-value',
-                    (
-                      (casesStore.cases_k?.priority
-                        ? selectedCaseDetails[casesStore.cases_k.priority[0]]
-                        : '') || ''
-                    ).toLowerCase(),
-                  ]"
-                >
-                  {{
-                    casesStore.cases_k?.priority
-                      ? selectedCaseDetails[casesStore.cases_k.priority[0]] ||
-                        "Normal"
-                      : "Normal"
-                  }}
-                </div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Priority</div>
+              <div
+                :class="['detail-value', (casesStore.cases_k?.priority ? selectedCaseDetails[casesStore.cases_k.priority[0]] || '' : '').toLowerCase()]"
+              >
+                {{ casesStore.cases_k?.priority ? selectedCaseDetails[casesStore.cases_k.priority[0]] || "Normal" : "Normal" }}
               </div>
-              <div class="detail-item">
-                <div class="detail-label">Disposition</div>
-                <div class="detail-value">
-                  {{
-                    casesStore.cases_k?.disposition
-                      ? selectedCaseDetails[
-                          casesStore.cases_k.disposition[0]
-                        ] || "N/A"
-                      : "N/A"
-                  }}
-                </div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Status</div>
+              <div class="detail-value">
+                {{ casesStore.cases_k?.status ? selectedCaseDetails[casesStore.cases_k.status[0]] || "Open" : "Open" }}
               </div>
-              <div class="detail-item">
-                <div class="detail-label">Date</div>
-                <div class="detail-value">
-                  {{
-                    casesStore.cases_k?.dt
-                      ? new Date(
-                          selectedCaseDetails[casesStore.cases_k.dt[0]] <
-                          10000000000
-                            ? selectedCaseDetails[casesStore.cases_k.dt[0]] *
-                              1000
-                            : selectedCaseDetails[casesStore.cases_k.dt[0]] *
-                              3600 *
-                              1000
-                        ).toLocaleString()
-                      : "N/A"
-                  }}
-                </div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Source</div>
+              <div class="detail-value">
+                {{ casesStore.cases_k?.source ? selectedCaseDetails[casesStore.cases_k.source[0]] || "N/A" : "N/A" }}
               </div>
-              <div class="detail-item">
-                <div class="detail-label">Escalated To</div>
-                <div class="detail-value">
-                  {{
-                    casesStore.cases_k?.escalated_to
-                      ? selectedCaseDetails[
-                          casesStore.cases_k.escalated_to[0]
-                        ] || "N/A"
-                      : "N/A"
-                  }}
-                </div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Disposition</div>
+              <div class="detail-value">
+                {{ casesStore.cases_k?.disposition ? selectedCaseDetails[casesStore.cases_k.disposition[0]] || "N/A" : "N/A" }}
+              </div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Date</div>
+              <div class="detail-value">
+                {{ casesStore.cases_k?.dt ? new Date(
+                  selectedCaseDetails[casesStore.cases_k.dt[0]] < 10000000000
+                    ? selectedCaseDetails[casesStore.cases_k.dt[0]] * 1000
+                    : selectedCaseDetails[casesStore.cases_k.dt[0]] * 3600 * 1000
+                ).toLocaleString() : "N/A" }}
+              </div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Escalated To</div>
+              <div class="detail-value">
+                {{ casesStore.cases_k?.escalated_to ? selectedCaseDetails[casesStore.cases_k.escalated_to[0]] || "N/A" : "N/A" }}
               </div>
             </div>
           </div>
@@ -313,17 +310,12 @@ import { useCaseStore } from "@/stores/cases";
 const casesStore = useCaseStore();
 const router = useRouter();
 
-// Load cases on mount
-onMounted(() => {
-  casesStore.listCases();
-  console.log("Cases loaded:", casesStore.raw);
-});
-
 // Reactive state
 const searchQuery = ref("");
 const activeFilter = ref("all");
 const selectedCaseId = ref(null);
 const currentTheme = ref(localStorage.getItem("theme") || "dark");
+const currentView = ref("table"); // Default to table view
 
 // SidePanel related state
 const userRole = ref("super-admin");
@@ -346,32 +338,60 @@ const filters = ref([
 const filteredCases = computed(() => {
   let filtered = casesStore.cases || [];
  
-  // Search filter
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
-    filtered = filtered.filter(
-      (c) =>
-        (c.title && c.title.toLowerCase().includes(query)) ||
-        (c.assignedTo && c.assignedTo.toLowerCase().includes(query)) ||
-        (c.caseFiler && c.caseFiler.toLowerCase().includes(query))
-    );
+    filtered = filtered.filter((c) => {
+      // Search in case title/category
+      const title = casesStore.cases_k?.cat_1 ? c[casesStore.cases_k.cat_1[0]] : '';
+      // Search in assigned to
+      const assignedTo = casesStore.cases_k?.assigned_to ? c[casesStore.cases_k.assigned_to[0]] : '';
+      // Search in created by
+      const createdBy = casesStore.cases_k?.created_by ? c[casesStore.cases_k.created_by[0]] : '';
+      // Search in source
+      const source = casesStore.cases_k?.source ? c[casesStore.cases_k.source[0]] : '';
+      
+      return (
+        (title && title.toString().toLowerCase().includes(query)) ||
+        (assignedTo && assignedTo.toString().toLowerCase().includes(query)) ||
+        (createdBy && createdBy.toString().toLowerCase().includes(query)) ||
+        (source && source.toString().toLowerCase().includes(query))
+      );
+    });
   }
 
-  // Status filter
   if (activeFilter.value !== "all") {
     const filterStatus = filters.value.find(
       (f) => f.id === activeFilter.value
     )?.status;
     if (filterStatus) {
-      filtered = filtered.filter((c) => c.status === filterStatus);
+      filtered = filtered.filter((c) => {
+        const status = casesStore.cases_k?.status ? c[casesStore.cases_k.status[0]] : '';
+        return status && status.toLowerCase() === filterStatus.toLowerCase();
+      });
     } else if (activeFilter.value === "assigned") {
-      filtered = filtered.filter((c) => c.assignedTo);
+      filtered = filtered.filter((c) => {
+        const assignedTo = casesStore.cases_k?.assigned_to ? c[casesStore.cases_k.assigned_to[0]] : '';
+        return assignedTo && assignedTo.trim() !== '';
+      });
     } else if (activeFilter.value === "priority") {
-      filtered = filtered.filter((c) => c.priority === "High");
+      filtered = filtered.filter((c) => {
+        const priority = casesStore.cases_k?.priority ? c[casesStore.cases_k.priority[0]] : '';
+        return priority && priority.toLowerCase() === "high";
+      });
     } else if (activeFilter.value === "today") {
-      // Filter for today's cases (example filter)
-      const today = new Date().toLocaleDateString();
-      filtered = filtered.filter((c) => c.date && c.date.includes(today));
+      // Filter for today's cases
+      const today = new Date().toDateString();
+      filtered = filtered.filter((c) => {
+        if (casesStore.cases_k?.dt && c[casesStore.cases_k.dt[0]]) {
+          const caseDate = new Date(
+            c[casesStore.cases_k.dt[0]] < 10000000000
+              ? c[casesStore.cases_k.dt[0]] * 1000
+              : c[casesStore.cases_k.dt[0]] * 3600 * 1000
+          );
+          return caseDate.toDateString() === today;
+        }
+        return false;
+      });
     }
   }
 
@@ -384,6 +404,10 @@ const selectedCaseDetails = computed(() => {
     (caseItem) => caseItem[casesStore.cases_k.id[0]] === selectedCaseId.value
   );
 });
+
+const setCurrentView = (view) => {
+  currentView.value = view;
+};
 
 // SidePanel event handlers
 const handleQueueToggle = () => {
@@ -461,6 +485,8 @@ const handleSearch = () => {
 
 // Lifecycle hooks
 onMounted(() => {
+  casesStore.listCases();
+  console.log("Cases loaded:", casesStore.raw);
   const savedTheme = localStorage.getItem("theme");
   if (savedTheme) {
     currentTheme.value = savedTheme;
@@ -469,7 +495,7 @@ onMounted(() => {
 });
 </script>
 
-<style>
+<style scoped>
 /* Global styles - not scoped */
 * {
   margin: 0;
@@ -500,9 +526,11 @@ body {
 
 .cases-container {
   flex: 1;
-  padding: 20px;
+  padding: 24px;
   height: auto;
   overflow: visible;
+  display: flex;
+  flex-direction: column;
 }
 
 .cases-container::-webkit-scrollbar {
@@ -522,135 +550,178 @@ body {
   background-color: rgba(255, 255, 255, 0.5);
 }
 
-.header {
+/* Improved header styles with better organization */
+.page-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-shrink: 0;
+}
+
+.header-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  flex-shrink: 0;
+  margin-bottom: 0;
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
 }
 
-.header h1 {
-  font-size: 24px;
-  font-weight: 600;
+.page-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-color);
+  margin: 0;
 }
 
 .add-new-case-btn {
   background: var(--accent-color);
   color: #fff;
   border: none;
-  border-radius: 20px;
-  padding: 0.6rem 1.4rem;
-  font-weight: 700;
-  font-size: 1rem;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 14px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
   text-decoration: none;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .add-new-case-btn:hover {
   background: var(--accent-hover);
+  transform: translateY(-1px);
 }
 
 .theme-toggle {
   background-color: var(--content-bg);
   color: var(--text-color);
   border: 1px solid var(--border-color);
-  border-radius: 30px;
-  padding: 8px 15px;
+  border-radius: 8px;
+  padding: 8px 12px;
   font-size: 14px;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+  transition: all 0.2s ease;
+  font-weight: 500;
 }
 
 .theme-toggle:hover {
   background-color: var(--border-color);
+  transform: translateY(-1px);
 }
 
 .theme-toggle svg {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
+}
+
+.theme-toggle-text {
+  font-size: 13px;
+}
+
+.search-and-controls-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
 }
 
 .search-container {
-  margin-bottom: 32px;
-  flex-shrink: 0;
-  margin-top: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
+  position: relative;
+  flex: 1;
+  max-width: 400px;
 }
 
 .search-input {
   width: 100%;
-  padding: 12px 20px 12px 44px;
-  border-radius: 30px;
-  border: none;
-  background-color: var(--content-bg);
+  padding: 12px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--content-bg);
   color: var(--text-color);
-  font-size: 15px;
-  transition: border-color 0.3s, box-shadow 0.3s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  position: relative;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(150, 75, 0, 0.1);
 }
 
 .search-input::placeholder {
-  color: var(--text-secondary);
-  font-size: 15px;
-  opacity: 1;
+  color: #999;
 }
 
-.search-icon {
-  position: absolute;
-  left: 22px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-secondary);
-  font-size: 18px;
-  pointer-events: none;
-  z-index: 2;
-}
-
-.filter-tabs {
+.view-toggle {
   display: flex;
-  gap: 10px;
-  margin-bottom: 28px;
-  margin-top: 18px;
-  overflow-x: auto;
-  padding-bottom: 5px;
+  gap: 8px;
   flex-shrink: 0;
 }
 
-.filter-tab {
-  background-color: var(--content-bg);
-  color: var(--text-color);
+.view-btn {
+  /* Updated to match Calls page rounded button styling */
+  padding: 10px 20px;
   border: none;
-  border-radius: 30px;
-  padding: 8px 15px;
+  background: var(--content-bg);
+  color: var(--text-color);
   font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.view-btn:hover {
+  background: rgba(150, 75, 0, 0.05);
+}
+
+.view-btn.active {
+  background: var(--accent-color);
+  color: white;
+  border-color: var(--accent-color);
+}
+
+.filter-section {
+  margin-bottom: 16px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filter-tab {
+  background-color: var(--input-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
   cursor: pointer;
   white-space: nowrap;
-  transition: background-color 0.3s;
+  transition: all 0.2s ease;
   font-weight: 500;
 }
 
 .filter-tab.active {
   background-color: var(--accent-color);
   color: white;
+  border-color: var(--accent-color);
 }
 
 .filter-tab:hover:not(.active) {
   background-color: rgba(150, 75, 0, 0.1);
+  border-color: var(--accent-color);
 }
 
 .cases-container-inner {
@@ -667,6 +738,10 @@ body {
   gap: 12px;
   /* Make cards stretch to container width */
   width: 100%;
+  max-width: 900px;
+  min-width: 400px;
+  /* Center cards in container */
+  align-self: center;
 }
 
 .cases-list::-webkit-scrollbar {
@@ -922,6 +997,156 @@ body {
 .case-detail-drawer .detail-value.abusive {
   color: #ff3b30;
 }
+
+/* Added comprehensive table styles */
+.cases-table-container {
+  flex: 1;
+  overflow: hidden;
+  background: var(--content-bg);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.cases-table-wrapper {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: calc(100vh - 300px);
+}
+
+.cases-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.cases-table thead {
+  background: var(--header-bg);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.cases-table th {
+  padding: 14px 12px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-color);
+  border-bottom: 2px solid var(--border-color);
+  white-space: nowrap;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cases-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-color);
+  vertical-align: middle;
+}
+
+.table-row {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.table-row:hover {
+  background: rgba(150, 75, 0, 0.05);
+}
+
+.table-row.selected {
+  background: rgba(150, 75, 0, 0.1);
+  border-left: 3px solid var(--accent-color);
+}
+
+.case-id-cell {
+  font-weight: 600;
+  color: var(--accent-color);
+  min-width: 120px;
+}
+
+.created-by-cell,
+.source-cell {
+  min-width: 120px;
+}
+
+.created-on-cell {
+  min-width: 100px;
+  font-size: 13px;
+}
+
+.priority-cell,
+.status-cell {
+  min-width: 100px;
+}
+
+.priority-badge,
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.priority-badge.high {
+  background: rgba(255, 59, 48, 0.1);
+  color: var(--high-priority);
+}
+
+.priority-badge.medium {
+  background: rgba(255, 165, 0, 0.1);
+  color: var(--medium-priority);
+}
+
+.priority-badge.low,
+.priority-badge.normal {
+  background: rgba(76, 175, 80, 0.1);
+  color: var(--low-priority);
+}
+
+.status-badge.open {
+  background: rgba(76, 175, 80, 0.1);
+  color: var(--success-color);
+}
+
+.status-badge.pending {
+  background: rgba(255, 165, 0, 0.1);
+  color: var(--pending-color);
+}
+
+.status-badge.closed {
+  background: rgba(128, 128, 128, 0.1);
+  color: var(--unassigned-color);
+}
+
+.actions-cell {
+  width: 60px;
+  text-align: center;
+}
+
+.action-btn {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 6px;
+  cursor: pointer;
+  color: var(--text-color);
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn:hover {
+  background: var(--accent-color);
+  color: white;
+  border-color: var(--accent-color);
+}
+
 /* Responsive styles */
 @media (max-width: 1024px) {
   .cases-container-inner {
@@ -933,17 +1158,36 @@ body {
     left: 0;
     right: 0;
   }
+  
+  .controls-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .cases-table {
+    font-size: 13px;
+  }
+  
+  .cases-table th,
+  .cases-table td {
+    padding: 10px 8px;
+  }
 }
+
 @media (max-width: 768px) {
   .main-content {
     margin-left: 0;
-    padding: 15px;
   }
 
-  .header {
+  .cases-container {
+    padding: 16px;
+  }
+
+  .header-top {
     flex-direction: column;
     align-items: flex-start;
-    gap: 15px;
+    gap: 12px;
   }
 
   .header-left {
@@ -951,12 +1195,40 @@ body {
     justify-content: space-between;
   }
 
-  .header h1 {
-    font-size: 20px;
+  .page-title {
+    font-size: 24px;
   }
 
-  .cases-container {
-    padding: 10px;
+  .search-container {
+    max-width: 100%;
+  }
+  
+  .view-toggle {
+    width: 100%;
+    gap: 4px;
+  }
+  
+  .view-btn {
+    flex: 1;
+    text-align: center;
+  }
+  
+  .filter-section {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  .cases-table-wrapper {
+    max-height: calc(100vh - 350px);
+  }
+  
+  .cases-table {
+    font-size: 12px;
+  }
+  
+  .cases-table th,
+  .cases-table td {
+    padding: 8px 6px;
   }
 
   .case-meta {
@@ -967,9 +1239,11 @@ body {
     padding-top: 4px;
   }
 }
+
 .cases-main-content {
-  padding-top: 8px;
+  padding-top: 4px;
 }
+
 :root {
   --drawer-bg-dark: rgba(34, 34, 34, 0.98);
   --drawer-bg-light: #fff;
@@ -990,6 +1264,7 @@ body {
   --priority-dot-border-light: #fff;
   --priority-dot-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
 }
+
 [data-theme="light"] .case-detail-drawer {
   background: var(--drawer-bg-light);
 }
