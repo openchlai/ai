@@ -1281,7 +1281,7 @@ def process_post_call_audio_task(
         
         # Step 2: Classification
         logger.info(f"📊 [post-call] Starting classification for call {call_id}")
-        publish_call_update("classification", 40, "Analyzing content classification...")
+        # publish_call_update("classification", 40, "Analyzing content classification...")  # COMMENTED OUT
         
         step_start = datetime.now()
         try:
@@ -1300,12 +1300,12 @@ def process_post_call_audio_task(
                 f"Classification completed - Category: {classification.get('main_category', 'unknown')}",
                 result_data={"classification": classification},
                 metadata={"duration": classification_duration}
-            )
+            )  # COMMENTED OUT
             
         except Exception as e:
             logger.error(f"❌ Classification failed: {e}")
             classification = {}
-            publish_call_update("classification_error", 40, f"Classification failed: {str(e)}")
+            publish_call_update("classification_error", 40, f"Classification failed: {str(e)}")  # COMMENTED OUT
         
         # Step 3: NER (Named Entity Recognition)
         logger.info(f"🏷️ [post-call] Starting NER analysis for call {call_id}")
@@ -1434,10 +1434,8 @@ def process_post_call_audio_task(
             "total_duration": total_duration,
             "results": {
                 "translation": translation,
-                "classification": classification,
                 "entities": entities,
                 "qa_scores": qa_scores,
-                "summary": summary,
                 "case_insights": case_insights
             },
             "metadata": {

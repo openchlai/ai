@@ -84,12 +84,12 @@ class CallSessionManager:
             logger.info(f"📞 [session] Started call session: {call_id}")
             logger.info(f"📞 [session] Active sessions: {len(self.active_sessions)}")
             
-            # Send call start notification to agent
-            if AGENT_NOTIFICATIONS_ENABLED:
-                try:
-                    await agent_notification_service.send_call_start(call_id, connection_info)
-                except Exception as e:
-                    logger.error(f"❌ Failed to send call start notification for {call_id}: {e}")
+            # Send call start notification to agent - COMMENTED OUT
+            # if AGENT_NOTIFICATIONS_ENABLED:
+            #     try:
+            #         await agent_notification_service.send_call_start(call_id, connection_info)
+            #     except Exception as e:
+            #         logger.error(f"❌ Failed to send call start notification for {call_id}: {e}")
             
             # Start cleanup task if not running
             if self._cleanup_task is None:
@@ -278,7 +278,7 @@ class CallSessionManager:
                         'start_time': session.start_time.isoformat(),
                         'end_time': session.last_activity.isoformat()
                     }
-                    await agent_notification_service.send_call_end(call_id, reason, final_stats)
+                    # await agent_notification_service.send_call_end(call_id, reason, final_stats)  # COMMENTED OUT
                 except Exception as e:
                     logger.error(f"❌ Failed to send call end notification for {call_id}: {e}")
             
