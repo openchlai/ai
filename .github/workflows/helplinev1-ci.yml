@@ -1,4 +1,4 @@
-name: HelplineV1 Staging Pipeline
+name: HelplineV1 CI/CD Pipeline
 permissions:
   contents: write
   pull-requests: write
@@ -130,7 +130,7 @@ jobs:
           git commit -m "Update coverage report [skip ci]" || echo "No changes to commit"
           git push origin HEAD:${GITHUB_HEAD_REF}
 
-  # Build Docker Images
+  # Build Docker Images - runs on all pushes when tests pass
   build-images:
     runs-on: ubuntu-latest
     needs: unit-tests
@@ -184,11 +184,11 @@ jobs:
           echo "php-tag=${{ env.PHP_IMAGE_TAG }}" >> $GITHUB_OUTPUT
           echo "nginx-tag=${{ env.NGINX_IMAGE_TAG }}" >> $GITHUB_OUTPUT
 
-  # Deploy to Staging - isolated and safe for shared server
+  # Deploy to Staging - triggers when PR is merged to main
   deploy-staging:
     runs-on: ubuntu-latest
     needs: [unit-tests, build-images]
-    if: github.ref == 'refs/heads/main' && needs.build-images.result == 'success'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.build-images.result == 'success'
     environment: staging
     
     steps:
@@ -350,10 +350,11 @@ jobs:
     steps:
       - name: Generate deployment summary
         run: |
-          echo "## HelplineV1 Staging Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## HelplineV1 Pipeline Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
           echo "**Commit:** [\`${GITHUB_SHA:0:7}\`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})" >> $GITHUB_STEP_SUMMARY
+          echo "**Event:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
           echo "### Pipeline Results" >> $GITHUB_STEP_SUMMARY
@@ -373,7 +374,10 @@ jobs:
             echo "### Docker Images" >> $GITHUB_STEP_SUMMARY
             echo "- PHP: \`${{ needs.build-images.outputs.php-image-tag }}\`" >> $GITHUB_STEP_SUMMARY
             echo "- Nginx: \`${{ needs.build-images.outputs.nginx-image-tag }}\`" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "### Pull Request Testing Complete" >> $GITHUB_STEP_SUMMARY
+            echo "Tests passed, images built. Ready for merge to deploy to staging." >> $GITHUB_STEP_SUMMARY
           elif [ "${{ github.ref }}" != "refs/heads/main" ]; then
             echo "### Feature Branch Complete" >> $GITHUB_STEP_SUMMARY
-            echo "Tests passed, images built. Ready for merge to deploy to staging." >> $GITHUB_STEP_SUMMARY
+            echo "Tests passed, images built. Create PR to deploy to staging." >> $GITHUB_STEP_SUMMARY
           fi
