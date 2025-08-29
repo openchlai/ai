@@ -198,17 +198,17 @@ jobs:
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_KEY }}" > ~/.ssh/id_rsa
+          echo "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.STAGING_HOST }} >> ~/.ssh/known_hosts
 
       - name: Verify Docker availability
         run: |
-          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'docker --version && docker-compose --version || { echo "Docker/Docker-Compose not available"; exit 1; }'
+          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.STAGING_HOST }} 'docker --version && docker-compose --version || { echo "Docker/Docker-Compose not available"; exit 1; }'
 
       - name: Create isolated staging directory
         run: |
-          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'mkdir -p ~/helplinev1-staging && echo "Staging directory ready"'
+          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.STAGING_HOST }} 'mkdir -p ~/helplinev1-staging && echo "Staging directory ready"'
 
       - name: Prepare and copy application files
         working-directory: helplinev1
@@ -220,16 +220,16 @@ jobs:
           tar -czf helplinev1-staging.tar.gz application/ rest_api/ docker/
           
           # Copy to server
-          scp helplinev1-staging.tar.gz ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/
-          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'cd ~/helplinev1-staging && tar -xzf ~/helplinev1-staging.tar.gz && rm ~/helplinev1-staging.tar.gz'
+          scp helplinev1-staging.tar.gz ${{ secrets.EC2_USER }}@${{ secrets.STAGING_HOST }}:~/
+          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.STAGING_HOST }} 'cd ~/helplinev1-staging && tar -xzf ~/helplinev1-staging.tar.gz && rm ~/helplinev1-staging.tar.gz'
 
       - name: Login to container registry
         run: |
-          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin'
+          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.STAGING_HOST }} 'echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin'
 
       - name: Pull latest images
         run: |
-          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'docker pull ${{ needs.build-images.outputs.php-image-tag }} && docker pull ${{ needs.build-images.outputs.nginx-image-tag }}'
+          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.STAGING_HOST }} 'docker pull ${{ needs.build-images.outputs.php-image-tag }} && docker pull ${{ needs.build-images.outputs.nginx-image-tag }}'
 
       - name: Create staging docker-compose configuration
         run: |
@@ -299,15 +299,15 @@ jobs:
           EOF
           
           # Copy to server
-          scp docker-compose-staging.yml ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/helplinev1-staging/docker-compose.yml
+          scp docker-compose-staging.yml ${{ secrets.EC2_USER }}@${{ secrets.STAGING_HOST }}:~/helplinev1-staging/docker-compose.yml
 
       - name: Stop existing staging containers
         run: |
-          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'cd ~/helplinev1-staging && docker-compose down --remove-orphans || echo "No existing staging containers"'
+          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.STAGING_HOST }} 'cd ~/helplinev1-staging && docker-compose down --remove-orphans || echo "No existing staging containers"'
 
       - name: Start staging environment
         run: |
-          ssh -o ServerAliveInterval=60 -o ServerAliveCountMax=3 -T ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'cd ~/helplinev1-staging && nohup docker-compose up -d > docker-compose.log 2>&1 && echo "Containers started in background"'
+          ssh -o ServerAliveInterval=60 -o ServerAliveCountMax=3 -T ${{ secrets.EC2_USER }}@${{ secrets.STAGING_HOST }} 'cd ~/helplinev1-staging && nohup docker-compose up -d > docker-compose.log 2>&1 && echo "Containers started in background"'
 
       - name: Wait for containers to initialize
         run: |
@@ -316,7 +316,7 @@ jobs:
 
       - name: Check container status
         run: |
-          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'docker ps --filter name=helpline-staging --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"'
+          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.STAGING_HOST }} 'docker ps --filter name=helpline-staging --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"'
 
       - name: Verify deployment with health check
         run: |
@@ -324,18 +324,18 @@ jobs:
           sleep 60
           
           # Check if web service responds
-          if ssh -T ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'curl -f http://localhost:8890'; then
+          if ssh -T ${{ secrets.EC2_USER }}@${{ secrets.STAGING_HOST }} 'curl -f http://localhost:8890'; then
             echo "Staging deployment successful!"
           else
             echo "Health check failed, checking container logs..."
-            ssh -T ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'cd ~/helplinev1-staging && docker-compose logs --tail=20'
+            ssh -T ${{ secrets.EC2_USER }}@${{ secrets.STAGING_HOST }} 'cd ~/helplinev1-staging && docker-compose logs --tail=20'
             exit 1
           fi
 
       - name: Display staging information
         run: |
           echo "### Staging Deployment Complete ###"
-          echo "Staging URL: http://${{ secrets.EC2_HOST }}:8890"
+          echo "Staging URL: http://${{ secrets.STAGING_HOST }}:8890"
           echo "Database Port: 3308 (MySQL)"
           echo "HTTPS Port: 8445"
           echo "Container Prefix: helpline-staging-*"
@@ -367,9 +367,9 @@ jobs:
           
           if [ "${{ needs.deploy-staging.result }}" == "success" ]; then
             echo "### Staging Environment Ready" >> $GITHUB_STEP_SUMMARY
-            echo "**Access URL:** http://${{ secrets.EC2_HOST }}:8890" >> $GITHUB_STEP_SUMMARY
+            echo "**Access URL:** http://${{ secrets.STAGING_HOST }}:8890" >> $GITHUB_STEP_SUMMARY
             echo "**Database:** localhost:3308" >> $GITHUB_STEP_SUMMARY
-            echo "**SSL:** https://${{ secrets.EC2_HOST }}:8445" >> $GITHUB_STEP_SUMMARY
+            echo "**SSL:** https://${{ secrets.STAGING_HOST }}:8445" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "### Docker Images" >> $GITHUB_STEP_SUMMARY
             echo "- PHP: \`${{ needs.build-images.outputs.php-image-tag }}\`" >> $GITHUB_STEP_SUMMARY
