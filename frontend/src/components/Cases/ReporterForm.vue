@@ -2,144 +2,119 @@
     <div class="reporter-container">
         <h3>New Reporter</h3>
 
+        <form class="case-form" @submit.prevent="validateAndProceed(1)">
+            <div class="form-section">
+                <div class="section-title">Select Reporter</div>
+                <p class="section-description">
+                    Choose an existing contact or create a new reporter for this case.
+                </p>
+
+                <div class="search-section">
+                    <div class="search-row">
+                        <div class="search-box">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2" />
+                                <path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2" />
+                            </svg>
+                            <input v-model="searchQuery" type="text" placeholder="Search by name or phone..."
+                                class="search-input" />
+                            <!-- Live suggestions -->
+                            <ul class="search-suggestions" v-if="debouncedQuery && filteredContacts.length"
+                                :style="{ width: suggestionWidth }">
+                                <li v-for="contact in filteredContacts.slice(0, 8)"
+                                    :key="contact[casesStore.cases_k.id[0]]" class="suggestion-item"
+                                    @click="selectExistingReporter(contact)">
+                                    <span class="suggestion-name">{{ contact[casesStore.cases_k.reporter_fullname[0]] ||
+                                        'Unnamed' }}</span>
+                                    <span class="suggestion-phone">{{ contact[casesStore.cases_k.reporter_phone[0]] ||
+                                        '' }}</span>
+                                </li>
+                            </ul>
+                            <div class="search-empty" v-else-if="debouncedQuery && !filteredContacts.length"
+                                :style="{ width: suggestionWidth }">
+                                No matches found
+                            </div>
+                        </div>
+                        <button type="button" class="create-reporter-btn" @click="createNewReporter">
+                            + New Reporter
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Updated contacts list format -->
+                <div class="contacts-list" v-if="searchQuery && filteredContacts.length">
+                    <div v-for="contact in filteredContacts" :key="contact[casesStore.cases_k.id[0]]"
+                        class="contact-item"
+                        :class="{ selected: selectedReporter && selectedReporter[casesStore.cases_k.id[0]] === contact[casesStore.cases_k.id[0]] }"
+                        @click="selectExistingReporter(contact)">
+                        <div class="contact-avatar">
+                            <span>{{
+                                getInitials(
+                                    contact[casesStore.cases_k.reporter_fullname[0]] ||
+                                    "NA"
+                                )
+                                    .slice(0, 2)
+                                .toUpperCase()
+                                }}</span>
+                        </div>
+                        <div class="contact-details">
+                            <div class="contact-main-info">
+                                <div class="contact-name">
+                                    {{
+                                        contact[casesStore.cases_k.reporter_fullname[0]] ||
+                                        "Untitled Case"
+                                    }}
+                                </div>
+                                <div class="contact-phone">{{ contact[casesStore.cases_k.reporter_phone[0]] }}</div>
+                            </div>
+                            <div class="contact-meta-info">
+                                <div class="contact-tags">
+                                    <span class="contact-tag">{{ contact[casesStore.cases_k.reporter_age[0]] }}y</span>
+                                    <span class="contact-tag">{{ contact[casesStore.cases_k.reporter_sex[0]] }}</span>
+                                    <span class="contact-tag location">📍 {{
+                                        contact[casesStore.cases_k.reporter_location[0]]}}</span>
+                                </div>
+                                <div class="contact-timestamp">{{ new Date(contact[casesStore.cases_k.dt[0]] *
+                                    1000).toLocaleString('en-US') }}</div>
+                            </div>
+                        </div>
+                        <div class="contact-select-indicator">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <polyline points="9,18 15,12 9,6" stroke="currentColor" stroke-width="2" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button v-if="selectedReporter" type="submit" class="btn btn-primary btn-large">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5 12l5 5L20 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                        Continue with {{ selectedReporter?.[casesStore.cases_k.reporter_fullname[0]] }}
+                    </button>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-cancel" @click="cancelForm">
+                    Cancel
+                </button>
+                <div>
+                    <button type="button" class="btn btn-skip" @click="skipStep(1)">
+                        Skip
+                    </button>
+                    <button type="submit" class="btn btn-next" :disabled="!selectedReporter">
+                        Next
+                    </button>
+                </div>
+            </div>
+        </form>
+
         <!-- Personal Information -->
-        <div class="form-section">
-            <h4 class="section-title">Personal Information</h4>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label for="name">Name</label>
-                    <input id="name" type="text" placeholder="Enter Contact's Names" v-model="reporter.name" />
-                </div>
 
-                <div class="form-group">
-                    <label for="dob">Date of Birth</label>
-                    <input id="dob" type="date" v-model="reporter.dob" />
-                </div>
-
-                <div class="form-group">
-                    <label for="ageRange">Age Group</label>
-                    <select id="ageRange" v-model="reporter.ageRange">
-                        <option value="">Select Age Group</option>
-                        <option v-for="option in ageOptions" :key="option" :value="option">{{ option }}</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="gender">Sex</label>
-                    <select id="gender" v-model="reporter.gender">
-                        <option value="">Select Gender</option>
-                        <option v-for="option in genderOptions" :key="option" :value="option">{{ option }}</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-
-        <!-- Location Information -->
-        <div class="form-section">
-            <h4 class="section-title">Location Information</h4>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label for="location">Location</label>
-                    <select id="location" v-model="reporter.location">
-                        <option value="">Select Location</option>
-                        <option v-for="option in locationOptions" :key="option" :value="option">{{ option }}</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="landmark">Nearest Landmark</label>
-                    <input id="landmark" type="text" placeholder="Enter Nearest Landmark" v-model="reporter.landmark" />
-                </div>
-
-                <div class="form-group">
-                    <label for="nationality">Nationality</label>
-                    <select id="nationality" v-model="reporter.nationality">
-                        <option value="">Select Nationality</option>
-                        <option v-for="option in nationalityOptions" :key="option" :value="option">{{ option }}</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="tribe">Tribe</label>
-                    <select id="tribe" v-model="reporter.tribe">
-                        <option value="">Select Tribe</option>
-                        <option v-for="option in tribeOptions" :key="option" :value="option">{{ option }}</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-
-        <!-- Identification -->
-        <div class="form-section">
-            <h4 class="section-title">Identification</h4>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label for="idType">ID Type</label>
-                    <select id="idType" v-model="reporter.idType">
-                        <option value="">Select ID Type</option>
-                        <option v-for="option in idTypeOptions" :key="option" :value="option">{{ option }}</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="idNumber">ID Number</label>
-                    <input id="idNumber" type="text" placeholder="Enter Reporter's ID Number"
-                        v-model="reporter.idNumber" />
-                </div>
-
-                <div class="form-group">
-                    <label for="language">Language</label>
-                    <select id="language" v-model="reporter.language">
-                        <option value="">Select Language</option>
-                        <option v-for="option in languageOptions" :key="option" :value="option">{{ option }}</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="isRefugee">Is a Refugee?</label>
-                    <select id="isRefugee" v-model="reporter.isRefugee">
-                        <option value="">Select Option</option>
-                        <option v-for="option in refugeeOptions" :key="option" :value="option">{{ option }}</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-
-        <!-- Contact Information -->
-        <div class="form-section">
-            <h4 class="section-title">Contact Information</h4>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label for="phone">Phone Number</label>
-                    <input id="phone" type="tel" placeholder="Enter Reporter's Phone Number" v-model="reporter.phone" />
-                </div>
-
-                <div class="form-group">
-                    <label for="altPhone">Alternative Phone</label>
-                    <input id="altPhone" type="tel" placeholder="Enter Alternate Phone Number"
-                        v-model="reporter.altPhone" />
-                </div>
-
-                <div class="form-group">
-                    <label for="email">Email</label>
-                    <input id="email" type="email" placeholder="Enter Reporter's Email Address"
-                        v-model="reporter.email" />
-                </div>
-            </div>
-        </div>
-
-        <!-- Checkbox -->
-        <div class="checkbox-group">
-            <input id="isClient" type="checkbox" v-model="reporter.isClient" />
-            <label for="isClient">Reporter is also a Client</label>
-        </div>
-
-        <!-- Debug JSON -->
-        <div
-            style="margin-top: 20px; padding: 10px; background-color: var(--card-bg); border-radius: var(--border-radius);">
-            <h4 style="color: var(--accent-color); margin-bottom: 10px;">Current Data:</h4>
-            <pre style="font-size: 12px; overflow: auto;">{{ JSON.stringify(reporter, null, 2) }}</pre>
-        </div>
     </div>
 </template>
 
