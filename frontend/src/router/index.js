@@ -13,8 +13,9 @@ import CaseCreation from '../pages/CaseCreation.vue'
 import superadmin from '../pages/SuperAdminDashboard.vue'
 import AdminPanel from '../pages/AdminPanel.vue'
 import TestCall from '../pages/TestCall.vue'
-import Test from '../pages/Test.vue'
+import Test from '../pages/test.vue'
 import Reports from '../pages/Reports.vue'
+
 
 const routes = [
   { path: '/', component: Login },

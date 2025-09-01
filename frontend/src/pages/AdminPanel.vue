@@ -1041,99 +1041,118 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr
-                    v-for="case_ in filteredCases"
-                    :key="case_.id"
-                    class="case-row"
-                  >
-                    <td class="case-cell">
-                      <div class="case-info">
-                        <div class="case-number">{{ case_.caseNumber }}</div>
-                        <div class="case-title">{{ case_.title }}</div>
-                        <div class="case-client">{{ case_.clientName }}</div>
-                      </div>
-                    </td>
-                    <td>
-                      <span
-                        class="priority-badge"
-                        :class="case_.priority.toLowerCase()"
-                      >
-                        {{ case_.priority }}
-                      </span>
-                    </td>
-                    <td>
-                      <span
-                        class="status-badge"
-                        :class="case_.status.toLowerCase().replace(' ', '-')"
-                      >
-                        {{ case_.status }}
-                      </span>
-                    </td>
-                    <td>
-                      <div class="assignee-info">
-                        <div class="assignee-avatar">
-                          <span>{{ getInitials(case_.assignedTo) }}</span>
-                        </div>
-                        <span>{{ case_.assignedTo }}</span>
-                      </div>
-                    </td>
-                    <td>{{ case_.category }}</td>
-                    <td>{{ formatDate(case_.createdAt) }}</td>
-                    <td>
-                      <div class="case-actions">
-                        <button
-                          class="action-btn view-btn"
-                          @click="viewCase(case_.id)"
-                        >
-                          <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
-                              stroke="currentColor"
-                              stroke-width="2"
-                            />
-                            <circle
-                              cx="12"
-                              cy="12"
-                              r="3"
-                              stroke="currentColor"
-                              stroke-width="2"
-                            />
-                          </svg>
-                          View
-                        </button>
-                        <button
-                          class="action-btn edit-btn"
-                          @click="editCase(case_.id)"
-                        >
-                          <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-                              stroke="currentColor"
-                              stroke-width="2"
-                            />
-                            <path
-                              d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
-                              stroke="currentColor"
-                              stroke-width="2"
-                            />
-                          </svg>
-                          Edit
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+          <tr
+  v-for="(case_, index) in cases"
+  :key="case_[k.id?.[0]] || index"
+  class="case-row"
+>
+  <td class="case-cell">
+    <div class="case-info">
+      <div class="case-number">
+        {{ case_[k.id?.[0]] || 'N/A' }}
+      </div>
+      <div class="case-title">
+        {{ case_[k.cat_0?.[0]] || 'No Title' }}
+      </div>
+      <div class="case-client">
+        {{ case_[k.reporter_fullname?.[0]] || 'Unknown' }}
+      </div>
+    </div>
+  </td>
+
+  <td>
+    <span
+      class="priority-badge"
+      :class="( 'low')"
+    >
+      {{ case_[k.priority?.[0]] || 'Low' }}
+    </span>
+  </td>
+
+  <td>
+    <span
+      class="status-badge"
+      :class="( 'open')"
+    >
+      {{ case_[k.status?.[0]] || 'Open' }}
+    </span>
+  </td>
+
+  <td>
+    <div class="assignee-info">
+      <div class="assignee-avatar">
+        <span>
+          {{ getInitials(case_[k.created_by?.[0]] || '') }}
+        </span>
+      </div>
+      <span>
+        {{ case_[k.created_by?.[0]] || 'Unassigned' }}
+      </span>
+    </div>
+  </td>
+
+  <td>
+    {{ case_[k.src?.[0]] || 'Uncategorized' }}
+  </td>
+
+  <td>
+    {{ convertUnixToDate(case_[k.hr?.[0]]) }}
+  </td>
+ <td>
+    <div class="case-actions">
+      <button
+        class="action-btn view-btn"
+        @click="viewCase(case_[k.id])"
+      >
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <circle
+            cx="12"
+            cy="12"
+            r="3"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+        </svg>
+        View
+      </button>
+      <button
+        class="action-btn edit-btn"
+        @click="editCase(case_[k.id])"
+      >
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+          <path
+            d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+        </svg>
+        Edit
+      </button>
+    </div>
+  </td>
+</tr>
                 </tbody>
               </table>
             </div>
@@ -2584,6 +2603,7 @@ const recentCases = ref([]);
 const casesByStatus = ref([]);
 const casesByPriority = ref([]);
 const k = ref([]);
+const cases = ref([]);
 
 // Computed values
 const totalCases = ref(0);
@@ -2674,33 +2694,7 @@ function mapStatus(statusCode) {
   }
 }
 
-// Map timeframe to x-axis key
-function getXAxisKey(timeframe) {
-  switch (timeframe) {
-    case '7days': return 'd'    // days
-    case '30days': return 'wk'  // weeks (for 30 days, weekly grouping makes sense)
-    case '90days': return 'mth' // months
-    default: return 'd'
-  }
-}
 
-// Example: Get chart data based on selected timeframe
-const chartData = computed(() => {
-  const xKey = getXAxisKey(selectedTimeframe.value)
-
-  // Placeholder: For now, let's assume we're grouping by xKey
-  // and y-axis is based on 'status'
-  // In real use: filter casesStore.cases by date range, group by xKey, count per status
-  return [
-    { label: 'Mon', value: 60 },
-    { label: 'Tue', value: 80 },
-    { label: 'Wed', value: 45 },
-    { label: 'Thu', value: 90 },
-    { label: 'Fri', value: 70 },
-    { label: 'Sat', value: 85 },
-    { label: 'Sun', value: 55 }
-  ]
-})
 
 onMounted(async () => {
   await caseStore.listCases({ _c: 3 });
@@ -2724,6 +2718,11 @@ onMounted(async () => {
     metrics: "case_count",
   });
   casesByPriority.value = caseStore.cases;
+
+  await caseStore.listCases();
+  cases.value = caseStore.cases;
+  k.value = caseStore.cases_k
+  console.log("cases:", cases.value);
 
   calculateTotal();
   calculateActiveCases();
@@ -3216,9 +3215,16 @@ const navigateTo = (path) => {
   console.log(`Navigating to: ${path}`);
 };
 
-const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleDateString();
-};
+function convertUnixToDate(unixTimestamp) {
+  // If the timestamp is in seconds (10 digits), multiply by 1000 to convert to milliseconds
+  const timestamp = unixTimestamp < 10000000000 ? unixTimestamp * 1000 : unixTimestamp;
+
+  // Create a new Date object
+  const date = new Date(timestamp);
+
+  // Format the date to a readable string
+  return date.toLocaleString(); // e.g., "8/27/2025, 10:30:00 AM"
+}
 
 const formatTime = (date) => {
   return new Date(date).toLocaleTimeString([], {
@@ -3228,11 +3234,14 @@ const formatTime = (date) => {
 };
 
 const getInitials = (name) => {
+  if (!name || typeof name !== 'string') return '';
   return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("");
+    .split(' ')
+    .map(part => part[0])
+    .join('')
+    .toUpperCase();
 };
+
 
 const startEditingRole = async (userId) => {
   editingRole.value = userId;
