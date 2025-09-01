@@ -1,0 +1,82 @@
+/* BASE CSS */
+/* Basic HTML elements */
+body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  min-height: 100vh;
+  display: flex;
+  transition: background-color 0.3s, color 0.3s;
+  overflow: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 0.5em;
+}
+
+p {
+  margin-bottom: 1em;
+  color: var(--text-color);
+}
+
+a {
+  color: var(--accent-color);
+  transition: color 0.2s ease;
+}
+a:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
+button {
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  background: var(--accent-color);
+  color: #fff;
+  transition: background 0.3s ease;
+}
+button:hover {
+  background: var(--accent-hover);
+}
+
+input, textarea, select {
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.5rem;
+  background: var(--content-bg);
+  color: var(--text-color);
+}
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th, td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+  text-align: left;
+}
+th {
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+/* Incorporate your dashboard and UI styles */
+.main-content,
+.dashboard-container,
+.dashboard-card,
+.status-badge,
+.view-tab,
+.dashboard-table {
+  background: var(--content-bg);
+  color: var(--text-color);
+  border-color: var(--border-color);
+}
+
+/* Keep the rest of your provided styles */
