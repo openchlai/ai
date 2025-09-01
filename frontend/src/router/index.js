@@ -10,6 +10,7 @@ import Wallboard from '../pages/Wallboard.vue'
 import Settings from '../pages/Settings.vue'
 import EditProfile from '../pages/EditProfile.vue'
 import CaseCreation from '../pages/CaseCreation.vue'
+import CaseCreation1 from '../pages/CaseCreationStepper.vue'
 import superadmin from '../pages/SuperAdminDashboard.vue'
 import AdminPanel from '../pages/AdminPanel.vue'
 import TestCall from '../pages/TestCall.vue'
@@ -28,6 +29,7 @@ const routes = [
   { path: '/settings', component: Settings },
   { path: '/edit-profile', component: EditProfile },
   { path: '/case-creation', component: CaseCreation },
+  { path: '/case-creation1', component: CaseCreation1 },
   { path: '/superadmin', component: superadmin },
   { path: '/admin', component: AdminPanel },
   { path: '/test-call', component: TestCall },
