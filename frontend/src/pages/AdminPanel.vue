@@ -706,30 +706,30 @@
   <div class="cases-list">
     <div
       v-for="(case_, index) in recentCases"
-      :key="case_[k.id?.[0]] || index"
+      :key="case_[cases_k.id?.[0]] || index"
       class="case-item"
-      @click="viewCase(case_[k.id?.[0]])"
+      @click="viewCase(case_[cases_k.id?.[0]])"
     >
       <div
         class="case-priority"
-        :class="mapPriority(case_[k.priority?.[0]])?.toLowerCase()"
+        :class="mapPriority(case_[cases_k.priority?.[0]])?.toLowerCase()"
       ></div>
 
       <div class="case-info">
         <h4 class="case-title">
-          {{ case_[k.case_category?.[0]] || 'No Title' }}
+          {{ case_[cases_k.case_category?.[0]] || 'No Title' }}
         </h4>
         <p class="case-details">
-          {{ case_[k.case_number?.[0]] || 'N/A' }} •
-          {{ case_[k.assigned_to?.[0]] || 'Unassigned' }}
+          {{ case_[cases_k.case_number?.[0]] || 'N/A' }} •
+          {{ case_[cases_k.assigned_to?.[0]] || 'Unassigned' }}
         </p>
         <p class="case-date">
           {{
-            k.dt
+            cases_k.dt
               ? new Date(
-                  case_[k.hr?.[0]] < 10000000000
-                    ? case_[k.hr?.[0]] * 1000
-                    : case_[k.hr?.[0]] * 3600 * 1000
+                  case_[cases_k.hr?.[0]] < 10000000000
+                    ? case_[cases_k.hr?.[0]] * 1000
+                    : case_[cases_k.hr?.[0]] * 3600 * 1000
                 ).toLocaleString()
               : 'No Date'
           }}
@@ -739,9 +739,9 @@
       <div class="case-status">
         <span
           class="status-badge"
-          :class="mapStatus(case_[k.status?.[0]])?.toLowerCase()"
+          :class="mapStatus(case_[cases_k.status?.[0]])?.toLowerCase()"
         >
-          {{ mapStatus(case_[k.status?.[0]]) }}
+          {{ mapStatus(case_[cases_k.status?.[0]]) }}
         </span>
       </div>
     </div>
@@ -1043,19 +1043,19 @@
                 <tbody>
           <tr
   v-for="(case_, index) in cases"
-  :key="case_[k.id?.[0]] || index"
+  :key="case_[cases_k.id?.[0]] || index"
   class="case-row"
 >
   <td class="case-cell">
     <div class="case-info">
       <div class="case-number">
-        {{ case_[k.id?.[0]] || 'N/A' }}
+        {{ case_[cases_k.id?.[0]] || 'N/A' }}
       </div>
       <div class="case-title">
-        {{ case_[k.cat_0?.[0]] || 'No Title' }}
+        {{ case_[cases_k.cat_0?.[0]] || 'No Title' }}
       </div>
       <div class="case-client">
-        {{ case_[k.reporter_fullname?.[0]] || 'Unknown' }}
+        {{ case_[cases_k.reporter_fullname?.[0]] || 'Unknown' }}
       </div>
     </div>
   </td>
@@ -1065,7 +1065,7 @@
       class="priority-badge"
       :class="( 'low')"
     >
-      {{ case_[k.priority?.[0]] || 'Low' }}
+      {{ case_[cases_k.priority?.[0]] || 'Low' }}
     </span>
   </td>
 
@@ -1074,7 +1074,7 @@
       class="status-badge"
       :class="( 'open')"
     >
-      {{ case_[k.status?.[0]] || 'Open' }}
+      {{ case_[cases_k.status?.[0]] || 'Open' }}
     </span>
   </td>
 
@@ -1082,27 +1082,27 @@
     <div class="assignee-info">
       <div class="assignee-avatar">
         <span>
-          {{ getInitials(case_[k.created_by?.[0]] || '') }}
+          {{ getInitials(case_[cases_k.created_by?.[0]] || '') }}
         </span>
       </div>
       <span>
-        {{ case_[k.created_by?.[0]] || 'Unassigned' }}
+        {{ case_[cases_k.created_by?.[0]] || 'Unassigned' }}
       </span>
     </div>
   </td>
 
   <td>
-    {{ case_[k.src?.[0]] || 'Uncategorized' }}
+    {{ case_[cases_k.src?.[0]] || 'Uncategorized' }}
   </td>
 
   <td>
-    {{ convertUnixToDate(case_[k.hr?.[0]]) }}
+    {{ convertUnixToDate(case_[cases_k.hr?.[0]]) }}
   </td>
  <td>
     <div class="case-actions">
       <button
         class="action-btn view-btn"
-        @click="viewCase(case_[k.id])"
+        @click="viewCase(case_[cases_k.id])"
       >
         <svg
           width="14"
@@ -1128,7 +1128,7 @@
       </button>
       <button
         class="action-btn edit-btn"
-        @click="editCase(case_[k.id])"
+        @click="editCase(case_[cases_k.id])"
       >
         <svg
           width="14"
@@ -1241,184 +1241,164 @@
             </div>
 
             <div class="table-container">
-              <table class="users-table">
-                <thead>
-                  <tr>
-                    <th>User</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    <th>Cases Assigned</th>
-                    <th>Last Active</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr
-                    v-for="user in filteredUsers"
-                    :key="user.id"
-                    class="user-row"
-                  >
-                    <td class="user-cell">
-                      <div class="user-info">
-                        <div class="user-avatar">
-                          <span>{{ getInitials(user.name) }}</span>
-                        </div>
-                        <div class="user-details">
-                          <div class="user-name">{{ user.name }}</div>
-                          <div class="user-email">{{ user.email }}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div class="role-cell">
-                        <select
-                          v-if="editingRole === user.id"
-                          v-model="user.role"
-                          @change="saveUserRole(user.id, user.role)"
-                          @blur="editingRole = null"
-                          class="role-select"
-                        >
-                          <option value="Admin">Admin</option>
-                          <option value="Manager">Manager</option>
-                          <option value="Case Worker">Case Worker</option>
-                          <option value="Supervisor">Supervisor</option>
-                        </select>
-                        <div
-                          v-else
-                          class="role-display"
-                          @click="startEditingRole(user.id)"
-                        >
-                          <span
-                            class="role-badge"
-                            :class="user.role.toLowerCase().replace(' ', '-')"
-                            >{{ user.role }}</span
-                          >
-                          <svg
-                            width="12"
-                            height="12"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="edit-icon"
-                          >
-                            <path
-                              d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-                              stroke="currentColor"
-                              stroke-width="2"
-                            />
-                            <path
-                              d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
-                              stroke="currentColor"
-                              stroke-width="2"
-                            />
-                          </svg>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <span
-                        class="status-badge"
-                        :class="user.status.toLowerCase()"
-                      >
-                        {{ user.status }}
-                      </span>
-                    </td>
-                    <td>{{ user.casesAssigned }}</td>
-                    <td>{{ user.lastActive }}</td>
-                    <td>
-                      <div class="user-actions">
-                        <button
-                          class="action-btn edit-btn"
-                          @click="editUser(user.id)"
-                        >
-                          <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-                              stroke="currentColor"
-                              stroke-width="2"
-                            />
-                            <path
-                              d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
-                              stroke="currentColor"
-                              stroke-width="2"
-                            />
-                          </svg>
-                          Edit
-                        </button>
-                        <button
-                          class="action-btn deactivate-btn"
-                          @click="toggleUserStatus(user.id)"
-                          :class="{
-                            'activate-btn': user.status === 'Inactive',
-                          }"
-                        >
-                          <svg
-                            v-if="user.status === 'Active'"
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <circle
-                              cx="12"
-                              cy="12"
-                              r="10"
-                              stroke="currentColor"
-                              stroke-width="2"
-                            />
-                            <line
-                              x1="15"
-                              y1="9"
-                              x2="9"
-                              y2="15"
-                              stroke="currentColor"
-                              stroke-width="2"
-                            />
-                            <line
-                              x1="9"
-                              y1="9"
-                              x2="15"
-                              y2="15"
-                              stroke="currentColor"
-                              stroke-width="2"
-                            />
-                          </svg>
-                          <svg
-                            v-else
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M22 11.08V12a10 10 0 1 1-5.93-9.14"
-                              stroke="currentColor"
-                              stroke-width="2"
-                            />
-                            <polyline
-                              points="22,4 12,14.01 9,11.01"
-                              stroke="currentColor"
-                              stroke-width="2"
-                            />
-                          </svg>
-                          {{
-                            user.status === "Active" ? "Deactivate" : "Activate"
-                          }}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+  <table class="users-table">
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>Role</th>
+        <th>Status</th>
+        <th>Cases Assigned</th>
+        <th>Last Active</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr
+        v-for="(user, index) in users"
+        :key="user[users_k.id?.[0]] || index"
+        class="user-row"
+      >
+        <td class="user-cell">
+          <div class="user-info">
+            <div class="user-avatar">
+              <span>{{ getInitials(user[users_k.usn?.[0]] || '') }}</span>
             </div>
+            <div class="user-details">
+              <div class="user-name">{{ user[users_k.contact_fullname?.[0]] }}</div>
+              <div class="user-email">{{ user[users_k.contact_email?.[0]] }}</div>
+            </div>
+          </div>
+        </td>
+
+        <td>
+          <div class="role-cell">
+            <select
+              v-if="editingRole === user[users_k.id?.[0]]"
+              v-model="user[users_k.role?.[0]]"
+              @change="saveUserRole(user[users_k.id?.[0]], user[users_k.role?.[0]])"
+              @blur="editingRole = null"
+              class="role-select"
+            >
+              <option value="Admin">Admin</option>
+              <option value="Manager">Manager</option>
+              <option value="Case Worker">Case Worker</option>
+              <option value="Supervisor">Supervisor</option>
+            </select>
+
+            <div
+              v-else
+              class="role-display"
+              @click="startEditingRole(user[users_k.id?.[0]])"
+            >
+              <span
+                class="role-badge"
+                :class="(user[users_k.role?.[0]] || '').toLowerCase().replace(' ', '-')"
+              >
+                {{ user[users_k.role?.[0]] }}
+              </span>
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                class="edit-icon"
+              >
+                <path
+                  d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
+                <path
+                  d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
+              </svg>
+            </div>
+          </div>
+        </td>
+
+        <td>
+          <span
+            class="status-badge"
+            :class="(user[users_k.is_active?.[0]] || '').toLowerCase()"
+          >
+            {{ user[users_k.is_active?.[0]] }}
+          </span>
+        </td>
+
+        <td>{{ user[users_k.casesAssigned?.[0]] || "no such prop" }}</td>
+        <td>{{ user[users_k.last_break?.[0]] || '' }}</td>
+
+        <td>
+          <div class="user-actions">
+            <button
+              class="action-btn edit-btn"
+              @click="editUser(user[users_k.id?.[0]])"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
+                <path
+                  d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
+              </svg>
+              Edit
+            </button>
+
+            <button
+              class="action-btn deactivate-btn"
+              @click="toggleUserStatus(user[users_k.id?.[0]])"
+              :class="{ 'activate-btn': user[users_k.is_active?.[0]] === 'Inactive' }"
+            >
+              <svg
+                v-if="user[users_k.is_active?.[0]] === 'Active'"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+                <line x1="15" y1="9" x2="9" y2="15" stroke="currentColor" stroke-width="2" />
+                <line x1="9" y1="9" x2="15" y2="15" stroke="currentColor" stroke-width="2" />
+              </svg>
+              <svg
+                v-else
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M22 11.08V12a10 10 0 1 1-5.93-9.14"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
+                <polyline points="22,4 12,14.01 9,11.01" stroke="currentColor" stroke-width="2" />
+              </svg>
+              {{ user[users_k.is_active?.[0]] === 'Active' ? 'Deactivate' : 'Activate' }}
+            </button>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
           </div>
         </div>
 
@@ -2602,8 +2582,10 @@ const caseStore = useCaseStore();
 const recentCases = ref([]);
 const casesByStatus = ref([]);
 const casesByPriority = ref([]);
-const k = ref([]);
+const cases_k = ref([]);
 const cases = ref([]);
+const users = ref([]);
+const users_k = ref([]);
 
 // Computed values
 const totalCases = ref(0);
@@ -2699,7 +2681,7 @@ function mapStatus(statusCode) {
 onMounted(async () => {
   await caseStore.listCases({ _c: 3 });
   recentCases.value = caseStore.cases;
-  console.log("recent cases:", recentCases.value);
+//  console.log("recent cases:", recentCases.value);
 
   // Fetch cases grouped by status
   await caseStore.listCases({
@@ -2708,8 +2690,8 @@ onMounted(async () => {
     metrics: "case_count",
   });
   casesByStatus.value = caseStore.cases;
-  k.value = caseStore.cases_k;
-  console.log("cases by k:",  caseStore.cases_k);
+  cases_k.value = caseStore.cases_k;
+ // console.log("cases by cases_k:",  caseStore.cases_k);
 
   // Fetch cases grouped by priority
   await caseStore.listCases({
@@ -2721,8 +2703,8 @@ onMounted(async () => {
 
   await caseStore.listCases();
   cases.value = caseStore.cases;
-  k.value = caseStore.cases_k
-  console.log("cases:", cases.value);
+  cases_k.value = caseStore.cases_k
+ // console.log("cases:", cases.value);
 
   calculateTotal();
   calculateActiveCases();
@@ -2730,10 +2712,14 @@ onMounted(async () => {
   calculateResolvedPercentage();
 
   await userStore.listUsers();
+  users.value = userStore.users;
+  users_k.value = userStore.users_k
+  console.log("users:", users.value);
+
   calculateUsers();
 
-  console.log("Total:", totalCases.value);
-  console.log("Active:", activeCases.value);
+  //console.log("Total:", totalCases.value);
+  //console.log("Active:", activeCases.value);
 });
 
 const isSidebarCollapsed = ref(false);
