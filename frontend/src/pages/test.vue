@@ -1,212 +1,251 @@
-<!-- src/views/UsersView.vue -->
-<script setup>
-import { ref, onMounted } from 'vue';
-import { useUserStore } from '@/stores/users';
-
-const userStore = useUserStore();
-
-// Filters for list, CSV, and pivot
-const filters = ref({
-  _a: '',
-  _c: 20,
-  phone: '',
-  email: ''
-});
-
-// Pivot report data
-const pivotData = ref([]);
-const pivotColumns = ref([]);
-
-// Load initial user list
-onMounted(() => {
-  userStore.listUsers({ _c: filters.value._c });
-});
-
-// View User details
-const handleViewUser = async (userId) => {
-  try {
-    const details = await userStore.viewUser(userId);
-    alert(JSON.stringify(details, null, 2));
-  } catch (err) {
-    console.error('Failed to view user:', err.message);
-  }
-};
-
-// Create a new user (mock data for demo)
-const handleCreateUser = async () => {
-  const payload = {
-    usn: 'newuser',
-    exten: '8123',
-    photo: '123244554556',
-    fname: 'Jane',
-    lname: 'Doe',
-    phone: '0700000000',
-    email: 'jane.doe@example.com'
-  };
-  try {
-    const created = await userStore.createUser(payload);
-    alert('User Created: ' + JSON.stringify(created, null, 2));
-    userStore.listUsers({ _c: filters.value._c });
-  } catch (err) {
-    console.error('Create failed:', err.message);
-  }
-};
-
-// Edit a user (mock data for demo)
-const handleEditUser = async (userId) => {
-  const payload = { fname: 'UpdatedName' };
-  try {
-    const updated = await userStore.editUser(userId, payload);
-    alert('User Updated: ' + JSON.stringify(updated, null, 2));
-    userStore.listUsers({ _c: filters.value._c });
-  } catch (err) {
-    console.error('Edit failed:', err.message);
-  }
-};
-
-// Download CSV
-const handleDownloadCSV = async () => {
-  try {
-    const blob = await userStore.downloadCSV(filters.value);
-    const url = window.URL.createObjectURL(new Blob([blob], { type: 'text/csv' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', 'users.csv');
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
-  } catch (err) {
-    console.error('CSV Download failed:', err.message);
-  }
-};
-
-// Get Pivot Report
-const handlePivotReport = async () => {
-  try {
-    const data = await userStore.getPivotReport({
-      ...filters.value,
-      xaxis: 'role',
-      yaxis: 'enabled'
-    });
-    if (Array.isArray(data) && data.length > 0) {
-      pivotColumns.value = Object.keys(data[0]);
-      pivotData.value = data;
-    } else {
-      pivotColumns.value = [];
-      pivotData.value = [];
-    }
-  } catch (err) {
-    console.error('Pivot report fetch failed:', err.message);
-  }
-};
-</script>
-
 <template>
-  <section class="users-view">
-    <h2>Users List</h2>
-
-    <!-- Filters -->
-    <div class="filters">
-      <input v-model="filters._a" placeholder="Start position (_a)" />
-      <input v-model.number="filters._c" type="number" placeholder="Count (_c)" />
-      <input v-model="filters.phone" placeholder="Phone" />
-      <input v-model="filters.email" placeholder="Email" />
-      <button @click="userStore.listUsers(filters)">Apply Filters</button>
-      <button @click="handleDownloadCSV">Download CSV</button>
-      <button @click="handlePivotReport">Get Pivot Report</button>
+  <div class="analytics-card">
+    <div class="card-header">
+      <div class="section-title">Case Analytics</div>
+      <select class="time-filter" v-model="selectedTimeframe">
+        <option value="h">Hourly</option>
+        <option value="dt">Daily</option>
+        <option value="wk">Weekly</option>
+        <option value="mn">Monthly</option>
+        <option value="yr">Yearly</option>
+      </select>
     </div>
 
-    <!-- Error and Loading states -->
-    <p v-if="userStore.loading">Loading…</p>
-    <p v-else-if="userStore.error" class="error">{{ userStore.error }}</p>
+    <div class="chart-container">
+      <div class="chart-scroll">
+        <svg :width="svgWidth" :height="svgHeight">
+          <!-- Horizontal gridlines -->
+          <g v-for="tick in yTicks" :key="'grid-' + tick">
+            <line
+              :x1="margin.left"
+              :x2="svgWidth - margin.right"
+              :y1="yScale(tick)"
+              :y2="yScale(tick)"
+              stroke="#ddd"
+              stroke-width="1"
+            />
+          </g>
 
-    <!-- Users Table -->
-    <div v-else>
-      <h3>Total Users: {{ userStore.users.length }}</h3>
+          <!-- Bars -->
+          <g v-for="(bar, index) in chartData" :key="'bar-' + index">
+            <rect
+              :x="margin.left + index * (barWidth + barSpacing)"
+              :y="yScale(bar.rawValue)"
+              :width="barWidth"
+              :height="svgHeight - margin.bottom - yScale(bar.rawValue)"
+              fill="url(#barGradient)"
+            />
+            <!-- X-axis labels (timestamps) -->
+            <text
+              :x="margin.left + index * (barWidth + barSpacing) + barWidth / 2"
+              :y="svgHeight - margin.bottom + 15"
+              text-anchor="middle"
+              font-size="10"
+            >
+              {{ formatLabel(bar.label) }}
+            </text>
+          </g>
 
-      <table v-if="userStore.users.length">
-        <thead>
-          <tr>
-            <th v-for="(meta, key) in userStore.users_k" :key="key">
-              {{ meta[3] || key }}
-            </th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="user in userStore.users" :key="user[0]">
-            <td v-for="(meta, key) in userStore.users_k" :key="key">
-              {{ user[parseInt(meta[0])] }}
-            </td>
-            <td>
-              <button @click="handleViewUser(user[0])">View</button>
-              <button @click="handleEditUser(user[0])">Edit</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+          <!-- Y-axis labels -->
+          <g v-for="tick in yTicks" :key="'label-' + tick">
+            <text
+              :x="margin.left - 5"
+              :y="yScale(tick) + 3"
+              text-anchor="end"
+              font-size="10"
+            >
+              {{ tick }}
+            </text>
+          </g>
 
-      <div v-else>
-        <p>No users available.</p>
-      </div>
+          <!-- X-axis line -->
+          <line
+            :x1="margin.left"
+            :x2="svgWidth - margin.right"
+            :y1="svgHeight - margin.bottom"
+            :y2="svgHeight - margin.bottom"
+            stroke="#333"
+            stroke-width="1.2"
+          />
 
-      <!-- Pivot Table -->
-      <div v-if="pivotData.length" class="pivot-section">
-        <h3>Pivot Report</h3>
-        <table>
-          <thead>
-            <tr>
-              <th v-for="col in pivotColumns" :key="col">{{ col }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(row, idx) in pivotData" :key="idx">
-              <td v-for="col in pivotColumns" :key="col">{{ row[col] }}</td>
-            </tr>
-          </tbody>
-        </table>
+          <!-- Y-axis line -->
+          <line
+            :x1="margin.left"
+            :x2="margin.left"
+            :y1="margin.top"
+            :y2="svgHeight - margin.bottom"
+            stroke="#333"
+            stroke-width="1.2"
+          />
+
+          <!-- Gradient for bars -->
+          <defs>
+            <linearGradient id="barGradient" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="var(--accent-color)" />
+              <stop offset="100%" stop-color="#ff7700" />
+            </linearGradient>
+          </defs>
+        </svg>
       </div>
     </div>
-  </section>
+  </div>
 </template>
 
+<script setup>
+import { ref, watch, onMounted, computed } from 'vue'
+import { useCaseStore } from '@/stores/cases'
+
+const casesStore = useCaseStore()
+const selectedTimeframe = ref('dt') // default daily
+const chartData = ref([])
+
+// Chart dimensions & spacing
+const margin = { top: 20, right: 20, bottom: 40, left: 40 }
+const barWidth = 30
+const barSpacing = 15
+const svgHeight = 300
+
+// Dynamic width based on data count
+const svgWidth = computed(() =>
+  Math.max(chartData.value.length * (barWidth + barSpacing) + margin.left + margin.right, 400)
+)
+
+// Fetch data
+async function fetchCases() {
+  console.log('[Analytics] fetching cases with xaxis=', selectedTimeframe.value)
+  try {
+    await casesStore.listCases({
+      xaxis: selectedTimeframe.value,
+      yaxis: 'status',
+      metrics: 'case_count'
+    })
+    processCases(casesStore.cases)
+  } catch (err) {
+    console.error('[Analytics] fetchCases error', err)
+    chartData.value = []
+  }
+}
+
+// Process data
+function processCases(rawRows = []) {
+  const grouped = {}
+  rawRows.forEach(row => {
+    if (!Array.isArray(row)) return
+    let xVal, count
+    if (row.length === 3) {
+      xVal = String(row[0])
+      count = Number(row[2]) || 0
+    } else if (row.length === 2) {
+      xVal = String(row[0])
+      count = Number(row[1]) || 0
+    } else {
+      xVal = String(row[0])
+      count = Number(row[row.length - 1]) || 0
+    }
+    grouped[xVal] = (grouped[xVal] || 0) + count
+  })
+
+  const entries = Object.entries(grouped)
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => {
+      const na = Number(a.label), nb = Number(b.label)
+      if (!isNaN(na) && !isNaN(nb)) return na - nb
+      return String(a.label).localeCompare(String(b.label))
+    })
+
+  chartData.value = entries.map(e => ({
+    label: e.label,
+    rawValue: e.value
+  }))
+}
+
+// Y scale & ticks
+const maxValue = computed(() => Math.max(...chartData.value.map(d => d.rawValue), 1))
+const yScale = (value) =>
+  svgHeight - margin.bottom - (value / maxValue.value) * (svgHeight - margin.top - margin.bottom)
+
+// Generate 5 ticks including 0
+const yTicks = computed(() => {
+  const steps = 5
+  const stepValue = Math.ceil(maxValue.value / steps)
+  return Array.from({ length: steps + 1 }, (_, i) => i * stepValue)
+})
+
+// Format label based on timeframe
+function formatLabel(label) {
+  const timestamp = Number(label) * 1000 // convert seconds → milliseconds
+  const date = new Date(timestamp)
+
+  switch (selectedTimeframe.value) {
+    case 'h': // Hourly
+      return `${date.getHours()}:00`
+
+    case 'dt': // Daily
+      return date.toLocaleDateString('en-US', {
+        day: '2-digit', month: 'short', year: 'numeric'
+      })
+
+    case 'wk': // Weekly
+      // Show starting week date (or use ISO week)
+      const weekStart = new Date(date)
+      weekStart.setDate(date.getDate() - date.getDay()) // Sunday start
+      return `W${getWeekNumber(date)} (${weekStart.toLocaleDateString('en-US', {
+        month: 'short', day: '2-digit'
+      })})`
+
+    case 'mn': // Monthly
+      return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+
+    case 'yr': // Yearly
+      return date.getFullYear()
+
+    default:
+      return label
+  }
+}
+
+// Helper: ISO Week number
+function getWeekNumber(d) {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))
+  const dayNum = date.getUTCDay() || 7
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum)
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1))
+  return Math.ceil((((date - yearStart) / 86400000) + 1) / 7)
+}
+
+
+onMounted(fetchCases)
+watch(selectedTimeframe, fetchCases)
+</script>
+
 <style scoped>
-.users-view {
-  padding: 1rem;
+.analytics-card {
+  background-color: var(--card-bg);
+  border-radius: 30px;
+  padding: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s;
 }
-.filters {
-  margin-bottom: 1rem;
-}
-.filters input {
-  margin-right: 8px;
-}
-.filters button {
-  margin-right: 8px;
-}
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 8px;
-}
-th, td {
-  border: 1px solid #ccc;
-  padding: 6px 8px;
-  text-align: left;
-}
-button {
-  margin-right: 5px;
-  padding: 4px 8px;
+
+.time-filter {
+  padding: 8px 12px;
+  background: var(--background-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-color);
   cursor: pointer;
-  background: #4caf50;
-  color: white;
-  border: none;
-  border-radius: 4px;
+  transition: all 0.3s ease;
 }
-button:hover {
-  background: #45a049;
+
+.chart-container {
+  margin-top: 20px;
+  overflow-x: auto;
 }
-.error {
-  color: #e74c3c;
+
+.chart-scroll {
+  display: inline-block;
+  min-width: 100%;
 }
 </style>
