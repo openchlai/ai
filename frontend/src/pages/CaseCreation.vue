@@ -439,99 +439,7 @@
                 Provide detailed information about the case and incident.
               </p>
 
-              <!-- Audio Upload Section -->
-              <div v-if="isAIEnabled" class="audio-upload-section">
-                <div class="audio-upload-header">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" stroke="currentColor" stroke-width="2"/>
-                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="currentColor" stroke-width="2"/>
-                    <line x1="12" y1="19" x2="12" y2="23" stroke="currentColor" stroke-width="2"/>
-                    <line x1="8" y1="23" x2="16" y2="23" stroke="currentColor" stroke-width="2"/>
-                  </svg>
-                  <span>Audio Recording</span>
-                </div>
-                <div class="audio-upload-container">
-                  <div v-if="!audioFile && !isRecording" class="audio-upload-zone" @click="startRecording">
-                    <div class="upload-icon">
-                      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
-                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" stroke="currentColor" stroke-width="2"/>
-                        <path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="currentColor" stroke-width="2"/>
-                      </svg>
-                    </div>
-                    <div class="upload-text">
-                      <div class="upload-title">Record Audio Statement</div>
-                      <div class="upload-subtitle">Click to start recording or drag audio file here</div>
-                    </div>
-                  </div>
-                  
-                  <div v-if="isRecording" class="recording-controls">
-                    <div class="recording-indicator">
-                      <div class="recording-dot"></div>
-                      <span>Recording... {{ recordingTime }}s</span>
-                    </div>
-                    <div class="recording-actions">
-                      <button type="button" class="btn-recording stop" @click="stopRecording">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <rect x="6" y="6" width="12" height="12" stroke="currentColor" stroke-width="2"/>
-                        </svg>
-                        Stop
-                      </button>
-                    </div>
-                  </div>
-
-                  <div v-if="audioFile" class="audio-preview">
-                    <div class="audio-info">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M9 18V5l12-2v13" stroke="currentColor" stroke-width="2"/>
-                        <circle cx="6" cy="18" r="3" stroke="currentColor" stroke-width="2"/>
-                        <circle cx="18" cy="16" r="3" stroke="currentColor" stroke-width="2"/>
-                      </svg>
-                      <div class="audio-details">
-                        <div class="audio-name">{{ audioFile.name || 'Recorded Audio' }}</div>
-                        <div class="audio-meta">{{ formatFileSize(audioFile.size) }} • {{ audioDuration }}s</div>
-                      </div>
-                    </div>
-                    <div class="audio-actions">
-                      <button type="button" class="btn-audio play" @click="togglePlayback">
-                        <svg v-if="!isPlaying" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <polygon points="5,3 19,12 5,21" stroke="currentColor" stroke-width="2"/>
-                        </svg>
-                        <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <rect x="6" y="4" width="4" height="16" stroke="currentColor" stroke-width="2"/>
-                          <rect x="14" y="4" width="4" height="16" stroke="currentColor" stroke-width="2"/>
-                        </svg>
-                      </button>
-                      <button type="button" class="btn-audio delete" @click="removeAudio">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <polyline points="3,6 5,6 21,6" stroke="currentColor" stroke-width="2"/>
-                          <path d="M19,6v14a2,2 0,0,1-2,2H7a2,2 0,0,1-2-2V6m3,0V4a2,2 0,0,1,2-2h4a2,2 0,0,1,2,2v2" stroke="currentColor" stroke-width="2"/>
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div v-if="audioTranscription" class="transcription-result">
-                    <div class="transcription-header">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="2"/>
-                        <polyline points="14,2 14,8 20,8" stroke="currentColor" stroke-width="2"/>
-                        <line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="2"/>
-                        <line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="2"/>
-                      </svg>
-                      <span>AI Transcription</span>
-                      <button type="button" class="btn-copy" @click="copyTranscription">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke="currentColor" stroke-width="2"/>
-                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2"/>
-                        </svg>
-                        Copy
-                      </button>
-                    </div>
-                    <div class="transcription-text">{{ audioTranscription }}</div>
-                  </div>
-                </div>
-              </div>
+              
 
               <div class="form-group">
                 <label for="case-narrative">Case Narrative*</label>
@@ -1043,7 +951,7 @@
 
       <!-- Enhanced AI Insights Panel -->
       <div v-if="isAIEnabled" class="ai-preview-container">
-        <div class="ai-preview">
+        <div class="ai-preview" style="border:1px solid var(--border-color, rgba(0,0,0,0.08)); border-radius:12px; overflow:hidden; background: var(--card-bg, #fff);">
           <div class="ai-preview-header">
             <svg
               width="24"
@@ -1077,6 +985,66 @@
             </div>
           </div>
           <div class="ai-preview-content">
+            <!-- Audio Upload (AI Panel) -->
+            <div class="ai-preview-section">
+              <div class="ai-preview-section-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" stroke="currentColor" stroke-width="2"/>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                Upload Audio
+              </div>
+              <div class="ai-audio-upload">
+                <input type="file" accept="audio/*" @change="onAudioUpload" />
+                <div v-if="audioFile" class="ai-audio-meta">
+                  <div class="audio-name">{{ audioFile.name || 'Audio file' }}</div>
+                  <div class="audio-meta">{{ formatFileSize(audioFile.size) }} • {{ audioDuration }}s</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Transcription Section (AI Panel) -->
+            <div v-if="audioTranscription" class="ai-preview-section">
+              <div class="ai-preview-section-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="2"/>
+                  <polyline points="14,2 14,8 20,8" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                Case Transcription
+                <button type="button" class="btn-copy" @click="copyTranscription" style="margin-left:auto;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke="currentColor" stroke-width="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2"/>
+                  </svg>
+                  Copy
+                </button>
+              </div>
+              <div class="transcription-text">{{ audioTranscription }}</div>
+              <div class="transcription-verify" style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
+                <div class="question" style="font-weight:600;">Is the transcription correct?</div>
+                <div class="options" style="display:flex; gap:16px; align-items:center;">
+                  <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                    <input
+                      type="radio"
+                      name="transcription-correct"
+                      v-model="isTranscriptionCorrect"
+                      :value="true"
+                    />
+                    <span>Yes</span>
+                  </label>
+                  <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                    <input
+                      type="radio"
+                      name="transcription-correct"
+                      v-model="isTranscriptionCorrect"
+                      :value="false"
+                      @change="enqueueForTranscriptionReview"
+                    />
+                    <span>No</span>
+                  </label>
+                </div>
+              </div>
+            </div>
             
             <!-- Case Summary Section -->
             <div v-if="caseSummary" class="ai-preview-section">
@@ -1174,8 +1142,10 @@
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useTranscriptionsStore } from '@/stores/transcriptionsStore'
 
 const router = useRouter()
+const transcriptionsStore = useTranscriptionsStore()
 
 // State
 const currentStep = ref(1)
@@ -1191,6 +1161,7 @@ const audioFile = ref(null)
 const audioDuration = ref(0)
 const isPlaying = ref(false)
 const audioTranscription = ref('')
+const isTranscriptionCorrect = ref(false)
 let mediaRecorder = null
 let recordingInterval = null
 
@@ -1409,8 +1380,33 @@ const togglePlayback = () => {
 const removeAudio = () => {
   audioFile.value = null
   audioTranscription.value = ''
+  isTranscriptionCorrect.value = false
   audioDuration.value = 0
   isPlaying.value = false
+}
+
+// Handle uploaded audio file
+const onAudioUpload = async (event) => {
+  const file = event.target?.files?.[0]
+  if (!file) return
+  audioFile.value = file
+  isTranscriptionCorrect.value = false
+  // Compute duration via HTMLAudioElement
+  try {
+    const url = URL.createObjectURL(file)
+    const audioEl = new Audio()
+    audioEl.src = url
+    await new Promise((resolve, reject) => {
+      audioEl.addEventListener('loadedmetadata', () => resolve())
+      audioEl.addEventListener('error', (e) => reject(e))
+    })
+    audioDuration.value = Math.round(audioEl.duration || 0)
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    audioDuration.value = 0
+  }
+  // Trigger transcription (mock)
+  transcribeAudio()
 }
 
 const transcribeAudio = async () => {
@@ -1427,6 +1423,22 @@ const transcribeAudio = async () => {
 
 const copyTranscription = () => {
   navigator.clipboard.writeText(audioTranscription.value)
+}
+
+const enqueueForTranscriptionReview = () => {
+  if (isTranscriptionCorrect.value === false && audioTranscription.value) {
+    let audioUrl = null
+    if (audioFile.value instanceof File) {
+      audioUrl = URL.createObjectURL(audioFile.value)
+    }
+    transcriptionsStore.addItem({
+      audioFile: audioFile.value || null,
+      audioUrl,
+      transcription: audioTranscription.value,
+      counsellor: 'Current User',
+      uploadedAt: Date.now()
+    })
+  }
 }
 
 const formatFileSize = (bytes) => {
@@ -1635,3 +1647,94 @@ onMounted(() => {
 })
 </script>
 
+<style scoped>
+/* Ensure consistent typography and polished AI panel UI */
+.case-creation-page {
+  min-height: 0;
+  overflow: auto;
+}
+
+.ai-preview-container {
+  font-family: inherit;
+  position: sticky;
+  top: 16px;
+  align-self: start;
+  min-height: 0; /* allow inner scroll in flex/grid parents */
+}
+
+.ai-preview {
+  backdrop-filter: saturate(140%) blur(4px);
+  height: calc(100vh - 140px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  touch-action: pan-y;
+}
+
+.ai-preview-header {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-color, rgba(0,0,0,0.06));
+  position: sticky;
+  top: 0;
+  background: var(--card-bg, #fff);
+  z-index: 2;
+}
+
+.ai-preview-title {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.ai-preview-section {
+  padding: 14px;
+  border-bottom: 1px dashed var(--border-color, rgba(0,0,0,0.06));
+}
+
+.ai-preview-section:last-child {
+  border-bottom: none;
+}
+
+.ai-preview-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.ai-audio-upload input[type="file"] {
+  width: 100%;
+}
+
+.ai-audio-meta {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-muted, #666);
+}
+
+.transcription-text {
+  white-space: pre-wrap;
+  line-height: 1.5;
+  font-size: 14px;
+  background: var(--surface-muted, rgba(0,0,0,0.02));
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.btn-suggestion {
+  font-family: inherit;
+}
+
+/* Ensure ancestors don't block child overflow scrolling */
+.case-container {
+  min-height: 0;
+}
+
+.main-form-container {
+  min-height: 0;
+  overflow: visible;
+}
+</style>

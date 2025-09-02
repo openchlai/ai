@@ -66,10 +66,14 @@ onMounted(() => {
 </script>
 
 <style>
+html, body, #app {
+  height: auto;
+  min-height: 100vh;
+  overflow: auto;
+}
 body, #app {
   background: var(--background-color, #fff);
   color: var(--text-color, #222);
-  min-height: 100vh;
   margin: 0;
   padding: 0;
 }

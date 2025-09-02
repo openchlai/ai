@@ -16,6 +16,7 @@ import AdminPanel from '../pages/AdminPanel.vue'
 import TestCall from '../pages/TestCall.vue'
 import Test from '../pages/test.vue'
 import Reports from '../pages/Reports.vue'
+import TranscriptionReviews from '../pages/TranscriptionReviews.vue'
 
 
 const routes = [
@@ -34,7 +35,8 @@ const routes = [
   { path: '/admin', component: AdminPanel },
   { path: '/test-call', component: TestCall },
   { path: '/test', component: Test },
-  { path: '/reports', component: Reports }
+  { path: '/reports', component: Reports },
+  { path: '/reviews', component: TranscriptionReviews }
 
 ]
 
