@@ -407,7 +407,7 @@ onMounted(() => {
 }
 
 .nav-item.active {
-  background: #964B00 !important;
+  background: #8B4513 !important;
   color: #fff !important;
   border-radius: 16px !important;
   box-shadow: none !important;
@@ -508,7 +508,7 @@ onMounted(() => {
 }
 
 .status-dot.in-queue {
-  background-color: var(--success-color);
+  background-color: var(--accent-color);
   animation: pulse 2s infinite;
 }
 

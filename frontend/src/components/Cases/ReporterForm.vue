@@ -162,7 +162,7 @@
         --text-secondary: #666;
         --border-color: #ddd;
 
-        --accent-color: #964b00;
+        --accent-color: #8B4513;
         --accent-hover: #7a3c00;
 
         --success-color: #28a745;

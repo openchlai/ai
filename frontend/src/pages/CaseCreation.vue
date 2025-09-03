@@ -1,6 +1,6 @@
 <template>
   <div class="case-creation-page">
-    <router-link class="back-button" to="/cases">
+    <router-link class="btn btn--primary back-button" to="/cases">
       <svg
         width="16"
         height="16"
@@ -81,19 +81,24 @@
               v-for="step in totalSteps"
               :key="step"
               class="progress-step clickable-step"
-              :class="{ active: currentStep >= step }"
+              :class="{
+                active: currentStep === step,
+                completed: stepStatus(step) === 'completed',
+                error: stepStatus(step) === 'error'
+              }"
               @click="navigateToStep(step)"
             >
               <div
                 class="step-circle"
                 :class="{
-                  active: currentStep >= step,
-                  completed: currentStep > step,
+                  active: currentStep === step,
+                  completed: stepStatus(step) === 'completed',
+                  error: stepStatus(step) === 'error'
                 }"
               >
-                {{ currentStep > step ? "✓" : step }}
+                {{ stepStatus(step) === 'completed' ? '✓' : step }}
               </div>
-              <div class="step-label" :class="{ active: currentStep >= step }">
+              <div class="step-label" :class="{ active: currentStep === step }">
                 {{ stepLabels[step - 1] }}
               </div>
             </div>
@@ -138,38 +143,16 @@
                       placeholder="Search by name or phone..."
                       class="search-input"
                     />
-                    <!-- Live suggestions -->
-                    <ul
-                      class="search-suggestions"
-                      v-if="debouncedQuery && filteredContacts.length"
-                      :style="{ width: suggestionWidth }"
-                    >
-                      <li
-                        v-for="contact in filteredContacts.slice(0, 8)"
-                        :key="contact[casesStore.cases_k.id[0]]"
-                        class="suggestion-item"
-                        @click="selectExistingReporter(contact)"
-                      >
-                        <span class="suggestion-name">{{ contact[casesStore.cases_k.reporter_fullname[0]] || 'Unnamed' }}</span>
-                        <span class="suggestion-phone">{{ contact[casesStore.cases_k.reporter_phone[0]] || '' }}</span>
-                      </li>
-                    </ul>
-                    <div
-                      class="search-empty"
-                      v-else-if="debouncedQuery && !filteredContacts.length"
-                      :style="{ width: suggestionWidth }"
-                    >
-                      No matches found
-                    </div>
+                    <!-- Suggestions will render inline below using contacts-list -->
                   </div>
-                  <button type="button" class="create-reporter-btn" @click="createNewReporter">
+                  <button type="button" class="btn btn--primary new-reporter-btn" @click="createNewReporter">
                     + New Reporter
                   </button>
                 </div>
               </div>
 
-              <!-- Updated contacts list format -->
-              <div class="contacts-list" v-if="searchQuery && filteredContacts.length">
+              <!-- Inline results under search -->
+              <div class="contacts-list" v-if="debouncedQuery && filteredContacts.length">
                 <div
                   v-for="contact in filteredContacts"
                   :key="contact[casesStore.cases_k.id[0]]"
@@ -213,6 +196,7 @@
                   </div>
                 </div>
               </div>
+              <div class="search-empty" v-else-if="debouncedQuery && !filteredContacts.length">No matches found</div>
 
               <div class="action-buttons">
                 <button
@@ -244,16 +228,8 @@
                 Cancel
               </button>
               <div>
-                <button type="button" class="btn btn-skip" @click="skipStep(1)">
-                  Skip
-                </button>
-                <button
-                  type="submit"
-                  class="btn btn-next"
-                  :disabled="!selectedReporter"
-                >
-                  Next
-                </button>
+                <BaseButton variant="secondary" @click="skipStep(1)">Skip</BaseButton>
+                <BaseButton type="submit" :disabled="!selectedReporter">Next</BaseButton>
               </div>
             </div>
           </form>
@@ -275,121 +251,49 @@
               </p>
 
               <div class="form-row">
-                <div class="form-group">
-                  <label for="reporter-name">Full Name*</label>
-                  <input
-                    v-model="formData.step2.name"
-                    type="text"
-                    id="reporter-name"
-                    class="form-control"
-                    placeholder="Enter full name"
-                    required
-                    :readonly="!!selectedReporter"
-                  />
-                </div>
-                <div class="form-group">
-                  <label for="reporter-age">Age</label>
-                  <input
-                    v-model="formData.step2.age"
-                    type="number"
-                    id="reporter-age"
-                    class="form-control"
-                    placeholder="Enter age"
-                    min="1"
-                    max="120"
-                  />
-                </div>
-              </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="reporter-gender">Gender</label>
-                  <select
-                    v-model="formData.step2.gender"
-                    id="reporter-gender"
-                    class="form-control"
-                  >
-                    <option value="">Select gender</option>
-                    <option value="female">Female</option>
-                    <option value="male">Male</option>
-                    <option value="non-binary">Non-binary</option>
-                    <option value="transgender">Transgender</option>
-                    <option value="other">Other</option>
-                    <option value="prefer-not-to-say">Prefer not to say</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label for="reporter-location">Location</label>
-                  <input
-                    v-model="formData.step2.location"
-                    type="text"
-                    id="reporter-location"
-                    class="form-control"
-                    placeholder="Enter location"
-                  />
-                </div>
-              </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="reporter-phone">Phone Number*</label>
-                  <input
-                    v-model="formData.step2.phone"
-                    type="tel"
-                    id="reporter-phone"
-                    class="form-control"
-                    placeholder="Enter phone number"
-                    required
-                  />
-                </div>
-                <div class="form-group">
-                  <label for="reporter-alt-phone">Alternative Phone</label>
-                  <input
-                    v-model="formData.step2.altPhone"
-                    type="tel"
-                    id="reporter-alt-phone"
-                    class="form-control"
-                    placeholder="Enter alternative phone"
-                  />
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label for="reporter-email">Email Address</label>
-                <input
-                  v-model="formData.step2.email"
-                  type="email"
-                  id="reporter-email"
-                  class="form-control"
-                  placeholder="Enter email address"
+                <BaseInput
+                  id="reporter-name"
+                  label="Full Name*"
+                  v-model="formData.step2.name"
+                  placeholder="Enter full name"
+                  :readonly="!!selectedReporter"
+                />
+                <BaseInput
+                  id="reporter-age"
+                  label="Age"
+                  type="number"
+                  v-model="formData.step2.age"
+                  placeholder="Enter age"
                 />
               </div>
 
               <div class="form-row">
-                <div class="form-group">
-                  <label for="reporter-id-type">ID Type</label>
-                  <select
-                    v-model="formData.step2.idType"
-                    id="reporter-id-type"
-                    class="form-control"
-                  >
-                    <option value="">Select ID type</option>
-                    <option value="national-id">National ID</option>
-                    <option value="passport">Passport</option>
-                    <option value="drivers-license">Driver's License</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label for="reporter-id-number">ID Number</label>
-                  <input
-                    v-model="formData.step2.idNumber"
-                    type="text"
-                    id="reporter-id-number"
-                    class="form-control"
-                    placeholder="Enter ID number"
-                  />
-                </div>
+                <BaseSelect id="reporter-gender" label="Gender" v-model="formData.step2.gender" placeholder="Select gender">
+                  <option value="female">Female</option>
+                  <option value="male">Male</option>
+                  <option value="non-binary">Non-binary</option>
+                  <option value="transgender">Transgender</option>
+                  <option value="other">Other</option>
+                  <option value="prefer-not-to-say">Prefer not to say</option>
+                </BaseSelect>
+                <BaseInput id="reporter-location" label="Location" v-model="formData.step2.location" placeholder="Enter location" />
+              </div>
+
+              <div class="form-row">
+                <BaseInput id="reporter-phone" label="Phone Number*" type="tel" v-model="formData.step2.phone" placeholder="Enter phone number" />
+                <BaseInput id="reporter-alt-phone" label="Alternative Phone" type="tel" v-model="formData.step2.altPhone" placeholder="Enter alternative phone" />
+              </div>
+
+              <BaseInput id="reporter-email" label="Email Address" type="email" v-model="formData.step2.email" placeholder="Enter email address" />
+
+              <div class="form-row">
+                <BaseSelect id="reporter-id-type" label="ID Type" v-model="formData.step2.idType" placeholder="Select ID type">
+                  <option value="national-id">National ID</option>
+                  <option value="passport">Passport</option>
+                  <option value="drivers-license">Driver's License</option>
+                  <option value="other">Other</option>
+                </BaseSelect>
+                <BaseInput id="reporter-id-number" label="ID Number" v-model="formData.step2.idNumber" placeholder="Enter ID number" />
               </div>
 
               <div class="form-group">
@@ -417,14 +321,10 @@
               </div>
             </div>
             <div class="form-actions">
-              <button type="button" class="btn btn-back" @click="goToStep(1)">
-                Back
-              </button>
+              <BaseButton variant="secondary" @click="goToStep(1)">Back</BaseButton>
               <div>
-                <button type="button" class="btn btn-skip" @click="skipStep(2)">
-                  Skip
-                </button>
-                <button type="submit" class="btn btn-next">Next</button>
+                <BaseButton variant="secondary" @click="skipStep(2)">Skip</BaseButton>
+                <BaseButton type="submit">Next</BaseButton>
               </div>
             </div>
           </form>
@@ -441,17 +341,13 @@
 
               
 
-              <div class="form-group">
-                <label for="case-narrative">Case Narrative*</label>
-                <textarea
-                  v-model="formData.step3.narrative"
-                  id="case-narrative"
-                  class="form-control"
-                  placeholder="Describe the case details, incident, and circumstances in detail..."
-                  required
-                  rows="6"
-                ></textarea>
-              </div>
+              <BaseTextarea
+                id="case-narrative"
+                label="Case Narrative*"
+                v-model="formData.step3.narrative"
+                placeholder="Describe the case details, incident, and circumstances in detail..."
+                :rows="6"
+              />
 
               <div class="form-row">
                 <div class="form-group">
@@ -523,14 +419,10 @@
               </div>
             </div>
             <div class="form-actions">
-              <button type="button" class="btn btn-back" @click="goToStep(2)">
-                Back
-              </button>
+              <BaseButton variant="secondary" @click="goToStep(2)">Back</BaseButton>
               <div>
-                <button type="button" class="btn btn-skip" @click="skipStep(3)">
-                  Skip
-                </button>
-                <button type="submit" class="btn btn-next">Next</button>
+                <BaseButton variant="secondary" @click="skipStep(3)">Skip</BaseButton>
+                <BaseButton type="submit">Next</BaseButton>
               </div>
             </div>
           </form>
@@ -705,14 +597,10 @@
               </div>
             </div>
             <div class="form-actions">
-              <button type="button" class="btn btn-back" @click="goToStep(3)">
-                Back
-              </button>
+              <BaseButton variant="secondary" @click="goToStep(3)">Back</BaseButton>
               <div>
-                <button type="button" class="btn btn-skip" @click="skipStep(4)">
-                  Skip
-                </button>
-                <button type="submit" class="btn btn-next">Next</button>
+                <BaseButton variant="secondary" @click="skipStep(4)">Skip</BaseButton>
+                <BaseButton type="submit">Next</BaseButton>
               </div>
             </div>
           </form>
@@ -941,10 +829,8 @@
           </div>
 
           <div class="form-actions">
-            <button type="button" class="btn btn-back" @click="goToStep(4)">
-              Back
-            </button>
-            <button type="button" class="glass-btn filled" @click="submitCase">Create Case</button>
+            <BaseButton variant="secondary" @click="goToStep(4)">Back</BaseButton>
+            <BaseButton @click="submitCase">Create Case</BaseButton>
           </div>
         </div>
       </div>
@@ -994,11 +880,54 @@
                 </svg>
                 Upload Audio
               </div>
-              <div class="ai-audio-upload">
-                <input type="file" accept="audio/*" @change="onAudioUpload" />
-                <div v-if="audioFile" class="ai-audio-meta">
-                  <div class="audio-name">{{ audioFile.name || 'Audio file' }}</div>
-                  <div class="audio-meta">{{ formatFileSize(audioFile.size) }} • {{ audioDuration }}s</div>
+              <div 
+                class="ai-audio-upload"
+                :class="{ 'has-file': audioFile, 'drag-over': isDragOver }"
+                @drop="onAudioDrop"
+                @dragover.prevent="isDragOver = true"
+                @dragleave.prevent="isDragOver = false"
+                @dragenter.prevent
+              >
+                <input 
+                  ref="audioFileInput"
+                  type="file" 
+                  accept="audio/*" 
+                  @change="onAudioUpload" 
+                  style="display: none;"
+                />
+                
+                <div v-if="!audioFile" class="upload-placeholder">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" stroke="currentColor" stroke-width="2"/>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="currentColor" stroke-width="2"/>
+                  </svg>
+                  <div class="upload-text">
+                    <span class="upload-title">Drop audio file here</span>
+                    <span class="upload-subtitle">or click to browse</span>
+                  </div>
+                  <button type="button" class="upload-btn" @click="$refs.audioFileInput.click()">
+                    Choose File
+                  </button>
+                </div>
+                
+                <div v-else class="audio-file-info">
+                  <div class="audio-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M9 18V5l12-2v13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <circle cx="6" cy="18" r="3" stroke="currentColor" stroke-width="2"/>
+                      <circle cx="18" cy="16" r="3" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                  </div>
+                  <div class="audio-details">
+                    <div class="audio-name">{{ audioFile.name || 'Audio file' }}</div>
+                    <div class="audio-meta">{{ formatFileSize(audioFile.size) }} • {{ audioDuration }}s</div>
+                  </div>
+                  <button type="button" class="remove-audio-btn" @click="removeAudio" title="Remove audio">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
                 </div>
               </div>
             </div>
@@ -1142,6 +1071,10 @@
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import BaseButton from '@/components/base/BaseButton.vue'
+import BaseInput from '@/components/base/BaseInput.vue'
+import BaseTextarea from '@/components/base/BaseTextarea.vue'
+import BaseSelect from '@/components/base/BaseSelect.vue'
 import { useTranscriptionsStore } from '@/stores/transcriptionsStore'
 
 const router = useRouter()
@@ -1162,6 +1095,7 @@ const audioDuration = ref(0)
 const isPlaying = ref(false)
 const audioTranscription = ref('')
 const isTranscriptionCorrect = ref(false)
+const isDragOver = ref(false)
 let mediaRecorder = null
 let recordingInterval = null
 
@@ -1409,6 +1343,20 @@ const onAudioUpload = async (event) => {
   transcribeAudio()
 }
 
+// Handle drag and drop
+const onAudioDrop = async (event) => {
+  event.preventDefault()
+  isDragOver.value = false
+  
+  const files = event.dataTransfer.files
+  if (files.length > 0) {
+    const file = files[0]
+    if (file.type.startsWith('audio/')) {
+      await onAudioUpload({ target: { files: [file] } })
+    }
+  }
+}
+
 const transcribeAudio = async () => {
   // Mock transcription - in real app, this would call an AI service
   setTimeout(() => {
@@ -1557,6 +1505,13 @@ const generateRecommendations = () => {
   recommendations.value = recs
 }
 
+const progressWidth = computed(() => {
+  const completeCount = [1,2,3,4].filter(s => stepStatus(s) === 'completed' || currentStep.value > s).length
+  const totalSegments = totalSteps - 1
+  const percent = Math.min(100, Math.round((completeCount / totalSegments) * 100))
+  return percent + '%'
+})
+
 const applyInsight = (insight) => {
   switch (insight.id) {
     case 'priority-suggestion':
@@ -1570,6 +1525,26 @@ const applyInsight = (insight) => {
     case 'gbv-protocol':
       formData.step4.servicesOffered = ['counseling', 'legal-aid', 'shelter']
       break
+  }
+}
+
+// Determine step completion/error status for timeline colors
+const stepStatus = (step) => {
+  switch (step) {
+    case 1:
+      return selectedReporter.value ? 'completed' : 'idle'
+    case 2:
+      // basic validation: name and phone
+      if (!formData.step2.name || !formData.step2.phone) return 'error'
+      return 'completed'
+    case 3:
+      if (!formData.step3.narrative) return 'error'
+      return 'completed'
+    case 4:
+      if (!formData.step4.priority || !formData.step4.status || !formData.step4.category) return 'error'
+      return 'completed'
+    default:
+      return 'idle'
   }
 }
 
@@ -1644,7 +1619,20 @@ onMounted(() => {
   if (isAIEnabled.value) {
     generateAIInsights()
   }
+  // update CSS var for vertical progress fill
+  updateStepCSSVar()
 })
+
+watch(currentStep, () => updateStepCSSVar())
+
+const updateStepCSSVar = () => {
+  // compute progress ratio 0..1 based on current step index
+  const ratio = (currentStep.value - 1) / (totalSteps - 1)
+  const root = document.querySelector('.progress-steps')
+  if (root) {
+    root.style.setProperty('--progress-ratio', String(ratio))
+  }
+}
 </script>
 
 <style scoped>
@@ -1653,6 +1641,202 @@ onMounted(() => {
   min-height: 0;
   overflow: auto;
 }
+
+/* Layout: main form + AI panel */
+.case-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+@media (min-width: 1100px) {
+  .case-container { grid-template-columns: 1fr 360px; }
+}
+
+.main-form-container {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  box-shadow: var(--shadow-sm);
+  padding: 16px;
+}
+
+.case-header { display:flex; align-items:center; justify-content:space-between; gap: 12px; }
+.case-header h1 { margin:0; font-size: 26px; font-weight: 900; letter-spacing: -0.2px; color: var(--text-color); }
+.case-header h1::after { content: ""; display:block; width: 48px; height: 3px; border-radius: 2px; background: var(--color-primary); margin-top: 6px; }
+.case-header p { margin:6px 0 0; color: var(--color-muted); font-size: 13px; }
+
+/* Stepper */
+.progress-container { padding: 6px 0 12px; }
+.progress-steps { position:relative; display:flex; justify-content:space-between; align-items:flex-start; gap: 24px; padding-top: 28px; }
+.progress-step { display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; flex:1; }
+.progress-step .step-circle { font-weight:800; font-size:14px; color: var(--color-muted); line-height:1; }
+.progress-step .step-label { font-weight:700; color: var(--color-muted); font-size:12px; text-align:center; }
+.progress-step.active .step-circle { color: var(--text-color); }
+.progress-step.active .step-label { color: var(--text-color); }
+.progress-step.completed .step-circle { color: #fff; background: var(--success-color); width:24px; height:24px; border-radius:999px; display:flex; align-items:center; justify-content:center; }
+.progress-step.completed .step-label { color: var(--success-color); }
+.progress-step.error .step-circle { color: var(--color-primary); background: transparent; }
+.progress-step.error .step-label { color: var(--color-primary); }
+.progress-steps::before { content: none; }
+.progress-steps::after { content: none; }
+
+/* Search / contacts */
+.search-row { display:flex; gap: 8px; align-items:center; }
+.search-box { position:relative; display:flex; align-items:center; gap:8px; border:1px solid var(--color-border); border-radius: 12px; padding: 8px 10px; background: var(--color-surface); color: var(--text-color); width: 180px; }
+.new-reporter-btn { height: 36px; }
+.search-input { border:0; outline:0; width:100%; background: transparent; font-size:13px; color: var(--text-color); }
+.search-empty { margin-top: 8px; background: var(--color-surface); border:1px solid var(--color-border); border-radius: 12px; padding:10px; color: var(--color-muted); }
+
+.create-reporter-btn { border:1px solid var(--color-border); background: var(--color-surface); padding: 8px 12px; border-radius: 12px; font-weight:600; cursor:pointer; }
+.create-reporter-btn:hover { transform: translateY(-1px); }
+
+.contacts-list { display:flex; flex-direction:column; gap:8px; margin-top: 8px; }
+.contact-item { display:flex; align-items:center; gap:12px; border:1px solid var(--color-border); border-radius: 14px; padding: 12px; background: var(--color-surface); cursor:pointer; transition: background .15s ease, border-color .15s ease; }
+.contact-item:hover { background: var(--color-surface-muted); }
+.contact-item.selected { outline: 2px solid color-mix(in oklab, var(--color-primary) 28%, transparent); }
+.contact-avatar { width:40px; height:40px; border-radius:999px; display:flex; align-items:center; justify-content:center; background: var(--color-surface-muted); font-weight:700; }
+.contact-details { flex:1; display:grid; grid-template-columns: 1fr auto; align-items:center; column-gap: 12px; min-width: 0; }
+.contact-main-info { display:flex; align-items:center; gap:10px; min-width:0; }
+.contact-name { font-weight:700; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.contact-phone { color: var(--color-muted); font-size: 12px; white-space: nowrap; }
+.contact-meta-info { display:flex; align-items:center; gap:10px; flex-wrap: wrap; justify-content:flex-end; }
+.contact-tags { display:flex; gap:6px; flex-wrap:wrap; max-width: 420px; }
+.contact-tag { border:1px solid var(--color-border); border-radius:999px; padding:2px 8px; font-size: 12px; }
+.contact-tag.location { background: var(--color-surface-muted); }
+.contact-select-indicator { color: var(--color-muted); }
+
+/* Forms */
+.case-form { display:flex; flex-direction:column; gap: 14px; }
+.form-row { display:grid; grid-template-columns: 1fr; gap: 12px; }
+@media (min-width: 780px) { .form-row { grid-template-columns: 1fr 1fr; } }
+.form-actions { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top: 10px; }
+
+/* AI upload dropzone */
+.ai-audio-upload { 
+  border: 2px dashed var(--color-border); 
+  border-radius: 12px; 
+  padding: 20px; 
+  background: var(--color-surface); 
+  text-align: center; 
+  position: relative;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.ai-audio-upload:hover {
+  border-color: var(--color-primary);
+  background: color-mix(in oklab, var(--color-primary) 2%, transparent);
+}
+
+.ai-audio-upload.drag-over {
+  border-color: var(--color-primary);
+  background: color-mix(in oklab, var(--color-primary) 8%, transparent);
+  transform: scale(1.02);
+}
+
+.ai-audio-upload.has-file {
+  border-style: solid;
+  border-color: var(--success-color);
+  background: color-mix(in oklab, var(--success-color) 4%, transparent);
+}
+
+.upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.upload-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.upload-title {
+  font-weight: 600;
+  color: var(--text-color);
+  font-size: 14px;
+}
+
+.upload-subtitle {
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
+.upload-btn {
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.upload-btn:hover {
+  background: color-mix(in oklab, var(--color-primary) 80%, black);
+  transform: translateY(-1px);
+}
+
+.audio-file-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  background: var(--color-surface);
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+}
+
+.audio-icon {
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.audio-details {
+  flex: 1;
+  text-align: left;
+}
+
+.audio-name {
+  font-weight: 600;
+  color: var(--text-color);
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.audio-meta {
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
+.remove-audio-btn {
+  background: none;
+  border: none;
+  color: var(--color-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.remove-audio-btn:hover {
+  background: var(--color-surface-muted);
+  color: var(--color-danger, #dc2626);
+}
+
+/* Review styles */
+.review-sections { display:flex; flex-direction:column; gap:12px; }
+.review-section { border:1px solid var(--color-border); border-radius: 14px; background: var(--color-surface); }
+.section-header { display:flex; align-items:center; justify-content:space-between; padding: 10px 12px; border-bottom:1px solid var(--color-border); }
+.review-content { padding: 10px 12px; display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+.review-item-full { grid-column: 1 / -1; }
+.review-label { font-weight:600; color: var(--color-muted); }
+.review-value { color: var(--text-color); }
 
 .ai-preview-container {
   font-family: inherit;
@@ -1684,8 +1868,9 @@ onMounted(() => {
 }
 
 .ai-preview-title {
-  font-weight: 600;
-  font-size: 14px;
+  font-weight: 800;
+  font-size: 16px;
+  color: var(--text-color);
 }
 
 .ai-preview-section {
@@ -1701,8 +1886,9 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-weight: 600;
-  margin-bottom: 10px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: var(--text-color);
 }
 
 .ai-audio-upload input[type="file"] {
@@ -1724,9 +1910,12 @@ onMounted(() => {
   border-radius: 8px;
 }
 
-.btn-suggestion {
-  font-family: inherit;
-}
+.ai-suggestion { display:flex; gap:10px; padding:12px; border:1px solid var(--color-border); border-radius:12px; background: var(--color-surface); margin-bottom:8px; }
+.suggestion-icon { font-size:16px; }
+.suggestion-content { flex:1; }
+.suggestion-title { font-weight:700; color: var(--text-color); margin-bottom:4px; }
+.suggestion-text { color: var(--color-muted); font-size:13px; margin-bottom:8px; }
+.btn-suggestion { background: var(--color-primary); color:#fff; border:0; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; }
 
 /* Ensure ancestors don't block child overflow scrolling */
 .case-container {
@@ -1737,4 +1926,6 @@ onMounted(() => {
   min-height: 0;
   overflow: visible;
 }
+
+.back-button { margin-bottom: 12px; }
 </style>

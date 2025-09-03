@@ -8,7 +8,7 @@
   --text-secondary: #666;
   --border-color: #ddd;
 
-  --accent-color: #964b00;
+  --accent-color: #8B4513;
   --accent-hover: #7a3c00;
 
   --success-color: #28a745;
@@ -20,6 +20,13 @@
   --counsellor-color: #17a2b8;
 
   --sidebar-width: 250px;
+  
+  /* Font size variables */
+  --base-font-size: 16px;
+  --font-size-small: 14px;
+  --font-size-medium: 16px;
+  --font-size-large: 18px;
+  --font-size-x-large: 20px;
 }
 
 :root.dark {
@@ -32,4 +39,50 @@
 
   --accent-color: #ff9f43;
   --accent-hover: #e67e22;
+}
+
+/* Font Size Classes */
+.font-size-small {
+  --base-font-size: var(--font-size-small);
+}
+
+.font-size-medium {
+  --base-font-size: var(--font-size-medium);
+}
+
+.font-size-large {
+  --base-font-size: var(--font-size-large);
+}
+
+.font-size-x-large {
+  --base-font-size: var(--font-size-x-large);
+}
+
+/* High Contrast Mode */
+.high-contrast {
+  --text-color: #000000 !important;
+  --text-secondary: #333333 !important;
+  --background-color: #ffffff !important;
+  --content-bg: #ffffff !important;
+  --card-bg: #ffffff !important;
+  --border-color: #000000 !important;
+  --accent-color: #000000 !important;
+  --accent-hover: #333333 !important;
+}
+
+.high-contrast.dark {
+  --text-color: #ffffff !important;
+  --text-secondary: #cccccc !important;
+  --background-color: #000000 !important;
+  --content-bg: #000000 !important;
+  --card-bg: #000000 !important;
+  --border-color: #ffffff !important;
+  --accent-color: #ffffff !important;
+  --accent-hover: #cccccc !important;
+}
+
+/* Apply font size to body and html */
+html, body {
+  font-size: var(--base-font-size);
+  transition: font-size 0.3s ease;
 }

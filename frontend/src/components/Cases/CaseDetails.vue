@@ -1,5 +1,9 @@
 <script setup>
     import { ref } from "vue"
+    import BaseSelect from "@/components/base/BaseSelect.vue"
+    import BaseRadio from "@/components/base/BaseRadio.vue"
+    import BaseTextarea from "@/components/base/BaseTextarea.vue"
+    import BaseInput from "@/components/base/BaseInput.vue"
 
     const caseDetails = ref({
         department: "116",
@@ -17,44 +21,41 @@
     <div>
         <h3>Case Details</h3>
 
-        <label>Department</label>
-        <select v-model="caseDetails.department">
-            <option>116</option>
-            <option>Labor</option>
-        </select>
+        <BaseSelect label="Department" v-model="caseDetails.department" placeholder="Select department">
+            <option value="116">116</option>
+            <option value="Labor">Labor</option>
+        </BaseSelect>
 
-        <label>Case Category</label>
-        <select v-model="caseDetails.category">
-            <option>Violence</option>
-            <option>Neglect</option>
-            <option>Exploitation</option>
-        </select>
+        <BaseSelect label="Case Category" v-model="caseDetails.category" placeholder="Select category">
+            <option value="Violence">Violence</option>
+            <option value="Neglect">Neglect</option>
+            <option value="Exploitation">Exploitation</option>
+        </BaseSelect>
 
-        <label>GBV Related?</label>
-        <input type="radio" value="Yes" v-model="caseDetails.gbv" /> Yes
-        <input type="radio" value="No" v-model="caseDetails.gbv" /> No
+        <div class="form-group">
+            <div class="form-label">GBV Related?</div>
+            <div style="display:flex; gap:12px;">
+                <BaseRadio name="gbv" value="Yes" v-model="caseDetails.gbv">Yes</BaseRadio>
+                <BaseRadio name="gbv" value="No" v-model="caseDetails.gbv">No</BaseRadio>
+            </div>
+        </div>
 
-        <label>Case Narrative</label>
-        <textarea v-model="caseDetails.narrative"></textarea>
+        <BaseTextarea label="Case Narrative" v-model="caseDetails.narrative" :rows="4" />
 
-        <label>Case Plan</label>
-        <textarea v-model="caseDetails.plan"></textarea>
+        <BaseTextarea label="Case Plan" v-model="caseDetails.plan" :rows="3" />
 
-        <label>Priority</label>
-        <select v-model="caseDetails.priority">
-            <option>High</option>
-            <option>Medium</option>
-            <option>Low</option>
-        </select>
+        <BaseSelect label="Priority" v-model="caseDetails.priority" placeholder="Select priority">
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+        </BaseSelect>
 
-        <label>Status</label>
-        <select v-model="caseDetails.status">
-            <option>Open</option>
-            <option>Closed</option>
-            <option>Pending</option>
-        </select>
+        <BaseSelect label="Status" v-model="caseDetails.status" placeholder="Select status">
+            <option value="Open">Open</option>
+            <option value="Closed">Closed</option>
+            <option value="Pending">Pending</option>
+        </BaseSelect>
 
-        <label>Escalated To</label>
-        <input v-model="caseDetails.escalatedTo" placeholder="Enter Department/Staff" />
+        <BaseInput label="Escalated To" v-model="caseDetails.escalatedTo" placeholder="Enter Department/Staff" />
     </div>
 </template>

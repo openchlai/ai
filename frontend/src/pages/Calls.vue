@@ -18,148 +18,14 @@
           <h1 class="page-title">Calls</h1>
           <div class="header-actions">
             <!-- Theme toggle removed; use global controller in App.vue -->
-              <svg
-                v-if="false"
-                id="moon-icon"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-              <svg
-                v-else
-                id="sun-icon"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="5"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-                <line
-                  x1="12"
-                  y1="1"
-                  x2="12"
-                  y2="3"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-                <line
-                  x1="12"
-                  y1="21"
-                  x2="12"
-                  y2="23"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-                <line
-                  x1="4.22"
-                  y1="4.22"
-                  x2="5.64"
-                  y2="5.64"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-                <line
-                  x1="18.36"
-                  y1="18.36"
-                  x2="19.78"
-                  y2="19.78"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-                <line
-                  x1="1"
-                  y1="12"
-                  x2="3"
-                  y2="12"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-                <line
-                  x1="21"
-                  y1="12"
-                  x2="23"
-                  y2="12"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-                <line
-                  x1="4.22"
-                  y1="19.78"
-                  x2="5.64"
-                  y2="18.36"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-                <line
-                  x1="18.36"
-                  y1="5.64"
-                  x2="19.78"
-                  y2="4.22"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-              <span id="theme-text"></span>
+              
           </div>
         </div>
 
-        <div class="view-tabs">
-          <div
-            class="view-tab"
-            :class="{ active: activeView === 'timeline' }"
-            @click="activeView = 'timeline'"
-          >
-            Timeline
-          </div>
-          <div
-            class="view-tab"
-            :class="{ active: activeView === 'table' }"
-            @click="activeView = 'table'"
-          >
-            Table View
-          </div>
-          <div
-            class="view-tab"
-            :class="{ active: activeView === 'queue' }"
-            @click="activeView = 'queue'"
-          >
-            Call Queue
-          </div>
+        <div class="view-tabs" style="display:flex; gap:8px; padding:8px 0;">
+          <button class="btn btn--secondary btn--sm" :class="{ active: activeView === 'timeline' }" @click="activeView = 'timeline'">Timeline</button>
+          <button class="btn btn--secondary btn--sm" :class="{ active: activeView === 'table' }" @click="activeView = 'table'">Table View</button>
+          <button class="btn btn--secondary btn--sm" :class="{ active: activeView === 'queue' }" @click="activeView = 'queue'">Call Queue</button>
         </div>
 
         <!-- Status Cards - Horizontal Layout -->
@@ -196,7 +62,7 @@
             <div
               v-for="(call, index) in callsStore.calls"
               :key="index"
-              class="call-item glass-card fine-border"
+              class="call-item card"
               @click="selectCall(call[callsStore.calls_k?.uniqueid?.[0]])"
             >
               <div class="call-icon">
@@ -240,8 +106,8 @@
 </div>
         <!-- Table View -->
         <div class="view-container" v-show="activeView === 'table'">
-          <div class="calls-table-container">
-            <table class="calls-table">
+          <div class="calls-table-container card" style="padding:0;">
+            <table class="calls-table" style="width:100%;">
               <thead>
                 <tr>
                   <th>Call ID</th>
@@ -310,7 +176,7 @@
     <td>
       <div class="table-actions">
         <button
-          class="action-btn view-btn"
+          class="btn btn--secondary btn--sm"
           @click.stop="viewCallDetails(call[callsStore.calls_k.uniqueid?.[0]])"
           title="View Details"
         >
@@ -320,7 +186,7 @@
                       </svg>
         </button>
         <button
-          class="action-btn link-btn"
+          class="btn btn--secondary btn--sm"
           @click.stop="linkToCase(call[callsStore.calls_k.uniqueid?.[0]])"
           title="Link to Case"
         >
@@ -330,7 +196,7 @@
                       </svg>
         </button>
         <button
-          class="action-btn case-btn"
+          class="btn btn--primary btn--sm"
           @click.stop="viewCase(call[callsStore.calls_k.case_id?.[0]])"
           title="View Case"
         >
@@ -1357,7 +1223,11 @@
       <div class="modal-content" @click.stop>
         <div class="modal-header">
           <h3>Link Call to Different Case</h3>
-          <button class="modal-close" @click="closeCaseLink">×</button>
+          <button class="modal-close" @click="closeCaseLink" type="button" title="Close">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
         </div>
         <div class="modal-body">
           <div class="case-link-options">
@@ -1378,12 +1248,7 @@
                     stroke-linejoin="round"
                   />
                   <path
-                    d="M14 11C13.5705 10.4259 13.0226 9.95085 12.3934 9.60706C11.7643 9.26327 11.0685 9.05885 10.3533 9.00769C9.63819 8.95653 8.92037 9.05973 8.24864 9.31028C7.5769 9.56084 6.9669 9.95303 6.46 10.46L3.46 13.46C2.54918 14.403 2.04520 15.6661 2.0566 16.9771C2.06799 18.288 2.59383 19.5421 3.52087 20.4691C4.44791 21.3962 5.70198 21.922 7.01296 21.9334C8.32394 21.9448 9.58695 21.4408 10.53 20.53L12.24 18.82"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
+                    d="M14 11C13.5705 10.4259 13.0226 9.95085 12.3934 9.60706C11.7643 9.26327 11.0685 9.05885 10.3533 9.00769C9.63819 8.95653 8.92037 9.05973 8.24864 9.31028C7.5769 9.56084 6.9669 9.95303 6.46 10.46L3.46 13.46C2.54918 14.403 2.04520 15.6661 2.0566 16.9771C2.06799 18.288 2.59383 19.5421 3.52087 20.4691C4.44791 21.3962 5.70198 21.922 7.01296 21.9334C8.32394 21.9448 9.58695 21.4408 10.53 20.53L12.24 18.82" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               </div>
               <div class="option-content">
@@ -1888,7 +1753,7 @@ function handleSidebarToggle(collapsed) {
 // Reactive state
 const activeView = ref("timeline");
 //const selectedCallId = ref('1348456')
-const currentTheme = ref("dark");
+const currentTheme = ref("light");
 const selectedTimeRange = ref("all");
 const showCallDetails = ref(false);
 const userRole = ref("super-admin");
@@ -2783,6 +2648,7 @@ const linkToCase = (callId) => {
 };
 
 const closeCaseLink = () => {
+  console.log('closeCaseLink called');
   showCaseLink.value = false;
   selectedCallForLink.value = null;
 };
@@ -2840,8 +2706,8 @@ const applyTheme = (theme) => {
   }
 
   // Set common variables
-  root.style.setProperty("--accent-color", "#964B00");
-  root.style.setProperty("--accent-hover", "#b25900");
+      root.style.setProperty("--accent-color", "#8B4513");
+    root.style.setProperty("--accent-hover", "#A0522D");
   root.style.setProperty("--danger-color", "#ff3b30");
   root.style.setProperty("--success-color", "#4CAF50");
   root.style.setProperty("--pending-color", "#FFA500");
@@ -3753,17 +3619,24 @@ body {
   cursor: pointer;
   font-size: 24px;
   font-weight: 700;
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
+  position: relative;
+  z-index: 10;
 }
 
 .modal-close:hover {
   background-color: rgba(255, 255, 255, 0.1);
+  transform: scale(1.1);
+}
+
+.modal-close:active {
+  transform: scale(0.95);
 }
 
 .modal-body {
