@@ -1212,11 +1212,11 @@ def process_post_call_audio_task(
                 logger.error(f"❌ Failed to publish call update for {step}: {e}")
         
         # Publish start
-        publish_call_update("processing_started", 5, f"Starting post-call processing for {call_id}")
+        # publish_call_update("processing_started", 5, f"Starting post-call processing for {call_id}")  # COMMENTED OUT
         
         # Step 1: Translation using Whisper Large-V3 (sw→en)
         logger.info(f"🎵 [post-call] Starting translation for call {call_id}")
-        publish_call_update("translation", 10, "Translating audio (Swahili → English)...")
+        # publish_call_update("translation", 10, "Translating audio (Swahili → English)...")  # COMMENTED OUT
         
         step_start = datetime.now()
         
@@ -1268,13 +1268,13 @@ def process_post_call_audio_task(
         logger.info(f"✅ [post-call] Translation completed in {translation_duration:.2f}s: {translation[:100]}...")
         
         # Publish translation result
-        publish_call_update(
-            "translation_complete", 
-            30, 
-            "Translation completed successfully",
-            result_data={"translation": translation, "language_pair": "sw→en"},
-            metadata={"duration": translation_duration, "method": translation_method}
-        )
+        # publish_call_update(
+        #     "translation_complete", 
+        #     30, 
+        #     "Translation completed successfully",
+        #     result_data={"translation": translation, "language_pair": "sw→en"},
+        #     metadata={"duration": translation_duration, "method": translation_method}
+        # )  # COMMENTED OUT
         
         # Use translated text for all downstream processing
         nlp_text = translation
@@ -1309,7 +1309,7 @@ def process_post_call_audio_task(
         
         # Step 3: NER (Named Entity Recognition)
         logger.info(f"🏷️ [post-call] Starting NER analysis for call {call_id}")
-        publish_call_update("ner_analysis", 50, "Extracting named entities...")
+        # publish_call_update("ner_analysis", 50, "Extracting named entities...")  # COMMENTED OUT
         
         step_start = datetime.now()
         try:
@@ -1322,22 +1322,22 @@ def process_post_call_audio_task(
             
             logger.info(f"✅ [post-call] NER analysis completed: {len(entities)} entity types found")
             
-            publish_call_update(
-                "ner_complete",
-                55,
-                f"Named entity extraction completed - {len(entities)} entity types found",
-                result_data={"entities": entities},
-                metadata={"duration": ner_duration, "entity_types": list(entities.keys())}
-            )
+            # publish_call_update(
+            #     "ner_complete",
+            #     55,
+            #     f"Named entity extraction completed - {len(entities)} entity types found",
+            #     result_data={"entities": entities},
+            #     metadata={"duration": ner_duration, "entity_types": list(entities.keys())}
+            # )  # COMMENTED OUT
             
         except Exception as e:
             logger.error(f"❌ NER analysis failed: {e}")
             entities = {}
-            publish_call_update("ner_error", 50, f"NER analysis failed: {str(e)}")
+            # publish_call_update("ner_error", 50, f"NER analysis failed: {str(e)}")  # COMMENTED OUT
         
         # Step 4: QA Analysis
         logger.info(f"🎯 [post-call] Starting QA analysis for call {call_id}")
-        publish_call_update("qa_analysis", 65, "Running quality assessment analysis...")
+        # publish_call_update("qa_analysis", 65, "Running quality assessment analysis...")  # COMMENTED OUT
         
         step_start = datetime.now()
         try:
@@ -1350,18 +1350,18 @@ def process_post_call_audio_task(
             
             logger.info(f"✅ [post-call] QA analysis completed: {qa_scores}")
             
-            publish_call_update(
-                "qa_complete",
-                75,
-                "QA analysis completed successfully",
-                result_data={"qa_scores": qa_scores},
-                metadata={"duration": qa_duration, "model": "all_qa_distilbert_v1"}
-            )
+            # publish_call_update(
+            #     "qa_complete",
+            #     75,
+            #     "QA analysis completed successfully",
+            #     result_data={"qa_scores": qa_scores},
+            #     metadata={"duration": qa_duration, "model": "all_qa_distilbert_v1"}
+            # )  # COMMENTED OUT
             
         except Exception as e:
             logger.error(f"❌ QA analysis failed: {e}")
             qa_scores = {}
-            publish_call_update("qa_error", 65, f"QA analysis failed: {str(e)}")
+            # publish_call_update("qa_error", 65, f"QA analysis failed: {str(e)}")  # COMMENTED OUT
         
         # Step 5: Summary
         logger.info(f"📝 [post-call] Starting summary generation for call {call_id}")
@@ -1378,13 +1378,13 @@ def process_post_call_audio_task(
             
             logger.info(f"✅ [post-call] Summary completed: {summary[:100]}...")
             
-            publish_call_update(
-                "summary_complete",
-                90,
-                "Summary generation completed",
-                result_data={"summary": summary},
-                metadata={"duration": summary_duration}
-            )
+            # publish_call_update(
+            #     "summary_complete",
+            #     90,
+            #     "Summary generation completed",
+            #     result_data={"summary": summary},
+            #     metadata={"duration": summary_duration}
+            # )  # COMMENTED OUT
             
         except Exception as e:
             logger.error(f"❌ Summary generation failed: {e}")

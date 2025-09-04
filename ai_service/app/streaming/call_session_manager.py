@@ -395,7 +395,7 @@ class CallSessionManager:
                                         }
                                     }
                                     
-                                    await agent_notification_service.send_call_summary(call_id, summary, final_analysis)
+                                    # await agent_notification_service.send_call_summary(call_id, summary, final_analysis)  # COMMENTED OUT
                                     logger.info(f"📋 [session] Sent call summary with QA summary for {call_id}")
                                 except Exception as e:
                                     logger.error(f"❌ Failed to send call summary for {call_id}: {e}")
@@ -414,7 +414,7 @@ class CallSessionManager:
                                             'coaching_recommendations': self._generate_coaching_recommendations(qa_scores)
                                         }
                                     
-                                    await self._send_insights_notification(call_id, insights)
+                                    # await self._send_insights_notification(call_id, insights)  # COMMENTED OUT
                                     logger.info(f"💡 [session] Sent insights with full QA analysis for {call_id}")
                                 except Exception as e:
                                     logger.error(f"❌ Failed to send insights for {call_id}: {e}")
@@ -429,7 +429,7 @@ class CallSessionManager:
                                     gpt_insights = generate_case_insights(transcript)
                                     
                                     # Send GPT insights notification
-                                    await agent_notification_service.send_gpt_insights(call_id, gpt_insights)
+                                    # await agent_notification_service.send_gpt_insights(call_id, gpt_insights)  # COMMENTED OUT
                                     logger.info(f"🤖 [session] Sent Mistral GPT insights for {call_id}")
                                 else:
                                     logger.warning(f"⚠️ [session] Transcript too short for GPT insights generation: {len(transcript)} chars")
