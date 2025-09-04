@@ -185,7 +185,10 @@ class ModelLoader:
                         model_status.model_info = whisper_model_manager.get_loaded_variant_info()
                         # Store the actual whisper model instance for backward compatibility
                         self.models[model_name] = whisper_model_manager.whisper_model
+                        # Unified instance: whisper_translation_model references the same instance
+                        self.models['whisper_translation_model'] = whisper_model_manager.whisper_model
                         logger.info(f"✅ Whisper model loaded successfully: {whisper_model_manager.current_variant.value}")
+                        logger.info("✅ Unified Whisper instance created for both transcription and translation")
                     else:
                         model_status.error = "Failed to load Whisper model via WhisperModelManager"
                         logger.error(f"❌ Whisper model failed to load: {model_status.error}")

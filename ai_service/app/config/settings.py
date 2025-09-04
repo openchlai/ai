@@ -109,6 +109,15 @@ class Settings(BaseSettings):
     whisper_large_turbo_path: str = "./models/whisper_large_turbo"
     whisper_active_symlink: str = "./models/whisper"  # Symlink for backward compatibility
     
+    # Agent Notification Configuration
+    enable_agent_notifications: bool = True
+    notification_mode: str = "results_only"  # all, results_only, critical_only, disabled
+    notification_endpoint_url: str = "https://192.168.10.3/hh5aug2025/api/msg/"
+    notification_auth_endpoint_url: str = "https://192.168.10.3/hh5aug2025/api/"
+    notification_basic_auth: str = "dGVzdDpwQHNzdzByZA=="  # Base64 encoded
+    notification_request_timeout: int = 10
+    notification_max_retries: int = 3
+    
     def get_model_path(self, model_name: str) -> str:
         """Get absolute path for a model"""
         return os.path.join(self.models_path, model_name)
@@ -165,6 +174,23 @@ class Settings(BaseSettings):
     
     def initialize_paths(self):
         """Initialize paths - called explicitly, not at import time"""
+        # Auto-detect Docker environment
+        self.docker_container = os.getenv("DOCKER_CONTAINER") is not None or os.path.exists("/.dockerenv")
+        
+        # Auto-detect paths based on environment
+        if self.docker_container:
+            # Docker environment: use /app paths
+            if self.models_path == "./models":
+                self.models_path = "/app/models"
+            if self.logs_path == "./logs":
+                self.logs_path = "/app/logs"
+            if self.temp_path == "./temp":
+                self.temp_path = "/app/temp"
+            print("🐳 Docker environment detected - using /app paths")
+        else:
+            # Local development: use relative paths
+            print("💻 Local development environment detected - using relative paths")
+        
         # Convert to absolute paths
         self.models_path = os.path.abspath(self.models_path)
         self.logs_path = os.path.abspath(self.logs_path)
@@ -178,6 +204,7 @@ class Settings(BaseSettings):
         # Debug output
         print(f"📁 Models path: {self.models_path}")
         print(f"📁 Models exists: {os.path.exists(self.models_path)}")
+        print(f"🔧 Environment: {'Docker' if self.docker_container else 'Local'}")
         
         return self.models_path
     

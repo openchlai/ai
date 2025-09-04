@@ -12,6 +12,7 @@ from ..config.settings import redis_task_client
 from .progressive_processor import progressive_processor
 from ..core.processing_strategy_manager import processing_strategy_manager
 from ..utils.scp_audio_downloader import download_audio_by_method, convert_gsm_to_wav
+from ..core.notification_manager import notification_manager, NotificationType
 
 logger = logging.getLogger(__name__)
 
@@ -129,12 +130,12 @@ class CallSessionManager:
             logger.info(f"📞 [session] Processing mode: {session.processing_mode}")
             logger.info(f"📞 [session] Active sessions: {len(self.active_sessions)}")
             
-            # Send call start notification to agent
-            if AGENT_NOTIFICATIONS_ENABLED:
-                try:
-                    await agent_notification_service.send_call_start(call_id, connection_info)
-                except Exception as e:
-                    logger.error(f"❌ Failed to send call start notification for {call_id}: {e}")
+            # Send call start notification to agent (using notification manager)
+            await notification_manager.send_notification_if_allowed(
+                NotificationType.CALL_START,
+                call_id,
+                {"connection_info": connection_info}
+            )
             
             # Start cleanup task if not running
             if self._cleanup_task is None:
@@ -204,16 +205,16 @@ class CallSessionManager:
             # Store updated session
             self._store_session_in_redis(session)
             
-            # Send transcript segment notification to agent
-            if AGENT_NOTIFICATIONS_ENABLED:
-                try:
-                    await agent_notification_service.send_transcript_segment(
-                        call_id, 
-                        segment, 
-                        session.cumulative_transcript
-                    )
-                except Exception as e:
-                    logger.error(f"❌ Failed to send transcript segment notification for {call_id}: {e}")
+            # Send transcript segment notification to agent (using notification manager)
+            await notification_manager.send_notification_if_allowed(
+                NotificationType.TRANSCRIPT_SEGMENT,
+                call_id,
+                {
+                    "segment": segment,
+                    "cumulative_transcript": session.cumulative_transcript
+                },
+                has_results=True if segment.get('transcript') else False
+            )
             
             logger.info(f"📝 [session] Added segment {segment['segment_id']} to call {call_id}")
             logger.info(f"📝 [session] Transcript length: {len(session.cumulative_transcript)} chars")
@@ -325,21 +326,25 @@ class CallSessionManager:
             else:
                 logger.info(f"ℹ️ [session] Post-call processing disabled for call {call_id} (mode: {session.processing_mode})")
                 
-                # Send basic call end notification without waiting for AI results
-                if AGENT_NOTIFICATIONS_ENABLED:
-                    try:
-                        final_stats = {
-                            'duration': session.total_audio_duration,
-                            'segments': session.segment_count,
-                            'transcript_length': len(session.cumulative_transcript),
-                            'start_time': session.start_time.isoformat(),
-                            'end_time': session.last_activity.isoformat(),
-                            'processing_mode': session.processing_mode,
-                            'postcall_processing_skipped': True
-                        }
-                        await agent_notification_service.send_call_end(call_id, reason, final_stats)
-                    except Exception as e:
-                        logger.error(f"❌ Failed to send call end notification for {call_id}: {e}")
+                # Send basic call end notification without waiting for AI results (using notification manager)
+                final_stats = {
+                    'duration': session.total_audio_duration,
+                    'segments': session.segment_count,
+                    'transcript_length': len(session.cumulative_transcript),
+                    'start_time': session.start_time.isoformat(),
+                    'end_time': session.last_activity.isoformat(),
+                    'processing_mode': session.processing_mode,
+                    'postcall_processing_skipped': True
+                }
+                await notification_manager.send_notification_if_allowed(
+                    NotificationType.CALL_END,
+                    call_id,
+                    {
+                        "reason": reason,
+                        "stats": final_stats
+                    },
+                    has_results=True
+                )
             
             
             # Remove from active sessions
@@ -530,7 +535,8 @@ class CallSessionManager:
                                         }
                                     }
                                     
-                                    await agent_notification_service.send_call_summary(call_id, summary, final_analysis)
+                                    # Commented out to reduce notification noise - use notification manager instead
+                                    # await agent_notification_service.send_call_summary(call_id, summary, final_analysis)
                                     logger.info(f"📋 [session] Sent call summary with QA summary for {call_id}")
                                 except Exception as e:
                                     logger.error(f"❌ Failed to send call summary for {call_id}: {e}")
@@ -549,7 +555,8 @@ class CallSessionManager:
                                             'coaching_recommendations': self._generate_coaching_recommendations(qa_scores)
                                         }
                                     
-                                    await self._send_insights_notification(call_id, insights)
+                                    # Commented out to reduce notification noise - use notification manager instead  
+                                    # await self._send_insights_notification(call_id, insights)
                                     logger.info(f"💡 [session] Sent insights with full QA analysis for {call_id}")
                                 except Exception as e:
                                     logger.error(f"❌ Failed to send insights for {call_id}: {e}")
@@ -564,7 +571,8 @@ class CallSessionManager:
                                     gpt_insights = generate_case_insights(transcript)
                                     
                                     # Send GPT insights notification
-                                    await agent_notification_service.send_gpt_insights(call_id, gpt_insights)
+                                    # Commented out to reduce notification noise - use notification manager instead
+                                    # await agent_notification_service.send_gpt_insights(call_id, gpt_insights)
                                     logger.info(f"🤖 [session] Sent Mistral GPT insights for {call_id}")
                                 else:
                                     logger.warning(f"⚠️ [session] Transcript too short for GPT insights generation: {len(transcript)} chars")
@@ -1131,7 +1139,8 @@ class CallSessionManager:
                                     )
                                     
                                     # Send enhanced insights notification to agent
-                                    await self._send_enhanced_insights_notification(call_id, enhanced_insights, audio_quality_info)
+                                    # Commented out to reduce notification noise - use notification manager instead
+                                    # await self._send_enhanced_insights_notification(call_id, enhanced_insights, audio_quality_info)
                                     
                                     logger.info(f"🤖 [enhanced] Sent comprehensive enhanced insights for call {call_id}")
                                     
