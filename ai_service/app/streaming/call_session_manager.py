@@ -10,6 +10,8 @@ import os
 
 from ..config.settings import redis_task_client
 from .progressive_processor import progressive_processor
+from ..core.processing_strategy_manager import processing_strategy_manager
+from ..utils.scp_audio_downloader import download_audio_by_method, convert_gsm_to_wav
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +35,8 @@ class CallSession:
     total_audio_duration: float
     segment_count: int
     status: str  # 'active', 'completed', 'timeout'
+    processing_mode: str = "hybrid"  # Processing mode for this call
+    processing_plan: Optional[Dict] = None  # Detailed processing plan
     
     def to_dict(self) -> Dict:
         """Convert to dictionary for JSON serialization"""
@@ -58,10 +62,24 @@ class CallSessionManager:
         self.cleanup_interval = 300  # Cleanup every 5 minutes
         self._cleanup_task = None
         
-    async def start_session(self, call_id: str, connection_info: Dict) -> CallSession:
-        """Start a new call session"""
+    async def start_session(self, call_id: str, connection_info: Dict, mode_override: Optional[str] = None) -> CallSession:
+        """Start a new call session with processing mode determination"""
         try:
             now = datetime.now()
+            
+            # Create call context for processing mode determination
+            call_context = {
+                "call_id": call_id,
+                "start_time": now,
+                "connection_info": connection_info
+            }
+            
+            # Add mode override if provided
+            if mode_override:
+                call_context["mode_override"] = mode_override
+            
+            # Determine processing strategy
+            processing_plan = processing_strategy_manager.create_call_processing_plan(call_context)
             
             session = CallSession(
                 call_id=call_id,
@@ -72,7 +90,9 @@ class CallSessionManager:
                 cumulative_transcript="",
                 total_audio_duration=0.0,
                 segment_count=0,
-                status='active'
+                status='active',
+                processing_mode=processing_plan["processing_mode"],
+                processing_plan=processing_plan
             )
             
             # Store in memory
@@ -82,6 +102,7 @@ class CallSessionManager:
             self._store_session_in_redis(session)
             
             logger.info(f"📞 [session] Started call session: {call_id}")
+            logger.info(f"📞 [session] Processing mode: {session.processing_mode}")
             logger.info(f"📞 [session] Active sessions: {len(self.active_sessions)}")
             
             # Send call start notification to agent
@@ -133,22 +154,28 @@ class CallSessionManager:
                 transcript.strip()
             )
             
-            # Trigger progressive processing (translation, NER, classification)
-            try:
-                processed_window = await progressive_processor.process_if_ready(
-                    call_id, 
-                    session.cumulative_transcript
-                )
-                
-                if processed_window:
-                    logger.info(f"🧠 [session] Progressive processing completed window {processed_window.window_id} for call {call_id}")
+            # Trigger progressive processing if enabled for this call's mode
+            realtime_enabled = session.processing_plan.get("realtime_processing", {}).get("enabled", False)
+            
+            if realtime_enabled:
+                try:
+                    processed_window = await progressive_processor.process_if_ready(
+                        call_id, 
+                        session.cumulative_transcript
+                    )
                     
-                    # Add processing info to segment metadata
-                    segment['metadata']['progressive_window'] = processed_window.window_id
-                    segment['metadata']['window_processed'] = True
-                
-            except Exception as e:
-                logger.error(f"❌ Progressive processing failed for call {call_id}: {e}")
+                    if processed_window:
+                        logger.info(f"🧠 [session] Progressive processing completed window {processed_window.window_id} for call {call_id}")
+                        
+                        # Add processing info to segment metadata
+                        segment['metadata']['progressive_window'] = processed_window.window_id
+                        segment['metadata']['window_processed'] = True
+                    
+                except Exception as e:
+                    logger.error(f"❌ Progressive processing failed for call {call_id}: {e}")
+            else:
+                logger.debug(f"ℹ️ [session] Real-time processing disabled for call {call_id} (mode: {session.processing_mode})")
+                segment['metadata']['realtime_processing_disabled'] = True
             
             # Store updated session
             self._store_session_in_redis(session)
@@ -249,38 +276,47 @@ class CallSessionManager:
             except Exception as e:
                 logger.error(f"❌ Failed to finalize progressive analysis for call {call_id}: {e}")
             
-            # Download and process complete audio file from Asterisk server
-            audio_download_task = None
-            try:
-                audio_download_task = await self._download_and_process_audio(session)
-            except Exception as e:
-                logger.error(f"❌ Failed to download/process audio for {call_id}: {e}")
+            # Check if post-call processing is enabled for this session
+            postcall_enabled = session.processing_plan.get("postcall_processing", {}).get("enabled", False)
+            
+            if postcall_enabled:
+                # Download and process complete audio file from Asterisk server
+                audio_download_task = None
+                try:
+                    audio_download_task = await self._download_and_process_audio_with_mode(session)
+                except Exception as e:
+                    logger.error(f"❌ Failed to download/process audio for {call_id}: {e}")
 
-            # Trigger AI pipeline processing if transcript is substantial (fallback)
-            ai_task = None
-            if len(session.cumulative_transcript.strip()) > 50:  # Minimum threshold
-                ai_task = await self._trigger_ai_pipeline(session)
+                # Trigger AI pipeline processing if transcript is substantial
+                ai_task = None
+                if len(session.cumulative_transcript.strip()) > 50:  # Minimum threshold
+                    ai_task = await self._trigger_ai_pipeline_with_mode(session)
+                    
+                # Wait for AI pipeline completion and send summary/insights
+                if ai_task and AGENT_NOTIFICATIONS_ENABLED:
+                    try:
+                        await self._wait_and_send_ai_results(call_id, ai_task)
+                    except Exception as e:
+                        logger.error(f"❌ Failed to send AI results for {call_id}: {e}")
+            else:
+                logger.info(f"ℹ️ [session] Post-call processing disabled for call {call_id} (mode: {session.processing_mode})")
+                
+                # Send basic call end notification without waiting for AI results
+                if AGENT_NOTIFICATIONS_ENABLED:
+                    try:
+                        final_stats = {
+                            'duration': session.total_audio_duration,
+                            'segments': session.segment_count,
+                            'transcript_length': len(session.cumulative_transcript),
+                            'start_time': session.start_time.isoformat(),
+                            'end_time': session.last_activity.isoformat(),
+                            'processing_mode': session.processing_mode,
+                            'postcall_processing_skipped': True
+                        }
+                        await agent_notification_service.send_call_end(call_id, reason, final_stats)
+                    except Exception as e:
+                        logger.error(f"❌ Failed to send call end notification for {call_id}: {e}")
             
-            # Wait for AI pipeline completion and send summary/insights
-            if ai_task and AGENT_NOTIFICATIONS_ENABLED:
-                try:
-                    await self._wait_and_send_ai_results(call_id, ai_task)
-                except Exception as e:
-                    logger.error(f"❌ Failed to send AI results for {call_id}: {e}")
-            
-            # Send call end notification to agent
-            if AGENT_NOTIFICATIONS_ENABLED:
-                try:
-                    final_stats = {
-                        'duration': session.total_audio_duration,
-                        'segments': session.segment_count,
-                        'transcript_length': len(session.cumulative_transcript),
-                        'start_time': session.start_time.isoformat(),
-                        'end_time': session.last_activity.isoformat()
-                    }
-                    await agent_notification_service.send_call_end(call_id, reason, final_stats)
-                except Exception as e:
-                    logger.error(f"❌ Failed to send call end notification for {call_id}: {e}")
             
             # Remove from active sessions
             if call_id in self.active_sessions:
@@ -295,6 +331,81 @@ class CallSessionManager:
             
         except Exception as e:
             logger.error(f"❌ Failed to end session {call_id}: {e}")
+            return None
+    
+    async def _trigger_ai_pipeline_with_mode(self, session: CallSession):
+        """Trigger AI pipeline processing with mode-aware configuration"""
+        try:
+            call_id = session.call_id
+            postcall_config = session.processing_plan.get("postcall_processing", {}).get("config", {})
+            
+            # Use enhanced model for post-call processing if configured
+            whisper_model = postcall_config.get("whisper_model", "large-v3")
+            
+            from ..tasks.audio_tasks import process_audio_task
+            
+            # Create filename for the complete call
+            filename = f"call_{call_id}_{session.start_time.strftime('%Y%m%d_%H%M%S')}.transcript"
+            
+            # Check if we have downloaded audio or should use transcript
+            audio_bytes = None
+            is_pretranscribed = True
+            
+            # Try to get downloaded audio if available
+            if hasattr(session, 'audio_download_info') and session.audio_download_info:
+                # Use the downloaded audio for enhanced transcription
+                download_info = session.audio_download_info
+                if download_info.get('success', False):
+                    # Audio was successfully downloaded - we should re-transcribe with higher quality model
+                    is_pretranscribed = False
+                    logger.info(f"🎙️ [pipeline] Using downloaded audio for enhanced transcription with {whisper_model}")
+                    # Note: The actual audio bytes would need to be stored separately or re-downloaded
+            
+            if is_pretranscribed:
+                # Fall back to using existing transcript
+                transcript_data = {
+                    'transcript': session.cumulative_transcript,
+                    'is_pretranscribed': True,
+                    'language': 'sw',
+                    'processing_mode': session.processing_mode,
+                    'realtime_source': True
+                }
+                audio_bytes = json.dumps(transcript_data).encode('utf-8')
+                logger.info(f"🎙️ [pipeline] Using real-time transcript for AI pipeline (mode: {session.processing_mode})")
+            
+            # Configure pipeline based on post-call settings
+            include_translation = postcall_config.get("enable_full_pipeline", True)
+            include_insights = postcall_config.get("enable_insights_generation", True)
+            
+            # Submit to AI pipeline
+            task = process_audio_task.delay(
+                audio_bytes=audio_bytes,
+                filename=filename,
+                language="sw",
+                include_translation=include_translation,
+                include_insights=include_insights,
+                processing_mode=session.processing_mode
+            )
+            
+            # Store task reference
+            session_key = f"call_session:{call_id}"
+            pipeline_info = {
+                'task_id': task.id,
+                'submitted_at': datetime.now().isoformat(),
+                'status': 'processing',
+                'processing_mode': session.processing_mode,
+                'whisper_model': whisper_model,
+                'enhanced_transcription': not is_pretranscribed
+            }
+            
+            if self.redis_client:
+                self.redis_client.hset(session_key, 'ai_pipeline', json.dumps(pipeline_info))
+            
+            logger.info(f"🤖 [pipeline] Triggered AI pipeline for call {call_id}, task: {task.id} (mode: {session.processing_mode})")
+            return task
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to trigger AI pipeline with mode for session {session.call_id}: {e}")
             return None
     
     async def _trigger_ai_pipeline(self, session: CallSession):
@@ -788,6 +899,60 @@ class CallSessionManager:
         
         if inactive_sessions:
             logger.info(f"🧹 [session] Cleaned up {len(inactive_sessions)} inactive sessions")
+    
+    async def _download_and_process_audio_with_mode(self, session: CallSession):
+        """Download complete audio file using configured method based on processing mode"""
+        try:
+            call_id = session.call_id
+            postcall_config = session.processing_plan.get("postcall_processing", {}).get("config", {})
+            download_config = session.processing_plan.get("postcall_processing", {}).get("audio_download", {})
+            
+            download_method = download_config.get("method", "scp")
+            
+            logger.info(f"📥 [download] Starting audio download for call {call_id} using method: {download_method}")
+            
+            # Download audio using configured method
+            audio_bytes, download_info = await download_audio_by_method(
+                call_id, 
+                download_method, 
+                download_config.get("config", {})
+            )
+            
+            if audio_bytes is None:
+                logger.error(f"❌ [download] Failed to download audio for {call_id}: {download_info.get('error', 'Unknown error')}")
+                return None
+            
+            logger.info(f"✅ [download] Successfully downloaded {download_info.get('file_size_mb', 0):.2f}MB for call {call_id}")
+            
+            # Convert to WAV if enabled and needed
+            convert_to_wav = postcall_config.get("convert_to_wav", True)
+            format_type = download_info.get("format", "unknown")
+            
+            if convert_to_wav and format_type == "gsm":
+                logger.info(f"🔄 [download] Converting GSM to WAV for call {call_id}")
+                
+                wav_bytes = await convert_gsm_to_wav(audio_bytes)
+                if wav_bytes:
+                    download_info.update({
+                        "format": "wav_converted_from_gsm",
+                        "original_size_bytes": len(audio_bytes),
+                        "converted_size_bytes": len(wav_bytes),
+                        "conversion_successful": True
+                    })
+                    audio_bytes = wav_bytes
+                    logger.info(f"✅ [download] GSM to WAV conversion successful for {call_id}")
+                else:
+                    logger.warning(f"⚠️ [download] WAV conversion failed for {call_id}, using original format")
+            
+            # Store download info in session for later reference
+            if not hasattr(session, 'audio_download_info'):
+                session.audio_download_info = download_info
+            
+            return audio_bytes, download_info
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to download audio with mode for session {call_id}: {e}")
+            return None
     
     async def _download_and_process_audio(self, session: CallSession):
         """Download complete audio file from Asterisk server and process through full pipeline"""

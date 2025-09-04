@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings
-from typing import Optional
+from typing import Optional, Dict, Any
 import os
 from pathlib import Path
 import redis
@@ -58,9 +58,93 @@ class Settings(BaseSettings):
     # Docker detection
     docker_container: bool = False
     
+    # Processing Mode Configuration
+    default_processing_mode: str = "hybrid"  # realtime_only, postcall_only, hybrid, adaptive
+    enable_realtime_processing: bool = True
+    enable_postcall_processing: bool = True
+    enable_scp_audio_download: bool = True
+    
+    # Real-time Processing Configuration
+    realtime_min_window_chars: int = 150
+    realtime_target_window_chars: int = 300
+    realtime_overlap_chars: int = 50
+    realtime_processing_interval_seconds: int = 30
+    realtime_enable_progressive_translation: bool = True
+    realtime_enable_progressive_entities: bool = True
+    realtime_enable_progressive_classification: bool = True
+    realtime_enable_agent_notifications: bool = True
+    
+    # Post-call Processing Configuration
+    postcall_audio_download_method: str = "scp"  # scp, http, local, disabled
+    postcall_enable_full_pipeline: bool = True
+    postcall_enable_enhanced_transcription: bool = True
+    postcall_enable_audio_quality_improvement: bool = True
+    postcall_whisper_model: str = "large-v3"
+    postcall_enable_diarization: bool = False
+    postcall_enable_noise_reduction: bool = True
+    postcall_download_timeout_seconds: int = 60
+    postcall_convert_to_wav: bool = True
+    postcall_enable_insights_generation: bool = True
+    postcall_enable_qa_scoring: bool = True
+    postcall_enable_summarization: bool = True
+    postcall_notify_completion: bool = True
+    postcall_send_unified_insights: bool = True
+    
+    # Adaptive Processing Rules
+    adaptive_short_call_threshold_seconds: int = 30
+    adaptive_long_call_threshold_seconds: int = 600
+    adaptive_high_priority_keywords: str = "emergency,urgent,critical,suicide,violence,accident,medical,police,fire,ambulance"
+    
+    # SCP Audio Download Configuration
+    scp_user: str = "helpline"
+    scp_server: str = "192.168.10.3"
+    scp_password: str = "h3lpl1n3"
+    scp_remote_path_template: str = "/home/dat/helpline/calls/{call_id}.gsm"
+    scp_timeout_seconds: int = 30
+    
     def get_model_path(self, model_name: str) -> str:
         """Get absolute path for a model"""
         return os.path.join(self.models_path, model_name)
+    
+    def get_processing_mode_config(self) -> Dict[str, Any]:
+        """Get complete processing mode configuration as dictionary"""
+        return {
+            "default_mode": self.default_processing_mode,
+            "realtime_processing": {
+                "enabled": self.enable_realtime_processing,
+                "min_window_chars": self.realtime_min_window_chars,
+                "target_window_chars": self.realtime_target_window_chars,
+                "overlap_chars": self.realtime_overlap_chars,
+                "processing_interval_seconds": self.realtime_processing_interval_seconds,
+                "enable_progressive_translation": self.realtime_enable_progressive_translation,
+                "enable_progressive_entities": self.realtime_enable_progressive_entities,
+                "enable_progressive_classification": self.realtime_enable_progressive_classification,
+                "enable_agent_notifications": self.realtime_enable_agent_notifications
+            },
+            "postcall_processing": {
+                "enabled": self.enable_postcall_processing,
+                "audio_download_method": self.postcall_audio_download_method,
+                "enable_full_pipeline": self.postcall_enable_full_pipeline,
+                "enable_enhanced_transcription": self.postcall_enable_enhanced_transcription,
+                "enable_audio_quality_improvement": self.postcall_enable_audio_quality_improvement,
+                "whisper_model": self.postcall_whisper_model,
+                "enable_diarization": self.postcall_enable_diarization,
+                "enable_noise_reduction": self.postcall_enable_noise_reduction,
+                "download_timeout_seconds": self.postcall_download_timeout_seconds,
+                "convert_to_wav": self.postcall_convert_to_wav,
+                "enable_insights_generation": self.postcall_enable_insights_generation,
+                "enable_qa_scoring": self.postcall_enable_qa_scoring,
+                "enable_summarization": self.postcall_enable_summarization,
+                "notify_completion": self.postcall_notify_completion,
+                "send_unified_insights": self.postcall_send_unified_insights,
+                "scp_audio_download": self.enable_scp_audio_download
+            },
+            "adaptive_rules": {
+                "short_call_threshold_seconds": self.adaptive_short_call_threshold_seconds,
+                "long_call_threshold_seconds": self.adaptive_long_call_threshold_seconds,
+                "high_priority_keywords": self.adaptive_high_priority_keywords.split(",")
+            }
+        }
     
     def initialize_paths(self):
         """Initialize paths - called explicitly, not at import time"""
