@@ -43,7 +43,31 @@ class CallSession:
         data = asdict(self)
         data['start_time'] = self.start_time.isoformat()
         data['last_activity'] = self.last_activity.isoformat()
+        
+        # Handle processing_plan serialization (convert enums to strings)
+        if self.processing_plan:
+            import json
+            try:
+                # Test if it's JSON serializable, if not convert enums to strings
+                json.dumps(self.processing_plan)
+                data['processing_plan'] = self.processing_plan
+            except TypeError:
+                # Convert enum objects to their string values
+                serializable_plan = self._make_json_serializable(self.processing_plan)
+                data['processing_plan'] = serializable_plan
+        
         return data
+    
+    def _make_json_serializable(self, obj):
+        """Recursively convert non-serializable objects to serializable form"""
+        if hasattr(obj, 'value'):  # Enum
+            return obj.value
+        elif isinstance(obj, dict):
+            return {k: self._make_json_serializable(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [self._make_json_serializable(item) for item in obj]
+        else:
+            return obj
     
     @classmethod
     def from_dict(cls, data: Dict) -> 'CallSession':

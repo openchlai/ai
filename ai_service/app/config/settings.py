@@ -102,9 +102,26 @@ class Settings(BaseSettings):
     scp_remote_path_template: str = "/home/dat/helpline/calls/{call_id}.gsm"
     scp_timeout_seconds: int = 30
     
+    # Whisper Model Configuration
+    whisper_model_variant: str = "large_turbo"  # large_v3, large_turbo
+    translation_strategy: str = "custom_model"  # whisper_builtin, custom_model
+    whisper_large_v3_path: str = "./models/whisper_large_v3"
+    whisper_large_turbo_path: str = "./models/whisper_large_turbo"
+    whisper_active_symlink: str = "./models/whisper"  # Symlink for backward compatibility
+    
     def get_model_path(self, model_name: str) -> str:
         """Get absolute path for a model"""
         return os.path.join(self.models_path, model_name)
+    
+    def get_active_whisper_path(self) -> str:
+        """Get path to the currently active whisper model"""
+        if self.whisper_model_variant == "large_v3":
+            return os.path.abspath(self.whisper_large_v3_path)
+        elif self.whisper_model_variant == "large_turbo":
+            return os.path.abspath(self.whisper_large_turbo_path)
+        else:
+            # Fallback to symlink path
+            return os.path.abspath(self.whisper_active_symlink)
     
     def get_processing_mode_config(self) -> Dict[str, Any]:
         """Get complete processing mode configuration as dictionary"""

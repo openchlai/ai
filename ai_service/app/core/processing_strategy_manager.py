@@ -185,7 +185,10 @@ class ProcessingStrategyManager:
         if method == AudioDownloadMethod.SCP:
             scp_config = {
                 "timeout_seconds": self.config.postcall_config.download_timeout_seconds,
-                # Additional SCP-specific config can be added here or loaded from environment
+                "user": self.settings.scp_user,
+                "server": self.settings.scp_server,
+                "password": self.settings.scp_password,
+                "remote_path_template": self.settings.scp_remote_path_template
             }
             return "scp", scp_config
             

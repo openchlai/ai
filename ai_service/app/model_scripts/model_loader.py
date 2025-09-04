@@ -174,18 +174,24 @@ class ModelLoader:
                 return
             
             if model_name == "whisper":
-                from .whisper_model import whisper_model
+                # Use WhisperModelManager for dynamic variant loading
+                from ..core.whisper_model_manager import whisper_model_manager
                 
-                success = whisper_model.load()
-                if success:
-                    model_status.loaded = True
-                    model_status.error = None
-                    model_status.model_info = whisper_model.get_model_info()
-                    self.models[model_name] = whisper_model
-                    logger.info("✅ Whisper model loaded successfully")
-                else:
-                    model_status.error = whisper_model.error or "Failed to load Whisper model"
-                    logger.error(f"❌ Whisper model failed to load: {model_status.error}")
+                try:
+                    success = await whisper_model_manager.load_whisper_model()
+                    if success:
+                        model_status.loaded = True
+                        model_status.error = None
+                        model_status.model_info = whisper_model_manager.get_loaded_variant_info()
+                        # Store the actual whisper model instance for backward compatibility
+                        self.models[model_name] = whisper_model_manager.whisper_model
+                        logger.info(f"✅ Whisper model loaded successfully: {whisper_model_manager.current_variant.value}")
+                    else:
+                        model_status.error = "Failed to load Whisper model via WhisperModelManager"
+                        logger.error(f"❌ Whisper model failed to load: {model_status.error}")
+                except Exception as e:
+                    model_status.error = f"WhisperModelManager error: {str(e)}"
+                    logger.error(f"❌ Whisper model manager failed: {model_status.error}")
                 
                 model_status.load_time = datetime.now()
                 return
