@@ -578,34 +578,86 @@
                 </div>
                 <div class="form-group">
                   <label for="case-category">Case Category*</label>
-                  <div class="category-tags-container">
-                    <div class="category-tags">
-                      <span 
-                        v-for="category in formData.step4.categories" 
-                        :key="category" 
-                        class="category-tag"
-                      >
-                        {{ category }}
-                        <button type="button" @click="removeCategory(category)" class="tag-remove">×</button>
-                      </span>
+                  <div class="hierarchical-dropdown">
+                    <div class="dropdown-trigger" @click="toggleCategoryDropdown">
+                      <div class="selected-categories">
+                        <span 
+                          v-for="category in formData.step4.categories" 
+                          :key="category" 
+                          class="category-tag"
+                        >
+                          {{ category }}
+                          <button type="button" @click.stop="removeCategory(category)" class="tag-remove">×</button>
+                        </span>
+                        <span v-if="formData.step4.categories.length === 0" class="placeholder">Select Category</span>
+                      </div>
+                      <svg class="dropdown-arrow" :class="{ 'open': showCategoryDropdown }" width="12" height="12" viewBox="0 0 12 12">
+                        <path d="M6 8L2 4h8L6 8z" fill="currentColor"/>
+                      </svg>
                     </div>
-                    <select
-                      v-model="selectedCategory"
-                      @change="addCategory"
-                      class="form-control"
-                    >
-                      <option value="">Add category...</option>
-                      <option value="Abuse">Abuse</option>
-                      <option value="Child Exploitation">Child Exploitation</option>
-                      <option value="Domestic Violence">Domestic Violence</option>
-                      <option value="Sexual Assault">Sexual Assault</option>
-                      <option value="Human Trafficking">Human Trafficking</option>
-                      <option value="Labor Exploitation">Labor Exploitation</option>
-                      <option value="Elder Abuse">Elder Abuse</option>
-                      <option value="Stalking">Stalking</option>
-                      <option value="Substance Abuse">Substance Abuse</option>
-                      <option value="Other">Other</option>
-                    </select>
+                    
+                    <div v-if="showCategoryDropdown" class="category-dropdown-panel">
+                      <div class="panel-header">
+                        <span class="panel-title">Case Category</span>
+                        <button @click="expandCategoryPanel" class="expand-btn">
+                          <svg width="16" height="16" viewBox="0 0 16 16">
+                            <path d="M2 2h12v12H2V2zm1 1v10h10V3H3z" fill="currentColor"/>
+                            <path d="M5 5h6v6H5V5zm1 1v4h4V6H6z" fill="currentColor"/>
+                          </svg>
+                        </button>
+                      </div>
+                      
+                      <div class="category-tree">
+                        <div 
+                          v-for="category in caseCategories" 
+                          :key="category.value"
+                          class="category-item"
+                          :class="{ 'expanded': category.expanded }"
+                        >
+                          <div 
+                            class="category-row"
+                            @click="toggleCategory(category)"
+                          >
+                            <span class="category-icon" v-if="category.children && category.children.length > 0">
+                              <svg width="12" height="12" viewBox="0 0 12 12">
+                                <path d="M4 2l4 4-4 4V2z" fill="currentColor"/>
+                              </svg>
+                            </span>
+                            <span class="category-name">{{ category.label }}</span>
+                            <input 
+                              type="checkbox" 
+                              :value="category.value"
+                              v-model="formData.step4.categories"
+                              @click.stop
+                              class="category-checkbox"
+                            />
+                          </div>
+                          
+                          <div v-if="category.expanded && category.children" class="subcategories">
+                            <div 
+                              v-for="subcategory in category.children" 
+                              :key="subcategory.value"
+                              class="subcategory-item"
+                            >
+                              <div class="subcategory-row">
+                                <span class="subcategory-name">{{ subcategory.label }}</span>
+                                <input 
+                                  type="checkbox" 
+                                  :value="subcategory.value"
+                                  v-model="formData.step4.categories"
+                                  @click.stop
+                                  class="category-checkbox"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div class="pagination-info">
+                        <span>{{ caseCategories.length }} categories available</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1568,13 +1620,51 @@
                     
                     <!-- Conditional field for school name when "Yes" is selected -->
                     <div v-if="clientForm.attendingSchool === 'yes'" class="conditional-field">
-                      <label>Which School Is the Client Attending?</label>
+                      <label>School Name</label>
                       <input 
-                        v-model="clientForm.previousSchool" 
+                        v-model="clientForm.schoolName" 
                         type="text" 
                         placeholder="Enter school name"
                         class="school-input"
                       />
+                      
+                      <label>School Level</label>
+                      <select v-model="clientForm.schoolLevel">
+                        <option value="">Select School Level</option>
+                        <option value="nursery">Nursery</option>
+                        <option value="primary">Primary</option>
+                        <option value="secondary">Secondary</option>
+                        <option value="tertiary">Tertiary</option>
+                      </select>
+                      
+                      <label>School Address</label>
+                      <input 
+                        v-model="clientForm.schoolAddress" 
+                        type="text" 
+                        placeholder="Enter school address"
+                      />
+                      
+                      <label>School Type</label>
+                      <select v-model="clientForm.schoolType">
+                        <option value="">Select School Type</option>
+                        <option value="government-boarding">Government Boarding</option>
+                        <option value="government-day">Government Day</option>
+                        <option value="government-day-boarding">Government Day and Boarding</option>
+                        <option value="none">None</option>
+                        <option value="private-boarding">Private Boarding</option>
+                        <option value="private-day">Private Day</option>
+                        <option value="private-day-boarding">Private Day and Boarding</option>
+                      </select>
+                      
+                      <label>School Attendance</label>
+                      <select v-model="clientForm.schoolAttendance">
+                        <option value="">Select Attendance Status</option>
+                        <option value="regular">Regular</option>
+                        <option value="irregular">Irregular</option>
+                        <option value="absent">Frequently Absent</option>
+                        <option value="dropped">Dropped Out</option>
+                        <option value="unknown">Unknown</option>
+                      </select>
                     </div>
                   </div>
                   
@@ -1596,6 +1686,90 @@
                         <span class="radio-indicator"></span>
                         <span class="radio-label">Unknown</span>
                       </label>
+                    </div>
+                    
+                    <!-- Conditional field for disability details when "Yes" is selected -->
+                    <div v-if="clientForm.isDisabled === 'yes'" class="conditional-field">
+                      <label>Disability</label>
+                      <select v-model="clientForm.disability">
+                        <option value="">Select Type of Disability</option>
+                        <option value="physical">Physical Disability</option>
+                        <option value="visual">Visual Impairment</option>
+                        <option value="hearing">Hearing Impairment</option>
+                        <option value="speech">Speech Impairment</option>
+                        <option value="intellectual">Intellectual Disability</option>
+                        <option value="developmental">Developmental Disability</option>
+                        <option value="mental-health">Mental Health Condition</option>
+                        <option value="multiple">Multiple Disabilities</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Is the Client Referred for Special Services?</label>
+                    <div class="radio-group">
+                      <label class="radio-option">
+                        <input type="radio" v-model="clientForm.specialServicesReferred" value="yes" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">Yes</span>
+                      </label>
+                      <label class="radio-option">
+                        <input type="radio" v-model="clientForm.specialServicesReferred" value="no" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">No</span>
+                      </label>
+                      <label class="radio-option">
+                        <input type="radio" v-model="clientForm.specialServicesReferred" value="unknown" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">Unknown</span>
+                      </label>
+                    </div>
+                    
+                    <!-- Conditional field for special services referral when "Yes" is selected -->
+                    <div v-if="clientForm.specialServicesReferred === 'yes'" class="conditional-field">
+                      <label>Special Services Referral</label>
+                      <div class="multi-select-dropdown">
+                        <div class="dropdown-trigger" @click="toggleSpecialServicesDropdown">
+                          <span class="selected-text">
+                            {{ getSelectedSpecialServicesText() || 'Select Special Services Referral' }}
+                          </span>
+                          <svg class="dropdown-arrow" :class="{ 'open': showSpecialServicesDropdown }" width="12" height="12" viewBox="0 0 12 12">
+                            <path d="M6 8L2 4h8L6 8z" fill="currentColor"/>
+                          </svg>
+                        </div>
+                        
+                        <div v-if="showSpecialServicesDropdown" class="dropdown-options">
+                          <div class="search-box">
+                            <input 
+                              v-model="specialServicesSearch" 
+                              type="text" 
+                              placeholder="Search services..."
+                              @click.stop
+                            />
+                          </div>
+                          
+                          <div class="options-list">
+                            <label 
+                              v-for="service in filteredSpecialServices" 
+                              :key="service.value"
+                              class="checkbox-option"
+                            >
+                              <input 
+                                type="checkbox" 
+                                :value="service.value"
+                                v-model="clientForm.specialServicesReferral"
+                                @click.stop
+                              />
+                              <span class="checkbox-label">{{ service.label }}</span>
+                            </label>
+                          </div>
+                          
+                          <div class="pagination-info">
+                            <span>{{ filteredSpecialServices.length }} of {{ specialServicesOptions.length }}</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1945,6 +2119,113 @@ const selectedCategory = ref('')
 const clientModalOpen = ref(false)
 const perpetratorModalOpen = ref(false)
 
+// Special Services dropdown state
+const showSpecialServicesDropdown = ref(false)
+const specialServicesSearch = ref('')
+
+// Case Category dropdown state
+const showCategoryDropdown = ref(false)
+const isCategoryPanelExpanded = ref(false)
+
+// Case Categories with hierarchical structure
+const caseCategories = ref([
+  {
+    value: 'abuse',
+    label: 'Abuse',
+    expanded: false,
+    children: [
+      { value: 'child-exploitation', label: 'Child Exploitation' },
+      { value: 'child-neglect', label: 'Child Neglect' },
+      { value: 'economic-violence', label: 'Economic Violence' },
+      { value: 'emotional-psychological-abuse', label: 'Emotional & Psychological Abuse' },
+      { value: 'harmful-traditional-practices', label: 'Harmful Traditional Practices' },
+      { value: 'murder', label: 'Murder' },
+      { value: 'online-sexual-abuse-violence', label: 'Online Sexual Abuse & Violence' },
+      { value: 'others', label: 'Others' },
+      { value: 'physical-violence', label: 'Physical Violence' },
+      { value: 'sexual-violence', label: 'Sexual Violence' }
+    ]
+  },
+  {
+    value: 'counseling',
+    label: 'Counseling',
+    expanded: false,
+    children: [
+      { value: 'family-counseling', label: 'Family Counseling' },
+      { value: 'individual-counseling', label: 'Individual Counseling' },
+      { value: 'group-counseling', label: 'Group Counseling' },
+      { value: 'crisis-counseling', label: 'Crisis Counseling' }
+    ]
+  },
+  {
+    value: 'distress',
+    label: 'Distress',
+    expanded: false,
+    children: [
+      { value: 'emotional-distress', label: 'Emotional Distress' },
+      { value: 'mental-health-crisis', label: 'Mental Health Crisis' },
+      { value: 'suicidal-ideation', label: 'Suicidal Ideation' },
+      { value: 'panic-attacks', label: 'Panic Attacks' }
+    ]
+  },
+  {
+    value: 'fraud-theft',
+    label: 'Fraud/Theft',
+    expanded: false,
+    children: [
+      { value: 'identity-theft', label: 'Identity Theft' },
+      { value: 'financial-fraud', label: 'Financial Fraud' },
+      { value: 'cyber-crime', label: 'Cyber Crime' },
+      { value: 'property-theft', label: 'Property Theft' }
+    ]
+  },
+  {
+    value: 'health',
+    label: 'Health',
+    expanded: false,
+    children: [
+      { value: 'medical-emergency', label: 'Medical Emergency' },
+      { value: 'mental-health', label: 'Mental Health' },
+      { value: 'substance-abuse', label: 'Substance Abuse' },
+      { value: 'healthcare-access', label: 'Healthcare Access' }
+    ]
+  },
+  {
+    value: 'information-inquiry',
+    label: 'Information Inquiry',
+    expanded: false,
+    children: [
+      { value: 'general-information', label: 'General Information' },
+      { value: 'service-inquiry', label: 'Service Inquiry' },
+      { value: 'resource-request', label: 'Resource Request' },
+      { value: 'referral-inquiry', label: 'Referral Inquiry' }
+    ]
+  }
+])
+
+// Special Services options
+const specialServicesOptions = ref([
+  { value: 'assistant-commissioner-ees', label: 'Assistant Commissioner EES' },
+  { value: 'childrens-home', label: 'Children\'s Home' },
+  { value: 'commissioner-ees', label: 'Commissioner EES' },
+  { value: 'foreign-affairs', label: 'Foreign Affairs' },
+  { value: 'gbv-shelters', label: 'GBV Shelters' },
+  { value: 'head-eeu', label: 'Head EEU' },
+  { value: 'head-ieu', label: 'Head IEU' },
+  { value: 'health-facility', label: 'Health Facility' },
+  { value: 'labour-officer', label: 'Labour Officer (LO)' },
+  { value: 'labour-support-officer', label: 'Labour Support Officer (LSO)' },
+  { value: 'lcs-lcs', label: 'LCs LCs' },
+  { value: 'legal-aid', label: 'Legal Aid' },
+  { value: 'local-recruitment-agency', label: 'Local Recruitment Agency/Associations' },
+  { value: 'mia-uganda-police', label: 'MIA (Uganda Police Force)' },
+  { value: 'ngos-csos-cbos', label: 'NGOs/CSOs/CBOs' },
+  { value: 'other', label: 'Other' },
+  { value: 'police', label: 'Police' },
+  { value: 'probation-office', label: 'Probation Office' },
+  { value: 'special-needs-facility', label: 'Special Needs Facility' }
+])
+
 // Audio recording state
 const isRecording = ref(false)
 const recordingTime = ref(0)
@@ -2004,7 +2285,15 @@ const clientForm = reactive({
   maritalStatus: '',
   attendingSchool: '',
   previousSchool: '',
-  isDisabled: ''
+  schoolName: '',
+  schoolLevel: '',
+  schoolAddress: '',
+  schoolType: '',
+  schoolAttendance: '',
+  isDisabled: '',
+  disability: '',
+  specialServicesReferred: '',
+  specialServicesReferral: []
 })
 
 // Perpetrator form steps
@@ -2288,6 +2577,47 @@ const addClient = () => {
 
 const removeClient = (index) => {
   formData.step2.clients.splice(index, 1)
+}
+
+// Special Services Dropdown Methods
+const toggleSpecialServicesDropdown = () => {
+  showSpecialServicesDropdown.value = !showSpecialServicesDropdown.value
+}
+
+const filteredSpecialServices = computed(() => {
+  if (!specialServicesSearch.value) return specialServicesOptions.value
+  
+  return specialServicesOptions.value.filter(service =>
+    service.label.toLowerCase().includes(specialServicesSearch.value.toLowerCase())
+  )
+})
+
+const getSelectedSpecialServicesText = () => {
+  if (!clientForm.specialServicesReferral || clientForm.specialServicesReferral.length === 0) {
+    return ''
+  }
+  
+  if (clientForm.specialServicesReferral.length === 1) {
+    const selected = specialServicesOptions.value.find(opt => opt.value === clientForm.specialServicesReferral[0])
+    return selected ? selected.label : ''
+  }
+  
+  return `${clientForm.specialServicesReferral.length} services selected`
+}
+
+// Case Category Dropdown Methods
+const toggleCategoryDropdown = () => {
+  showCategoryDropdown.value = !showCategoryDropdown.value
+}
+
+const toggleCategory = (category) => {
+  category.expanded = !category.expanded
+}
+
+const expandCategoryPanel = () => {
+  isCategoryPanelExpanded.value = !isCategoryPanelExpanded.value
+  // This could open a modal or expand the panel further
+  console.log('Expand category panel:', isCategoryPanelExpanded.value)
 }
 
 const openPerpetratorModal = () => {
@@ -3912,5 +4242,370 @@ const updateStepCSSVar = () => {
 .btn--sm {
   padding: 8px 16px;
   font-size: 12px;
+}
+
+/* Multi-Select Dropdown Styles */
+.multi-select-dropdown {
+  position: relative;
+  width: 100%;
+}
+
+.dropdown-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border: 1px solid var(--color-border, #d1d5db);
+  border-radius: var(--radius-md, 6px);
+  background: var(--color-surface, #ffffff);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dropdown-trigger:hover {
+  border-color: var(--color-primary, #8b4513);
+}
+
+.selected-text {
+  color: var(--color-text, #1f2937);
+  flex: 1;
+  text-align: left;
+}
+
+.dropdown-arrow {
+  transition: transform 0.2s ease;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.dropdown-arrow.open {
+  transform: rotate(180deg);
+}
+
+.dropdown-options {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #d1d5db);
+  border-radius: var(--radius-md, 6px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  max-height: 300px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.search-box {
+  padding: 12px;
+  border-bottom: 1px solid var(--color-border, #d1d5db);
+}
+
+.search-box input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border, #d1d5db);
+  border-radius: var(--radius-sm, 4px);
+  font-size: 14px;
+  outline: none;
+}
+
+.search-box input:focus {
+  border-color: var(--color-primary, #8b4513);
+  box-shadow: 0 0 0 1px var(--color-primary, #8b4513);
+}
+
+.options-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.checkbox-option {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.checkbox-option:hover {
+  background-color: var(--color-surface-hover, #f9fafb);
+}
+
+.checkbox-option input[type="checkbox"] {
+  margin-right: 12px;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-primary, #8b4513);
+}
+
+.checkbox-label {
+  flex: 1;
+  color: var(--color-text, #1f2937);
+  font-size: 14px;
+  user-select: none;
+}
+
+.pagination-info {
+  padding: 6px 12px;
+  background-color: var(--color-surface-muted, #f3f4f6);
+  border-top: 1px solid var(--color-border, #d1d5db);
+  font-size: 11px;
+  color: var(--color-text-secondary, #6b7280);
+  text-align: center;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Scrollbar styles for options list */
+.options-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.options-list::-webkit-scrollbar-track {
+  background: var(--color-surface-muted, #f3f4f6);
+}
+
+.options-list::-webkit-scrollbar-thumb {
+  background: var(--color-border, #d1d5db);
+  border-radius: 3px;
+}
+
+.options-list::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary, #6b7280);
+}
+
+/* Hierarchical Category Dropdown Styles */
+.hierarchical-dropdown {
+  position: relative;
+  width: 100%;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.hierarchical-dropdown .dropdown-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border, #d1d5db);
+  border-radius: var(--radius-md, 6px);
+  background: var(--color-surface, #ffffff);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 36px;
+  font-size: 13px;
+}
+
+.hierarchical-dropdown .dropdown-trigger:hover {
+  border-color: var(--color-primary, #8b4513);
+}
+
+.selected-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+  align-items: center;
+}
+
+.category-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  background-color: var(--color-primary, #8b4513);
+  color: white;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.tag-remove {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 0;
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+
+.tag-remove:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.placeholder {
+  color: var(--color-text-secondary, #6b7280);
+  font-style: italic;
+  font-size: 13px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.category-dropdown-panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #d1d5db);
+  border-radius: var(--radius-md, 6px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  max-height: 300px;
+  overflow: hidden;
+  margin-top: 4px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--color-border, #d1d5db);
+  background-color: var(--color-surface-muted, #f8f9fa);
+}
+
+.panel-title {
+  font-weight: 600;
+  color: var(--color-text, #1f2937);
+  font-size: 13px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.expand-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 3px;
+  transition: background-color 0.2s ease;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.expand-btn:hover {
+  background-color: var(--color-surface-hover, #e5e7eb);
+}
+
+.expand-btn svg {
+  width: 12px;
+  height: 12px;
+}
+
+.category-tree {
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.category-item {
+  border-bottom: 1px solid var(--color-border-light, #f3f4f6);
+}
+
+.category-item:last-child {
+  border-bottom: none;
+}
+
+.category-row {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  position: relative;
+}
+
+.category-row:hover {
+  background-color: var(--color-surface-hover, #f9fafb);
+}
+
+.category-icon {
+  margin-right: 6px;
+  transition: transform 0.2s ease;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.category-icon svg {
+  width: 10px;
+  height: 10px;
+}
+
+.category-item.expanded .category-icon {
+  transform: rotate(90deg);
+}
+
+.category-name {
+  flex: 1;
+  color: var(--color-text, #1f2937);
+  font-weight: 500;
+  font-size: 13px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.category-checkbox {
+  margin-left: 8px;
+  width: 14px;
+  height: 14px;
+  accent-color: var(--color-primary, #8b4513);
+}
+
+.subcategories {
+  background-color: var(--color-surface-muted, #f8f9fa);
+  border-left: 2px solid var(--color-primary, #8b4513);
+}
+
+.subcategory-item {
+  border-bottom: 1px solid var(--color-border-light, #f3f4f6);
+}
+
+.subcategory-item:last-child {
+  border-bottom: none;
+}
+
+.subcategory-row {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px 6px 24px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.subcategory-row:hover {
+  background-color: var(--color-surface-hover, #f0f0f0);
+}
+
+.subcategory-name {
+  flex: 1;
+  color: var(--color-text, #1f2937);
+  font-size: 12px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Scrollbar styles for category tree */
+.category-tree::-webkit-scrollbar {
+  width: 6px;
+}
+
+.category-tree::-webkit-scrollbar-track {
+  background: var(--color-surface-muted, #f3f4f6);
+}
+
+.category-tree::-webkit-scrollbar-thumb {
+  background: var(--color-border, #d1d5db);
+  border-radius: 3px;
+}
+
+.category-tree::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary, #6b7280);
 }
 </style>
