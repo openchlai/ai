@@ -169,7 +169,9 @@
 
     <!-- Agent -->
     <td>
-      {{ call[callsStore.calls_k.user_name?.[0]] || 'Unassigned' }}
+      <span :class="{ 'agent-unassigned': !(call[callsStore.calls_k.user_name?.[0]]) }">
+        {{ call[callsStore.calls_k.user_name?.[0]] || 'Unassigned' }}
+      </span>
     </td>
 
     <!-- Actions -->
@@ -1751,7 +1753,7 @@ function handleSidebarToggle(collapsed) {
 }
 
 // Reactive state
-const activeView = ref("timeline");
+const activeView = ref("table");
 //const selectedCallId = ref('1348456')
 const currentTheme = ref("light");
 const selectedTimeRange = ref("all");
@@ -3163,10 +3165,12 @@ body {
 .priority-badge {
   font-size: 11px;
   font-weight: 700;
-  text-transform: uppercase;
-  padding: 4px 8px;
-  border-radius: 8px;
-  color: white;
+  padding: 4px 10px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #fff;
 }
 
 .priority-badge.critical {
@@ -3184,6 +3188,17 @@ body {
 .priority-badge.low {
   background-color: var(--low-color);
 }
+
+/* Default/normal variant */
+.priority-badge.normal {
+  background-color: var(--color-muted);
+}
+
+/* Support numeric priority values from API (1=low, 2=medium, 3=high, 4=critical) */
+.priority-badge.\31 { background-color: var(--low-color); }
+.priority-badge.\32 { background-color: var(--medium-color); }
+.priority-badge.\33 { background-color: var(--high-color); }
+.priority-badge.\34 { background-color: var(--critical-color); }
 
 /* Queue Section */
 .queue-section {
@@ -4999,5 +5014,11 @@ body.dark .queue-section *,
 [data-theme="dark"] .queue-section,
 [data-theme="dark"] .queue-section * {
   color: #fff !important;
+}
+
+/* Show 'Unassigned' in red in Agent column */
+.agent-unassigned {
+  color: var(--danger-color) !important;
+  font-weight: 700;
 }
 </style>
