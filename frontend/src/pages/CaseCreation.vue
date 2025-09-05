@@ -330,36 +330,72 @@
                 <BaseInput id="reporter-id-number" label="ID Number" v-model="formData.step2.idNumber" placeholder="Enter ID number" />
               </div>
 
-              <div class="form-group">
-                <label>Is a Refugee?</label>
-                <div class="radio-group">
-                  <label class="radio-option"><input type="radio" v-model="formData.step2.isRefugee" value="yes" /><span class="radio-indicator"></span><span class="radio-label">Yes</span></label>
-                  <label class="radio-option"><input type="radio" v-model="formData.step2.isRefugee" value="no" /><span class="radio-indicator"></span><span class="radio-label">No</span></label>
-                  <label class="radio-option"><input type="radio" v-model="formData.step2.isRefugee" value="unknown" /><span class="radio-indicator"></span><span class="radio-label">Unknown</span></label>
-                </div>
-              </div>
 
-              <div class="form-group">
-                <label>Is Reporter also a Client?</label>
-                <div class="radio-group">
-                  <label class="radio-option">
-                    <input
-                      v-model="formData.step2.isClient"
-                      type="radio"
-                      :value="true"
-                    />
-                    <span class="radio-indicator"></span>
-                    <span class="radio-label">Yes</span>
-                  </label>
-                  <label class="radio-option">
-                    <input
-                      v-model="formData.step2.isClient"
-                      type="radio"
-                      :value="false"
-                    />
-                    <span class="radio-indicator"></span>
-                    <span class="radio-label">No</span>
-                  </label>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Is Reporter also a Client?</label>
+                  <div class="radio-group">
+                    <label class="radio-option">
+                      <input
+                        v-model="formData.step2.isClient"
+                        type="radio"
+                        :value="true"
+                      />
+                      <span class="radio-indicator"></span>
+                      <span class="radio-label">Yes</span>
+                    </label>
+                    <label class="radio-option">
+                      <input
+                        v-model="formData.step2.isClient"
+                        type="radio"
+                        :value="false"
+                        @change="handleClientSelection"
+                      />
+                      <span class="radio-indicator"></span>
+                      <span class="radio-label">No</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Perpetrators Section -->
+                <div class="form-group">
+                  <label>Perpetrators</label>
+                  <div class="perpetrators-section">
+                    <div v-if="formData.step2.perpetrators.length" class="perpetrators-list">
+                      <div v-for="(perpetrator, index) in formData.step2.perpetrators" :key="index" class="perpetrator-item">
+                        <div class="perpetrator-info">
+                          <div class="perpetrator-name">{{ perpetrator.name }}</div>
+                          <div class="perpetrator-details">{{ perpetrator.age }} {{ perpetrator.sex }} - {{ perpetrator.location }}</div>
+                        </div>
+                        <button type="button" class="remove-perpetrator" @click="removePerpetrator(index)">×</button>
+                      </div>
+                    </div>
+                    <button type="button" class="btn btn--primary btn--sm add-perpetrator-btn" @click="openPerpetratorModal">
+                      + Add Perpetrator
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Clients Section - Only show if "Is Reporter a Client?" is "No" -->
+                <div v-if="formData.step2.isClient === false" class="form-group">
+                  <label>Clients</label>
+                  <div class="clients-section">
+                    <div v-if="formData.step2.clients.length" class="clients-list">
+                      <div v-for="(client, index) in formData.step2.clients" :key="index" class="client-item">
+                        <div class="client-info">
+                          <div class="client-name">{{ client.name }}</div>
+                          <div class="client-details">{{ client.age }} {{ client.sex }} - {{ client.phone || 'No phone' }}</div>
+                        </div>
+                        <button type="button" class="remove-client" @click="removeClient(index)">×</button>
+                      </div>
+                    </div>
+                    <div v-else class="empty-state">
+                      <p>No clients added yet</p>
+                    </div>
+                    <button type="button" class="btn btn--primary btn--sm add-client-btn" @click="openClientModal">
+                      + Add Client
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1151,6 +1187,174 @@
         </div>
       </div>
     </div>
+
+    <!-- Client Modal -->
+    <div v-if="clientModalOpen" class="simple-modal">
+      <div class="simple-modal-content">
+        <div class="simple-modal-header">
+          <h3>Add Client(s)</h3>
+          <span class="simple-modal-close" @click="closeClientModal">×</span>
+        </div>
+        
+        <div class="simple-modal-body">
+          <!-- Show existing clients -->
+          <div v-if="formData.step2.clients.length > 0" class="existing-clients">
+            <h4>Added Clients:</h4>
+            <div v-for="(client, index) in formData.step2.clients" :key="index" class="client-display">
+              <span>{{ client.name }} ({{ client.age }} {{ client.sex }})</span>
+              <button @click="removeClient(index)" class="remove-btn">Remove</button>
+            </div>
+          </div>
+          
+          <!-- Add new client form -->
+          <div class="add-client-form">
+            <h4>Add New Client:</h4>
+            <div class="form-fields">
+              <div class="field-group">
+                <label>Client Name *</label>
+                <input v-model="clientForm.name" type="text" placeholder="Enter client name" />
+              </div>
+              
+              <div class="field-group">
+                <label>Age</label>
+                <input v-model="clientForm.age" type="number" placeholder="Enter age" />
+              </div>
+              
+              <div class="field-group">
+                <label>Sex</label>
+                <select v-model="clientForm.sex">
+                  <option value="">Select sex</option>
+                  <option value="female">Female</option>
+                  <option value="male">Male</option>
+                  <option value="non-binary">Non-binary</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              
+              <div class="field-group">
+                <label>Location</label>
+                <input v-model="clientForm.location" type="text" placeholder="Enter location" />
+              </div>
+              
+              <div class="field-group">
+                <label>Phone Number</label>
+                <input v-model="clientForm.phone" type="tel" placeholder="Enter phone number" />
+              </div>
+              
+              <div class="field-group">
+                <label>Relationship to Reporter</label>
+                <input v-model="clientForm.relationship" type="text" placeholder="e.g., Daughter, Son, Spouse" />
+              </div>
+            </div>
+            
+            <div class="form-actions">
+              <button @click="addClient" class="add-btn">Add Client</button>
+              <button @click="closeClientModal" class="cancel-btn">Done</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Perpetrator Modal -->
+    <div v-if="perpetratorModalOpen" class="simple-modal">
+      <div class="simple-modal-content">
+        <div class="simple-modal-header">
+          <h3>Add Perpetrator</h3>
+          <span class="simple-modal-close" @click="closePerpetratorModal">×</span>
+        </div>
+        
+        <div class="simple-modal-body">
+          <!-- Show existing perpetrators -->
+          <div v-if="formData.step2.perpetrators.length > 0" class="existing-perpetrators">
+            <h4>Added Perpetrators:</h4>
+            <div v-for="(perpetrator, index) in formData.step2.perpetrators" :key="index" class="perpetrator-display">
+              <span>{{ perpetrator.name }} ({{ perpetrator.age }} {{ perpetrator.sex }})</span>
+              <button @click="removePerpetrator(index)" class="remove-btn">Remove</button>
+            </div>
+          </div>
+          
+          <!-- Add new perpetrator form -->
+          <div class="add-perpetrator-form">
+            <h4>Add New Perpetrator:</h4>
+            <div class="form-fields">
+              <div class="field-group">
+                <label>Perpetrator Name *</label>
+                <input v-model="perpetratorForm.name" type="text" placeholder="Enter perpetrator name" />
+              </div>
+              
+              <div class="field-group">
+                <label>Age</label>
+                <input v-model="perpetratorForm.age" type="number" placeholder="Enter age" />
+              </div>
+              
+              <div class="field-group">
+                <label>Sex</label>
+                <select v-model="perpetratorForm.sex">
+                  <option value="">Select sex</option>
+                  <option value="female">Female</option>
+                  <option value="male">Male</option>
+                  <option value="non-binary">Non-binary</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              
+              <div class="field-group">
+                <label>Location</label>
+                <input v-model="perpetratorForm.location" type="text" placeholder="Enter location" />
+              </div>
+              
+              <div class="field-group">
+                <label>Phone Number</label>
+                <input v-model="perpetratorForm.phone" type="tel" placeholder="Enter phone number" />
+              </div>
+              
+              <div class="field-group">
+                <label>Relationship to Reporter/Client</label>
+                <input v-model="perpetratorForm.relationship" type="text" placeholder="e.g., Father, Uncle, Neighbor" />
+              </div>
+              
+              <div class="field-group">
+                <label>Nationality</label>
+                <select v-model="perpetratorForm.nationality">
+                  <option value="">Select nationality</option>
+                  <option>Kenyan</option>
+                  <option>Ugandan</option>
+                  <option>Tanzanian</option>
+                  <option>Somali</option>
+                  <option>South Sudanese</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              
+              <div class="field-group">
+                <label>ID Number</label>
+                <input v-model="perpetratorForm.idNumber" type="text" placeholder="Enter ID number" />
+              </div>
+              
+              <div class="field-group">
+                <label>Is the Perpetrator a Refugee?</label>
+                <div class="radio-options">
+                  <label><input type="radio" v-model="perpetratorForm.isRefugee" value="yes" /> Yes</label>
+                  <label><input type="radio" v-model="perpetratorForm.isRefugee" value="no" /> No</label>
+                  <label><input type="radio" v-model="perpetratorForm.isRefugee" value="unknown" /> Unknown</label>
+                </div>
+              </div>
+              
+              <div class="field-group">
+                <label>Additional Details</label>
+                <textarea v-model="perpetratorForm.additionalDetails" placeholder="Any additional information about the perpetrator..." rows="3"></textarea>
+              </div>
+            </div>
+            
+            <div class="form-actions">
+              <button @click="addPerpetrator" class="add-btn">Add Perpetrator</button>
+              <button @click="closePerpetratorModal" class="cancel-btn">Done</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -1173,6 +1377,8 @@ const isAIEnabled = ref(true)
 const searchQuery = ref('')
 const selectedReporter = ref(null)
 const selectedCategory = ref('')
+const clientModalOpen = ref(false)
+const perpetratorModalOpen = ref(false)
 
 // Audio recording state
 const isRecording = ref(false)
@@ -1190,6 +1396,29 @@ let recordingInterval = null
 const caseSummary = ref(null)
 const aiInsights = ref([])
 const recommendations = ref([])
+
+// Client and Perpetrator forms
+const clientForm = reactive({
+  name: '',
+  age: '',
+  sex: '',
+  location: '',
+  phone: '',
+  relationship: ''
+})
+
+const perpetratorForm = reactive({
+  name: '',
+  age: '',
+  sex: '',
+  location: '',
+  phone: '',
+  relationship: '',
+  nationality: '',
+  idNumber: '',
+  isRefugee: '',
+  additionalDetails: ''
+})
 
 // Mock store for demonstration
 const casesStore = {
@@ -1228,7 +1457,9 @@ const formData = reactive({
     idType: '',
     idNumber: '',
     isRefugee: '',
-    isClient: null
+    isClient: null,
+    clients: [],
+    perpetrators: []
   },
   step3: {
     narrative: '',
@@ -1326,6 +1557,75 @@ const createNewReporter = () => {
     formData.step2[key] = key === 'isClient' ? null : ''
   })
   currentStep.value = 2
+}
+
+// Client and Perpetrator Methods
+const handleClientSelection = () => {
+  if (formData.step2.isClient === true) {
+    // If reporter is a client, clear any existing clients
+    formData.step2.clients = []
+  } else if (formData.step2.isClient === false) {
+    // If reporter is not a client, open the client modal
+    clientModalOpen.value = true
+  }
+}
+
+const openClientModal = () => {
+  clientModalOpen.value = true
+}
+
+const closeClientModal = () => {
+  clientModalOpen.value = false
+  resetClientForm()
+}
+
+const resetClientForm = () => {
+  Object.keys(clientForm).forEach(key => {
+    clientForm[key] = ''
+  })
+}
+
+const addClient = () => {
+  if (!clientForm.name.trim()) {
+    alert('Please enter client name')
+    return
+  }
+  
+  formData.step2.clients.push({ ...clientForm })
+  resetClientForm()
+}
+
+const removeClient = (index) => {
+  formData.step2.clients.splice(index, 1)
+}
+
+const openPerpetratorModal = () => {
+  perpetratorModalOpen.value = true
+}
+
+const closePerpetratorModal = () => {
+  perpetratorModalOpen.value = false
+  resetPerpetratorForm()
+}
+
+const resetPerpetratorForm = () => {
+  Object.keys(perpetratorForm).forEach(key => {
+    perpetratorForm[key] = ''
+  })
+}
+
+const addPerpetrator = () => {
+  if (!perpetratorForm.name.trim()) {
+    alert('Please enter perpetrator name')
+    return
+  }
+  
+  formData.step2.perpetrators.push({ ...perpetratorForm })
+  resetPerpetratorForm()
+}
+
+const removePerpetrator = (index) => {
+  formData.step2.perpetrators.splice(index, 1)
 }
 
 const addCategory = () => {
@@ -2083,5 +2383,328 @@ const updateStepCSSVar = () => {
 
 .tag-remove:hover {
   color: rgba(255, 255, 255, 0.8);
+}
+
+/* Main Form Display Sections */
+.clients-section,
+.perpetrators-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.clients-list,
+.perpetrators-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.client-item,
+.perpetrator-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.client-info,
+.perpetrator-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.client-name,
+.perpetrator-name {
+  font-weight: 600;
+  color: var(--color-fg);
+  font-size: 14px;
+}
+
+.client-details,
+.perpetrator-details {
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+.remove-client,
+.remove-perpetrator {
+  background: var(--color-danger);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.remove-client:hover,
+.remove-perpetrator:hover {
+  background: color-mix(in oklab, var(--color-danger) 80%, black);
+  transform: scale(1.1);
+}
+
+.empty-state {
+  padding: 20px;
+  text-align: center;
+  color: var(--color-muted);
+  font-style: italic;
+  background: var(--color-surface-muted);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.add-client-btn,
+.add-perpetrator-btn {
+  align-self: flex-start;
+  margin-top: 8px;
+}
+
+/* Simple Modal Styles - Using Application Theme */
+.simple-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.simple-modal-content {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  max-width: 90%;
+  max-height: 90%;
+  overflow-y: auto;
+  width: 600px;
+}
+
+.simple-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.simple-modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-fg);
+}
+
+.simple-modal-close {
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--color-muted);
+  padding: 5px;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+}
+
+.simple-modal-close:hover {
+  background: var(--color-surface-muted);
+  color: var(--color-fg);
+}
+
+.simple-modal-body {
+  padding: 20px;
+}
+
+/* Form Styles */
+.form-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-group label {
+  font-weight: 600;
+  color: var(--color-fg);
+  font-size: 14px;
+}
+
+.field-group input,
+.field-group select,
+.field-group textarea {
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  background: var(--color-surface);
+  color: var(--color-fg);
+  transition: border-color 0.2s ease;
+}
+
+.field-group input:focus,
+.field-group select:focus,
+.field-group textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary) 20%, transparent);
+}
+
+.field-group textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+/* Radio Options */
+.radio-options {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.radio-options label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.radio-options input[type="radio"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+/* Existing Items Display */
+.existing-clients,
+.existing-perpetrators {
+  margin-bottom: 20px;
+  padding: 16px;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.existing-clients h4,
+.existing-perpetrators h4 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-fg);
+}
+
+.client-display,
+.perpetrator-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-bottom: 8px;
+}
+
+.client-display span,
+.perpetrator-display span {
+  font-size: 14px;
+  color: var(--color-fg);
+  font-weight: 500;
+}
+
+.remove-btn {
+  background: var(--color-danger);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.remove-btn:hover {
+  background: color-mix(in oklab, var(--color-danger) 80%, black);
+  transform: translateY(-1px);
+}
+
+/* Form Actions */
+.form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border);
+}
+
+.add-btn {
+  background: var(--color-primary);
+  color: white;
+  border: 1px solid var(--color-primary);
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.add-btn:hover {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+  transform: translateY(-1px);
+}
+
+.cancel-btn {
+  background: var(--color-surface);
+  color: var(--color-fg);
+  border: 1px solid var(--color-border);
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-btn:hover {
+  background: var(--color-surface-muted);
+  transform: translateY(-1px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .form-fields {
+    grid-template-columns: 1fr;
+  }
+  
+  .simple-modal-content {
+    width: 95%;
+    margin: 10px;
+  }
 }
 </style>
