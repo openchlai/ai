@@ -251,32 +251,66 @@
               </p>
 
               <div class="form-row">
-                <BaseInput
-                  id="reporter-name"
-                  label="Full Name*"
-                  v-model="formData.step2.name"
-                  placeholder="Enter full name"
-                  :readonly="!!selectedReporter"
-                />
-                <BaseInput
-                  id="reporter-age"
-                  label="Age"
-                  type="number"
-                  v-model="formData.step2.age"
-                  placeholder="Enter age"
-                />
+                <BaseInput id="reporter-name" label="Full Name*" v-model="formData.step2.name" placeholder="Enter full name" :readonly="!!selectedReporter" />
+                <BaseInput id="reporter-age" label="Age" type="number" v-model="formData.step2.age" placeholder="Enter age" />
               </div>
 
               <div class="form-row">
-                <BaseSelect id="reporter-gender" label="Gender" v-model="formData.step2.gender" placeholder="Select gender">
+                <BaseInput id="reporter-dob" label="DOB" type="date" v-model="formData.step2.dob" />
+                <BaseSelect id="reporter-age-group" label="Age Group" v-model="formData.step2.ageGroup" placeholder="Select age group">
+                  <option value="">Select age group</option>
+                  <option>0-5</option>
+                  <option>6-12</option>
+                  <option>13-17</option>
+                  <option>18-24</option>
+                  <option>25-34</option>
+                  <option>35-49</option>
+                  <option>50+</option>
+                </BaseSelect>
+              </div>
+
+              <div class="form-row">
+                <BaseSelect id="reporter-gender" label="Sex" v-model="formData.step2.gender" placeholder="Select sex">
                   <option value="female">Female</option>
                   <option value="male">Male</option>
                   <option value="non-binary">Non-binary</option>
-                  <option value="transgender">Transgender</option>
                   <option value="other">Other</option>
-                  <option value="prefer-not-to-say">Prefer not to say</option>
                 </BaseSelect>
                 <BaseInput id="reporter-location" label="Location" v-model="formData.step2.location" placeholder="Enter location" />
+              </div>
+
+              <div class="form-row">
+                <BaseInput id="reporter-landmark" label="Nearest Landmark" v-model="formData.step2.nearestLandmark" placeholder="Enter nearest landmark" />
+                <BaseSelect id="reporter-nationality" label="Nationality" v-model="formData.step2.nationality" placeholder="Select nationality">
+                  <option value="">Select nationality</option>
+                  <option>Kenyan</option>
+                  <option>Ugandan</option>
+                  <option>Tanzanian</option>
+                  <option>Somali</option>
+                  <option>South Sudanese</option>
+                  <option>Other</option>
+                </BaseSelect>
+              </div>
+
+              <div class="form-row">
+                <BaseSelect id="reporter-language" label="Language" v-model="formData.step2.language" placeholder="Select language">
+                  <option value="">Select language</option>
+                  <option>English</option>
+                  <option>Kiswahili</option>
+                  <option>Somali</option>
+                  <option>Arabic</option>
+                  <option>Other</option>
+                </BaseSelect>
+                <BaseSelect id="reporter-tribe" label="Tribe" v-model="formData.step2.tribe" placeholder="Select tribe">
+                  <option value="">Select tribe</option>
+                  <option>Kikuyu</option>
+                  <option>Luhya</option>
+                  <option>Luo</option>
+                  <option>Kalenjin</option>
+                  <option>Kamba</option>
+                  <option>Somali</option>
+                  <option>Other</option>
+                </BaseSelect>
               </div>
 
               <div class="form-row">
@@ -294,6 +328,15 @@
                   <option value="other">Other</option>
                 </BaseSelect>
                 <BaseInput id="reporter-id-number" label="ID Number" v-model="formData.step2.idNumber" placeholder="Enter ID number" />
+              </div>
+
+              <div class="form-group">
+                <label>Is a Refugee?</label>
+                <div class="radio-group">
+                  <label class="radio-option"><input type="radio" v-model="formData.step2.isRefugee" value="yes" /><span class="radio-indicator"></span><span class="radio-label">Yes</span></label>
+                  <label class="radio-option"><input type="radio" v-model="formData.step2.isRefugee" value="no" /><span class="radio-indicator"></span><span class="radio-label">No</span></label>
+                  <label class="radio-option"><input type="radio" v-model="formData.step2.isRefugee" value="unknown" /><span class="radio-indicator"></span><span class="radio-label">Unknown</span></label>
+                </div>
               </div>
 
               <div class="form-group">
@@ -1127,13 +1170,20 @@ const formData = reactive({
   step2: {
     name: '',
     age: '',
+    dob: '',
+    ageGroup: '',
     gender: '',
     location: '',
+    nearestLandmark: '',
+    nationality: '',
+    language: '',
+    tribe: '',
     phone: '',
     altPhone: '',
     email: '',
     idType: '',
     idNumber: '',
+    isRefugee: '',
     isClient: null
   },
   step3: {

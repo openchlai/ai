@@ -199,6 +199,10 @@
           <div class="content-header">
             <h2>{{ categoryName }} Data</h2>
             <div class="content-actions">
+              <div class="view-toggle">
+                <button class="filter-btn" :class="{ active: viewMode === 'table' }" @click="viewMode = 'table'">Table</button>
+                <button class="filter-btn" :class="{ active: viewMode === 'graph' }" @click="viewMode = 'graph'">Graph</button>
+              </div>
               <button class="action-btn" @click="refreshData" :disabled="loading">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                   <path d="M1 4V10H7" stroke="currentColor" stroke-width="2"/>
@@ -210,7 +214,28 @@
             </div>
           </div>
 
-          <div class="data-table">
+          <!-- Graph View -->
+          <div v-if="viewMode === 'graph'" class="graph-view">
+            <div class="graph-row">
+              <div class="graph-card">
+                <h3>Distribution</h3>
+                <svg viewBox="0 0 42 42" class="donut">
+                  <circle class="donut-ring" cx="21" cy="21" r="15.915" fill="transparent" stroke="#eee" stroke-width="3"></circle>
+                  <circle class="donut-segment a" cx="21" cy="21" r="15.915" fill="transparent" :stroke-dasharray="successRate + ' ' + (100-successRate)" stroke="#2E7D32" stroke-width="3" stroke-dashoffset="25"></circle>
+                  <text x="21" y="21" text-anchor="middle" dominant-baseline="middle" class="chart-center">{{ successRate }}%</text>
+                </svg>
+              </div>
+              <div class="graph-card">
+                <h3>Trend</h3>
+                <svg viewBox="0 0 300 120" class="line">
+                  <polyline :points="trendPoints" fill="none" stroke="#1E88E5" stroke-width="3" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Table View -->
+          <div v-else class="data-table">
             <div v-if="loading" class="loading-state">
               <div class="spinner"></div>
               <p>Loading {{ categoryName }} data...</p>
@@ -277,6 +302,7 @@ const toDate = ref('')
 const searchQuery = ref('')
 const showDownloadMenu = ref(false)
 const activeFilter = ref('all')
+const viewMode = ref('table')
 
 // Computed properties
 const category = computed(() => route.params.category)
@@ -290,6 +316,7 @@ const categoryName = computed(() => {
     calls: 'Calls',
     cases: 'Cases', 
     counsellors: 'Counsellors',
+    channels: 'Channels',
     all: 'All'
   }
   return names[category.value] || 'Reports'
@@ -302,6 +329,7 @@ const pageDescription = computed(() => {
     calls: 'Detailed analytics and metrics for all call activities',
     cases: 'Comprehensive case tracking and resolution statistics',
     counsellors: 'Performance metrics and workload analysis for counsellors',
+    channels: 'Chat, WhatsApp and other channels: volume, directions, dispositions',
     all: 'Complete system overview with all metrics and analytics'
   }
   return descriptions[category.value] || 'View detailed reports and analytics'
@@ -313,6 +341,16 @@ const averageMetric = ref(0)
 const successRate = ref(0)
 const tableHeaders = ref([])
 const tableData = ref([])
+const trendPoints = computed(() => {
+  // Generate simple mock trend points from table data length
+  const n = 8
+  const pts = Array.from({ length: n }, (_, i) => {
+    const x = (i / (n - 1)) * 300
+    const y = 100 - ((Math.sin(i) + 1) * 40 + 10) // 10..90
+    return `${x},${y}`
+  })
+  return pts.join(' ')
+})
 
 // Methods
 const goBack = () => {
@@ -360,6 +398,17 @@ const applyFilters = async () => {
           { Name: 'John Doe', 'Active Cases': 5, 'Completed Cases': 45, 'Success Rate': '94%', 'Avg Response Time': '2.3h' },
           { Name: 'Jane Smith', 'Active Cases': 3, 'Completed Cases': 38, 'Success Rate': '89%', 'Avg Response Time': '1.8h' },
           { Name: 'Mike Johnson', 'Active Cases': 7, 'Completed Cases': 52, 'Success Rate': '91%', 'Avg Response Time': '2.1h' }
+        ]
+      },
+      channels: {
+        total: 10,
+        average: 'hourly',
+        success: 0,
+        headers: ['Channel', 'Case Created', 'Counselor Request', 'New Reporter', 'Noisy Background', 'Complaint', 'Silent', 'Total'],
+        data: [
+          { Channel: 'chat', 'Case Created': 1, 'Counselor Request': 1, 'New Reporter': 2, 'Noisy Background': 1, Complaint: 0, Silent: 0, Total: 5 },
+          { Channel: 'safepal', 'Case Created': 0, 'Counselor Request': 0, 'New Reporter': 0, 'Noisy Background': 0, Complaint: 1, Silent: 0, Total: 1 },
+          { Channel: 'whatsApp', 'Case Created': 0, 'Counselor Request': 0, 'New Reporter': 2, 'Noisy Background': 0, Complaint: 0, Silent: 0, Total: 2 }
         ]
       },
       all: {
@@ -443,4 +492,11 @@ onMounted(() => {
 
 <style scoped>
 /* ReportsCategory styles moved to global components.css */
+.view-toggle { display:flex; gap:8px; margin-right:8px; }
+.graph-view { background: var(--color-surface); border:1px solid var(--color-border); border-radius: var(--radius-lg); padding:12px; }
+.graph-row { display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:12px; }
+.graph-card { background: var(--color-surface); border:1px solid var(--color-border); border-radius: var(--radius-lg); padding:12px; }
+.donut { width: 160px; height:160px; display:block; margin:auto; }
+.chart-center { font-size: 10px; fill: var(--color-fg); font-weight: 800; }
+.line { width: 100%; height: 160px; }
 </style>

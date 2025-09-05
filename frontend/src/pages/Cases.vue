@@ -52,6 +52,7 @@
             >
               {{ filter.name }}
             </button>
+            <router-link to="/reports-category" class="btn btn--secondary btn--sm">Advanced Filters</router-link>
           </div>
         </header>
 
@@ -122,6 +123,35 @@
               </tbody>
             </table>
           </div>
+          <!-- Edit Case Modal -->
+          <div v-if="editModalOpen" class="case-detail-drawer">
+            <div class="case-detail-drawer-header">
+              <div class="case-detail-title">Edit Case</div>
+              <button class="close-details" @click="closeEdit">×</button>
+            </div>
+            <div class="case-detail-content">
+              <div class="detail-item">
+                <div class="detail-label">Priority</div>
+                <div><select v-model="editForm.priority" class="input"><option>Low</option><option>Medium</option><option>High</option></select></div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Status</div>
+                <div><select v-model="editForm.status" class="input"><option>Open</option><option>Pending</option><option>Closed</option></select></div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Assigned To</div>
+                <div><input v-model="editForm.assignedTo" class="input" /></div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Case Plan</div>
+                <div><textarea v-model="editForm.casePlan" class="input" rows="3"/></div>
+              </div>
+              <div style="display:flex; gap:8px; justify-content:flex-end;">
+                <button class="btn btn--secondary btn--sm" @click="closeEdit">Cancel</button>
+                <button class="btn btn--primary btn--sm" @click="saveEdit">Save</button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Timeline View (Original Card Layout) -->
@@ -182,6 +212,12 @@
                       ? `Assigned: ${caseItem[casesStore.cases_k.assigned_to[0]]}`
                       : "Unassigned" }}
                   </span>
+                  <button class="btn btn--secondary btn--sm" @click.stop="openEdit(caseItem)">Edit</button>
+                </div>
+              </div>
+              <div v-if="caseItem.activity && caseItem.activity.length" class="case-activity" style="margin-top:8px; font-size:12px; color:var(--color-muted);">
+                <div v-for="(log, idx) in caseItem.activity.slice(0,3)" :key="idx">
+                  <strong>{{ log.type }}</strong> • {{ new Date(log.at).toLocaleString() }}
                 </div>
               </div>
             </div>
@@ -377,6 +413,42 @@ const filteredCases = computed(() => {
 
   return filtered;
 });
+
+// Edit modal state and helpers
+const editModalOpen = ref(false);
+const editForm = ref({ priority: 'Medium', status: 'Open', assignedTo: '', casePlan: '' });
+let editingCaseRef = null;
+
+const openEdit = (caseItem) => {
+  editingCaseRef = caseItem;
+  editForm.value = {
+    priority: (casesStore.cases_k?.priority ? caseItem[casesStore.cases_k.priority[0]] : '') || 'Medium',
+    status: (casesStore.cases_k?.status ? caseItem[casesStore.cases_k.status[0]] : '') || 'Open',
+    assignedTo: (casesStore.cases_k?.assigned_to ? caseItem[casesStore.cases_k.assigned_to[0]] : '') || '',
+    casePlan: caseItem.casePlan || ''
+  };
+  editModalOpen.value = true;
+};
+
+const closeEdit = () => { editModalOpen.value = false; editingCaseRef = null; };
+
+const saveEdit = () => {
+  if (!editingCaseRef) return;
+  if (casesStore.cases_k?.priority) editingCaseRef[casesStore.cases_k.priority[0]] = editForm.value.priority;
+  if (casesStore.cases_k?.status) editingCaseRef[casesStore.cases_k.status[0]] = editForm.value.status;
+  if (casesStore.cases_k?.assigned_to) editingCaseRef[casesStore.cases_k.assigned_to[0]] = editForm.value.assignedTo;
+  editingCaseRef.casePlan = editForm.value.casePlan;
+  // Log to a simple activity timeline array on the case
+  const now = new Date();
+  editingCaseRef.activity = editingCaseRef.activity || [];
+  editingCaseRef.activity.unshift({
+    type: 'Case Updated',
+    by: 'current user',
+    at: now.toISOString(),
+    changes: { ...editForm.value }
+  });
+  editModalOpen.value = false;
+};
 
 const selectedCaseDetails = computed(() => {
   if (!casesStore.cases_k?.id) return null;
