@@ -542,6 +542,40 @@
                     </label>
                   </div>
                 </div>
+                
+                <!-- Labor Department - Client Passport Search -->
+                <div v-if="formData.step4.department === 'labor'" class="form-group labor-search-section">
+                  <label>Client's Passport Number</label>
+                  <div class="passport-search-container">
+                    <input 
+                      v-model="formData.step4.clientPassportNumber" 
+                      type="text" 
+                      placeholder="Enter passport number"
+                      class="passport-input"
+                    />
+                    <button type="button" @click="searchClientByPassport" class="search-btn">
+                      Search
+                    </button>
+                  </div>
+                  
+                  <!-- Search Results -->
+                  <div v-if="clientSearchResults.length > 0" class="search-results">
+                    <h4>Search Results:</h4>
+                    <div v-for="client in clientSearchResults" :key="client.id" class="client-result">
+                      <div class="client-info">
+                        <strong>{{ client.name }}</strong>
+                        <span class="client-details">{{ client.passportNumber }} • {{ client.nationality }}</span>
+                      </div>
+                      <button @click="selectClient(client)" class="select-client-btn">Select</button>
+                    </div>
+                  </div>
+                  
+                  <!-- No Results -->
+                  <div v-if="clientSearchResults.length === 0 && hasSearched" class="no-results">
+                    <p>No client found with this passport number.</p>
+                    <button @click="createNewClient" class="create-client-btn">Create New Client</button>
+                  </div>
+                </div>
                 <div class="form-group">
                   <label for="case-category">Case Category*</label>
                   <div class="category-tags-container">
@@ -1190,9 +1224,9 @@
 
     <!-- Client Modal -->
     <div v-if="clientModalOpen" class="simple-modal">
-      <div class="simple-modal-content">
+      <div class="simple-modal-content client-modal-large">
         <div class="simple-modal-header">
-          <h3>Add Client(s)</h3>
+          <h3>New Client</h3>
           <span class="simple-modal-close" @click="closeClientModal">×</span>
         </div>
         
@@ -1206,50 +1240,373 @@
             </div>
           </div>
           
-          <!-- Add new client form -->
+          <!-- Multi-step Client Form -->
           <div class="add-client-form">
             <h4>Add New Client:</h4>
-            <div class="form-fields">
-              <div class="field-group">
-                <label>Client Name *</label>
-                <input v-model="clientForm.name" type="text" placeholder="Enter client name" />
-              </div>
-              
-              <div class="field-group">
-                <label>Age</label>
-                <input v-model="clientForm.age" type="number" placeholder="Enter age" />
-              </div>
-              
-              <div class="field-group">
-                <label>Sex</label>
-                <select v-model="clientForm.sex">
-                  <option value="">Select sex</option>
-                  <option value="female">Female</option>
-                  <option value="male">Male</option>
-                  <option value="non-binary">Non-binary</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-              
-              <div class="field-group">
-                <label>Location</label>
-                <input v-model="clientForm.location" type="text" placeholder="Enter location" />
-              </div>
-              
-              <div class="field-group">
-                <label>Phone Number</label>
-                <input v-model="clientForm.phone" type="tel" placeholder="Enter phone number" />
-              </div>
-              
-              <div class="field-group">
-                <label>Relationship to Reporter</label>
-                <input v-model="clientForm.relationship" type="text" placeholder="e.g., Daughter, Son, Spouse" />
+            
+            <!-- Progress Steps -->
+            <div class="form-steps">
+              <div class="step-indicator">
+                <div v-for="(step, index) in clientSteps" :key="index" 
+                     :class="['step', { 
+                       active: currentClientStep === index, 
+                       completed: currentClientStep > index,
+                       future: currentClientStep < index
+                     }]">
+                  <span class="step-number">
+                    <span>{{ index + 1 }}</span>
+                  </span>
+                  <span class="step-title">{{ step.title }}</span>
+                </div>
               </div>
             </div>
             
-            <div class="form-actions">
-              <button @click="addClient" class="add-btn">Add Client</button>
-              <button @click="closeClientModal" class="cancel-btn">Done</button>
+            <!-- Step Content -->
+            <div class="step-content">
+              <!-- Step 1: Basic Information -->
+              <div v-if="currentClientStep === 0" class="form-step">
+                <div class="form-fields">
+                  <div class="field-group">
+                    <label>Client's Name *</label>
+                    <input v-model="clientForm.name" type="text" placeholder="Enter Client's Names" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Age</label>
+                    <input v-model="clientForm.age" type="number" placeholder="Enter age" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>DOB</label>
+                    <input v-model="clientForm.dob" type="date" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Age Group</label>
+                    <select v-model="clientForm.ageGroup">
+                      <option value="">Select Age Group</option>
+                      <option value="0-5">0-5 years</option>
+                      <option value="6-12">6-12 years</option>
+                      <option value="13-17">13-17 years</option>
+                      <option value="18-25">18-25 years</option>
+                      <option value="26-35">26-35 years</option>
+                      <option value="36-50">36-50 years</option>
+                      <option value="51+">51+ years</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Location</label>
+                    <select v-model="clientForm.location">
+                      <option value="">Select Location</option>
+                      <option value="Nairobi">Nairobi</option>
+                      <option value="Mombasa">Mombasa</option>
+                      <option value="Kisumu">Kisumu</option>
+                      <option value="Nakuru">Nakuru</option>
+                      <option value="Eldoret">Eldoret</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Sex</label>
+                    <select v-model="clientForm.sex">
+                      <option value="">Select Gender</option>
+                      <option value="female">Female</option>
+                      <option value="male">Male</option>
+                      <option value="non-binary">Non-binary</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Step 2: Contact & Identity -->
+              <div v-if="currentClientStep === 1" class="form-step">
+                <div class="form-fields">
+                  <div class="field-group">
+                    <label>Nearest Landmark</label>
+                    <input v-model="clientForm.landmark" type="text" placeholder="Enter Nearest Landmark" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Nationality</label>
+                    <select v-model="clientForm.nationality">
+                      <option value="">Select Nationality</option>
+                      <option value="Kenyan">Kenyan</option>
+                      <option value="Ugandan">Ugandan</option>
+                      <option value="Tanzanian">Tanzanian</option>
+                      <option value="Somali">Somali</option>
+                      <option value="South Sudanese">South Sudanese</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>ID Type</label>
+                    <select v-model="clientForm.idType">
+                      <option value="">Select ID Type</option>
+                      <option value="National ID">National ID</option>
+                      <option value="Passport">Passport</option>
+                      <option value="Birth Certificate">Birth Certificate</option>
+                      <option value="Refugee ID">Refugee ID</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>ID Number</label>
+                    <input v-model="clientForm.idNumber" type="text" placeholder="Enter Reporter's ID Number" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Language</label>
+                    <select v-model="clientForm.language">
+                      <option value="">Select Language</option>
+                      <option value="English">English</option>
+                      <option value="Kiswahili">Kiswahili</option>
+                      <option value="Luo">Luo</option>
+                      <option value="Kikuyu">Kikuyu</option>
+                      <option value="Luhya">Luhya</option>
+                      <option value="Kalenjin">Kalenjin</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Is the Client a Refugee?</label>
+                    <div class="radio-group">
+                      <label class="radio-option">
+                        <input type="radio" v-model="clientForm.isRefugee" value="yes" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">Yes</span>
+                      </label>
+                      <label class="radio-option">
+                        <input type="radio" v-model="clientForm.isRefugee" value="no" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">No</span>
+                      </label>
+                      <label class="radio-option">
+                        <input type="radio" v-model="clientForm.isRefugee" value="unknown" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">Unknown</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Step 3: Contact Information -->
+              <div v-if="currentClientStep === 2" class="form-step">
+                <div class="form-fields">
+                  <div class="field-group">
+                    <label>Tribe</label>
+                    <select v-model="clientForm.tribe">
+                      <option value="">Select Tribe</option>
+                      <option value="Kikuyu">Kikuyu</option>
+                      <option value="Luhya">Luhya</option>
+                      <option value="Kalenjin">Kalenjin</option>
+                      <option value="Luo">Luo</option>
+                      <option value="Kamba">Kamba</option>
+                      <option value="Kisii">Kisii</option>
+                      <option value="Meru">Meru</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Phone Number</label>
+                    <input v-model="clientForm.phone" type="tel" placeholder="Enter Reporter's Phone Number" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Alternative Phone</label>
+                    <input v-model="clientForm.alternativePhone" type="tel" placeholder="Enter Alternate Phone Number" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Email</label>
+                    <input v-model="clientForm.email" type="email" placeholder="Enter Reporter's Email Address" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Reporter's Relationship with Client</label>
+                    <select v-model="clientForm.relationship">
+                      <option value="">Select Relationship</option>
+                      <option value="Parent">Parent</option>
+                      <option value="Guardian">Guardian</option>
+                      <option value="Sibling">Sibling</option>
+                      <option value="Relative">Relative</option>
+                      <option value="Friend">Friend</option>
+                      <option value="Neighbor">Neighbor</option>
+                      <option value="Teacher">Teacher</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Relationship Comment</label>
+                    <textarea v-model="clientForm.relationshipComment" placeholder="Enter Comments about the relationship" rows="3"></textarea>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Step 4: Household & Background -->
+              <div v-if="currentClientStep === 3" class="form-step">
+                <div class="form-fields">
+                  <div class="field-group">
+                    <label>Number of Adults in Household</label>
+                    <input v-model="clientForm.adultsInHousehold" type="number" placeholder="Enter number" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Household Type</label>
+                    <select v-model="clientForm.householdType">
+                      <option value="">Select Household Type</option>
+                      <option value="Nuclear">Nuclear Family</option>
+                      <option value="Extended">Extended Family</option>
+                      <option value="Single Parent">Single Parent</option>
+                      <option value="Child Headed">Child Headed</option>
+                      <option value="Institutional">Institutional</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Head of Household Occupation</label>
+                    <select v-model="clientForm.headOccupation">
+                      <option value="">Select Employment Status</option>
+                      <option value="Employed">Employed</option>
+                      <option value="Self-employed">Self-employed</option>
+                      <option value="Unemployed">Unemployed</option>
+                      <option value="Student">Student</option>
+                      <option value="Retired">Retired</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Parent/Guardian's Name</label>
+                    <input v-model="clientForm.parentGuardianName" type="text" placeholder="Enter name" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Parent/Guardian's Marital Status</label>
+                    <select v-model="clientForm.parentMaritalStatus">
+                      <option value="">Select Marital Status</option>
+                      <option value="Single">Single</option>
+                      <option value="Married">Married</option>
+                      <option value="Divorced">Divorced</option>
+                      <option value="Widowed">Widowed</option>
+                      <option value="Separated">Separated</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Parent/Guardian's Identification Number</label>
+                    <input v-model="clientForm.parentIdNumber" type="text" placeholder="Enter ID number" />
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Step 5: Health & Status -->
+              <div v-if="currentClientStep === 4" class="form-step">
+                <div class="form-fields">
+                  <div class="field-group">
+                    <label>Client's Health Status</label>
+                    <select v-model="clientForm.healthStatus">
+                      <option value="">Select Health Status</option>
+                      <option value="Good">Good</option>
+                      <option value="Fair">Fair</option>
+                      <option value="Poor">Poor</option>
+                      <option value="Unknown">Unknown</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Client's HIV Status</label>
+                    <select v-model="clientForm.hivStatus">
+                      <option value="">Select HIV Status</option>
+                      <option value="Positive">Positive</option>
+                      <option value="Negative">Negative</option>
+                      <option value="Unknown">Unknown</option>
+                      <option value="Not Tested">Not Tested</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Client's Marital Status</label>
+                    <select v-model="clientForm.maritalStatus">
+                      <option value="">Select Marital Status</option>
+                      <option value="Single">Single</option>
+                      <option value="Married">Married</option>
+                      <option value="Divorced">Divorced</option>
+                      <option value="Widowed">Widowed</option>
+                      <option value="Separated">Separated</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Is the Client Attending School?</label>
+                    <div class="radio-group">
+                      <label class="radio-option">
+                        <input type="radio" v-model="clientForm.attendingSchool" value="yes" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">Yes</span>
+                      </label>
+                      <label class="radio-option">
+                        <input type="radio" v-model="clientForm.attendingSchool" value="no" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">No</span>
+                      </label>
+                      <label class="radio-option">
+                        <input type="radio" v-model="clientForm.attendingSchool" value="unknown" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">Unknown</span>
+                      </label>
+                    </div>
+                    
+                    <!-- Conditional field for school name when "Yes" is selected -->
+                    <div v-if="clientForm.attendingSchool === 'yes'" class="conditional-field">
+                      <label>Which School Is the Client Attending?</label>
+                      <input 
+                        v-model="clientForm.previousSchool" 
+                        type="text" 
+                        placeholder="Enter school name"
+                        class="school-input"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Is the Client Disabled?</label>
+                    <div class="radio-group">
+                      <label class="radio-option">
+                        <input type="radio" v-model="clientForm.isDisabled" value="yes" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">Yes</span>
+                      </label>
+                      <label class="radio-option">
+                        <input type="radio" v-model="clientForm.isDisabled" value="no" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">No</span>
+                      </label>
+                      <label class="radio-option">
+                        <input type="radio" v-model="clientForm.isDisabled" value="unknown" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">Unknown</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Step Navigation -->
+            <div class="step-navigation">
+              <button v-if="currentClientStep > 0" @click="prevClientStep" type="button" class="btn btn--secondary">Previous</button>
+              <button v-if="currentClientStep < clientSteps.length - 1" @click="nextClientStep" type="button" class="btn btn--primary">Next</button>
+              <button v-if="currentClientStep === clientSteps.length - 1" @click="addClient" type="button" class="btn btn--primary">Create</button>
             </div>
           </div>
         </div>
@@ -1258,9 +1615,9 @@
 
     <!-- Perpetrator Modal -->
     <div v-if="perpetratorModalOpen" class="simple-modal">
-      <div class="simple-modal-content">
+      <div class="simple-modal-content perpetrator-modal-large">
         <div class="simple-modal-header">
-          <h3>Add Perpetrator</h3>
+          <h3>New Perpetrator</h3>
           <span class="simple-modal-close" @click="closePerpetratorModal">×</span>
         </div>
         
@@ -1274,82 +1631,290 @@
             </div>
           </div>
           
-          <!-- Add new perpetrator form -->
+          <!-- Multi-step Perpetrator Form -->
           <div class="add-perpetrator-form">
             <h4>Add New Perpetrator:</h4>
-            <div class="form-fields">
-              <div class="field-group">
-                <label>Perpetrator Name *</label>
-                <input v-model="perpetratorForm.name" type="text" placeholder="Enter perpetrator name" />
-              </div>
-              
-              <div class="field-group">
-                <label>Age</label>
-                <input v-model="perpetratorForm.age" type="number" placeholder="Enter age" />
-              </div>
-              
-              <div class="field-group">
-                <label>Sex</label>
-                <select v-model="perpetratorForm.sex">
-                  <option value="">Select sex</option>
-                  <option value="female">Female</option>
-                  <option value="male">Male</option>
-                  <option value="non-binary">Non-binary</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-              
-              <div class="field-group">
-                <label>Location</label>
-                <input v-model="perpetratorForm.location" type="text" placeholder="Enter location" />
-              </div>
-              
-              <div class="field-group">
-                <label>Phone Number</label>
-                <input v-model="perpetratorForm.phone" type="tel" placeholder="Enter phone number" />
-              </div>
-              
-              <div class="field-group">
-                <label>Relationship to Reporter/Client</label>
-                <input v-model="perpetratorForm.relationship" type="text" placeholder="e.g., Father, Uncle, Neighbor" />
-              </div>
-              
-              <div class="field-group">
-                <label>Nationality</label>
-                <select v-model="perpetratorForm.nationality">
-                  <option value="">Select nationality</option>
-                  <option>Kenyan</option>
-                  <option>Ugandan</option>
-                  <option>Tanzanian</option>
-                  <option>Somali</option>
-                  <option>South Sudanese</option>
-                  <option>Other</option>
-                </select>
-              </div>
-              
-              <div class="field-group">
-                <label>ID Number</label>
-                <input v-model="perpetratorForm.idNumber" type="text" placeholder="Enter ID number" />
-              </div>
-              
-              <div class="field-group">
-                <label>Is the Perpetrator a Refugee?</label>
-                <div class="radio-options">
-                  <label><input type="radio" v-model="perpetratorForm.isRefugee" value="yes" /> Yes</label>
-                  <label><input type="radio" v-model="perpetratorForm.isRefugee" value="no" /> No</label>
-                  <label><input type="radio" v-model="perpetratorForm.isRefugee" value="unknown" /> Unknown</label>
+            
+            <!-- Progress Steps -->
+            <div class="form-steps">
+              <div class="step-indicator">
+                <div v-for="(step, index) in perpetratorSteps" :key="index" 
+                     :class="['step', { 
+                       active: currentPerpetratorStep === index, 
+                       completed: currentPerpetratorStep > index,
+                       future: currentPerpetratorStep < index
+                     }]">
+                  <span class="step-number">
+                    <span>{{ index + 1 }}</span>
+                  </span>
+                  <span class="step-title">{{ step.title }}</span>
                 </div>
-              </div>
-              
-              <div class="field-group">
-                <label>Additional Details</label>
-                <textarea v-model="perpetratorForm.additionalDetails" placeholder="Any additional information about the perpetrator..." rows="3"></textarea>
               </div>
             </div>
             
-            <div class="form-actions">
-              <button @click="addPerpetrator" class="add-btn">Add Perpetrator</button>
-              <button @click="closePerpetratorModal" class="cancel-btn">Done</button>
+            <!-- Step Content -->
+            <div class="step-content">
+              <!-- Step 1: Basic Information -->
+              <div v-if="currentPerpetratorStep === 0" class="form-step">
+                <div class="form-fields">
+                  <div class="field-group">
+                    <label>Perpetrator's Name *</label>
+                    <input v-model="perpetratorForm.name" type="text" placeholder="Enter Perpetrator's Names" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Age</label>
+                    <input v-model="perpetratorForm.age" type="number" placeholder="Enter age" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>DOB</label>
+                    <input v-model="perpetratorForm.dob" type="date" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Age Group</label>
+                    <select v-model="perpetratorForm.ageGroup">
+                      <option value="">Select Age Group</option>
+                      <option value="0-5">0-5 years</option>
+                      <option value="6-12">6-12 years</option>
+                      <option value="13-17">13-17 years</option>
+                      <option value="18-25">18-25 years</option>
+                      <option value="26-35">26-35 years</option>
+                      <option value="36-50">36-50 years</option>
+                      <option value="51+">51+ years</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Location</label>
+                    <select v-model="perpetratorForm.location">
+                      <option value="">Select Location</option>
+                      <option value="Nairobi">Nairobi</option>
+                      <option value="Mombasa">Mombasa</option>
+                      <option value="Kisumu">Kisumu</option>
+                      <option value="Nakuru">Nakuru</option>
+                      <option value="Eldoret">Eldoret</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Sex</label>
+                    <select v-model="perpetratorForm.sex">
+                      <option value="">Select Gender</option>
+                      <option value="female">Female</option>
+                      <option value="male">Male</option>
+                      <option value="non-binary">Non-binary</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Step 2: Identity & Contact -->
+              <div v-if="currentPerpetratorStep === 1" class="form-step">
+                <div class="form-fields">
+                  <div class="field-group">
+                    <label>Nearest Landmark</label>
+                    <input v-model="perpetratorForm.landmark" type="text" placeholder="Enter Nearest Landmark" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Nationality</label>
+                    <select v-model="perpetratorForm.nationality">
+                      <option value="">Select Nationality</option>
+                      <option value="Kenyan">Kenyan</option>
+                      <option value="Ugandan">Ugandan</option>
+                      <option value="Tanzanian">Tanzanian</option>
+                      <option value="Somali">Somali</option>
+                      <option value="South Sudanese">South Sudanese</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>ID Type</label>
+                    <select v-model="perpetratorForm.idType">
+                      <option value="">Select ID Type</option>
+                      <option value="National ID">National ID</option>
+                      <option value="Passport">Passport</option>
+                      <option value="Birth Certificate">Birth Certificate</option>
+                      <option value="Refugee ID">Refugee ID</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>ID Number</label>
+                    <input v-model="perpetratorForm.idNumber" type="text" placeholder="Enter Reporter's ID Number" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Language</label>
+                    <select v-model="perpetratorForm.language">
+                      <option value="">Select Language</option>
+                      <option value="English">English</option>
+                      <option value="Kiswahili">Kiswahili</option>
+                      <option value="Luo">Luo</option>
+                      <option value="Kikuyu">Kikuyu</option>
+                      <option value="Luhya">Luhya</option>
+                      <option value="Kalenjin">Kalenjin</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Is the Perpetrator a Refugee?</label>
+                    <div class="radio-group">
+                      <label class="radio-option">
+                        <input type="radio" v-model="perpetratorForm.isRefugee" value="yes" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">Yes</span>
+                      </label>
+                      <label class="radio-option">
+                        <input type="radio" v-model="perpetratorForm.isRefugee" value="no" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">No</span>
+                      </label>
+                      <label class="radio-option">
+                        <input type="radio" v-model="perpetratorForm.isRefugee" value="unknown" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">Unknown</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Step 3: Contact & Background -->
+              <div v-if="currentPerpetratorStep === 2" class="form-step">
+                <div class="form-fields">
+                  <div class="field-group">
+                    <label>Tribe</label>
+                    <select v-model="perpetratorForm.tribe">
+                      <option value="">Select Tribe</option>
+                      <option value="Kikuyu">Kikuyu</option>
+                      <option value="Luhya">Luhya</option>
+                      <option value="Kalenjin">Kalenjin</option>
+                      <option value="Luo">Luo</option>
+                      <option value="Kamba">Kamba</option>
+                      <option value="Kisii">Kisii</option>
+                      <option value="Meru">Meru</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Phone Number</label>
+                    <input v-model="perpetratorForm.phone" type="tel" placeholder="Enter Reporter's Phone Number" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Alternative Phone</label>
+                    <input v-model="perpetratorForm.alternativePhone" type="tel" placeholder="Enter Alternate Phone Number" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Email</label>
+                    <input v-model="perpetratorForm.email" type="email" placeholder="Enter Reporter's Email Address" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Relationship with Client?</label>
+                    <select v-model="perpetratorForm.relationship">
+                      <option value="">Select Relationship</option>
+                      <option value="Parent">Parent</option>
+                      <option value="Guardian">Guardian</option>
+                      <option value="Sibling">Sibling</option>
+                      <option value="Relative">Relative</option>
+                      <option value="Friend">Friend</option>
+                      <option value="Neighbor">Neighbor</option>
+                      <option value="Teacher">Teacher</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Shares Home with Client?</label>
+                    <div class="radio-group">
+                      <label class="radio-option">
+                        <input type="radio" v-model="perpetratorForm.sharesHome" value="yes" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">Yes</span>
+                      </label>
+                      <label class="radio-option">
+                        <input type="radio" v-model="perpetratorForm.sharesHome" value="no" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">No</span>
+                      </label>
+                      <label class="radio-option">
+                        <input type="radio" v-model="perpetratorForm.sharesHome" value="unknown" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">Unknown</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Step 4: Status & Details -->
+              <div v-if="currentPerpetratorStep === 3" class="form-step">
+                <div class="form-fields">
+                  <div class="field-group">
+                    <label>Health Status</label>
+                    <select v-model="perpetratorForm.healthStatus">
+                      <option value="">Select Health Status</option>
+                      <option value="Good">Good</option>
+                      <option value="Fair">Fair</option>
+                      <option value="Poor">Poor</option>
+                      <option value="Unknown">Unknown</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Perpetrator's Profession</label>
+                    <select v-model="perpetratorForm.profession">
+                      <option value="">Select Work Status</option>
+                      <option value="Employed">Employed</option>
+                      <option value="Self-employed">Self-employed</option>
+                      <option value="Unemployed">Unemployed</option>
+                      <option value="Student">Student</option>
+                      <option value="Retired">Retired</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Perpetrator's Marital Status</label>
+                    <select v-model="perpetratorForm.maritalStatus">
+                      <option value="">Select Marital Status</option>
+                      <option value="Single">Single</option>
+                      <option value="Married">Married</option>
+                      <option value="Divorced">Divorced</option>
+                      <option value="Widowed">Widowed</option>
+                      <option value="Separated">Separated</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Perpetrator's Guardian's Name</label>
+                    <input v-model="perpetratorForm.guardianName" type="text" placeholder="Enter Perpetrator's Guardian Name" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Additional Details</label>
+                    <textarea v-model="perpetratorForm.additionalDetails" placeholder="Enter Additional Details" rows="4"></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Step Navigation -->
+            <div class="step-navigation">
+              <button v-if="currentPerpetratorStep > 0" @click="prevPerpetratorStep" type="button" class="btn btn--secondary">Previous</button>
+              <button v-if="currentPerpetratorStep < perpetratorSteps.length - 1" @click="nextPerpetratorStep" type="button" class="btn btn--primary">Next</button>
+              <button v-if="currentPerpetratorStep === perpetratorSteps.length - 1" @click="addPerpetrator" type="button" class="btn btn--primary">Create</button>
             </div>
           </div>
         </div>
@@ -1398,25 +1963,83 @@ const aiInsights = ref([])
 const recommendations = ref([])
 
 // Client and Perpetrator forms
+const currentClientStep = ref(0)
+
+// Client form steps
+const clientSteps = ref([
+  { title: 'Basic Info' },
+  { title: 'Identity' },
+  { title: 'Contact' },
+  { title: 'Household' },
+  { title: 'Health & Status' }
+])
+
 const clientForm = reactive({
   name: '',
   age: '',
-  sex: '',
+  dob: '',
+  ageGroup: '',
   location: '',
+  sex: '',
+  landmark: '',
+  nationality: '',
+  idType: '',
+  idNumber: '',
+  language: '',
+  isRefugee: '',
+  tribe: '',
   phone: '',
-  relationship: ''
+  alternativePhone: '',
+  email: '',
+  relationship: '',
+  relationshipComment: '',
+  adultsInHousehold: '',
+  householdType: '',
+  headOccupation: '',
+  parentGuardianName: '',
+  parentMaritalStatus: '',
+  parentIdNumber: '',
+  healthStatus: '',
+  hivStatus: '',
+  maritalStatus: '',
+  attendingSchool: '',
+  previousSchool: '',
+  isDisabled: ''
 })
+
+// Perpetrator form steps
+const perpetratorSteps = ref([
+  { title: 'Basic Info' },
+  { title: 'Identity' },
+  { title: 'Contact' },
+  { title: 'Status & Details' }
+])
+
+const currentPerpetratorStep = ref(0)
 
 const perpetratorForm = reactive({
   name: '',
   age: '',
-  sex: '',
+  dob: '',
+  ageGroup: '',
   location: '',
-  phone: '',
-  relationship: '',
+  sex: '',
+  landmark: '',
   nationality: '',
+  idType: '',
   idNumber: '',
+  language: '',
   isRefugee: '',
+  tribe: '',
+  phone: '',
+  alternativePhone: '',
+  email: '',
+  relationship: '',
+  sharesHome: '',
+  healthStatus: '',
+  profession: '',
+  maritalStatus: '',
+  guardianName: '',
   additionalDetails: ''
 })
 
@@ -1471,6 +2094,8 @@ const formData = reactive({
   },
   step4: {
     department: '',
+    clientPassportNumber: '',
+    selectedClient: null,
     categories: [],
     priority: '',
     status: '',
@@ -1499,10 +2124,55 @@ const stepDescriptions = [
   'Step 5: Review all information before creating the case'
 ]
 
-// Computed
-const debouncedQuery = ref('')
-const suggestionWidth = '100%'
-let debounceTimer = null
+// Labor Department - Client Search
+const clientSearchResults = ref([])
+const hasSearched = ref(false)
+
+// Mock client database for demonstration
+const mockClients = [
+  { id: 1, name: 'John Doe', passportNumber: 'A1234567', nationality: 'Kenyan', phone: '254700123456' },
+  { id: 2, name: 'Jane Smith', passportNumber: 'B2345678', nationality: 'Ugandan', phone: '254700234567' },
+  { id: 3, name: 'Ahmed Hassan', passportNumber: 'C3456789', nationality: 'Somali', phone: '254700345678' },
+  { id: 4, name: 'Maria Garcia', passportNumber: 'D4567890', nationality: 'Spanish', phone: '254700456789' }
+]
+
+const searchClientByPassport = () => {
+  if (!formData.step4.clientPassportNumber.trim()) {
+    alert('Please enter a passport number')
+    return
+  }
+  
+  hasSearched.value = true
+  
+  // Search in mock database
+  const results = mockClients.filter(client => 
+    client.passportNumber.toLowerCase().includes(formData.step4.clientPassportNumber.toLowerCase())
+  )
+  
+  clientSearchResults.value = results
+  
+  if (results.length === 0) {
+    console.log('No client found with passport:', formData.step4.clientPassportNumber)
+  }
+}
+
+const selectClient = (client) => {
+  formData.step4.selectedClient = client
+  console.log('Selected client:', client)
+  
+  // Clear search results
+  clientSearchResults.value = []
+  hasSearched.value = false
+  
+  // You could also populate some form fields with client data
+  // formData.step2.name = client.name
+  // formData.step2.phone = client.phone
+}
+
+const createNewClient = () => {
+  // Open the client modal for creating a new client
+  clientModalOpen.value = true
+}
 
 watch(searchQuery, (val) => {
   clearTimeout(debounceTimer)
@@ -1583,16 +2253,37 @@ const resetClientForm = () => {
   Object.keys(clientForm).forEach(key => {
     clientForm[key] = ''
   })
+  currentClientStep.value = 0
+}
+
+const nextClientStep = () => {
+  if (currentClientStep.value < clientSteps.value.length - 1) {
+    currentClientStep.value++
+  }
+}
+
+const prevClientStep = () => {
+  if (currentClientStep.value > 0) {
+    currentClientStep.value--
+  }
 }
 
 const addClient = () => {
+  console.log('addClient called', clientForm)
+  
   if (!clientForm.name.trim()) {
     alert('Please enter client name')
     return
   }
   
+  console.log('Adding client:', clientForm)
   formData.step2.clients.push({ ...clientForm })
+  console.log('Clients after add:', formData.step2.clients)
+  
   resetClientForm()
+  closeClientModal()
+  
+  console.log('Client added successfully')
 }
 
 const removeClient = (index) => {
@@ -1612,6 +2303,19 @@ const resetPerpetratorForm = () => {
   Object.keys(perpetratorForm).forEach(key => {
     perpetratorForm[key] = ''
   })
+  currentPerpetratorStep.value = 0
+}
+
+const nextPerpetratorStep = () => {
+  if (currentPerpetratorStep.value < perpetratorSteps.value.length - 1) {
+    currentPerpetratorStep.value++
+  }
+}
+
+const prevPerpetratorStep = () => {
+  if (currentPerpetratorStep.value > 0) {
+    currentPerpetratorStep.value--
+  }
 }
 
 const addPerpetrator = () => {
@@ -2499,6 +3203,133 @@ const updateStepCSSVar = () => {
   width: 600px;
 }
 
+.client-modal-large,
+.perpetrator-modal-large {
+  width: 800px;
+  max-width: 95vw;
+}
+
+/* Multi-step Form Styles */
+.form-steps {
+  margin-bottom: 24px;
+  padding: 20px 0;
+  border-top: 1px solid #e5e5e5;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.step-indicator {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  position: relative;
+}
+
+.step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  right: -50%;
+  height: 2px;
+  background: #e5e5e5;
+  z-index: 1;
+}
+
+.step.completed:not(:last-child)::after {
+  background: #28a745;
+}
+
+.step.active:not(:last-child)::after {
+  background: #28a745;
+}
+
+.step-number {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  position: relative;
+  z-index: 2;
+}
+
+/* Completed steps - Green background with white numbers */
+.step.completed .step-number {
+  background: #28a745;
+  color: white;
+}
+
+/* Active steps - Green */
+.step.active .step-number {
+  background: #28a745;
+  color: white;
+}
+
+/* Future steps - Grey */
+.step.future .step-number {
+  background: #e5e5e5;
+  color: #666666;
+}
+
+.step-title {
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+  margin-top: 4px;
+}
+
+/* Completed step titles - Green */
+.step.completed .step-title {
+  color: #28a745;
+  font-weight: 600;
+}
+
+/* Active step titles - Green */
+.step.active .step-title {
+  color: #28a745;
+  font-weight: 600;
+}
+
+/* Future step titles - Grey */
+.step.future .step-title {
+  color: #666666;
+}
+
+.step-content {
+  min-height: 400px;
+}
+
+.form-step {
+  padding: 20px 0;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.step-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border);
+}
+
 .simple-modal-header {
   display: flex;
   justify-content: space-between;
@@ -2536,15 +3367,69 @@ const updateStepCSSVar = () => {
 .form-fields {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: 20px;
+  margin-bottom: 24px;
 }
 
 .field-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
+
+.field-group label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+  margin-bottom: 4px;
+}
+
+.field-group input,
+.field-group select,
+.field-group textarea {
+  padding: 12px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  background: var(--color-background);
+  color: var(--color-text);
+  transition: all 0.2s ease;
+}
+
+.field-group input:focus,
+.field-group select:focus,
+.field-group textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.1);
+}
+
+.field-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.radio-options {
+  display: flex;
+  gap: 16px;
+  margin-top: 4px;
+}
+
+.radio-options label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.radio-options input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
 
 .field-group label {
   font-weight: 600;
@@ -2700,11 +3585,332 @@ const updateStepCSSVar = () => {
 @media (max-width: 768px) {
   .form-fields {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
   
   .simple-modal-content {
     width: 95%;
     margin: 10px;
   }
+  
+  .client-modal-large,
+  .perpetrator-modal-large {
+    width: 95%;
+    max-width: 95vw;
+  }
+  
+  .radio-options {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+/* Labor Department - Passport Search Styles */
+.labor-search-section {
+  margin-top: 20px;
+  padding: 20px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.passport-search-container {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.passport-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid var(--color-border, #d1d5db);
+  border-radius: var(--radius-md, 6px);
+  font-size: 14px;
+  background: var(--color-background, #ffffff);
+  color: var(--color-text, #1f2937);
+  transition: all 0.2s ease;
+}
+
+.passport-input:hover {
+  border-color: var(--color-primary, #8b4513);
+  background: var(--color-background, #ffffff);
+  color: var(--color-text, #1f2937);
+}
+
+.passport-input:focus {
+  outline: none;
+  border-color: var(--color-primary, #8b4513);
+  background: var(--color-background, #ffffff);
+  color: var(--color-text, #1f2937);
+  box-shadow: 0 0 0 2px rgba(139, 69, 19, 0.1);
+}
+
+.passport-input::placeholder {
+  color: var(--color-text-secondary, #6b7280);
+  opacity: 1;
+}
+
+.search-btn {
+  background: var(--color-primary);
+  color: white;
+  border: 1px solid var(--color-primary);
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.search-btn:hover {
+  background: var(--color-primary-hover, #7a3a0f);
+  border-color: var(--color-primary-hover, #7a3a0f);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(139, 69, 19, 0.2);
+}
+
+.search-results {
+  margin-top: 16px;
+}
+
+.search-results h4 {
+  margin-bottom: 12px;
+  color: var(--color-text);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.client-result {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+}
+
+.client-result:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 2px 8px rgba(var(--color-primary-rgb), 0.1);
+}
+
+.client-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.client-info strong {
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.client-details {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+
+.select-client-btn {
+  padding: 8px 16px;
+  background: var(--color-success);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.select-client-btn:hover {
+  background: var(--color-success-dark);
+}
+
+.no-results {
+  margin-top: 16px;
+  padding: 16px;
+  text-align: center;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.no-results p {
+  margin-bottom: 12px;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+.create-client-btn {
+  background: var(--color-primary);
+  color: white;
+  border: 1px solid var(--color-primary);
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.create-client-btn:hover {
+  background: var(--color-primary-hover, #7a3a0f);
+  border-color: var(--color-primary-hover, #7a3a0f);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(139, 69, 19, 0.2);
+}
+
+/* Conditional Field Styling */
+.conditional-field {
+  margin-top: 16px;
+  padding: 16px;
+  background: var(--color-surface-muted, #f8f9fa);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: var(--radius-md, 6px);
+  animation: slideDown 0.3s ease-out;
+}
+
+.conditional-field label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text, #1f2937);
+}
+
+.school-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--color-border, #d1d5db);
+  border-radius: var(--radius-md, 6px);
+  font-size: 14px;
+  background: var(--color-background, #ffffff);
+  color: var(--color-text, #1f2937);
+  transition: all 0.2s ease;
+}
+
+.school-input:focus {
+  outline: none;
+  border-color: var(--color-primary, #8b4513);
+  box-shadow: 0 0 0 2px rgba(139, 69, 19, 0.1);
+}
+
+.school-input::placeholder {
+  color: var(--color-text-secondary, #6b7280);
+  opacity: 1;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 100px;
+  }
+}
+
+/* Custom Radio Button Styling */
+.radio-options input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--color-primary, #8b4513);
+}
+
+.radio-options input[type="radio"]:checked {
+  accent-color: var(--color-primary, #8b4513);
+}
+
+/* Custom radio button styling for better control */
+.radio-options label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  position: relative;
+}
+
+.radio-options label input[type="radio"] {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--color-border, #d1d5db);
+  border-radius: 50%;
+  background: var(--color-background, #ffffff);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.radio-options label input[type="radio"]:checked {
+  border-color: var(--color-primary, #8b4513);
+  background: var(--color-primary, #8b4513);
+}
+
+.radio-options label input[type="radio"]:checked::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: white;
+}
+
+/* Button Styles */
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--radius-md, 6px);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn--primary {
+  background: var(--color-primary, #8b4513);
+  color: white;
+  border: 1px solid var(--color-primary, #8b4513);
+}
+
+.btn--primary:hover {
+  background: var(--color-primary-hover, #7a3a0f);
+  border-color: var(--color-primary-hover, #7a3a0f);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(139, 69, 19, 0.2);
+}
+
+.btn--secondary {
+  background: var(--color-surface, #ffffff);
+  color: var(--color-text, #1f2937);
+  border: 1px solid var(--color-border, #d1d5db);
+}
+
+.btn--secondary:hover {
+  background: var(--color-surface-muted, #f8f9fa);
+  transform: translateY(-1px);
+}
+
+.btn--sm {
+  padding: 8px 16px;
+  font-size: 12px;
 }
 </style>

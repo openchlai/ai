@@ -779,8 +779,8 @@ input:checked + .toggle-slider:before {
 }
 
 .radio-indicator {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border: 2px solid #dee2e6;
   border-radius: 50%;
   position: relative;
@@ -797,8 +797,8 @@ input:checked + .toggle-slider:before {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   background: #8B4513;
   border-radius: 50%;
 }
@@ -1449,4 +1449,11 @@ input:checked + .toggle-slider:before {
   .upload-icon {
     margin-bottom: 12px;
   }
+}
+
+/* Global radio button sizing consistency */
+input[type="radio"] {
+  width: 16px !important;
+  height: 16px !important;
+  accent-color: #8B4513;
 }
