@@ -130,17 +130,20 @@ To enhance the system's accessibility and efficiency further, AI-driven upgrades
 </div>
 
 <script>
-  const tabs = document.querySelectorAll('.vp-tab');
-  const tabPanels = document.querySelectorAll('.vp-tab-panel');
+  // Only run this code on the client side
+  if (typeof window !== 'undefined') {
+    const tabs = document.querySelectorAll('.vp-tab');
+    const tabPanels = document.querySelectorAll('.vp-tab-panel');
 
-  tabs.forEach((tab, index) => {
-    tab.addEventListener('click', () => {
-      tabs.forEach(t => t.setAttribute('aria-selected', 'false'));
-      tab.setAttribute('aria-selected', 'true');
-      tabPanels.forEach(p => p.style.display = 'none');
-      tabPanels[index].style.display = 'block';
+    tabs.forEach((tab, index) => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.setAttribute('aria-selected', 'false'));
+        tab.setAttribute('aria-selected', 'true');
+        tabPanels.forEach(p => p.style.display = 'none');
+        tabPanels[index].style.display = 'block';
+      });
     });
-  });
+  }
 </script>
 
 ---
