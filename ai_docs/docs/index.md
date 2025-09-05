@@ -8,7 +8,7 @@ hero:
   actions:
     - theme: brand
       text: Getting Started
-      link: /getting-started/overview
+      link: /getting-started
     - theme: alt
       text: Explore API
       link: /api/overview
