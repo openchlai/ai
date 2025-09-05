@@ -11,13 +11,13 @@ export default defineConfig({
     themeConfig: {
         nav: [
             { text: 'Home', link: '/' },
-            { text: 'Getting Started', link: '/getting-started/overview' },
+            { text: 'Getting Started', link: '/getting-started' },
             { text: 'Helpline', link: '/helpline-service/overview' },
             { text: 'AI Service', link: '/ai-service/overview' },
             { text: 'Ecosystem', link: '/ecosystem/overview' },
             { text: 'API Docs', link: '/api/overview' },
             { text: 'User Guides', link: '/user-guides/operators' },
-            { text: 'About', link: '/about/privacy' }
+            { text: 'About', link: '/about/overview' }
         ],
 
         sidebar: {

@@ -47,3 +47,38 @@ The **openCHS Ecosystem** brings together the **Helpline Service**, the **AI Ser
 - **50% less time spent on admin** — more time for survivor care
 - **No dropped referrals** or duplicate paperwork
 - **Actionable insights** for caseworkers and policymakers
+
+---
+
+## OPENCHS ECOSYSTEM COMPONENTS
+
+### Survivor-Based WF
+- 🛡️ Protection from Sexual Exploitation and Abuse (PSEA)
+- 🚺 Gender-Based Violence (GBV)
+- 🤝 Migrant Workers Support Services
+
+### Live API Connections
+- 🏠 **Safe Houses:** "Auto-booking with biometric ID bypass for anonymity"
+- 🏥 **Health Facilities:** "STI/HIV test scheduling via chatbot"
+- 🧠 **Counseling:** "Mental health triage → WhatsApp therapy sessions"
+- API Gateway (pulsing animation showing live data exchange)
+
+### Health (Chatbots & APIs)
+- 🤰 **Maternal Health Chatbots:** Provide expectant mothers with accessible guidance and conduct prenatal violence screening to identify and address risks early.
+- 🧠 **Mental Health APIs:** Integrate with counseling services to trigger suicide risk alerts to counselors in real time, enabling rapid intervention.
+
+### Government
+- CPIMS, NSR, Labor Ministry (e.g., child labor case auto-referrals)
+
+### Child Friendly Feedback System
+- Mood Catcher
+- Games
+- Chat BOT
+- AI Triage
+
+### Omnichannel Intake
+For Omnichannel intake (calls, SMS, messages, chatbots, webform) a more relevant icon could be:
+- 📞 (phone calls)
+- 💬 (messaging)
+- 🌐 (web-based forms)
+- 📲 (multi-device communication)
