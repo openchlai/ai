@@ -671,9 +671,16 @@ onMounted(() => {
 }
 
 .sidepanel-coatofarms img {
-  max-width: 60px;
-  max-height: 90px;
+  width: clamp(64px, 10vw, 120px);
+  height: auto;
+  aspect-ratio: auto;
   object-fit: contain;
   display: block;
+}
+@media (max-width: 1024px) {
+  .sidepanel-coatofarms img { width: clamp(56px, 12vw, 108px); }
+}
+@media (max-width: 768px) {
+  .sidepanel-coatofarms img { width: clamp(52px, 16vw, 92px); }
 }
 </style>

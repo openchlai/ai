@@ -474,7 +474,7 @@ const handleSidebarToggle = () => {
 // Chat state
 const searchQuery = ref("");
 const activePlatform = ref("all");
-const activeView = ref("timeline");
+const activeView = ref("table");
 const showChatPanel = ref(false);
 const selectedMessage = ref(null);
 const selectedMessageId = ref(null);
@@ -1126,14 +1126,105 @@ onMounted(async () => {
   letter-spacing: 0.5px;
 }
 
-.status-badge.status-active {
-  background: color-mix(in oklab, var(--success-color) 10%, transparent);
-  color: var(--success-color);
+/* Enhanced status badge styling with proper color coding */
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.status-badge.status-pending {
-  background: color-mix(in oklab, var(--warning-color) 10%, transparent);
-  color: var(--warning-color);
+.status-badge.status--active {
+  background: rgba(34, 197, 94, 0.1);
+  color: #16a34a;
+}
+
+.status-badge.status--pending {
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+}
+
+.status-badge.status--inactive {
+  background: rgba(107, 114, 128, 0.1);
+  color: #6b7280;
+}
+
+.status-badge.status--busy {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+
+.status-badge.status--away {
+  background: rgba(168, 85, 247, 0.1);
+  color: #a855f7;
+}
+
+/* Status pill styling for timeline view */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-pill.status--active {
+  background: rgba(34, 197, 94, 0.1);
+  color: #16a34a;
+}
+
+.status-pill.status--pending {
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+}
+
+.status-pill.status--inactive {
+  background: rgba(107, 114, 128, 0.1);
+  color: #6b7280;
+}
+
+.status-pill.status--busy {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+
+.status-pill.status--away {
+  background: rgba(168, 85, 247, 0.1);
+  color: #a855f7;
+}
+
+/* Status dot styling */
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-dot.dot--active {
+  background: #16a34a;
+}
+
+.status-dot.dot--pending {
+  background: #d97706;
+}
+
+.status-dot.dot--inactive {
+  background: #6b7280;
+}
+
+.status-dot.dot--busy {
+  background: #dc2626;
+}
+
+.status-dot.dot--away {
+  background: #a855f7;
 }
 
 .action-btn {

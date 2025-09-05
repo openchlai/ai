@@ -472,3 +472,60 @@ onMounted(() => {
   applyTheme(savedTheme);
 });
 </script>
+
+<style scoped>
+/* Ensure priority label is readable even when no variant class matches */
+.priority-badge {
+  color: var(--text-color);
+  background: var(--content-bg);
+  border: 1px solid var(--border-color);
+  text-transform: capitalize;
+}
+
+/* Map numeric values coming from API (1/2/3) to visual styles */
+.priority-badge.\31 { /* 1 → low */
+  background: rgba(21, 128, 61, 0.1);
+  color: var(--success-color);
+}
+.priority-badge.\32 { /* 2 → medium */
+  background: rgba(255, 149, 0, 0.1);
+  color: #ff9500;
+}
+.priority-badge.\33 { /* 3 → high */
+  background: rgba(204, 47, 47, 0.1);
+  color: var(--danger-color);
+}
+
+/* Support textual variants as well */
+.priority-badge.low {
+  background: rgba(21, 128, 61, 0.1);
+  color: var(--success-color);
+}
+.priority-badge.medium {
+  background: rgba(255, 149, 0, 0.1);
+  color: #ff9500;
+}
+.priority-badge.high {
+  background: rgba(204, 47, 47, 0.1);
+  color: var(--danger-color);
+}
+.priority-badge.normal {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--text-color);
+}
+
+/* Priority indicator dot uses current text color by default */
+.priority-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  background: currentColor;
+  border: none;
+}
+
+.priority-dot.low, .priority-dot.\31 { background: var(--success-color); }
+.priority-dot.medium, .priority-dot.\32 { background: #ff9500; }
+.priority-dot.high, .priority-dot.\33 { background: var(--danger-color); }
+.priority-dot.normal { background: var(--text-color); }
+</style>
