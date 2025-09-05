@@ -492,7 +492,7 @@
                         required
                       />
                       <span class="radio-indicator"></span>
-                      <span class="radio-label">116 (Emergency Helpline)</span>
+                      <span class="radio-label">116</span>
                     </label>
                     <label class="radio-option">
                       <input
@@ -502,31 +502,41 @@
                         required
                       />
                       <span class="radio-indicator"></span>
-                      <span class="radio-label">Labor Department</span>
+                      <span class="radio-label">Labor</span>
                     </label>
                   </div>
                 </div>
                 <div class="form-group">
                   <label for="case-category">Case Category*</label>
-                  <select
-                    v-model="formData.step4.category"
-                    id="case-category"
-                    class="form-control"
-                    required
-                  >
-                    <option value="">Select category</option>
-                    <option value="domestic-violence">Domestic Violence</option>
-                    <option value="sexual-assault">Sexual Assault</option>
-                    <option value="child-abuse">Child Abuse</option>
-                    <option value="human-trafficking">Human Trafficking</option>
-                    <option value="labor-exploitation">
-                      Labor Exploitation
-                    </option>
-                    <option value="elder-abuse">Elder Abuse</option>
-                    <option value="stalking">Stalking</option>
-                    <option value="substance-abuse">Substance Abuse</option>
-                    <option value="other">Other</option>
-                  </select>
+                  <div class="category-tags-container">
+                    <div class="category-tags">
+                      <span 
+                        v-for="category in formData.step4.categories" 
+                        :key="category" 
+                        class="category-tag"
+                      >
+                        {{ category }}
+                        <button type="button" @click="removeCategory(category)" class="tag-remove">×</button>
+                      </span>
+                    </div>
+                    <select
+                      v-model="selectedCategory"
+                      @change="addCategory"
+                      class="form-control"
+                    >
+                      <option value="">Add category...</option>
+                      <option value="Abuse">Abuse</option>
+                      <option value="Child Exploitation">Child Exploitation</option>
+                      <option value="Domestic Violence">Domestic Violence</option>
+                      <option value="Sexual Assault">Sexual Assault</option>
+                      <option value="Human Trafficking">Human Trafficking</option>
+                      <option value="Labor Exploitation">Labor Exploitation</option>
+                      <option value="Elder Abuse">Elder Abuse</option>
+                      <option value="Stalking">Stalking</option>
+                      <option value="Substance Abuse">Substance Abuse</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -579,64 +589,86 @@
                 </select>
               </div>
 
-              <div class="form-group">
-                <label>Services Offered</label>
-                <div class="checkbox-grid">
-                  <label class="checkbox-option">
-                    <input
-                      v-model="formData.step4.servicesOffered"
-                      type="checkbox"
-                      value="counseling"
-                    />
-                    <span class="checkbox-indicator"></span>
-                    <span class="checkbox-label">Counseling</span>
-                  </label>
-                  <label class="checkbox-option">
-                    <input
-                      v-model="formData.step4.servicesOffered"
-                      type="checkbox"
-                      value="legal-aid"
-                    />
-                    <span class="checkbox-indicator"></span>
-                    <span class="checkbox-label">Legal Aid</span>
-                  </label>
-                  <label class="checkbox-option">
-                    <input
-                      v-model="formData.step4.servicesOffered"
-                      type="checkbox"
-                      value="shelter"
-                    />
-                    <span class="checkbox-indicator"></span>
-                    <span class="checkbox-label">Shelter</span>
-                  </label>
-                  <label class="checkbox-option">
-                    <input
-                      v-model="formData.step4.servicesOffered"
-                      type="checkbox"
-                      value="medical-assistance"
-                    />
-                    <span class="checkbox-indicator"></span>
-                    <span class="checkbox-label">Medical Assistance</span>
-                  </label>
-                  <label class="checkbox-option">
-                    <input
-                      v-model="formData.step4.servicesOffered"
-                      type="checkbox"
-                      value="financial-support"
-                    />
-                    <span class="checkbox-indicator"></span>
-                    <span class="checkbox-label">Financial Support</span>
-                  </label>
-                  <label class="checkbox-option">
-                    <input
-                      v-model="formData.step4.servicesOffered"
-                      type="checkbox"
-                      value="referral"
-                    />
-                    <span class="checkbox-indicator"></span>
-                    <span class="checkbox-label">Referral Services</span>
-                  </label>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="justice-system-state">State of the Case in the Justice System</label>
+                  <select
+                    v-model="formData.step4.justiceSystemState"
+                    id="justice-system-state"
+                    class="form-control"
+                  >
+                    <option value="">Select state...</option>
+                    <option value="Social Worker">Social Worker</option>
+                    <option value="Police Investigation">Police Investigation</option>
+                    <option value="Court Proceedings">Court Proceedings</option>
+                    <option value="Prosecution">Prosecution</option>
+                    <option value="Sentencing">Sentencing</option>
+                    <option value="Closed">Closed</option>
+                  </select>
                 </div>
+                <div class="form-group">
+                  <label for="general-assessment">General Case Assessment</label>
+                  <select
+                    v-model="formData.step4.generalAssessment"
+                    id="general-assessment"
+                    class="form-control"
+                  >
+                    <option value="">Select assessment...</option>
+                    <option value="Progressing">Progressing</option>
+                    <option value="Stalled">Stalled</option>
+                    <option value="Resolved">Resolved</option>
+                    <option value="Escalated">Escalated</option>
+                    <option value="Under Review">Under Review</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="services-offered">Services Offered</label>
+                <select
+                  v-model="formData.step4.servicesOffered"
+                  id="services-offered"
+                  class="form-control"
+                >
+                  <option value="">Select service...</option>
+                  <option value="Know About 116">Know About 116</option>
+                  <option value="Counseling">Counseling</option>
+                  <option value="Legal Aid">Legal Aid</option>
+                  <option value="Shelter">Shelter</option>
+                  <option value="Medical Assistance">Medical Assistance</option>
+                  <option value="Financial Support">Financial Support</option>
+                  <option value="Referral Services">Referral Services</option>
+                  <option value="Emergency Response">Emergency Response</option>
+                  <option value="Crisis Intervention">Crisis Intervention</option>
+                  <option value="Support Groups">Support Groups</option>
+                  <option value="Education Programs">Education Programs</option>
+                  <option value="Community Outreach">Community Outreach</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="referral-source">How did you know about 116?</label>
+                <select
+                  v-model="formData.step4.referralSource"
+                  id="referral-source"
+                  class="form-control"
+                >
+                  <option value="">Select source...</option>
+                  <option value="Community Sensitizations">Community Sensitizations</option>
+                  <option value="Facebook">Facebook</option>
+                  <option value="Friend">Friend</option>
+                  <option value="IEC Material">IEC Material</option>
+                  <option value="Instagram">Instagram</option>
+                  <option value="News Papers">News Papers</option>
+                  <option value="NGO/CSO/Partners">NGO/CSO/Partners</option>
+                  <option value="Radio">Radio</option>
+                  <option value="Relative/Family Member">Relative/Family Member</option>
+                  <option value="School">School</option>
+                  <option value="Television">Television</option>
+                  <option value="WhatsApp">WhatsApp</option>
+                  <option value="Word of Mouth">Word of Mouth</option>
+                  <option value="Other">Other</option>
+                </select>
               </div>
             </div>
             <div class="form-actions">
@@ -818,10 +850,15 @@
                     {{ formatDepartment(formData.step4.department) || "N/A" }}
                   </div>
                 </div>
-                <div class="review-item">
-                  <div class="review-label">Category</div>
+                <div class="review-item review-item-full">
+                  <div class="review-label">Categories</div>
                   <div class="review-value">
-                    {{ formatCategory(formData.step4.category) || "N/A" }}
+                    <div v-if="formData.step4.categories.length > 0" class="category-tags">
+                      <span v-for="category in formData.step4.categories" :key="category" class="category-tag">
+                        {{ category }}
+                      </span>
+                    </div>
+                    <span v-else>N/A</span>
                   </div>
                 </div>
                 <div class="review-item">
@@ -849,22 +886,28 @@
                     <span v-else>N/A</span>
                   </div>
                 </div>
-                <div class="review-item review-item-full">
+                <div class="review-item">
+                  <div class="review-label">Justice System State</div>
+                  <div class="review-value">
+                    {{ formData.step4.justiceSystemState || "N/A" }}
+                  </div>
+                </div>
+                <div class="review-item">
+                  <div class="review-label">General Assessment</div>
+                  <div class="review-value">
+                    {{ formData.step4.generalAssessment || "N/A" }}
+                  </div>
+                </div>
+                <div class="review-item">
                   <div class="review-label">Services Offered</div>
                   <div class="review-value">
-                    <div
-                      v-if="formData.step4.servicesOffered.length > 0"
-                      class="services-tags"
-                    >
-                      <span
-                        v-for="service in formData.step4.servicesOffered"
-                        :key="service"
-                        class="service-tag"
-                      >
-                        {{ formatService(service) }}
-                      </span>
-                    </div>
-                    <span v-else>None selected</span>
+                    {{ formData.step4.servicesOffered || "N/A" }}
+                  </div>
+                </div>
+                <div class="review-item">
+                  <div class="review-label">Referral Source</div>
+                  <div class="review-value">
+                    {{ formData.step4.referralSource || "N/A" }}
                   </div>
                 </div>
               </div>
@@ -1129,6 +1172,7 @@ const totalSteps = 5
 const isAIEnabled = ref(true)
 const searchQuery = ref('')
 const selectedReporter = ref(null)
+const selectedCategory = ref('')
 
 // Audio recording state
 const isRecording = ref(false)
@@ -1196,11 +1240,14 @@ const formData = reactive({
   },
   step4: {
     department: '',
-    category: '',
+    categories: [],
     priority: '',
     status: '',
     escalatedTo: '',
-    servicesOffered: []
+    justiceSystemState: '',
+    generalAssessment: '',
+    servicesOffered: '',
+    referralSource: ''
   }
 })
 
@@ -1279,6 +1326,20 @@ const createNewReporter = () => {
     formData.step2[key] = key === 'isClient' ? null : ''
   })
   currentStep.value = 2
+}
+
+const addCategory = () => {
+  if (selectedCategory.value && !formData.step4.categories.includes(selectedCategory.value)) {
+    formData.step4.categories.push(selectedCategory.value)
+    selectedCategory.value = ''
+  }
+}
+
+const removeCategory = (category) => {
+  const index = formData.step4.categories.indexOf(category)
+  if (index > -1) {
+    formData.step4.categories.splice(index, 1)
+  }
 }
 
 const goToStep = (step) => {
@@ -1591,7 +1652,7 @@ const stepStatus = (step) => {
       if (!formData.step3.narrative) return 'error'
       return 'completed'
     case 4:
-      if (!formData.step4.priority || !formData.step4.status || !formData.step4.category) return 'error'
+      if (!formData.step4.priority || !formData.step4.status || formData.step4.categories.length === 0) return 'error'
       return 'completed'
     default:
       return 'idle'
@@ -1978,4 +2039,49 @@ const updateStepCSSVar = () => {
 }
 
 .back-button { margin-bottom: 12px; }
+
+/* Category tags */
+.category-tags-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.category-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 32px;
+  padding: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+}
+
+.category-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: var(--color-primary);
+  color: white;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.tag-remove {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+  margin-left: 4px;
+}
+
+.tag-remove:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
 </style>
