@@ -1,29 +1,11 @@
 <template>
-<div class="app-container" :data-theme="currentTheme">
+<div class="app-container">
   <SidePanel :userRole="userRole" :isInQueue="isInQueue" :isProcessingQueue="isProcessingQueue" :currentCall="currentCall" @toggle-queue="handleQueueToggle" @logout="handleLogout" @sidebar-toggle="handleSidebarToggle" />
   <div class="qa-statistics-container" :class="{ 'sidebar-collapsed': isSidebarCollapsed }" overflow-y="auto" height="100vh">
     <div class="header">
       <button class="back-btn glass-btn" v-if="selectedCounsellor || selectedCall" @click="handleBack">Back</button>
       <div class="page-title">QA Management System</div>
-      <div class="header-actions">
-        <button class="theme-toggle" @click="toggleTheme">
-          <svg v-if="currentTheme === 'dark'" width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2"/>
-          </svg>
-          <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2"/>
-            <line x1="12" y1="1" x2="12" y2="3" stroke="currentColor" stroke-width="2"/>
-            <line x1="12" y1="21" x2="12" y2="23" stroke="currentColor" stroke-width="2"/>
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="currentColor" stroke-width="2"/>
-            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="2"/>
-            <line x1="1" y1="12" x2="3" y2="12" stroke="currentColor" stroke-width="2"/>
-            <line x1="21" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="2"/>
-            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="currentColor" stroke-width="2"/>
-            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="2"/>
-          </svg>
-          <span>{{ currentTheme === 'dark' ? 'Light Mode' : 'Dark Mode' }}</span>
-        </button>
-      </div>
+      <div class="header-actions"></div>
     </div>
     <div class="qa-main-content">
       <!-- Step 1: Counsellors List -->
@@ -100,7 +82,6 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 // Reactive state
-const currentTheme = ref('dark')
 const activeView = ref('cards')
 const selectedCard = ref(null)
 const showEvaluationModal = ref(false)
@@ -550,9 +531,7 @@ function saveEvaluation() {
 }
 
 // Methods
-const toggleTheme = () => {
-  currentTheme.value = currentTheme.value === 'dark' ? 'light' : 'dark'
-}
+// Theme is globally forced to light; per-page toggles removed
 
 const setActiveView = (viewId) => {
   activeView.value = viewId
@@ -1171,15 +1150,7 @@ function getInitials(name) {
 .evaluations-table button:hover {
   background: var(--accent-hover);
 }
-.modal-overlay {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
+/* Use global .modal-overlay from styles/components.css (transparent, non-blocking) */
 .modal-content {
   background: var(--card-bg);
   border-radius: 18px;

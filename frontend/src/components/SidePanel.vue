@@ -56,6 +56,17 @@
             <div class="nav-text">Cases</div>
           </router-link>
           
+          <router-link to="/reviews" class="nav-item" :class="{ active: $route.path === '/reviews' }">
+            <div class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M14 2H6C5.47 2 4.96 2.21 4.59 2.59C4.21 2.96 4 3.47 4 4V20C4 20.53 4.21 21.04 4.59 21.41C4.96 21.79 5.47 22 6 22H18C18.53 22 19.04 21.79 19.41 21.41C19.79 21.04 20 20.53 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M9 12H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M9 16H13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="nav-text">Reviews</div>
+          </router-link>
+          
           <router-link to="/chats" class="nav-item" :class="{ active: $route.path === '/chats' }">
             <div class="nav-icon">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -87,6 +98,18 @@
               </svg>
             </div>
             <div class="nav-text">Wallboard</div>
+          </router-link>
+
+          <router-link to="/reports" class="nav-item" :class="{ active: $route.path === '/reports' }">
+            <div class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 3H21V21H3V3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M7 7H17V9H7V7Z" fill="currentColor"/>
+                <path d="M7 11H17V13H7V11Z" fill="currentColor"/>
+                <path d="M7 15H13V17H7V15Z" fill="currentColor"/>
+              </svg>
+            </div>
+            <div class="nav-text">Reports</div>
           </router-link>
           
           <router-link to="/settings" class="nav-item" :class="{ active: $route.path === '/settings' }">
@@ -384,7 +407,7 @@ onMounted(() => {
 }
 
 .nav-item.active {
-  background: #964B00 !important;
+  background: #8B4513 !important;
   color: #fff !important;
   border-radius: 16px !important;
   box-shadow: none !important;
@@ -485,7 +508,7 @@ onMounted(() => {
 }
 
 .status-dot.in-queue {
-  background-color: var(--success-color);
+  background-color: var(--accent-color);
   animation: pulse 2s infinite;
 }
 
@@ -648,9 +671,16 @@ onMounted(() => {
 }
 
 .sidepanel-coatofarms img {
-  max-width: 60px;
-  max-height: 90px;
+  width: clamp(64px, 10vw, 120px);
+  height: auto;
+  aspect-ratio: auto;
   object-fit: contain;
   display: block;
+}
+@media (max-width: 1024px) {
+  .sidepanel-coatofarms img { width: clamp(56px, 12vw, 108px); }
+}
+@media (max-width: 768px) {
+  .sidepanel-coatofarms img { width: clamp(52px, 16vw, 92px); }
 }
 </style>

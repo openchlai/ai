@@ -2,159 +2,117 @@
 
  
 
-Table of Contents  
-[Table of Figures	iii](#table-of-figures)
+# Operator's User Guide
 
-[1	Introduction	1](#introduction)
+ 
 
-[1.1	System components	1](#system-components)
+## Table of Contents  
+[Table of Figures](#table-of-figures)
 
-[1.2	Requirements for using the system:	1](#requirements-for-using-the-system:)
+1. [Introduction](#introduction)
+    1. [System components](#system-components)
+    2. [Requirements for using the system:](#requirements-for-using-the-system)
+2. [Installations](#installations)
+    1. [Browser installation](#browser-installation)
+3. [The Helpline System](#the-helpline-system)
+    1. [Accessing the system](#accessing-the-system)
+    2. [Call & Queue Management](#call--queue-management)
+        1. [Queue Status](#queue-status)
+        2. [User Profile](#user-profile)
+        3. [Integrated Softphone](#integrated-softphone)
+        4. [Receiving A call](#receiving-a-call)
+4. [Case Capture](#case-capture)
+    1. [Reporter Details](#reporter-details)
+    2. [Case type action](#case-type-action)
+        1. [Case Follow Up](#case-follow-up)
+        2. [Information Inquiry.](#information-inquiry)
+        3. [Counselling](#counselling)
+        4. [New Case](#new-case)
+    3. [Case Details](#case-details)
+        1. [Case Fields](#case-fields)
+        2. [Reporter Details Update](#reporter-details-update)
+        3. [Client Details](#client-details)
+        4. [Perpetrator Details](#perpetrator-details)
+        5. [Case View](#case-view)
+        6. [Case Update](#case-update)
+        7. [Case Edit](#case-edit)
+    4. [Disposition](#disposition)
+5. [Dashboards](#dashboards)
+    1. [User Dashboards](#user-dashboards)
+    2. [Wall Dashboard](#wall-dashboard)
+6. [Calls](#calls)
+7. [Quality Assessment](#quality-assessment)
+8. [Contact list](#contact-list)
+9. [Reports](#reports)
+    1. [Call reports](#call-reports)
+        1. [Call List](#call-list)
+        2. [Call Pivot Report](#call-pivot-report)
+    2. [Case reports](#case-reports)
+        1. [Case List](#case-list)
+        2. [Case Report Pivot](#case-report-pivot)
+10. [System Notifications & Other Sources](#system-notifications--other-sources)
+11. [System Settings](#system-settings)
+    1. [Users](#users)
+    2. [Categories](#categories)
+12. [Conclusion](#conclusion)
+13. [User Manual Sign-Off](#user-manual-sign-off)
 
-[2	Installations	1](#installations)
+## Table of Figures {#table-of-figures}
 
-[2.1	Browser installation	1](#browser-installation)
+* [Figure 1: Chrome browser downloading](#figure-1chrome-browser-downloading)
+* [Figure 2: Installation Complete](#figure-2-installation-complete)
+* [Figure 3: Login Page](#figure-3-login-page)
+* [Figure 4: SIP Queue Status](#figure-4sip-queue-status)
+* [Figure 5: User profile view](#figure-5-user-profile-view)
+* [Figure 6: Change password form](#figure-6-change-password-form)
+* [Figure 7: SIP Phone & Making a call](#figure-7-sip-phone--making-a-call)
+* [Figure 8: Selected Reporter Details](#figure-8selected-reporter-details)
+* [Figure 9: Reporter Form](#figure-9reporter-form)
+* [Figure 10: Case Type Action](#figure-10-case-type-action)
+* [Figure 11: Follow Up Case list](#figure-11-follow-up-case-list)
+* [Figure 12: Case Details](#figure-12-case-details)
+* [Figure 13: Reporter Details Update](#figure-13-reporter-details-update)
+* [Figure 14: Client Details](#figure-14-client-details)
+* [Figure 15: Added clients listing](#figure-15-added-clients-listing)
+* [Figure 16: Perpetrator Details](#figure-16-perpetrator-details)
+* [Figure 17: Case View](#figure-17-case-view)
+* [Figure 18: Case Update View](#figure-18case-update-view)
+* [Figure 19: Case Edit](#figure-19-case-edit)
+* [Figure 20: Form Disposition](#figure-20-form-disposition)
+* [Figure 21: Call Disposition Reasons](#figure-21-call-disposition-reasons)
+* [Figure 22: Case Report Filters](#figure-22-case-report-filters)
+* [Figure 23: Generic Dashboard](#figure-23-generic-dashboard)
+* [Figure 24: Incoming Call](#figure-24-incoming-call)
+* [Figure 25: Incoming Call Options](#figure-25-incoming-call-options)
+* [Figure 26: Hang-up Reasons](#figure-26-hang-up-reasons)
+* [Figure 27: Call Listing For QA](#figure-27-call-listing-for-qa)
+* [Figure 28: QA Form](#figure-28-qa-form)
+* [Figure 29: QA Audio Player](#figure-29-qa-audio-player)
+* [Figure 30: Contact List](#figure-30contact-list)
+* [Figure 31: Individual Contact View](#figure-31individual-contact-view)
+* [Figure 32: Individual Contact Edit](#figure-32-individual-contact-edit)
+* [Figure 33: Report Options](#figure-33-report-options)
+* [Figure 34: Call Record List](#figure-34-call-record-list)
+* [Figure 35: Call Pivot Reports](#figure-35-call-pivot-reports)
+* [Figure 36: Case Report Listing](#figure-36-case-report-listing)
+* [Figure 37: Case Report List Filters](#figure-37-case-report-list-filters)
+* [Figure 38: X-Axis Case Report Filters](#figure-38-x-axis-case-report-filters)
+* [Figure 39: Case Pivot Report](#figure-39-case-pivot-report)
+* [Figure 41: Web Online Case Report Form](#figure-41-web-online-case-report-form)
+* [Figure 42: System Setting Options](#figure-42-system-setting-options)
+* [Figure 43: User Listing](#figure-43-user-listing)
+* [Figure 44: New User Form](#figure-44-new-user-form)
+* [Figure 45: User View](#figure-45-user-view)
+* [Figure 46: User Update Form](#figure-46-user-update-form)
+* [Figure 47: Campaign List](#heading=h5fkih3nzou5s)
+* [Figure 48: New Campaign Form](#heading=hvq5h39odewfk)
+* [Figure 49: IVR Prompt View](#figure-49-ivr-prompt-view)
 
-[3	The Helpline System	2](#the-helpline-system)
+# 1. Introduction {#introduction}
 
-[3.1	Accessing the system	2](#accessing-the-system)
+This user guide provides a comprehensive overview of the Helpline System, a powerful tool for managing call and case information. The system is designed to handle both VAC (Violence Against Children) and GBV (Gender-Based Violence) cases, offering a unified platform for helpline operators, supervisors, and administrators.
 
-[3.2	Call & Queue Management	2](#call-&-queue-management)
-
-[3.2.1	Queue Status	2](#queue-status)
-
-[3.2.2	User Profile	2](#user-profile)
-
-[3.2.3	Integrated Softphone	3](#integrated-softphone)
-
-[3.2.4	Receiving A call	4](#receiving-a-call)
-
-[4	Case Capture	5](#case-capture)
-
-[4.1	Reporter Details	5](#reporter-details)
-
-[4.2	Case type action	6](#case-type-action)
-
-[4.2.1	Case Follow Up	6](#case-follow-up)
-
-[4.2.2	Information Inquiry.	7](#information-inquiry.)
-
-[4.2.3	Counselling	7](#counselling)
-
-[4.2.4	New Case	7](#new-case)
-
-[4.3	Case Details	7](#case-details)
-
-[4.3.1	Case Fields	7](#case-fields)
-
-[4.3.2	Reporter Details Update	7](#reporter-details-update)
-
-[4.3.3	Client Details	8](#client-details)
-
-[4.3.4	Perpetrator Details	9](#perpetrator-details)
-
-[4.3.5	Case View	10](#case-view)
-
-[4.3.6	Case Update	11](#case-update)
-
-[4.3.7	Case Edit	11](#case-edit)
-
-[4.4	Disposition	11](#disposition)
-
-[5	Dashboards	12](#dashboards)
-
-[5.1	User Dashboards	12](#user-dashboards)
-
-[5.2	Wall Dashboard	1](#wall-dashboard)
-
-[6	Calls	1](#calls)
-
-[7	Quality Assessment	3](#quality-assessment)
-
-[8	Contact list	4](#contact-list)
-
-[9	Reports	6](#reports)
-
-[9.1	Call reports	6](#call-reports)
-
-[9.1.1	Call List	6](#call-list)
-
-[9.1.2	Call Pivot Report	7](#call-pivot-report)
-
-[9.2	Case reports	7](#case-reports)
-
-[9.2.1	Case List	7](#case-list)
-
-[9.2.2	Case Report Pivot	8](#case-report-pivot)
-
-[10	System Notifications & Other Sources	9](#system-notifications-&-other-sources)
-
-[11	System Settings	11](#system-settings)
-
-[11.1	Users	11](#users)
-
-[11.2	Categories	13](#categories)
-
-[12	Conclusion	14](#conclusion)
-
-[13	User Manual Sign-Off	1](#user-manual-sign-off)
-
-# 
-
-# Table of Figures {#table-of-figures}
-
-[Figure 1:Chrome browser downloading	1](#figure-1:chrome-browser-downloading)  
-[Figure 2: Installation Complete	1](#figure-2:-installation-complete)  
-[Figure 3: Login Page	2](#figure-3:-login-page)  
-[Figure 4:SIP Queue Status	3](#figure-4:sip-queue-status)  
-[Figure 5: User profile view	3](#figure-5:-user-profile-view)  
-[Figure 6: Change password form	4](#figure-6:-change-password-form)  
-[Figure 7: SIP Phone & Making a call	4](#figure-7:-sip-phone-&-making-a-call)  
-[Figure 8:Selected Reporter Details	5](#figure-8:selected-reporter-details)  
-[Figure 9:Reporter Form	6](#figure-9:reporter-form)  
-[Figure 10: Case Type Action	6](#figure-10:-case-type-action)  
-[Figure 11: Follow Up Case list	7](#figure-11:-follow-up-case-list)  
-[Figure 12: Case Details	7](#figure-12:-case-details)  
-[Figure 13: Reporter Details Update	8](#figure-13:-reporter-details-update)  
-[Figure 14: Client Details	9](#figure-14:-client-details)  
-[Figure 15: Added clients listing	9](#figure-15:-added-clients-listing)  
-[Figure 16: Perpetrator Details	10](#figure-16:-perpetrator-details)  
-[Figure 17: Case View	11](#figure-17:-case-view)  
-[Figure 18:Case Update View	11](#figure-18:case-update-view)  
-[Figure 19: Case Edit	12](#figure-19:-case-edit)  
-[Figure 20: Form Disposition	12](#figure-20:-form-disposition)  
-[Figure 21: Call Disposition Reasons	12](#figure-21:-call-disposition-reasons)  
-[Figure 22: Case Report Filters	12](#figure-22:-case-report-filters)  
-[Figure 23: Generic Dashboard	1](#figure-23:-generic-dashboard)  
-[Figure 24: Incoming Call	1](#figure-24:-incoming-call)  
-[Figure 25: Incoming Call Options	1](#figure-25:-incoming-call-options)  
-[Figure 26: Hang-up Reasons	2](#figure-26:-hang-up-reasons)  
-[Figure 27: Call Listing For QA	3](#figure-27:-call-listing-for-qa)  
-[Figure 28: QA Form	3](#figure-28:-qa-form)  
-[Figure 29: QA Audio Player	4](#figure-29:-qa-audio-player)  
-[Figure 30:Contact List	4](#figure-30:contact-list)  
-[Figure 31:Individual Contact View	5](#figure-31:individual-contact-view)  
-[Figure 32: Individual Contact Edit	5](#figure-32:-individual-contact-edit)  
-[Figure 33: Report Options	6](#figure-33:-report-options)  
-[Figure 34: Call Record List	6](#figure-34:-call-record-list)  
-[Figure 35: Call Pivot Reports	6](#figure-35:-call-pivot-reports)  
-[Figure 36: Case Report Listing	7](#figure-36:-case-report-listing)  
-[Figure 37: Case Report List Filters	7](#figure-37:-case-report-list-filters)  
-[Figure 38: X-Axis Case Report Filters	8](#figure-38:-x-axis-case-report-filters)  
-[Figure 39: Case Pivot Report	8](#figure-39:-case-pivot-report)  
-[Figure 41: Web Online Case Report Form	10](#figure-41:-web-online-case-report-form)  
-[Figure 42: System Setting Options	10](#figure-42:-system-setting-options)  
-[Figure 43: User Listing	10](#figure-43:-user-listing)  
-[Figure 44: New User Form	11](#figure-44:-new-user-form)  
-[Figure 45: User View	11](#figure-45:-user-view)  
-[Figure 46: User Update Form	12](#figure-46:-user-update-form)  
-[Figure 47: Campaign List	12](#heading=h.5fkih3nzou5s)  
-[![][image1]Figure 48: New Campaign Form	13](#heading=h.vq5h39odewfk)  
-[Figure 49: IVR Prompt View	14](#figure-49:-ivr-prompt-view)
-
-1. # Introduction {#introduction}
-
-This solution is an upgrade of the helpline call and case management system currently handling VAC cases to incorporate GBV cases and case management. This is a documentation of the different components to guide the users in the daily operations and configurations on the different modules.
+This guide will walk you through the various features and functionalities of the system, from initial setup and browser installation to advanced reporting and system configuration. Whether you are a new user or an experienced operator, this guide will provide you with the information you need to effectively use the system and provide the best possible support to those in need.
 
 1. ## System components {#system-components}
 

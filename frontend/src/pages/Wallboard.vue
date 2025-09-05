@@ -639,7 +639,7 @@
 </template>
 
 <script>
-import { onMounted, ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import SidePanel from '../components/SidePanel.vue';
 
@@ -649,101 +649,70 @@ export default {
   },
   setup() {
     const router = useRouter();
-    const logout = () => {
-      router.push('/');
-    };
+    // SidePanel state
+    const userRole = ref('counselor');
+    const isInQueue = ref(false);
+    const isProcessingQueue = ref(false);
+    const currentCall = ref(null);
 
-    const currentTheme = ref(localStorage.getItem('theme') || 'dark');
-
+    // Sidebar and theme state
     const isSidebarCollapsed = ref(false);
     const mobileOpen = ref(false);
+    const currentTheme = ref(localStorage.getItem('theme') || 'dark');
 
-    const toggleSidebar = () => {
-      isSidebarCollapsed.value = !isSidebarCollapsed.value;
-    };
-
-    const toggleMobileMenu = () => {
-      mobileOpen.value = !mobileOpen.value;
-    };
-
+    // Main content margin
     const mainContentMarginLeft = computed(() => {
       if (window.innerWidth <= 768) {
         return '0px';
       } else if (isSidebarCollapsed.value) {
-        return '80px'; // Collapsed sidebar width
+        return '80px';
       } else {
-        return '250px'; // Expanded sidebar width
+        return '250px';
       }
     });
 
+    // Theme logic
+    const applyTheme = (theme) => {
+      const html = document.documentElement;
+      html.setAttribute('data-theme', theme);
+    };
     const toggleTheme = () => {
       const newTheme = currentTheme.value === 'dark' ? 'light' : 'dark';
       currentTheme.value = newTheme;
       localStorage.setItem('theme', newTheme);
+      applyTheme(newTheme);
+    };
+
+    // SidePanel event handlers
+    const handleQueueToggle = () => {
+      isInQueue.value = !isInQueue.value;
+    };
+    const handleLogout = () => {
+      router.push('/');
+    };
+    const handleSidebarToggle = (collapsed) => {
+      isSidebarCollapsed.value = collapsed;
     };
 
     onMounted(() => {
-      const sidebar = document.getElementById('sidebar');
-      const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-      const themeToggle = document.getElementById('theme-toggle');
-      const html = document.documentElement;
-      const leaderboardTabs = document.querySelectorAll('.leaderboard-tab');
-
-      // Mobile menu toggle
-      if (mobileMenuBtn && sidebar) {
-        mobileMenuBtn.addEventListener('click', function() {
-          sidebar.classList.toggle('mobile-open');
-        });
-      }
-      // Close sidebar when clicking outside on mobile
-      document.addEventListener('click', function(event) {
-        const isMobile = window.innerWidth <= 768;
-        if (isMobile && !sidebar.contains(event.target) && event.target !== mobileMenuBtn) {
-          sidebar.classList.remove('mobile-open');
-        }
-      });
-      // Theme toggle
-      if (themeToggle && html) {
-        themeToggle.addEventListener('click', function() {
-          const currentTheme = html.getAttribute('data-theme');
-          const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-          html.setAttribute('data-theme', newTheme);
-          const themeText = themeToggle.querySelector('span');
-          if (themeText) {
-            themeText.textContent = newTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
-          }
-          localStorage.setItem('theme', newTheme);
-        });
-         // Check localStorage for saved theme preference
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme) {
-          html.setAttribute('data-theme', savedTheme);
-           const themeText = themeToggle.querySelector('span');
-          if (themeText) {
-            themeText.textContent = savedTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
-          }
-        }
-      }
-      // Leaderboard tabs
-      if (leaderboardTabs) {
-        leaderboardTabs.forEach(tab => {
-          tab.addEventListener('click', function() {
-            leaderboardTabs.forEach(t => t.classList.remove('active'));
-            this.classList.add('active');
-          });
-        });
-      }
+      applyTheme(currentTheme.value);
     });
 
     return {
-      logout,
-      currentTheme,
+      userRole,
+      isInQueue,
+      isProcessingQueue,
+      currentCall,
       isSidebarCollapsed,
       mobileOpen,
-      toggleSidebar,
-      toggleMobileMenu,
+      currentTheme,
       mainContentMarginLeft,
       toggleTheme,
+      handleQueueToggle,
+      handleLogout,
+      handleSidebarToggle,
+      toggleSidebar: () => { isSidebarCollapsed.value = !isSidebarCollapsed.value; },
+      toggleMobileMenu: () => { mobileOpen.value = !mobileOpen.value; },
     };
   },
 };

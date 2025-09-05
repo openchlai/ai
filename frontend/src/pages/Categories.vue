@@ -58,12 +58,12 @@
         <div class="search-container">
           <input 
             v-model="searchQuery"
-            class="search-input" 
+            class="input" 
             placeholder="Search categories..." 
             type="text"
             @input="handleSearch"
           />
-          <button class="add-category-btn" @click="openAddCategoryModal">
+          <button class="btn btn--primary btn--sm" @click="openAddCategoryModal">
             <svg fill="none" height="16" viewbox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
             </svg>
@@ -72,16 +72,16 @@
         </div>
       </div>
 
-      <div class="view-tabs">
-        <div 
-          v-for="view in viewOptions" 
+      <div class="view-tabs" style="display:flex; gap:8px; padding: 8px 0;">
+        <button
+          v-for="view in viewOptions"
           :key="view.id"
-          class="view-tab"
+          class="btn btn--secondary btn--sm"
           :class="{ active: currentView === view.id }"
           @click="handleViewChange(view.id)"
         >
           {{ view.label }}
-        </div>
+        </button>
       </div>
 
       <!-- Grid View -->
@@ -105,7 +105,7 @@
           <div 
             v-for="category in filteredCategories" 
             :key="category.id"
-            class="category-card glass-card fine-border"
+            class="category-card card"
           >
             <div class="category-header">
               <div class="category-title">{{ category.title }}</div>
@@ -115,13 +115,13 @@
             <div class="category-footer">
               <div>Last updated: {{ formatLastUpdated(category.lastUpdated) }}</div>
               <div class="category-actions">
-                <button class="category-action edit-category" @click="editCategory(category)">
+                <button class="btn btn--secondary btn--sm" @click="editCategory(category)">
                   <svg fill="none" height="16" viewbox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
                     <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
                     <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
                   </svg>
                 </button>
-                <button class="category-action delete-category" @click="confirmDeleteCategory(category)">
+                <button class="btn btn--danger btn--sm" @click="confirmDeleteCategory(category)">
                   <svg fill="none" height="16" viewbox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
                     <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
                   </svg>
@@ -151,7 +151,7 @@
 
       <!-- Table View -->
       <div v-else-if="currentView === 'table'" class="view-container">
-        <table class="categories-table">
+        <table class="categories-table card" style="width:100%;">
           <thead>
             <tr>
               <th>Title</th>
@@ -168,8 +168,8 @@
               <td>{{ category.count }}</td>
               <td>{{ formatLastUpdated(category.lastUpdated) }}</td>
               <td>
-                <button @click="editCategory(category)">Edit</button>
-                <button @click="confirmDeleteCategory(category)">Delete</button>
+                <button class="btn btn--secondary btn--sm" @click="editCategory(category)">Edit</button>
+                <button class="btn btn--danger btn--sm" @click="confirmDeleteCategory(category)">Delete</button>
               </td>
             </tr>
           </tbody>
@@ -178,32 +178,25 @@
     </div>
 
     <!-- Add/Edit Category Modal -->
-    <div v-if="showModal" class="modal">
-      <div class="modal-content">
-        <h2>{{ isEditing ? 'Edit Category' : 'Add New Category' }}</h2>
-        <form @submit.prevent="handleCategorySubmit">
-          <div class="form-group">
-            <label for="title">Title</label>
-            <input 
-              id="title"
-              v-model="categoryForm.title"
-              type="text"
-              required
-            />
-          </div>
-          <div class="form-group">
-            <label for="description">Description</label>
-            <textarea
-              id="description"
-              v-model="categoryForm.description"
-              required
-            ></textarea>
-          </div>
-          <div class="modal-actions">
-            <button type="button" @click="closeModal">Cancel</button>
-            <button type="submit">{{ isEditing ? 'Save Changes' : 'Add Category' }}</button>
-          </div>
-        </form>
+    <div v-if="showModal" class="modal-overlay" @click="closeModal">
+      <div class="modal" @click.stop>
+        <div class="modal__header">{{ isEditing ? 'Edit Category' : 'Add New Category' }}</div>
+        <div class="modal__body">
+          <form @submit.prevent="handleCategorySubmit">
+            <div class="form-group">
+              <label class="form-label" for="title">Title</label>
+              <input class="input" id="title" v-model="categoryForm.title" type="text" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="description">Description</label>
+              <textarea class="input" id="description" v-model="categoryForm.description" required></textarea>
+            </div>
+            <div class="modal__footer">
+              <button type="button" class="btn btn--secondary" @click="closeModal">Cancel</button>
+              <button type="submit" class="btn btn--primary">{{ isEditing ? 'Save Changes' : 'Add Category' }}</button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
 
@@ -244,7 +237,7 @@ const isSidebarCollapsed = ref(false)
 const isOnline = ref(true)
 const isInQueue = ref(false)
 const searchQuery = ref('')
-const currentView = ref('grid')
+const currentView = ref('table')
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 const showModal = ref(false)
@@ -272,9 +265,9 @@ const navigationItems = [
 
 // View options
 const viewOptions = [
-  { id: 'grid', label: 'Grid View' },
+  { id: 'table', label: 'Table View' },
   { id: 'timeline', label: 'Timeline' },
-  { id: 'table', label: 'Table View' }
+  { id: 'grid', label: 'Grid View' }
 ]
 
 // Computed
@@ -407,367 +400,5 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.categories-page {
-  display: flex;
-  min-height: 100vh;
-  background-color: var(--background-color);
-  color: var(--text-color);
-}
-
-.sidebar {
-  width: 250px;
-  background-color: var(--sidebar-bg);
-  transition: width 0.3s ease;
-}
-
-.sidebar.collapsed {
-  width: 60px;
-}
-
-.main-content {
-  flex: 1;
-  padding: 20px;
-  overflow-y: auto;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.search-container {
-  display: flex;
-  gap: 10px;
-}
-
-.search-input {
-  padding: 8px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  background-color: var(--input-bg);
-  color: var(--text-color);
-}
-
-.add-category-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background-color: var(--accent-color);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.view-tabs {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.view-tab {
-  padding: 8px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  background-color: var(--content-bg);
-}
-
-.view-tab.active {
-  background-color: var(--accent-color);
-  color: white;
-}
-
-.categories-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-}
-
-.category-card {
-  background-color: var(--content-bg);
-  border-radius: 12px;
-  padding: 20px;
-  transition: transform 0.2s ease;
-}
-
-.category-card:hover {
-  transform: translateY(-2px);
-}
-
-.category-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.category-title {
-  font-weight: 600;
-  font-size: 18px;
-}
-
-.category-count {
-  background-color: var(--accent-color);
-  color: white;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 14px;
-}
-
-.category-description {
-  color: var(--text-secondary);
-  margin-bottom: 15px;
-  font-size: 14px;
-}
-
-.category-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.category-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.category-action {
-  background: none;
-  border: none;
-  color: var(--text-secondary);
-  cursor: pointer;
-  padding: 4px;
-  transition: color 0.2s ease;
-}
-
-.category-action:hover {
-  color: var(--accent-color);
-}
-
-/* Loading state */
-.loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
-}
-
-.spinner {
-  border: 4px solid var(--border-color);
-  border-top: 4px solid var(--accent-color);
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Error state */
-.error-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  padding: 40px;
-  text-align: center;
-}
-
-/* Empty state */
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  padding: 40px;
-  text-align: center;
-}
-
-/* Modal styles */
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background-color: var(--content-bg);
-  padding: 24px;
-  border-radius: 12px;
-  width: 100%;
-  max-width: 500px;
-}
-
-.form-group {
-  margin-bottom: 16px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 500;
-}
-
-.form-group input,
-.form-group textarea {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  background-color: var(--input-bg);
-  color: var(--text-color);
-}
-
-.form-group textarea {
-  min-height: 100px;
-  resize: vertical;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 24px;
-}
-
-.modal-actions button {
-  padding: 8px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.modal-actions button:last-child {
-  background-color: var(--accent-color);
-  color: white;
-  border: none;
-}
-
-.delete-btn {
-  background-color: var(--error-color) !important;
-}
-
-/* Timeline view */
-.timeline-container {
-  padding: 20px;
-}
-
-.timeline-item {
-  display: flex;
-  gap: 20px;
-  padding: 20px;
-  border-left: 2px solid var(--accent-color);
-  margin-left: 20px;
-  position: relative;
-}
-
-.timeline-item::before {
-  content: '';
-  position: absolute;
-  left: -8px;
-  top: 24px;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background-color: var(--accent-color);
-}
-
-.timeline-date {
-  min-width: 120px;
-  color: var(--text-secondary);
-}
-
-.timeline-content {
-  flex: 1;
-}
-
-.timeline-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-/* Table view */
-.categories-table {
-  width: 100%;
-  border-collapse: collapse;
-  background-color: var(--content-bg);
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.categories-table th,
-.categories-table td {
-  padding: 12px 16px;
-  text-align: left;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.categories-table th {
-  background-color: var(--sidebar-bg);
-  font-weight: 600;
-}
-
-.categories-table tr:last-child td {
-  border-bottom: none;
-}
-
-/* Mobile menu button */
-.mobile-menu-btn {
-  display: none;
-  background: none;
-  border: none;
-  color: var(--text-color);
-  cursor: pointer;
-  padding: 8px;
-}
-
-@media (max-width: 768px) {
-  .mobile-menu-btn {
-    display: block;
-  }
-
-  .sidebar {
-    position: fixed;
-    left: -250px;
-    height: 100vh;
-    z-index: 1000;
-  }
-
-  .sidebar.active {
-    left: 0;
-  }
-
-  .categories-container {
-    grid-template-columns: 1fr;
-  }
-
-  .header {
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .search-container {
-    width: 100%;
-  }
-
-  .search-input {
-    flex: 1;
-  }
-}
+/* Categories styles moved to global components.css */
 </style>
