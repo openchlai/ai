@@ -282,6 +282,78 @@
 
   <div class="call-details-content" v-if="selectedCallDetails">
     <div class="detail-item">
+      <div class="detail-label">Call Date</div>
+      <div class="detail-value">
+        {{ selectedCallDetails[callsStore.calls_k?.dth?.[0]]
+          ? new Date(selectedCallDetails[callsStore.calls_k.dth[0]] * 1000).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true
+            })
+          : "N/A" }}
+      </div>
+    </div>
+
+    <div class="detail-item">
+      <div class="detail-label">Direction</div>
+      <div class="detail-value">
+        {{ selectedCallDetails[callsStore.calls_k?.direction?.[0]] || "Inbound" }}
+      </div>
+    </div>
+
+    <div class="detail-item">
+      <div class="detail-label">Phone</div>
+      <div class="detail-value">
+        {{ selectedCallDetails[callsStore.calls_k?.caller_id?.[0]] || selectedCallDetails[callsStore.calls_k?.phone?.[0]] || "N/A" }}
+      </div>
+    </div>
+
+    <div class="detail-item">
+      <div class="detail-label">Extension</div>
+      <div class="detail-value">
+        {{ selectedCallDetails[callsStore.calls_k?.extension?.[0]] || "N/A" }}
+      </div>
+    </div>
+
+    <div class="detail-item">
+      <div class="detail-label">Wait Time</div>
+      <div class="detail-value">
+        {{ formatTime(selectedCallDetails[callsStore.calls_k?.wait_time?.[0]]) || "0:00" }}
+      </div>
+    </div>
+
+    <div class="detail-item">
+      <div class="detail-label">Talk Time</div>
+      <div class="detail-value">
+        {{ formatTime(selectedCallDetails[callsStore.calls_k?.talk_time?.[0]]) || "0:00" }}
+      </div>
+    </div>
+
+    <div class="detail-item">
+      <div class="detail-label">Hangup Status</div>
+      <div class="detail-value">
+        {{ selectedCallDetails[callsStore.calls_k?.hangup_cause?.[0]] || selectedCallDetails[callsStore.calls_k?.status?.[0]] || "abandoned" }}
+      </div>
+    </div>
+
+    <div class="detail-item">
+      <div class="detail-label">Disposition</div>
+      <div class="detail-value">
+        {{ selectedCallDetails[callsStore.calls_k?.dispositions?.[0]] || "" }}
+      </div>
+    </div>
+
+    <div class="detail-item">
+      <div class="detail-label">Reporter</div>
+      <div class="detail-value">
+        {{ selectedCallDetails[callsStore.calls_k?.caller_name?.[0]] || selectedCallDetails[callsStore.calls_k?.reporter?.[0]] || "" }}
+      </div>
+    </div>
+
+    <div class="detail-item">
       <div class="detail-label">Call ID</div>
       <div class="detail-value">
         #{{ selectedCallDetails[callsStore.calls_k.uniqueid?.[0]] }}
@@ -298,45 +370,6 @@
         >
           #{{ selectedCallDetails[callsStore.calls_k.case_id?.[0]] }}
         </a>
-      </div>
-    </div>
-
-    <div class="detail-item">
-      <div class="detail-label">Caller</div>
-      <div class="detail-value">
-        {{ selectedCallDetails[callsStore.calls_k.caller_name?.[0]] || "Unknown" }}
-      </div>
-    </div>
-
-    <div class="detail-item">
-      <div class="detail-label">Duration</div>
-      <div class="detail-value">
-        {{ selectedCallDetails[callsStore.calls_k.talk_time?.[0]] || "N/A" }}
-      </div>
-    </div>
-
-    <div class="detail-item">
-      <div class="detail-label">Call Start</div>
-      <div class="detail-value">
-        {{ selectedCallDetails[callsStore.calls_k.start_time?.[0]] 
-          ? new Date(selectedCallDetails[callsStore.calls_k.start_time[0]] * 1000).toLocaleString() 
-          : 'N/A' }}
-      </div>
-    </div>
-
-    <div class="detail-item">
-      <div class="detail-label">Call End</div>
-      <div class="detail-value">
-        {{ selectedCallDetails[callsStore.calls_k.end_time?.[0]] 
-          ? new Date(selectedCallDetails[callsStore.calls_k.end_time[0]] * 1000).toLocaleString() 
-          : 'N/A' }}
-      </div>
-    </div>
-
-    <div class="detail-item">
-      <div class="detail-label">Disposition</div>
-      <div class="detail-value">
-        {{ selectedCallDetails[callsStore.calls_k.dispositions?.[0]] || "N/A" }}
       </div>
     </div>
 
@@ -1718,6 +1751,15 @@ function selectCall(callId) {
     (c) => c[callsStore.calls_k?.uniqueid?.[0]] === callId
   );
   selectedCallDetails.value = call || null;
+}
+
+// Helper function to format time (seconds to MM:SS format)
+function formatTime(seconds) {
+  if (!seconds || isNaN(seconds)) return "0:00";
+  
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
 // Group calls by date label for the timeline
@@ -3165,40 +3207,69 @@ body {
 .priority-badge {
   font-size: 11px;
   font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 999px;
+  padding: 6px 12px;
+  border-radius: 20px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #fff;
+  border: 1px solid #e0e0e0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #000;
 }
 
 .priority-badge.critical {
-  background-color: var(--critical-color);
+  background-color: #ff4444;
+  color: #000;
+  border-color: #ff4444;
 }
 
 .priority-badge.high {
-  background-color: var(--high-color);
+  background-color: #ff8800;
+  color: #000;
+  border-color: #ff8800;
 }
 
 .priority-badge.medium {
-  background-color: var(--medium-color);
+  background-color: #ffaa00;
+  color: #000;
+  border-color: #ffaa00;
 }
 
 .priority-badge.low {
-  background-color: var(--low-color);
+  background-color: #88cc00;
+  color: #000;
+  border-color: #88cc00;
 }
 
 /* Default/normal variant */
 .priority-badge.normal {
-  background-color: var(--color-muted);
+  background-color: #4a90e2;
+  color: #000;
+  border-color: #4a90e2;
 }
 
 /* Support numeric priority values from API (1=low, 2=medium, 3=high, 4=critical) */
-.priority-badge.\31 { background-color: var(--low-color); }
-.priority-badge.\32 { background-color: var(--medium-color); }
-.priority-badge.\33 { background-color: var(--high-color); }
-.priority-badge.\34 { background-color: var(--critical-color); }
+.priority-badge.\31 { 
+  background-color: #88cc00; 
+  color: #000;
+  border-color: #88cc00;
+}
+.priority-badge.\32 { 
+  background-color: #ffaa00; 
+  color: #000;
+  border-color: #ffaa00;
+}
+.priority-badge.\33 { 
+  background-color: #ff8800; 
+  color: #000;
+  border-color: #ff8800;
+}
+.priority-badge.\34 { 
+  background-color: #ff4444; 
+  color: #000;
+  border-color: #ff4444;
+}
 
 /* Queue Section */
 .queue-section {
