@@ -8,6 +8,7 @@ export default defineConfig({
 
   server: {
     port: 3000,
+    host: '0.0.0.0', // This allows access from any network interface
     open: true,
     hmr: true,
     proxy: {
