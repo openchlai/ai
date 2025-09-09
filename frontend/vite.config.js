@@ -15,7 +15,7 @@ export default defineConfig({
       // Any request that starts with /api-proxy will be proxied
       // e.g. GET /api-proxy/auth/login --> https://demo-openchs.bitz-itc.com/helpline/auth/login
       '/api-proxy': {
-        target: 'https://system.childlinekenya.co.ke',
+        target: 'https://demo-openchs.bitz-itc.com',
         // target: 'https://system.childlinekenya.co.ke/helpline',
         changeOrigin: true,     // rewrite Host header to target
         secure: false,          // allow self‑signed SSL certs
