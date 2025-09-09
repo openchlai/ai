@@ -26,6 +26,17 @@
       Back to Cases
     </router-link>
 
+    <div v-if="ongoingCall && ongoingCall.state==='in_call'" class="ongoing-call-overlay">
+      <div class="overlay-content">
+        <div class="dot"></div>
+        <div class="info">
+          <div class="line">On call · {{ formattedCallDuration }}</div>
+          <div class="line">{{ ongoingCall.number }}</div>
+        </div>
+        <button class="overlay-btn" @click="endOngoingCall">End</button>
+      </div>
+    </div>
+
     <div class="case-container">
       <div class="main-form-container">
         <div class="case-header">
@@ -299,7 +310,7 @@
                   <option>Kiswahili</option>
                   <option>Somali</option>
                   <option>Arabic</option>
-                  <option>Other</option>
+                  <option value="other">Other</option>
                 </BaseSelect>
                 <BaseSelect id="reporter-tribe" label="Tribe" v-model="formData.step2.tribe" placeholder="Select tribe">
                   <option value="">Select tribe</option>
@@ -332,28 +343,28 @@
 
 
               <div class="form-row">
-                <div class="form-group">
-                  <label>Is Reporter also a Client?</label>
-                  <div class="radio-group">
-                    <label class="radio-option">
-                      <input
-                        v-model="formData.step2.isClient"
-                        type="radio"
-                        :value="true"
-                      />
-                      <span class="radio-indicator"></span>
-                      <span class="radio-label">Yes</span>
-                    </label>
-                    <label class="radio-option">
-                      <input
-                        v-model="formData.step2.isClient"
-                        type="radio"
-                        :value="false"
+              <div class="form-group">
+                <label>Is Reporter also a Client?</label>
+                <div class="radio-group">
+                  <label class="radio-option">
+                    <input
+                      v-model="formData.step2.isClient"
+                      type="radio"
+                      :value="true"
+                    />
+                    <span class="radio-indicator"></span>
+                    <span class="radio-label">Yes</span>
+                  </label>
+                  <label class="radio-option">
+                    <input
+                      v-model="formData.step2.isClient"
+                      type="radio"
+                      :value="false"
                         @change="handleClientSelection"
-                      />
-                      <span class="radio-indicator"></span>
-                      <span class="radio-label">No</span>
-                    </label>
+                    />
+                    <span class="radio-indicator"></span>
+                    <span class="radio-label">No</span>
+                  </label>
                   </div>
                 </div>
 
@@ -712,7 +723,7 @@
               </div>
 
               <div class="form-row">
-                <div class="form-group">
+              <div class="form-group">
                   <label for="justice-system-state">State of the Case in the Justice System</label>
                   <select
                     v-model="formData.step4.justiceSystemState"
@@ -748,7 +759,7 @@
               <div class="form-group">
                 <label for="services-offered">Services Offered</label>
                 <select
-                  v-model="formData.step4.servicesOffered"
+                      v-model="formData.step4.servicesOffered"
                   id="services-offered"
                   class="form-control"
                 >
@@ -766,7 +777,7 @@
                   <option value="Education Programs">Education Programs</option>
                   <option value="Community Outreach">Community Outreach</option>
                 </select>
-              </div>
+                </div>
 
               <div class="form-group">
                 <label for="referral-source">How did you know about 116?</label>
@@ -1024,7 +1035,7 @@
                   <div class="review-label">Services Offered</div>
                   <div class="review-value">
                     {{ formData.step4.servicesOffered || "N/A" }}
-                  </div>
+                    </div>
                 </div>
                 <div class="review-item">
                   <div class="review-label">Referral Source</div>
@@ -2098,7 +2109,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, watch, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseInput from '@/components/base/BaseInput.vue'
@@ -2114,6 +2125,9 @@ const currentStep = ref(1)
 const totalSteps = 5
 const isAIEnabled = ref(true)
 const searchQuery = ref('')
+// Debounced version of the search query used for filtering
+const debouncedQuery = ref('')
+let debounceTimer = null
 const selectedReporter = ref(null)
 const selectedCategory = ref('')
 const clientModalOpen = ref(false)
@@ -2478,8 +2492,17 @@ const filteredContacts = computed(() => {
   
   return casesStore.cases.filter((contact) => {
     const name = (contact[nameIdx] || '').toString().toLowerCase()
-    const phone = (contact[phoneIdx] || '').toString()
-    return name.includes(q) || phone.includes(debouncedQuery.value)
+    const rawPhone = (contact[phoneIdx] || '').toString()
+    // Normalize phone by removing non-digits for robust matching
+    const phoneDigits = rawPhone.replace(/\D+/g, '')
+    const qDigits = debouncedQuery.value.replace(/\D+/g, '')
+
+    const matchesName = name.includes(q)
+    const matchesPhone = qDigits.length > 0
+      ? phoneDigits.includes(qDigits)
+      : rawPhone.includes(debouncedQuery.value)
+
+    return matchesName || matchesPhone
   })
 })
 
@@ -3077,6 +3100,30 @@ const updateStepCSSVar = () => {
   if (root) {
     root.style.setProperty('--progress-ratio', String(ratio))
   }
+}
+
+const ongoingCall = ref(null)
+const tick = ref(0)
+let intervalId = null
+
+onMounted(()=>{
+  try { const raw = localStorage.getItem('ongoingCall'); if (raw) ongoingCall.value = JSON.parse(raw) } catch(e) {}
+  intervalId = setInterval(()=>{ tick.value++ }, 1000)
+})
+
+onUnmounted(()=>{ if (intervalId) clearInterval(intervalId) })
+
+const formattedCallDuration = computed(()=>{
+  if (!ongoingCall.value?.startedAt) return '00:00'
+  const secs = Math.floor((Date.now() - ongoingCall.value.startedAt)/1000)
+  const m = Math.floor(secs/60).toString().padStart(2,'0')
+  const s = (secs%60).toString().padStart(2,'0')
+  return `${m}:${s}`
+})
+
+function endOngoingCall(){
+  ongoingCall.value = null
+  try { localStorage.removeItem('ongoingCall') } catch(e) {}
 }
 </script>
 
@@ -4608,4 +4655,18 @@ const updateStepCSSVar = () => {
 .category-tree::-webkit-scrollbar-thumb:hover {
   background: var(--color-text-secondary, #6b7280);
 }
+
+.ongoing-call-overlay {
+  position: fixed;
+  top: 12px;
+  right: 16px;
+  z-index: 1100;
+}
+
+.ongoing-call-overlay .overlay-content{ display:flex; align-items:center; gap:10px; background: var(--content-bg); border:1px solid var(--border-color); border-radius:14px; padding:8px 12px; box-shadow:0 10px 30px rgba(0,0,0,0.2); }
+.ongoing-call-overlay .dot{ width:10px; height:10px; background:#10B981; border-radius:50%; animation: pulse 1.2s infinite ease-in-out; }
+.ongoing-call-overlay .info{ display:flex; flex-direction:column; line-height:1.2; }
+.ongoing-call-overlay .line{ font-size:12px; color: var(--text-color); }
+.ongoing-call-overlay .overlay-btn{ border:none; background:#991B1B; color:#fff; border-radius:10px; padding:6px 10px; font-weight:700; cursor:pointer; }
+@keyframes pulse{ 0%{opacity:.4} 50%{opacity:1} 100%{opacity:.4} }
 </style>
