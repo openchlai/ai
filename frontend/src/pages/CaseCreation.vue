@@ -1079,8 +1079,19 @@
             </div>
           </div>
           <div class="ai-preview-content">
+            <!-- AI Mode Selector -->
+            <div class="ai-mode-row">
+              <label class="ai-mode-label">Mode</label>
+              <select v-model="aiMode" class="ai-mode-select ai-mode-select--elevated">
+                <option value="transcription">Transcription</option>
+                <option value="translation">Translation</option>
+                <option value="ner">NER</option>
+                <option value="summary">Case Summary</option>
+                <option value="qa">QA Analysis</option>
+              </select>
+            </div>
             <!-- Audio Upload (AI Panel) -->
-            <div class="ai-preview-section">
+            <div v-if="aiMode === 'transcription'" class="ai-preview-section">
               <div class="ai-preview-section-title">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" stroke="currentColor" stroke-width="2"/>
@@ -1140,8 +1151,8 @@
               </div>
             </div>
 
-            <!-- Transcription Section (AI Panel) -->
-            <div v-if="audioTranscription" class="ai-preview-section">
+            <!-- Transcription Output -->
+            <div v-if="aiMode === 'transcription' && audioTranscription" class="ai-preview-section">
               <div class="ai-preview-section-title">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="2"/>
@@ -1183,8 +1194,61 @@
               </div>
             </div>
             
+            <!-- Translation Input/Output -->
+            <div v-if="aiMode === 'translation'" class="ai-preview-section">
+              <div class="ai-preview-section-title">Translate Text</div>
+              <textarea v-model="translationInput" class="form-control" rows="4" placeholder="Enter text to translate..."></textarea>
+              <div class="ai-action-row">
+                <button class="btn btn--primary btn--sm" @click="runTranslation">Translate</button>
+              </div>
+              <div v-if="translationOutput" class="ai-io-output">{{ translationOutput }}</div>
+            </div>
+
+            <!-- NER Input/Output -->
+            <div v-if="aiMode === 'ner'" class="ai-preview-section">
+              <div class="ai-preview-section-title">Named Entity Recognition</div>
+              <textarea v-model="nerInput" class="form-control" rows="4" placeholder="Enter text for entity extraction..."></textarea>
+              <div class="ai-action-row">
+                <button class="btn btn--primary btn--sm" @click="runNER">Extract Entities</button>
+              </div>
+              <div v-if="nerOutput && nerOutput.length" class="ner-output">
+                <div v-for="(ent, idx) in nerOutput" :key="idx" class="ner-chip">
+                  <span class="ent-text">{{ ent.text }}</span>
+                  <span class="ent-label">{{ ent.label }}</span>
+                </div>
+              </div>
+            </div>
+
             <!-- Case Summary Section -->
-            <div v-if="caseSummary" class="ai-preview-section">
+            <div v-if="aiMode === 'summary'" class="ai-preview-section">
+              <div class="ai-preview-section-title">Case Summary</div>
+              <div class="summary-textarea">
+                <textarea class="form-control" rows="6" v-model="caseSummaryText" placeholder="Summary will appear here..."></textarea>
+              </div>
+            </div>
+
+            <!-- QA Analysis -->
+            <div v-if="aiMode === 'qa'" class="ai-preview-section">
+              <div class="ai-preview-section-title">QA Analysis</div>
+              <div class="qa-grid">
+                <div class="qa-card">
+                  <div class="qa-card-title">Call Quality</div>
+                  <div class="qa-score">—</div>
+                </div>
+                <div class="qa-card">
+                  <div class="qa-card-title">Compliance</div>
+                  <div class="qa-score">—</div>
+                </div>
+                <div class="qa-card">
+                  <div class="qa-card-title">Empathy</div>
+                  <div class="qa-score">—</div>
+                </div>
+                <div class="qa-card qa-card-full">
+                  <div class="qa-card-title">Notes</div>
+                  <div class="qa-notes">QA insights will appear here when available.</div>
+                </div>
+              </div>
+            </div>
               <div class="ai-preview-section-title">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="2"/>
@@ -1272,7 +1336,6 @@
           </div>
         </div>
       </div>
-    </div>
 
     <!-- Client Modal -->
     <div v-if="clientModalOpen" class="simple-modal">
@@ -2242,8 +2305,21 @@ const isDragOver = ref(false)
 let mediaRecorder = null
 let recordingInterval = null
 
+// AI panel mode and IO state
+const aiMode = ref('transcription')
+const translationInput = ref('')
+const translationOutput = ref('')
+const nerInput = ref('')
+const nerOutput = ref([])
+const caseSummaryText = ref('')
+
 // AI state
-const caseSummary = ref(null)
+const caseSummary = ref({
+  riskLevel: 'low',
+  urgency: 'Normal',
+  keyConcerns: [],
+  analysis: ''
+})
 const aiInsights = ref([])
 const recommendations = ref([])
 
@@ -2821,6 +2897,22 @@ const onAudioDrop = async (event) => {
   }
 }
 
+// Simple mocked AI runners (replace with backend calls later)
+const runTranslation = () => {
+  translationOutput.value = translationInput.value
+    ? `Translated: ${translationInput.value}`
+    : ''
+}
+
+const runNER = () => {
+  if (!nerInput.value) { nerOutput.value = []; return }
+  nerOutput.value = nerInput.value
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 12)
+    .map(t => ({ text: t.replace(/[^\w-]/g,''), label: t[0] === t[0]?.toUpperCase() ? 'PERSON' : 'MISC' }))
+}
+
 const transcribeAudio = async () => {
   // Mock transcription - in real app, this would call an AI service
   setTimeout(() => {
@@ -3266,6 +3358,29 @@ const updateStepCSSVar = () => {
   background: color-mix(in oklab, var(--color-primary) 80%, black);
   transform: translateY(-1px);
 }
+
+/* AI mode controls and IO */
+.ai-mode-row { display:flex; align-items:center; gap:12px; }
+.ai-mode-label { font-weight:700; color: var(--text-color); }
+.ai-mode-select { padding:10px 14px; border:1px solid var(--color-border); border-radius:14px; background:#fff; color:#111; font-weight:600; font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; }
+.ai-mode-select--elevated { box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 4px 10px rgba(0,0,0,0.04); }
+.ai-mode-select:focus { outline: none; box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-primary) 20%, white); }
+.ai-mode-select option { font-weight:600; }
+.ai-action-row { margin-top:8px; }
+.ai-io-output { margin-top:10px; padding:12px; border:1px solid var(--color-border); border-radius:12px; background: var(--color-surface); color: var(--text-color); }
+.ner-output { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.ner-chip { display:inline-flex; gap:6px; padding:6px 10px; border:1px solid var(--color-border); border-radius:999px; background: var(--color-surface); }
+.ner-chip .ent-text { font-weight:600; }
+.ner-chip .ent-label { text-transform:uppercase; font-size:12px; color: var(--color-muted); }
+.summary-textarea .form-control { width:100%; }
+
+/* QA cards */
+.qa-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; }
+.qa-card { border:1px solid var(--color-border); border-radius:14px; background: var(--color-surface); padding:12px; }
+.qa-card-title { font-weight:700; color: var(--text-color); margin-bottom:6px; }
+.qa-score { font-size:22px; font-weight:800; color: var(--text-color); }
+.qa-card-full { grid-column: 1 / -1; }
+.qa-notes { color: var(--color-muted); }
 
 .audio-file-info {
   display: flex;
