@@ -1124,24 +1124,7 @@ const filteredCases = computed(() => {
   };
 
   if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase();
-    filtered = filtered.filter((c) => {
-      // Search in case title/category
-      const title = casesStore.cases_k?.cat_1 ? c[casesStore.cases_k.cat_1[0]] : '';
-      // Search in assigned to
-      const assignedTo = casesStore.cases_k?.assigned_to ? c[casesStore.cases_k.assigned_to[0]] : '';
-      // Search in created by
-      const createdBy = casesStore.cases_k?.created_by ? c[casesStore.cases_k.created_by[0]] : '';
-      // Search in source
-      const source = casesStore.cases_k?.source ? c[casesStore.cases_k.source[0]] : '';
-      
-      return (
-        (title && title.toString().toLowerCase().includes(query)) ||
-        (assignedTo && assignedTo.toString().toLowerCase().includes(query)) ||
-        (createdBy && createdBy.toString().toLowerCase().includes(query)) ||
-        (source && source.toString().toLowerCase().includes(query))
-      );
-    });
+    filtered = casesStore.searchCases(searchQuery.value);
   }
 
   if (activeFilter.value !== "all") {

@@ -2105,15 +2105,19 @@ import BaseInput from '@/components/base/BaseInput.vue'
 import BaseTextarea from '@/components/base/BaseTextarea.vue'
 import BaseSelect from '@/components/base/BaseSelect.vue'
 import { useTranscriptionsStore } from '@/stores/transcriptionsStore'
+import { useCaseStore } from '@/stores/cases'
 
 const router = useRouter()
 const transcriptionsStore = useTranscriptionsStore()
+const casesStore = useCaseStore()
 
 // State
 const currentStep = ref(1)
 const totalSteps = 5
 const isAIEnabled = ref(true)
 const searchQuery = ref('')
+const debouncedQuery = ref('')
+let debounceTimer = null
 const selectedReporter = ref(null)
 const selectedCategory = ref('')
 const clientModalOpen = ref(false)
@@ -2332,23 +2336,7 @@ const perpetratorForm = reactive({
   additionalDetails: ''
 })
 
-// Mock store for demonstration
-const casesStore = {
-  cases_k: {
-    id: [0],
-    reporter_fullname: [1],
-    reporter_phone: [2],
-    reporter_age: [3],
-    reporter_sex: [4],
-    reporter_location: [5],
-    dt: [6]
-  },
-  cases: [
-    [1, 'Ivan Somondi', '254700112233', 16, 'Male', 'Narok County', 1640995200],
-    [2, 'Susan Kirigwa', '254700445566', 45, 'Female', 'Narok', 1640908800],
-    [3, 'Amira', '254700778899', 28, 'Female', 'Nairobi', 1641081600]
-  ]
-}
+// Using real Pinia cases store (mock removed)
 
 // Form data
 const formData = reactive({
@@ -2472,14 +2460,45 @@ watch(searchQuery, (val) => {
 
 const filteredContacts = computed(() => {
   if (!debouncedQuery.value) return []
-  const q = debouncedQuery.value.toLowerCase()
-  const nameIdx = casesStore.cases_k.reporter_fullname[0]
-  const phoneIdx = casesStore.cases_k.reporter_phone[0]
-  
-  return casesStore.cases.filter((contact) => {
-    const name = (contact[nameIdx] || '').toString().toLowerCase()
-    const phone = (contact[phoneIdx] || '').toString()
-    return name.includes(q) || phone.includes(debouncedQuery.value)
+
+  const text = debouncedQuery.value.toString().trim().toLowerCase()
+  const digits = text.replace(/\D+/g, '')
+
+  const getField = (row, keyDef, fallbacks = []) => {
+    // Attempt by mapping
+    if (keyDef && Array.isArray(keyDef) && keyDef.length > 0) {
+      const k = keyDef[0]
+      const v = row?.[k]
+      if (v != null) return v
+    }
+    // Attempt by common keys
+    for (const k of fallbacks) {
+      const v = row?.[k]
+      if (v != null) return v
+    }
+    return ''
+  }
+
+  const k = casesStore.cases_k || {}
+  const nameMap = k.reporter_fullname || k.created_by || k.name
+  const phoneMap = k.reporter_phone || k.phone
+
+  const nameFallbacks = ['reporter_fullname', 'reporter_name', 'created_by', 'name', 'full_name']
+  const phoneFallbacks = ['reporter_phone', 'phone', 'contact_phone', 'reporterPhone']
+
+  const list = Array.isArray(casesStore.cases) ? casesStore.cases : []
+
+  return list.filter((row) => {
+    const rawName = getField(row, nameMap, nameFallbacks)
+    const rawPhone = getField(row, phoneMap, phoneFallbacks)
+
+    const name = rawName == null ? '' : String(rawName).toLowerCase()
+    const phone = rawPhone == null ? '' : String(rawPhone)
+    const phoneDigits = phone.replace(/\D+/g, '')
+
+    const byName = text ? name.includes(text) : false
+    const byPhone = digits ? phoneDigits.includes(digits) : false
+    return byName || byPhone
   })
 })
 
@@ -3060,9 +3079,31 @@ const submitCase = async () => {
 }
 
 // Initialize AI insights on mount
-onMounted(() => {
+onMounted(async () => {
   if (isAIEnabled.value) {
     generateAIInsights()
+  }
+  // Ensure cases are available for search suggestions
+  try { await casesStore.listCases({ src: 'call' }) } catch (e) {}
+
+  // Dev fallback: if no data loaded, seed a few demo contacts so filtering can be verified live
+  if (import.meta.env.DEV && (!Array.isArray(casesStore.cases) || casesStore.cases.length === 0)) {
+    // Use object rows with friendly keys; computed uses fallbacks so this works
+    casesStore.cases = [
+      { id: 1, reporter_fullname: 'Amira Karim', reporter_phone: '254700112233', reporter_age: 28, reporter_sex: 'Female', reporter_location: 'Nairobi', dt: 1641081600 },
+      { id: 2, reporter_fullname: 'Brian Newton', reporter_phone: '254711223344', reporter_age: 34, reporter_sex: 'Male', reporter_location: 'Nakuru', dt: 1640908800 },
+      { id: 3, reporter_fullname: 'Susan Kirigwa', reporter_phone: '254722334455', reporter_age: 45, reporter_sex: 'Female', reporter_location: 'Narok', dt: 1640995200 },
+      { id: 4, reporter_fullname: 'Ivan Somondi', reporter_phone: '254733445566', reporter_age: 16, reporter_sex: 'Male', reporter_location: 'Narok County', dt: 1640995200 }
+    ]
+    casesStore.cases_k = {
+      id: ['id'],
+      reporter_fullname: ['reporter_fullname'],
+      reporter_phone: ['reporter_phone'],
+      reporter_age: ['reporter_age'],
+      reporter_sex: ['reporter_sex'],
+      reporter_location: ['reporter_location'],
+      dt: ['dt']
+    }
   }
   // update CSS var for vertical progress fill
   updateStepCSSVar()
