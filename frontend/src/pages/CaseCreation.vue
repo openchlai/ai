@@ -2116,6 +2116,8 @@ const currentStep = ref(1)
 const totalSteps = 5
 const isAIEnabled = ref(true)
 const searchQuery = ref('')
+const debouncedQuery = ref('')
+let debounceTimer = null
 const selectedReporter = ref(null)
 const selectedCategory = ref('')
 const clientModalOpen = ref(false)
@@ -3083,6 +3085,26 @@ onMounted(async () => {
   }
   // Ensure cases are available for search suggestions
   try { await casesStore.listCases({ src: 'call' }) } catch (e) {}
+
+  // Dev fallback: if no data loaded, seed a few demo contacts so filtering can be verified live
+  if (import.meta.env.DEV && (!Array.isArray(casesStore.cases) || casesStore.cases.length === 0)) {
+    // Use object rows with friendly keys; computed uses fallbacks so this works
+    casesStore.cases = [
+      { id: 1, reporter_fullname: 'Amira Karim', reporter_phone: '254700112233', reporter_age: 28, reporter_sex: 'Female', reporter_location: 'Nairobi', dt: 1641081600 },
+      { id: 2, reporter_fullname: 'Brian Newton', reporter_phone: '254711223344', reporter_age: 34, reporter_sex: 'Male', reporter_location: 'Nakuru', dt: 1640908800 },
+      { id: 3, reporter_fullname: 'Susan Kirigwa', reporter_phone: '254722334455', reporter_age: 45, reporter_sex: 'Female', reporter_location: 'Narok', dt: 1640995200 },
+      { id: 4, reporter_fullname: 'Ivan Somondi', reporter_phone: '254733445566', reporter_age: 16, reporter_sex: 'Male', reporter_location: 'Narok County', dt: 1640995200 }
+    ]
+    casesStore.cases_k = {
+      id: ['id'],
+      reporter_fullname: ['reporter_fullname'],
+      reporter_phone: ['reporter_phone'],
+      reporter_age: ['reporter_age'],
+      reporter_sex: ['reporter_sex'],
+      reporter_location: ['reporter_location'],
+      dt: ['dt']
+    }
+  }
   // update CSS var for vertical progress fill
   updateStepCSSVar()
 })
