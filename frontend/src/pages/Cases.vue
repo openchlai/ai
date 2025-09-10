@@ -15,126 +15,25 @@
     <div class="main-content">
       <div class="cases-container">
         <!-- Cleaned up header section with better structure and spacing -->
-        <header class="page-header">
-          <div class="header-top">
-            <div class="header-left">
-              <h1 class="page-title">Cases</h1>
-              <router-link to="/case-creation" class="btn btn--primary btn--sm">Add New Case</router-link>
-            </div>
-            
-          </div>
-          
-          <!-- Combined search and view toggle into single horizontal row -->
-          <div class="search-and-controls-section">
-            <div class="search-container">
-              <input
-                v-model="searchQuery"
-                type="text"
-                placeholder="Search case by title, assignee, or filter..."
-                class="input"
-              />
-            </div>
-            
-            <div class="view-toggle">
-              <button 
-                class="btn btn--secondary btn--sm" 
-                :class="{ active: currentView === 'table' }" 
-                @click="setCurrentView('table')"
-              >
-                Table View
-              </button>
-              <button 
-                class="btn btn--secondary btn--sm" 
-                :class="{ active: currentView === 'timeline' }" 
-                @click="setCurrentView('timeline')"
-              >
-                Timeline
-              </button>
-            </div>
-          </div>
-
-          <!-- Moved filter tabs to separate section -->
-          <div class="filter-section">
-            <button
-              v-for="filter in filters"
-              :key="filter.id"
-              class="btn btn--secondary btn--sm"
-              :class="{ active: activeFilter === filter.id }"
-              @click="setActiveFilter(filter.id)"
-            >
-              {{ filter.name }}
-            </button>
-            <router-link to="/reports-category" class="btn btn--secondary btn--sm">Advanced Filters</router-link>
-          </div>
-        </header>
+        <CasesHeader
+          :search-query="searchQuery"
+          :current-view="currentView"
+          :filters="filters"
+          :active-filter="activeFilter"
+          @update:search-query="val => searchQuery = val"
+          @set-view="setCurrentView"
+          @set-filter="setActiveFilter"
+        />
 
         <!-- Added conditional rendering for table view and timeline view -->
         <!-- Table View -->
         <div v-if="currentView === 'table'" class="cases-table-container">
-          <div class="cases-table-wrapper card" style="padding:0;">
-            <table class="cases-table">
-              <thead>
-                <tr>
-                  <!-- Improved table headers with better labels and spacing -->
-                  <th class="case-id-header">Case ID</th>
-                  <th class="created-by-header">Created By</th>
-                  <th class="created-on-header">Created On</th>
-                  <th class="source-header">Source</th>
-                  <th class="priority-header">Priority</th>
-                  <th class="status-header">Status</th>
-                  <th class="actions-header">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="caseItem in filteredCases"
-                  :key="casesStore.cases_k?.id ? caseItem[casesStore.cases_k.id[0]] : caseItem.id"
-                  :class="['table-row', {
-                    selected: selectedCaseId === (casesStore.cases_k?.id ? caseItem[casesStore.cases_k.id[0]] : caseItem.id)
-                  }]"
-                  @click="selectCase(casesStore.cases_k?.id ? caseItem[casesStore.cases_k.id[0]] : caseItem.id)"
-                >
-                  <td class="case-id-cell">
-                    {{ casesStore.cases_k?.id ? caseItem[casesStore.cases_k.id[0]] : caseItem.id || 'N/A' }}
-                  </td>
-                  <td class="created-by-cell">
-                    {{ casesStore.cases_k?.created_by ? caseItem[casesStore.cases_k.created_by[0]] || 'N/A' : 'N/A' }}
-                  </td>
-                  <td class="created-on-cell">
-                    {{ casesStore.cases_k?.dt ? new Date(
-                      caseItem[casesStore.cases_k.dt[0]] < 10000000000
-                        ? caseItem[casesStore.cases_k.dt[0]] * 1000
-                        : caseItem[casesStore.cases_k.dt[0]] * 3600 * 1000
-                    ).toLocaleDateString() : 'N/A' }}
-                  </td>
-                  <td class="source-cell">
-                    {{ casesStore.cases_k?.source ? caseItem[casesStore.cases_k.source[0]] || 'N/A' : 'N/A' }}
-                  </td>
-                  <td class="priority-cell">
-                    <span class="priority-badge" :class="(casesStore.cases_k?.priority ? caseItem[casesStore.cases_k.priority[0]] || 'normal' : 'normal').toLowerCase()">
-                      <span
-                        :class="['priority-dot', (casesStore.cases_k?.priority ? caseItem[casesStore.cases_k.priority[0]] || '' : '').toLowerCase()]"
-                      />
-                      {{ casesStore.cases_k?.priority ? caseItem[casesStore.cases_k.priority[0]] || 'Normal' : 'Normal' }}
-                    </span>
-                  </td>
-                  <td class="status-cell">
-                    <span class="status-badge" :class="(casesStore.cases_k?.status ? caseItem[casesStore.cases_k.status[0]] || 'open' : 'open').toLowerCase()">
-                      {{ casesStore.cases_k?.status ? caseItem[casesStore.cases_k.status[0]] || 'Open' : 'Open' }}
-                    </span>
-                  </td>
-                  <td class="actions-cell">
-                    <button class="btn btn--secondary btn--sm" @click.stop="selectCase(casesStore.cases_k?.id ? caseItem[casesStore.cases_k.id[0]] : caseItem.id)">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                        <circle cx="12" cy="12" r="3"/>
-                      </svg>
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          <CasesTable
+            :cases="filteredCases"
+            :cases-k="casesStore.cases_k"
+            :selected-id="selectedCaseId"
+            @select="selectCase"
+          />
           <!-- Edit Case Modal -->
           <div v-if="editModalOpen" class="case-detail-drawer">
             <div class="case-detail-drawer-header">
@@ -1030,6 +929,8 @@ import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import SidePanel from "@/components/SidePanel.vue";
 import { useCaseStore } from "@/stores/cases";
+import CasesHeader from "@/components/CasesHeader.vue";
+import CasesTable from "@/components/CasesTable.vue";
 
 const casesStore = useCaseStore();
 const router = useRouter();
