@@ -158,3 +158,4 @@ models/
 *.tflite
 *.weights
 *.ckpt.index
+ai_service/test_audio_workspace/metadata/preprocessing.db
