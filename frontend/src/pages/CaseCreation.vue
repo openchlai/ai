@@ -28,82 +28,15 @@
 
     <div class="case-container">
       <div class="main-form-container">
-        <div class="case-header">
-          <div>
-            <h1>Create New Case</h1>
-            <p>{{ stepDescriptions[currentStep - 1] }}</p>
-          </div>
-          <div class="toggle-container">
-            <span class="toggle-label">
-              <span class="ai-icon">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M12 2L2 7L12 12L22 7L12 2Z"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                  />
-                  <path
-                    d="M2 17L12 22L22 17"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                  />
-                  <path
-                    d="M2 12L12 17L22 12"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                  />
-                </svg>
-              </span>
-              AI Enabled
-            </span>
-            <label class="toggle-switch">
-              <input v-model="isAIEnabled" type="checkbox" />
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-        </div>
+        <CaseCreationHeader :description="stepDescriptions[currentStep - 1]" :isAIEnabled="isAIEnabled" @update:isAIEnabled="val => isAIEnabled = val" />
 
-        <div class="progress-container">
-          <div class="progress-steps">
-            <div
-              v-for="step in totalSteps"
-              :key="step"
-              class="progress-step clickable-step"
-              :class="{
-                active: currentStep === step,
-                completed: stepStatus(step) === 'completed',
-                error: stepStatus(step) === 'error'
-              }"
-              @click="navigateToStep(step)"
-            >
-              <div
-                class="step-circle"
-                :class="{
-                  active: currentStep === step,
-                  completed: stepStatus(step) === 'completed',
-                  error: stepStatus(step) === 'error'
-                }"
-              >
-                {{ stepStatus(step) === 'completed' ? '✓' : step }}
-              </div>
-              <div class="step-label" :class="{ active: currentStep === step }">
-                {{ stepLabels[step - 1] }}
-              </div>
-            </div>
-          </div>
-        </div>
+        <CaseCreationProgress
+          :total-steps="totalSteps"
+          :current-step="currentStep"
+          :step-labels="stepLabels"
+          :step-status="stepStatus"
+          @navigate="navigateToStep"
+        />
 
         <!-- Step 1: Reporter Selection -->
         <div v-show="currentStep === 1" class="step-content">
@@ -299,7 +232,7 @@
                   <option>Kiswahili</option>
                   <option>Somali</option>
                   <option>Arabic</option>
-                  <option>Other</option>
+                  <option value="other">Other</option>
                 </BaseSelect>
                 <BaseSelect id="reporter-tribe" label="Tribe" v-model="formData.step2.tribe" placeholder="Select tribe">
                   <option value="">Select tribe</option>
@@ -2169,6 +2102,8 @@ import BaseTextarea from '@/components/base/BaseTextarea.vue'
 import BaseSelect from '@/components/base/BaseSelect.vue'
 import { useTranscriptionsStore } from '@/stores/transcriptionsStore'
 import { useCaseStore } from '@/stores/cases'
+import CaseCreationHeader from '@/components/CaseCreationHeader.vue'
+import CaseCreationProgress from '@/components/CaseCreationProgress.vue'
 
 const router = useRouter()
 const transcriptionsStore = useTranscriptionsStore()
