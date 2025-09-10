@@ -124,11 +124,12 @@ class CallSessionManager:
             self.active_sessions[call_id] = session
             
             # Store in Redis for persistence
-            self._store_session_in_redis(session)
+            redis_success = self._store_session_in_redis(session)
             
             logger.info(f"📞 [session] Started call session: {call_id}")
             logger.info(f"📞 [session] Processing mode: {session.processing_mode}")
             logger.info(f"📞 [session] Active sessions: {len(self.active_sessions)}")
+            logger.info(f"📞 [session] Redis storage: {'✅ success' if redis_success else '❌ failed'}")
             
             # Send call start notification to agent (using notification manager)
             await notification_manager.send_notification_if_allowed(
@@ -153,7 +154,7 @@ class CallSessionManager:
         try:
             session = await self.get_session(call_id)
             if not session:
-                logger.warning(f"⚠️ [session] No active session found for call {call_id}")
+                logger.debug(f"⚠️ [session] No active session found for call {call_id}")
                 return None
             
             now = datetime.now()
@@ -203,18 +204,13 @@ class CallSessionManager:
                 segment['metadata']['realtime_processing_disabled'] = True
             
             # Store updated session
-            self._store_session_in_redis(session)
+            redis_update_success = self._store_session_in_redis(session)
+            if not redis_update_success:
+                logger.warning(f"⚠️ [session] Failed to update session {call_id} in Redis")
             
-            # Send transcript segment notification to agent (using notification manager)
-            await notification_manager.send_notification_if_allowed(
-                NotificationType.TRANSCRIPT_SEGMENT,
-                call_id,
-                {
-                    "segment": segment,
-                    "cumulative_transcript": session.cumulative_transcript
-                },
-                has_results=True if segment.get('transcript') else False
-            )
+            # Skip real-time segment notifications - only send post-call summary
+            # Real-time segment notifications create too much noise
+            logger.debug(f"📝 [session] Segment {segment['segment_id']} added (no real-time notification)")
             
             logger.info(f"📝 [session] Added segment {segment['segment_id']} to call {call_id}")
             logger.info(f"📝 [session] Transcript length: {len(session.cumulative_transcript)} chars")
@@ -259,21 +255,28 @@ class CallSessionManager:
     
     async def get_session(self, call_id: str) -> Optional[CallSession]:
         """Get active session by call ID"""
+        logger.debug(f"🔍 [session] Attempting to get session for call {call_id}")
+        
         # Try Redis first for cross-process compatibility
         try:
             session_data = self._get_session_from_redis(call_id)
             if session_data:
+                logger.debug(f"🔍 [session] Found session {call_id} in Redis")
                 session = CallSession.from_dict(session_data)
                 # Update in-memory cache
                 self.active_sessions[call_id] = session
                 return session
+            else:
+                logger.debug(f"🔍 [session] Session {call_id} not found in Redis")
         except Exception as e:
             logger.error(f"❌ Failed to retrieve session {call_id} from Redis: {e}")
         
         # Fallback to memory (for same-process access)
         if call_id in self.active_sessions:
+            logger.debug(f"🔍 [session] Found session {call_id} in memory (same process)")
             return self.active_sessions[call_id]
         
+        logger.debug(f"🔍 [session] Session {call_id} not found anywhere")
         return None
     
     async def end_session(self, call_id: str, reason: str = "completed") -> Optional[CallSession]:
@@ -289,7 +292,9 @@ class CallSessionManager:
             session.last_activity = datetime.now()
             
             # Store final session state
-            self._store_session_in_redis(session)
+            redis_final_success = self._store_session_in_redis(session)
+            if not redis_final_success:
+                logger.warning(f"⚠️ [session] Failed to store final session {call_id} in Redis")
             
             # Finalize progressive processing and trigger summarization
             try:
@@ -302,7 +307,10 @@ class CallSessionManager:
                 logger.error(f"❌ Failed to finalize progressive analysis for call {call_id}: {e}")
             
             # Check if post-call processing is enabled for this session
-            postcall_enabled = session.processing_plan.get("postcall_processing", {}).get("enabled", False)
+            postcall_processing_config = session.processing_plan.get("postcall_processing", {})
+            postcall_enabled = postcall_processing_config.get("enabled", False)
+            
+            logger.info(f"📋 [session] Post-call processing enabled: {postcall_enabled}")
             
             if postcall_enabled:
                 # Download and process complete audio file from Asterisk server
@@ -326,25 +334,8 @@ class CallSessionManager:
             else:
                 logger.info(f"ℹ️ [session] Post-call processing disabled for call {call_id} (mode: {session.processing_mode})")
                 
-                # Send basic call end notification without waiting for AI results (using notification manager)
-                final_stats = {
-                    'duration': session.total_audio_duration,
-                    'segments': session.segment_count,
-                    'transcript_length': len(session.cumulative_transcript),
-                    'start_time': session.start_time.isoformat(),
-                    'end_time': session.last_activity.isoformat(),
-                    'processing_mode': session.processing_mode,
-                    'postcall_processing_skipped': True
-                }
-                await notification_manager.send_notification_if_allowed(
-                    NotificationType.CALL_END,
-                    call_id,
-                    {
-                        "reason": reason,
-                        "stats": final_stats
-                    },
-                    has_results=True
-                )
+                # Even without full post-call processing, send complete transcript and basic insights
+                await self._send_simple_post_call_notification(session, reason)
             
             
             # Remove from active sessions
@@ -843,7 +834,7 @@ class CallSessionManager:
             'session_list': [s.call_id for s in self.active_sessions.values()]
         }
     
-    def _store_session_in_redis(self, session: CallSession):
+    def _store_session_in_redis(self, session: CallSession) -> bool:
         """Store session in Redis for persistence"""
         # Ensure we have a Redis client
         if not self.redis_client:
@@ -852,7 +843,7 @@ class CallSessionManager:
             
         if not self.redis_client:
             logger.warning(f"🔍 [session] Redis client not available for storing session {session.call_id}")
-            return
+            return False
         
         try:
             session_key = f"call_session:{session.call_id}"
@@ -872,9 +863,11 @@ class CallSessionManager:
                 self.redis_client.srem('active_call_sessions', session.call_id)
                 
             logger.debug(f"🔍 [session] Successfully stored session {session.call_id} in Redis")
+            return True
                 
         except Exception as e:
             logger.error(f"❌ Failed to store session {session.call_id} in Redis: {e}")
+            return False
     
     def _get_session_from_redis(self, call_id: str) -> Optional[Dict]:
         """Retrieve session from Redis"""
@@ -1196,6 +1189,71 @@ class CallSessionManager:
         except Exception as e:
             logger.error(f"❌ Failed to send enhanced insights notification for {call_id}: {e}")
             return False
+    
+    async def _send_simple_post_call_notification(self, session: CallSession, reason: str):
+        """Send simple post-call notification with complete transcript and basic insights"""
+        try:
+            call_id = session.call_id
+            logger.info(f"📤 [session] Sending post-call notification for {call_id}")
+            
+            # Prepare final call data
+            final_data = {
+                "call_id": call_id,
+                "complete_transcript": session.cumulative_transcript,
+                "call_duration": session.total_audio_duration,
+                "segments_processed": session.segment_count,
+                "processing_mode": session.processing_mode,
+                "start_time": session.start_time.isoformat(),
+                "end_time": session.last_activity.isoformat(),
+                "end_reason": reason,
+                "transcript_length": len(session.cumulative_transcript)
+            }
+            
+            # Send call summary notification
+            await notification_manager.send_notification_if_allowed(
+                NotificationType.CALL_END,
+                call_id,
+                {
+                    "call_summary": final_data,
+                    "processing_complete": True
+                },
+                has_results=True
+            )
+            
+            # Generate basic Mistral insights if transcript is substantial
+            if len(session.cumulative_transcript.strip()) > 100:  # Minimum threshold
+                try:
+                    logger.info(f"🧠 [session] Generating Mistral insights for call {call_id}")
+                    
+                    # Import insights service
+                    from ..services.insights_service import generate_case_insights
+                    
+                    # Generate GPT insights
+                    gpt_insights = generate_case_insights(session.cumulative_transcript)
+                    
+                    # Send insights notification
+                    await notification_manager.send_notification_if_allowed(
+                        NotificationType.GPT_INSIGHTS_RESULTS,
+                        call_id,
+                        {
+                            "call_id": call_id,
+                            "insights": gpt_insights,
+                            "transcript_length": len(session.cumulative_transcript),
+                            "insight_source": "mistral_gpt_from_transcript",
+                            "processing_mode": session.processing_mode
+                        },
+                        has_results=True
+                    )
+                    
+                    logger.info(f"🤖 [session] Sent Mistral insights for call {call_id}")
+                    
+                except Exception as e:
+                    logger.error(f"❌ Failed to generate/send Mistral insights for {call_id}: {e}")
+            else:
+                logger.info(f"⚠️ [session] Transcript too short for insights generation: {len(session.cumulative_transcript)} chars")
+                
+        except Exception as e:
+            logger.error(f"❌ Failed to send post-call notification for {call_id}: {e}")
 
 # Global session manager instance
 call_session_manager = CallSessionManager()

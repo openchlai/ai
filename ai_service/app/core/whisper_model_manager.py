@@ -70,7 +70,12 @@ class WhisperModelManager:
                 logger.warning(f"Unknown translation strategy '{strategy_str}', defaulting to custom_model")
                 self.current_strategy = TranslationStrategy.CUSTOM_MODEL
             
-            # Validate configuration combination
+            # Auto-upgrade to Large-V3 when whisper_builtin is configured
+            if self.current_strategy == TranslationStrategy.WHISPER_BUILTIN and self.current_variant != WhisperVariant.LARGE_V3:
+                logger.info(f"🎯 Auto-upgrading from {self.current_variant.value} to large_v3 for built-in translation")
+                self.current_variant = WhisperVariant.LARGE_V3
+            
+            # Validate configuration combination (fallback safety)
             if self.current_variant == WhisperVariant.LARGE_TURBO and self.current_strategy == TranslationStrategy.WHISPER_BUILTIN:
                 logger.warning("⚠️ Invalid combination: large_turbo doesn't support built-in translation, switching to custom_model")
                 self.current_strategy = TranslationStrategy.CUSTOM_MODEL
@@ -138,7 +143,15 @@ class WhisperModelManager:
             model_path = self.get_current_model_path()
             logger.info(f"🎙️ Loading Whisper {self.current_variant.value} from {model_path}")
             
-            self.whisper_model = WhisperModel(model_path=model_path)
+            # Enable translation for Large-V3, disable for Large-Turbo
+            enable_translation = (self.current_variant == WhisperVariant.LARGE_V3)
+            
+            self.whisper_model = WhisperModel(
+                model_path=model_path,
+                enable_translation=enable_translation
+            )
+            
+            logger.info(f"🎯 Model configuration: translation_enabled={enable_translation}")
             
             # Load the model
             success = self.whisper_model.load()
@@ -348,11 +361,15 @@ class WhisperModelManager:
         if self.current_variant != WhisperVariant.LARGE_V3:
             raise RuntimeError("Built-in translation only available with large-v3 variant")
         
+        if not self.whisper_model or not self.whisper_model.is_ready():
+            raise RuntimeError("Whisper model not loaded or not ready")
+        
         try:
-            # This would require modifying the WhisperModel class to support translation task
-            # For now, return a placeholder
-            logger.info("🌐 Whisper built-in translation (implementation needed)")
-            return "[Whisper built-in translation - implementation pending]"
+            logger.info("🌐 Using Whisper built-in translation to English")
+            # Use WhisperModel with translation task
+            result = self.whisper_model.transcribe_audio_bytes(audio_bytes, language=language, task="translate")
+            logger.info(f"✅ Whisper built-in translation completed: {len(result)} characters")
+            return result
             
         except Exception as e:
             logger.error(f"❌ Whisper translation failed: {e}")

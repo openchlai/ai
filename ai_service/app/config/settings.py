@@ -103,8 +103,8 @@ class Settings(BaseSettings):
     scp_timeout_seconds: int = 30
     
     # Whisper Model Configuration
-    whisper_model_variant: str = "large_turbo"  # large_v3, large_turbo
-    translation_strategy: str = "custom_model"  # whisper_builtin, custom_model
+    whisper_model_variant: str = "large_v3"  # large_v3, large_turbo
+    translation_strategy: str = "whisper_builtin"  # whisper_builtin, custom_model
     whisper_large_v3_path: str = "./models/whisper_large_v3"
     whisper_large_turbo_path: str = "./models/whisper_large_turbo"
     whisper_active_symlink: str = "./models/whisper"  # Symlink for backward compatibility
