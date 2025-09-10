@@ -45,6 +45,9 @@
                   {{ formatDate(selectedItem.uploadedAt) }}
                 </span>
               </div>
+              <div class="header-actions">
+                <button class="btn btn--secondary" @click="skipToNext">Skip to Next</button>
+              </div>
             </div>
 
             <!-- Audio player -->
@@ -125,7 +128,9 @@
                     v-model="filters.audioId" 
                     type="text" 
                     placeholder="Filter by ID..."
-                    class="filter-input"
+                    :class="['filter-input', { active: focusedFilter === 'audioId' || !!filters.audioId }]"
+                    @focus="focusedFilter = 'audioId'"
+                    @blur="focusedFilter = null"
                   />
                 </div>
                 <div class="filter-group">
@@ -134,8 +139,17 @@
                     v-model="filters.counsellor" 
                     type="text" 
                     placeholder="Filter by name..."
-                    class="filter-input"
+                    :class="['filter-input', { active: focusedFilter === 'counsellor' || !!filters.counsellor }]"
+                    @focus="focusedFilter = 'counsellor'"
+                    @blur="focusedFilter = null"
                   />
+                </div>
+                <div class="filter-group">
+                  <label>Sort by ID:</label>
+                  <div class="sort-controls">
+                    <button class="btn btn--secondary" :class="{ active: sortOrder === 'asc' }" @click="setSort('asc')">Smallest → Largest</button>
+                    <button class="btn btn--secondary" :class="{ active: sortOrder === 'desc' }" @click="setSort('desc')">Largest → Smallest</button>
+                  </div>
                 </div>
                 <button class="btn btn--secondary" @click="clearFilters">Clear Filters</button>
               </div>
@@ -143,7 +157,7 @@
 
             <div class="queue-list">
               <div 
-                v-for="item in filteredQueue" 
+                v-for="item in pagedQueue" 
                 :key="item.id" 
                 class="queue-item"
                 :class="{ active: selectedItem?.id === item.id }"
@@ -163,6 +177,12 @@
                   Review
                 </button>
               </div>
+            </div>
+
+            <div class="pagination" v-if="sortedFilteredQueue.length > pageSize">
+              <button class="btn btn--secondary" @click="prevPage" :disabled="currentPage === 1">Prev</button>
+              <span class="page-indicator">Page {{ currentPage }} / {{ totalPages }}</span>
+              <button class="btn btn--secondary" @click="nextPage" :disabled="currentPage === totalPages">Next</button>
             </div>
 
             <div v-if="filteredQueue.length === 0" class="empty-queue">
@@ -222,6 +242,14 @@ const filters = ref({
   audioId: '',
   counsellor: ''
 })
+const focusedFilter = ref(null)
+
+// Sorting
+const sortOrder = ref('asc') // 'asc' | 'desc'
+
+// Pagination
+const pageSize = 8
+const currentPage = ref(1)
 
 // Computed
 const queue = computed(() => transStore.pending)
@@ -236,6 +264,19 @@ const filteredQueue = computed(() => {
   })
 })
 
+const sortedFilteredQueue = computed(() => {
+  const arr = [...filteredQueue.value]
+  arr.sort((a, b) => sortOrder.value === 'asc' ? a.id - b.id : b.id - a.id)
+  return arr
+})
+
+const totalPages = computed(() => Math.max(1, Math.ceil(sortedFilteredQueue.value.length / pageSize)))
+
+const pagedQueue = computed(() => {
+  const start = (currentPage.value - 1) * pageSize
+  return sortedFilteredQueue.value.slice(start, start + pageSize)
+})
+
 const progressPercent = computed(() => {
   return duration.value > 0 ? (currentTime.value / duration.value) * 100 : 0
 })
@@ -245,6 +286,25 @@ const selectItem = (item) => {
   selectedItem.value = item
   editingTranscription.value = item.transcription
   resetAudio()
+}
+
+const skipToNext = () => {
+  if (!selectedItem.value) return
+  // Remove from queue visually by marking reviewed then immediately selecting next visible
+  transStore.markReviewed(selectedItem.value.id)
+  const currentIndex = sortedFilteredQueue.value.findIndex(i => i.id === selectedItem.value.id)
+  // If we removed one, adjust page if needed
+  if ((currentIndex + 1) >= sortedFilteredQueue.value.length && currentPage.value > 1 && pagedQueue.value.length === 1) {
+    currentPage.value = Math.max(1, currentPage.value - 1)
+  }
+  // Pick next item from current page slice
+  const next = sortedFilteredQueue.value[currentIndex + 1] || sortedFilteredQueue.value[currentIndex - 1]
+  if (next) {
+    selectItem(next)
+  } else {
+    selectedItem.value = null
+    editingTranscription.value = ''
+  }
 }
 
 const resetTranscription = () => {
@@ -274,6 +334,20 @@ const submitReview = () => {
 const clearFilters = () => {
   filters.value.audioId = ''
   filters.value.counsellor = ''
+  currentPage.value = 1
+}
+
+const setSort = (order) => {
+  sortOrder.value = order
+  currentPage.value = 1
+}
+
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) currentPage.value += 1
+}
+
+const prevPage = () => {
+  if (currentPage.value > 1) currentPage.value -= 1
 }
 
 // Audio controls
@@ -342,8 +416,8 @@ const formatDate = (ts) => {
 // Lifecycle
 onMounted(() => {
   // Select first item if available
-  if (filteredQueue.value.length > 0) {
-    selectItem(filteredQueue.value[0])
+  if (sortedFilteredQueue.value.length > 0) {
+    selectItem(sortedFilteredQueue.value[0])
   }
 })
 
@@ -657,6 +731,11 @@ onUnmounted(() => {
   border-color: var(--color-primary);
 }
 
+.filter-input.active {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-primary) 10%, transparent);
+}
+
 /* Queue list */
 .queue-list {
   display: flex;
@@ -753,6 +832,30 @@ onUnmounted(() => {
 .review-btn:hover {
   background: color-mix(in oklab, var(--color-primary) 80%, black);
   transform: translateY(-1px);
+}
+
+/* Sort / Pagination */
+.sort-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.btn.btn--secondary.active {
+  border-color: var(--color-primary);
+  background: var(--color-surface);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-primary) 8%, transparent);
+}
+
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.page-indicator {
+  font-size: 12px;
+  color: var(--color-muted);
 }
 
 /* Empty state */
