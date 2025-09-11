@@ -884,7 +884,8 @@ function getInitials(name) {
 }
 </script>
 
-<style scoped>
+<style>
+@import url("@/styles/qa-statistics.css");
 .qa-statistics-container {
   transition: margin-left 0.3s, width 0.3s;
   margin-left: 250px;
