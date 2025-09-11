@@ -3148,7 +3148,8 @@ const updateStepCSSVar = () => {
 }
 </script>
 
-<style scoped>
+<style>
+@import url("@/styles/case-creation.css");
 /* Ensure consistent typography and polished AI panel UI */
 .case-creation-page {
   min-height: 0;
