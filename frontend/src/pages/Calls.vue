@@ -17,8 +17,14 @@
         <div class="header">
           <h1 class="page-title">Calls</h1>
           <div class="header-actions">
-            <!-- Theme toggle removed; use global controller in App.vue -->
-              
+            <!-- Call button -->
+            <button class="btn btn--secondary btn--sm call-action-btn" @click="openPhoneModal">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right:6px">
+                <path d="M22 16.92V19C22 20.1046 21.1046 21 20 21C10.611 21 3 13.389 3 4C3 2.895 3.895 2 5 2H7.08C7.556 2 7.958 2.337 8.025 2.808L8.7 7.5C8.767 7.97 8.537 8.43 8.12 8.67L6.5 9.5C7.84 12.16 11.84 16.16 14.5 17.5L15.33 15.88C15.57 15.463 16.03 15.233 16.5 15.3L21.192 16.025C21.663 16.092 22 16.494 22 16.97V16.92Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              New Call
+            </button>
+            <button class="btn btn--secondary btn--sm" @click="simulateInbound">Simulate Inbound</button>
           </div>
         </div>
 
@@ -1722,11 +1728,85 @@
         </button>
       </div>
     </div>
+
+    <!-- Phone Modal (iOS style) -->
+    <div v-if="showPhoneModal" class="modal-overlay" :style="minimizedPhone ? 'pointer-events:none;background:transparent;' : ''" @click.self="closePhoneModal">
+      <div class="phone-modal" :class="{ minimized: minimizedPhone }" @click.stop>
+        <div class="notch" v-if="!minimizedPhone"></div>
+        <div class="phone-header">
+          <div class="status-bar">New Call</div>
+          <button class="modal-close" @click="closePhoneModal">×</button>
+        </div>
+        <div class="phone-content">
+          <input
+           class="number-display-input"
+           type="tel"
+           v-model="dialNumber"
+           :placeholder="placeholderNumber"
+           ref="dialInputRef"
+           @input="onDialInput"
+           inputmode="tel"
+           autocomplete="off"
+         />
+          <div class="dialpad">
+            <button v-for="key in dialpadKeys" :key="key" class="dialpad-key" @click="tapKey(key)">{{ key }}</button>
+          </div>
+          <div class="phone-actions">
+            <button class="phone-btn call" @click="startPhoneCall" :disabled="isCalling || !dialNumber">Call</button>
+            <button class="phone-btn clear" @click="backspaceDial">⌫</button>
+            <button class="phone-btn answer" v-if="incomingCall && !isInCall" @click="answerPhoneCall">Answer</button>
+            <button class="phone-btn end" v-if="isInCall" @click="endPhoneCall">End</button>
+            <button class="phone-btn clear" @click="clearDial">Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Continue or Dispose Prompt -->
+    <div v-if="showContinueDispose" class="modal-overlay" @click.self="showContinueDispose=false">
+      <div class="continue-dispose" @click.stop>
+        <div class="prompt-title">Continue with call?</div>
+        <div class="prompt-actions">
+          <button class="btn btn--secondary btn--sm" @click="createCaseFromCall">Create Case</button>
+          <button class="btn btn--primary btn--sm" @click="disposeCall">Dispose Call</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Disposition Form -->
+    <div v-if="showDispositionForm" class="modal-overlay" @click.self="cancelDisposition">
+      <div class="disposition-modal" @click.stop>
+        <div class="modal-header-row">
+          <div class="modal-title">Call Disposition</div>
+          <button class="modal-close" @click="cancelDisposition">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Reason</label>
+            <select v-model="phoneDisposition.reason" class="form-control">
+              <option>Call Completed</option>
+              <option>Not Interested</option>
+              <option>Wrong Number</option>
+              <option>Callback Requested</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="form-group" v-if="phoneDisposition.reason==='Other'">
+            <label class="form-label">Details</label>
+            <textarea v-model="phoneDisposition.details" class="form-control" rows="3" placeholder="Add more details"></textarea>
+          </div>
+        </div>
+        <div class="modal-actions-row">
+          <button class="btn btn--secondary" @click="cancelDisposition">Cancel</button>
+          <button class="btn btn--primary" @click="submitPhoneDisposition">Submit</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, nextTick } from "vue";
 import { useRouter } from "vue-router";
 import SidePanel from "@/components/SidePanel.vue";
 import { useCallStore } from "@/stores/calls";
@@ -2808,6 +2888,148 @@ onUnmounted(() => {
     ringingStartTime.value = null;
   }
 });
+
+// Phone modal state and logic
+const showPhoneModal = ref(false);
+const dialNumber = ref("");
+const placeholderNumber = "Enter phone number";
+const incomingCall = ref(false);
+const isCalling = ref(false);
+const isInCall = ref(false);
+const showContinueDispose = ref(false);
+const showDispositionForm = ref(false);
+const phoneDisposition = ref({ reason: "Call Completed", details: "" });
+let continueTimer = null;
+
+const dialpadKeys = ["1","2","3","4","5","6","7","8","9","*","0","#"];
+
+const dialInputRef = ref(null);
+
+function openPhoneModal(){
+  showPhoneModal.value = true;
+  nextTick(()=>{ if (dialInputRef.value) dialInputRef.value.focus(); });
+}
+
+function closePhoneModal(){ showPhoneModal.value = false; resetPhoneState(); }
+
+function tapKey(key){
+  dialNumber.value = (dialNumber.value || "") + key;
+}
+
+function backspaceDial(){
+  dialNumber.value = (dialNumber.value || "").slice(0, -1);
+}
+
+function clearDial(){ dialNumber.value = ""; }
+
+function startPhoneCall(){
+  if (!dialNumber.value) return;
+  incomingCall.value = false;
+  isCalling.value = true;
+  setTimeout(()=>{ // simulate connect
+    isCalling.value = false;
+    isInCall.value = true;
+    if (continueTimer) clearTimeout(continueTimer);
+    continueTimer = setTimeout(()=>{ showContinueDispose.value = true; }, 5000);
+  }, 800);
+}
+
+function answerPhoneCall(){
+  incomingCall.value = false;
+  isInCall.value = true;
+  if (continueTimer) clearTimeout(continueTimer);
+  continueTimer = setTimeout(()=>{ showContinueDispose.value = true; }, 5000);
+}
+
+function endPhoneCall(){
+  isInCall.value = false;
+  isCalling.value = false;
+  if (continueTimer) clearTimeout(continueTimer);
+}
+
+// Dev-only: simulate inbound call
+function simulateInbound(){
+  incomingCall.value = true;
+  dialNumber.value = "+255 700 123 456";
+  // show ringing interface first, then allow Answer to open the modal
+  ringingCall.value = {
+    type: 'Incoming Call',
+    priority: 'high',
+    callerName: 'Unknown',
+    number: dialNumber.value
+  };
+  showRingingInterface.value = true;
+  ringingStartTime.value = new Date();
+  startRingingTimer();
+}
+
+function continueCall(){
+  showContinueDispose.value = false;
+}
+
+function disposeCall(){
+  showContinueDispose.value = false;
+  endCall();
+  showDispositionForm.value = true;
+}
+
+function cancelDisposition(){
+  showDispositionForm.value = false;
+}
+
+function submitPhoneDisposition(){
+  // Placeholder for submission; integrate with backend later
+  showDispositionForm.value = false;
+  resetPhoneState();
+}
+
+function resetPhoneState(){
+  dialNumber.value = "";
+  incomingCall.value = false;
+  isCalling.value = false;
+  isInCall.value = false;
+  showContinueDispose.value = false;
+  if (continueTimer) clearTimeout(continueTimer);
+}
+
+function sanitizeDialInput(){
+  dialNumber.value = (dialNumber.value || '').replace(/[^0-9*#+\s]/g, '');
+}
+
+function onDialInput(e){
+  const raw = e?.target?.value ?? dialNumber.value ?? "";
+  dialNumber.value = String(raw).replace(/[^0-9*#+\s]/g, "");
+}
+
+function handleGlobalKeydown(e){
+  if (!showPhoneModal.value) return;
+  const key = e.key;
+  if (/^[0-9*#]$/.test(key)) {
+    dialNumber.value = (dialNumber.value || "") + key;
+    e.preventDefault();
+    return;
+  }
+  if (key === 'Backspace') { backspaceDial(); e.preventDefault(); return; }
+  if (key === 'Enter') { if (dialNumber.value) startPhoneCall(); e.preventDefault(); return; }
+}
+
+onMounted(()=>{ window.addEventListener('keydown', handleGlobalKeydown); });
+onUnmounted(()=>{ window.removeEventListener('keydown', handleGlobalKeydown); });
+
+function createCaseFromCall(){
+  showContinueDispose.value = false;
+  minimizedPhone.value = true;
+  const payload = {
+    number: dialNumber.value,
+    startedAt: Date.now(),
+    state: 'in_call'
+  };
+  try { localStorage.setItem('ongoingCall', JSON.stringify(payload)); } catch(e) {}
+  router.push({ name: 'CaseCreation' }).catch(()=>{});
+}
+
+const minimizedPhone = ref(false);
+
 </script>
 
 <style scoped>
@@ -5092,4 +5314,72 @@ body.dark .queue-section *,
   color: var(--danger-color) !important;
   font-weight: 700;
 }
+
+/* Phone modal and disposition styles */
+.call-action-btn { display:flex; align-items:center; }
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  backdrop-filter: saturate(120%) blur(1.5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.phone-modal {
+  width: 360px;
+  background: #ffffff;
+  border: 2px solid rgba(17, 24, 39, 0.08); /* clear, visible border */
+  border-radius: 28px; /* iOS-style rounded card */
+  box-shadow: 0 12px 28px rgba(17, 24, 39, 0.12);
+  overflow: hidden;
+  animation: pop-in 180ms ease-out;
+}
+.phone-header { position: relative; padding: 12px 16px; background: #ffffff; border-bottom: 1px solid rgba(17, 24, 39, 0.06); }
+.phone-header .status-bar { font-weight: 700; color: #111827; }
+.phone-header .modal-close { position:absolute; right:10px; top:8px; border:none; background:transparent; font-size:22px; line-height:1; cursor:pointer; color: #6B7280; }
+.phone-content { padding: 16px; background: #ffffff; }
+.number-display { text-align:center; font-size:18px; letter-spacing:1px; margin-bottom:12px; color: #111827; }
+.dialpad { display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin-bottom:16px; }
+.dialpad-key { height:56px; border-radius:16px; border: 1.5px solid rgba(17, 24, 39, 0.08); background: #F9FAFB; color: #111827; font-size:18px; font-weight:600; transition: background 0.15s ease, transform 0.05s ease; }
+.dialpad-key:active { transform: scale(0.98); background:#F3F4F6; }
+.phone-actions { display:flex; gap:10px; justify-content:center; }
+.phone-btn { border:none; padding:10px 16px; border-radius:18px; font-weight:700; cursor:pointer; }
+.phone-btn.call { background: var(--color-primary, #8b4513); color:#fff; }
+.phone-btn.answer { background: var(--accent-color, #10B981); color:#fff; }
+.phone-btn.end { background: #991B1B; color:#fff; }
+.phone-btn.clear { background: #ffffff; color: #111827; border:1.5px solid rgba(17,24,39,0.12); }
+
+/* Minimized state remains but with crisp border */
+.phone-modal.minimized { width: 260px; border-radius: 18px; position: fixed; top: 12px; right: 16px; z-index: 1100; padding-bottom: 8px; border: 1.5px solid rgba(17,24,39,0.12); box-shadow: 0 8px 18px rgba(17,24,39,0.12); }
+.phone-modal.minimized .dialpad, .phone-modal.minimized .phone-actions { display: none; }
+.phone-modal.minimized .phone-content { padding: 10px 12px; }
+
+/* Input matches iOS card aesthetics */
+.number-display-input { width:100%; text-align:center; font-size:18px; letter-spacing:1px; margin:0 0 12px; color:#111827; background: #F9FAFB; border: 1.5px solid rgba(17,24,39,0.12); border-radius:14px; padding:10px 12px; outline:none; }
+.number-display-input::placeholder { color:#9CA3AF; }
+
+.continue-dispose { width: 360px; background: var(--content-bg); border:1px solid var(--border-color); border-radius:16px; padding:16px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); animation: pop-in 180ms ease-out; }
+.prompt-title { font-weight:800; margin-bottom:12px; }
+.prompt-actions { display:flex; justify-content:flex-end; gap:8px; }
+
+.disposition-modal { width: 520px; background: var(--content-bg); border:1px solid var(--border-color); border-radius:16px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); animation: pop-in 180ms ease-out; }
+.modal-header-row { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--border-color); }
+.modal-title { font-weight:800; }
+.modal-body { padding:16px; }
+.modal-actions-row { display:flex; justify-content:flex-end; gap:8px; padding:12px 16px; border-top:1px solid var(--border-color); }
+
+@keyframes pop-in { from { transform: translateY(8px) scale(0.98); opacity:0; } to { transform: translateY(0) scale(1); opacity:1; } }
+
+.number-display-input { width:100%; text-align:center; font-size:18px; letter-spacing:1px; margin:0 0 12px; color: var(--text-color); background: transparent; border:1px dashed var(--border-color); border-radius:12px; padding:8px 10px; outline:none; }
+.number-display-input::placeholder { color: var(--text-secondary); }
+
+.modal-overlay { pointer-events: all; }
+.phone-modal, .continue-dispose, .disposition-modal { pointer-events: auto; z-index: 1001; }
+
+.phone-modal.minimized { width: 260px; border-radius: 12px; position: fixed; top: 12px; right: 16px; z-index: 1100; padding-bottom: 8px; }
+.phone-modal.minimized .dialpad, .phone-modal.minimized .phone-actions { display: none; }
+.phone-modal.minimized .phone-content { padding: 8px 12px; }
+
 </style>
