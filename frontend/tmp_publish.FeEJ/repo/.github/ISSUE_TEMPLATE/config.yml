@@ -1,0 +1,35 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🙋‍♂️ Community Support
+    url: https://github.com/openchlai/ai/discussions
+    about: Support for the community
+issue_templates:
+  - name: "🐛 Bug Report"
+    description: "Report a reproducible bug or problem"
+    file: .github/ISSUE_TEMPLATE/bug_report.md
+    labels: ["bug"]
+
+  - name: "✨ Feature Request"
+    description: "Suggest a new feature or improvement"
+    file: .github/ISSUE_TEMPLATE/feature_request.md
+    labels: ["enhancement"]
+
+  - name: "📋 Agile Backlog Item"
+    description: "Add a new backlog item to track work"
+    file: .github/ISSUE_TEMPLATE/agile_backlog_item.md
+    labels: ["backlog"]
+
+  - name: "🙋 Good First Issue"
+    description: "Beginner-friendly issue for new contributors"
+    file: .github/ISSUE_TEMPLATE/good_first_issue.md
+    labels: ["good first issue", "help wanted"]
+
+  - name: "❓ Question"
+    description: "Ask a question about the project"
+    file: .github/ISSUE_TEMPLATE/question.md
+    labels: ["question"]
+
+  - name: "⚙️ Custom"
+    description: "Custom template for special cases"
+    file: .github/ISSUE_TEMPLATE/custom.md
+

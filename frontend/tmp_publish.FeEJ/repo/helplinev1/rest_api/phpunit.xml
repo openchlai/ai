@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.5/phpunit.xsd"
+         bootstrap="tests/bootstrap.php"
+         cacheResultFile=".phpunit.result.cache"
+         executionOrder="depends,defects"
+         forceCoversAnnotation="false"
+         beStrictAboutCoversAnnotation="false"
+         beStrictAboutOutputDuringTests="false"
+         beStrictAboutTodoAnnotatedTests="false"
+         convertDeprecationsToExceptions="false"
+
+         failOnEmptyTestSuite="true"
+         convertErrorsToExceptions="false"
+         convertNoticesToExceptions="false"
+         convertWarningsToExceptions="false"
+         processIsolation="false"
+         stopOnFailure="false">
+    <testsuites>
+        <testsuite name="Unit">
+            <directory suffix="Test.php">./tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Integration">
+            <directory suffix="Test.php">./tests/Integration</directory>
+        </testsuite>
+    </testsuites>
+    
+    <coverage processUncoveredFiles="true">
+        <include>
+            <directory suffix=".php">./api</directory>
+            <directory suffix=".php">./lib</directory>
+        </include>
+        <exclude>
+            <file>./config.php</file>
+            <directory>./tests</directory>
+        </exclude>
+        <report>
+            <html outputDirectory="coverage-html"/>
+            <text outputFile="coverage.txt"/>
+            <clover outputFile="coverage.xml"/>
+        </report>
+    </coverage>
+    
+    <logging>
+        <junit outputFile="test-results.xml"/>
+    </logging>
+</phpunit>
