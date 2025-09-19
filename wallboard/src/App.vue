@@ -272,12 +272,12 @@ export default {
 
     // Highly-visible cases tiles (dummy data)
     const casesTiles = ref([
-      { id: 'ct1', label: "TODAY'S RESPONSIVE CALLS", value: null, variant: 'c-blue' },
+      { id: 'ct1', label: "TODAY'S ANSWERED CALLS", value: null, variant: 'c-blue' },
       { id: 'ct2', label: "TODAY'S CASES", value: '29', variant: 'c-amber' },
       { id: 'ct3', label: 'ONGOING CASES', value: '2425', variant: 'c-red' },
       { id: 'ct4', label: 'MONTH CLOSED CASES', value: '60897', variant: 'c-green' },
-      { id: 'ct5', label: 'RESPONSIVE CALLS', value: null, variant: 'c-black' },
-      { id: 'ct6', label: 'NON RESPONSIVE CALLS', value: null, variant: 'c-black' }
+      { id: 'ct5', label: 'ANSWERED CALLS', value: null, variant: 'c-black' },
+      { id: 'ct6', label: 'UNANSWERED CALLS', value: null, variant: 'c-black' }
     ])
 
     // Filters
