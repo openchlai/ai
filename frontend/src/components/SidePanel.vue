@@ -1,19 +1,7 @@
 <template>
   <div>
-    <!-- Mobile Menu Button -->
-    <button class="mobile-menu-btn" id="mobile-menu-btn" @click="toggleMobileMenu">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
-
-    <!-- Sidebar -->
-    <div class="sidebar glass-panel fine-border" :class="{ collapsed: isSidebarCollapsed, 'mobile-open': mobileOpen }" id="sidebar">
-      <div class="toggle-btn" @click="toggleSidebar">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </div>
+    <!-- Sidebar (static) -->
+    <div class="sidebar glass-panel fine-border" id="sidebar">
 
       <div class="sidebar-content">
         <div class="sidepanel-coatofarms">
@@ -153,11 +141,7 @@
       </div>
     </div>
 
-    <button class="expand-btn" @click="expandSidebar" id="expand-btn">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
+    
   </div>
 </template>
 
@@ -192,13 +176,10 @@ const props = defineProps({
 // Emits
 const emit = defineEmits([
   'toggle-queue',
-  'logout',
-  'sidebar-toggle'
+  'logout'
 ])
 
-// Local state
-const isSidebarCollapsed = ref(false)
-const mobileOpen = ref(false)
+// Local state (static sidebar - no collapse/mobile menu)
 
 // Computed properties
 const queueStatus = computed(() => {
@@ -214,20 +195,7 @@ const queueButtonText = computed(() => {
   return props.isInQueue ? 'Leave Queue' : 'Join Queue'
 })
 
-// Methods
-const toggleSidebar = () => {
-  isSidebarCollapsed.value = !isSidebarCollapsed.value
-  emit('sidebar-toggle', isSidebarCollapsed.value)
-}
-
-const expandSidebar = () => {
-  isSidebarCollapsed.value = false
-  emit('sidebar-toggle', isSidebarCollapsed.value)
-}
-
-const toggleMobileMenu = () => {
-  mobileOpen.value = !mobileOpen.value
-}
+// Methods (no sidebar collapse/mobile toggles)
 
 const handleQueueToggle = () => {
   // Simply emit to parent component - let parent handle notifications and SIP logic
@@ -238,13 +206,8 @@ const handleLogout = () => {
   emit('logout')
 }
 
-// Close mobile menu after navigation
 onMounted(() => {
-  router.afterEach(() => {
-    if (window.innerWidth <= 1024) {
-      mobileOpen.value = false
-    }
-  })
+  // No sidebar toggling; sidebar remains static
 })
 </script>
 
@@ -303,67 +266,7 @@ onMounted(() => {
   border-top: none;
 }
 
-.toggle-btn {
-  position: absolute;
-  top: 50px;
-  right: -15px;
-  width: 30px;
-  height: 30px;
-  background-color: #ffffff;
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  z-index: 10;
-  border: none;
-  color: #333333;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  transition: all 0.3s ease;
-}
-
-.toggle-btn:hover {
-  transform: scale(1.1);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-}
-
-.expand-btn {
-  position: fixed;
-  top: 50px;
-  left: 5px;
-  width: 30px;
-  height: 30px;
-  background-color: #ffffff;
-  border-radius: 50%;
-  display: none;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  z-index: 101;
-  border: none;
-  color: #333333;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  transition: all 0.3s ease;
-}
-
-.expand-btn:hover {
-  transform: scale(1.1);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-}
-
-.sidebar.collapsed ~ .expand-btn {
-  display: flex;
-}
-
-.sidebar.collapsed {
-  width: 20px;
-  transform: translateX(-230px);
-}
-
-.sidebar.collapsed .sidebar-content {
-  opacity: 0;
-  pointer-events: none;
-}
+/* Removed collapse/expand controls for static sidebar */
 
 .logo-container {
   display: flex;
@@ -574,28 +477,7 @@ onMounted(() => {
   transform: translateY(-1px);
 }
 
-.mobile-menu-btn {
-  display: none;
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  width: 40px;
-  height: 40px;
-  background-color: var(--content-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 50%;
-  color: var(--text-color);
-  cursor: pointer;
-  z-index: 102;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-}
-
-.mobile-menu-btn:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
+/* Removed mobile menu button styles */
 
 /* Responsive Design */
 @media (max-width: 1200px) {
@@ -604,26 +486,13 @@ onMounted(() => {
   }
 }
 @media (max-width: 1024px) {
-  .mobile-menu-btn {
-    display: flex;
-  }
   .sidebar {
     position: fixed;
-    left: -250px;
+    left: 0;
     top: 0;
     height: 100vh;
     z-index: 200;
     width: 250px;
-    transform: translateX(-100%);
-    transition: transform 0.3s;
-  }
-  .sidebar.mobile-open {
-    transform: translateX(0);
-    left: 0;
-  }
-  .main-content {
-    margin-left: 0 !important;
-    width: 100vw !important;
   }
 }
 @media (max-width: 900px) {
@@ -633,32 +502,14 @@ onMounted(() => {
 }
 @media (max-width: 768px) {
   .sidebar {
-    width: 100vw;
-    left: -100vw;
-  }
-  .sidebar.mobile-open {
     left: 0;
     width: 100vw;
-  }
-  .main-content {
-    margin-left: 0 !important;
-    width: 100vw !important;
-    padding: 10px 2vw;
   }
 }
 @media (max-width: 480px) {
   .sidebar {
-    width: 100vw;
-    left: -100vw;
-  }
-  .sidebar.mobile-open {
     left: 0;
     width: 100vw;
-  }
-  .main-content {
-    margin-left: 0 !important;
-    width: 100vw !important;
-    padding: 6px 1vw;
   }
 }
 

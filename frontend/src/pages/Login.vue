@@ -746,35 +746,8 @@ export default {
 };
 </script>
 <style>
-@font-face {
-  font-family: 'Lequire';
-  src: url('@/assets/fonts/Lequire.otf') format('opentype');
-  font-weight: normal;
-  font-style: normal;
-}
-.openchs-lequire {
-  font-family: 'Lequire', sans-serif !important;
-  letter-spacing: 0.04em;
-  font-weight: normal;
-}
-.openchs-kenya-flag {
-  background: linear-gradient(
-    to right,
-    #000 0%, #000 33%,      /* Black */
-    #bc0103 33%, #bc0103 66%, /* Red */
-    #006817 66%, #006817 100% /* Green */
-  );
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  color: transparent;
-  font-family: 'Lequire', sans-serif !important;
-  letter-spacing: 0.04em;
-}
+@import url("@/styles/login.css");
 </style>
-
-<style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 * {
   margin: 0;
   padding: 0;

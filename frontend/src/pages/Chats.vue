@@ -707,7 +707,8 @@ onMounted(async () => {
 });
 </script>
 
-<style scoped>
+<style>
+@import url("@/styles/chats.css");
 /* Main content layout with SidePanel */
 .main-content {
   margin-left: 280px;
