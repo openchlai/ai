@@ -1,5 +1,5 @@
 /* QA Statistics styles extracted from QAStatistics.vue */
-.qa-statistics-container { transition: margin-left 0.3s, width 0.3s; margin-left:250px; width:calc(100% - 250px); min-height:100vh; background: var(--background-color); display:flex; flex-direction:column; overflow-y:auto; height:100vh; }
+.qa-statistics-container { transition: margin-left 0.3s, width 0.3s; margin-left:var(--sidebar-width); width:calc(100% - var(--sidebar-width)); min-height:100vh; background: var(--background-color); display:flex; flex-direction:column; overflow-y:auto; height:100vh; }
 .qa-statistics-container.sidebar-collapsed { margin-left:20px; width:calc(100% - 20px); }
 .header { display:flex; align-items:center; justify-content:space-between; padding:2rem 2.5rem 1.5rem; background:transparent; border-bottom:1px solid var(--border-color); position:sticky; top:0; z-index:10; }
 .page-title { font-size:2rem; font-weight:800; color: var(--text-color); letter-spacing:1px; }
