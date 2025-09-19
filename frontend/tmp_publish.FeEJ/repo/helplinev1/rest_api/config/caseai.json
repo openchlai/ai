@@ -1,0 +1,58 @@
+{ 
+
+"case_summary": "The case involves a 17-year-old girl being mistreated by her father and denied human rights. She has attempted suicide multiple times, recently causing an accident due to her anger, and is currently hospitalized.",
+
+"named_entities": 
+{    
+"persons": ["girl", "father"], 
+"organizations": ["Human Rights Commission", "Mr. Mugisha"],  
+"locations": [],
+"dates": [],  
+"contact_information": []  
+},
+
+"classification": 
+{    
+"category": ["Psychological distress", "Workplace abuse"],    
+"interventions_needed": ["Mental health support", "Legal aid", "Safety planning", "Housing assistance"],    
+"priority_level": "high"
+},
+
+"case_management": 
+{    
+
+"safety_planning": 
+{      
+"immediate_actions": ["Ensure the girl's immediate safety in the hospital.", "Arrange for a secure location away from the father."],    
+"long_term_measures": ["Develop a safety plan with the girl, considering her preferences and cultural background."]
+},
+
+"psychosocial_support": 
+{      
+"short_term": ["Provide crisis counseling for the girl.", "Connect her to a mental health professional."],    
+"long_term": ["Offer ongoing psychotherapy to address trauma, improve coping skills, and promote resilience."]    
+},
+
+"legal_protocols": 
+{
+"applicable_laws": ["Children's Act, 2009 (Tanzania)"],      
+"required_documents": ["Medical reports", "Statement from the girl detailing experiences of abuse."],      
+"authorities_to_contact": ["Police", "Child Welfare Department"]    
+},
+
+"medical_protocols": 
+{      
+"immediate_needs": ["Treat injuries sustained in the car accident.", "Monitor and manage suicidal ideation."],    
+"follow_up_care": ["Arrange for regular check-ups with a psychiatrist or mental health professional."]
+}  
+},  
+
+"risk_assessment": 
+{    
+"red_flags": ["Multiple suicide attempts", "Father's history of bribing authorities.", "Threat to the girl's physical safety."],  
+"potential_barriers": ["Stigma surrounding mental health and abuse.", "The father's control over communication."],
+"protective_factors": ["Strong friendship with the caller.", "Access to resources in Tanzania."]
+},  
+
+"cultural_considerations": ["Respect for cultural norms and beliefs, involving community elders or traditional healers where appropriate.", "Ensure confidentiality and maintain trust with the girl, taking into account potential language barriers or cultural nuances."]
+}
