@@ -65,9 +65,6 @@ body {
 }
 
 .side-panel { 
-  flex: 0 0 80px; 
-  min-width: 60px; 
-  max-width: 100px; 
   position: relative; 
   display: flex; 
   flex-direction: column; 
@@ -75,6 +72,17 @@ body {
   align-items: stretch; 
   background: transparent; 
   overflow: hidden; 
+}
+
+.left-panel { 
+  flex: 0 0 40px; 
+  min-width: 30px; 
+  max-width: 50px; 
+}
+
+.right-panel { 
+  flex: 0 0 45%; 
+  min-width: 300px; 
 }
 
 .left-panel { 
@@ -106,7 +114,7 @@ body {
 .center-panel::-webkit-scrollbar { 
   display: none; 
 }
-/* Kenyan flag-inspired vertical panel */
+/* Thin Kenyan flag-inspired vertical panel (left) */
 .flag-panel { 
   width: 100%; 
   height: 100%; 
@@ -115,6 +123,18 @@ body {
   border-radius: 20px 0 0 20px; 
   overflow: hidden; 
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1); 
+}
+
+/* Large Kenyan flag visual panel (right) */
+.flag-visual-panel { 
+  width: 100%; 
+  height: 100%; 
+  display: flex; 
+  flex-direction: column; 
+  border-radius: 0 20px 20px 0; 
+  overflow: hidden; 
+  margin: 24px; 
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.1); 
 }
 
 .flag-segment { 
@@ -787,15 +807,40 @@ body {
 .social-btn{ width:42px; height:42px; border-radius:50%; border:1px solid #e5e5ea; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.06); cursor:pointer; font-size:18px; font-weight:700; display:flex; align-items:center; justify-content:center; transition:all .2s ease; }
 .social-btn:hover{ transform:translateY(-2px); box-shadow:0 6px 14px rgba(0,0,0,0.12); }
 
-/* Responsive adjustments for flag panel */
+/* Responsive adjustments for flag panels */
 @media (max-width: 900px) { 
   .left-panel { 
-    flex: 0 0 60px; 
-    min-width: 40px; 
+    flex: 0 0 20px; 
+    min-width: 0; 
   } 
   
+  .right-panel { 
+    flex: 0 0 20px; 
+    min-width: 0; 
+  }
+  
   .flag-panel { 
-    border-radius: 20px 0 0 20px; 
+    height: 20px; 
+    flex-direction: row; 
+    border-radius: 20px 20px 0 0; 
+  } 
+  
+  .flag-visual-panel { 
+    height: 20px; 
+    flex-direction: row; 
+    border-radius: 0 0 20px 20px; 
+    margin: 0; 
+  }
+  
+  .flag-segment { 
+    width: 20%; 
+    height: 100%; 
+    flex: 1; 
+  } 
+  
+  .flag-segment.white { 
+    width: 2px; 
+    flex: 0 0 2px; 
   } 
 }
 /* Apple-style responsive design */
@@ -808,35 +853,9 @@ body {
     margin: 1rem;
   } 
   
-  .left-panel { 
-    flex: 0 0 20px; 
-    min-width: 0; 
-  } 
-  
-  .flag-panel { 
-    height: 20px; 
-    flex-direction: row; 
-    border-radius: 20px 20px 0 0; 
-  } 
-  
-  .flag-segment { 
-    width: 20%; 
-    height: 100%; 
-    flex: 1; 
-  } 
-  
-  .flag-segment.white { 
-    width: 2px; 
-    flex: 0 0 2px; 
-  } 
-  
   .form-section { 
     min-width: 0; 
     padding: 40px 20px;
-  } 
-  
-  .right-panel { 
-    display: none;
   } 
 }
 

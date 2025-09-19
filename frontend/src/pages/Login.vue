@@ -261,8 +261,14 @@
         </div>
       </div>
       <div class="side-panel right-panel">
-        <!-- subtle pattern background -->
-        <div class="pattern-bg pattern-bg-right"></div>
+        <!-- Kenyan flag-inspired visual panel -->
+        <div class="flag-visual-panel">
+          <div class="flag-segment black"></div>
+          <div class="flag-segment white"></div>
+          <div class="flag-segment red"></div>
+          <div class="flag-segment white"></div>
+          <div class="flag-segment green"></div>
+        </div>
       </div>
     </div>
   </div>
