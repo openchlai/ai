@@ -131,7 +131,7 @@ body {
   height: 100%; 
   border-radius: 0 24px 24px 0; 
   overflow: hidden; 
-  margin: 24px; 
+  margin: 16px 24px 24px 24px; 
   background-size: contain; 
   background-position: center; 
   background-repeat: no-repeat; 
@@ -199,6 +199,7 @@ body {
   align-items: center; 
   justify-content: center; 
   margin-bottom: 3rem; 
+  margin-top: 0.75rem;
   gap: 1.75rem; 
 }
 
@@ -206,7 +207,7 @@ body {
   display: flex; 
   flex-direction: column; 
   align-items: center; 
-  gap: 0.5rem; 
+  gap: 0.25rem; 
 }
 
 .step-number { 
@@ -233,8 +234,8 @@ body {
 
 .step.active .step-number::after {
   content: "";
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   background: #1d1d1f;
   border-radius: 50%;
   position: absolute;
