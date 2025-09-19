@@ -131,8 +131,8 @@ body {
   height: 100%; 
   border-radius: 0 24px 24px 0; 
   overflow: hidden; 
-  margin: 16px 24px 24px 24px; 
-  background-size: contain; 
+  margin: 0; 
+  background-size: cover; 
   background-position: center; 
   background-repeat: no-repeat; 
   background-color: #f8f9fa;
