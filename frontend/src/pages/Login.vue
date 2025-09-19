@@ -276,7 +276,7 @@ import { useRouter, useRoute } from 'vue-router'
 export default {
   setup() {
     // Use the added login photo in assets by default; env can override
-    const defaultCover = new URL('../assets/images/login photo.png', import.meta.url).href
+    const defaultCover = new URL('../assets/images/login photo.jpg', import.meta.url).href
     const coverUrl = import.meta.env.VITE_LOGIN_COVER || defaultCover
     const router = useRouter();
     const route = useRoute();
