@@ -261,14 +261,8 @@
         </div>
       </div>
       <div class="side-panel right-panel">
-        <!-- Kenyan flag-inspired visual panel -->
-        <div class="flag-visual-panel">
-          <div class="flag-segment black"></div>
-          <div class="flag-segment white"></div>
-          <div class="flag-segment red"></div>
-          <div class="flag-segment white"></div>
-          <div class="flag-segment green"></div>
-        </div>
+        <!-- Cover photo visual panel -->
+        <div class="cover-panel" :style="{ backgroundImage: `url('${coverUrl}')` }" aria-hidden="true"></div>
       </div>
     </div>
   </div>
@@ -281,6 +275,7 @@ import { useRouter, useRoute } from 'vue-router'
 
 export default {
   setup() {
+    const coverUrl = import.meta.env.VITE_LOGIN_COVER || '/placeholder.svg'
     const router = useRouter();
     const route = useRoute();
 
@@ -748,6 +743,7 @@ export default {
       handleHelp,
       sipConnectionDetails,
       config, // Expose config if needed in template
+      coverUrl,
     };
   }
 };
