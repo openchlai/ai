@@ -20,7 +20,7 @@
 }
 
 body { 
-  background-color: #1e3a8a; /* deep blue page background like inspo */
+  background-color: #ffffff; /* white page background */
   line-height: 1.5;
   color: #1d1d1f;
 }
@@ -49,25 +49,25 @@ body {
   align-items: center; 
   min-height: 100vh; 
   width: 100vw; 
-  background: #1e3a8a; 
+  background: #ffffff; 
   padding: 2rem 1rem;
 }
 
 .login-container { 
   display: flex; 
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.25); 
-  border-radius: 28px; 
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08), 0 8px 16px rgba(0, 0, 0, 0.04); 
+  border-radius: 20px; 
   background: #ffffff; 
   overflow: hidden; 
-  max-width: 1200px;
+  max-width: 1000px;
   width: 100%;
   min-height: 600px;
 }
 
 .side-panel { 
-  flex: 0 0 120px; 
-  min-width: 100px; 
-  max-width: 140px; 
+  flex: 0 0 80px; 
+  min-width: 60px; 
+  max-width: 100px; 
   position: relative; 
   display: flex; 
   flex-direction: column; 
@@ -106,61 +106,51 @@ body {
 .center-panel::-webkit-scrollbar { 
   display: none; 
 }
-/* Apple-style subtle patterns and flag design */
-.pattern-bg { 
-  position: absolute; 
-  inset: 0; 
-  z-index: 1; 
-  background: repeating-linear-gradient(135deg, rgba(0,0,0,0.02) 0 8px, transparent 8px 24px), 
-              repeating-linear-gradient(-135deg, rgba(0,0,0,0.02) 0 8px, transparent 8px 24px), 
-              linear-gradient(90deg, #fff 0%, rgba(248,249,250,0.5) 100%); 
-  background-size: 32px 32px, 32px 32px, 100% 100%; 
-  background-position: 0 0, 16px 16px, 0 0; 
-  opacity: 0.6; 
-  pointer-events: none; 
-  filter: none; 
-}
-
-.flag-strip { 
-  width: 36px; 
-  min-width: 36px; 
+/* Kenyan flag-inspired vertical panel */
+.flag-panel { 
+  width: 100%; 
   height: 100%; 
   display: flex; 
   flex-direction: column; 
-  position: absolute; 
-  left: 0; 
-  top: 0; 
-  z-index: 2; 
-}
-
-.right-flag-bar { 
-  left: auto; 
-  right: 0; 
+  border-radius: 20px 0 0 20px; 
+  overflow: hidden; 
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1); 
 }
 
 .flag-segment { 
   width: 100%; 
-  height: 20%; 
+  flex: 1; 
+  position: relative; 
 }
 
 .flag-segment.black { 
-  background: #000; 
-  height: 32%; 
+  background: #000000; 
 }
 
 .flag-segment.white { 
-  background: #fff; 
-  height: 4%; 
+  background: #ffffff; 
+  height: 2px; 
+  flex: 0 0 2px; 
 }
 
 .flag-segment.red { 
   background: #bc0103; 
-  height: 28%; 
 }
 
 .flag-segment.green { 
   background: #1e7e34; 
-  height: 32%; 
+}
+
+/* Subtle pattern background for right panel */
+.pattern-bg { 
+  position: absolute; 
+  inset: 0; 
+  z-index: 1; 
+  background: repeating-linear-gradient(45deg, rgba(0,0,0,0.02) 0 4px, transparent 4px 8px), 
+              repeating-linear-gradient(-45deg, rgba(0,0,0,0.02) 0 4px, transparent 4px 8px); 
+  background-size: 16px 16px; 
+  opacity: 0.3; 
+  pointer-events: none; 
 }
 .welcome-section{ flex:1; min-width:350px; position:relative; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; padding:0; overflow:hidden; background:#f8f9fa; }
 .welcome-photo{ width:160px; height:160px; object-fit:contain; margin-bottom:1.5rem; z-index:5; }
@@ -797,10 +787,17 @@ body {
 .social-btn{ width:42px; height:42px; border-radius:50%; border:1px solid #e5e5ea; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.06); cursor:pointer; font-size:18px; font-weight:700; display:flex; align-items:center; justify-content:center; transition:all .2s ease; }
 .social-btn:hover{ transform:translateY(-2px); box-shadow:0 6px 14px rgba(0,0,0,0.12); }
 
-/* Hero panel on the right */
-.right-panel{ flex: 0 0 48%; max-width:48%; }
-.hero-panel{ flex:1; background: radial-gradient(1200px 600px at 80% -20%, #93c5fd 0%, transparent 60%), radial-gradient(600px 600px at -10% 110%, #1d4ed8 0%, transparent 60%), linear-gradient(180deg, #0b1220 0%, #0f172a 100%); border-radius: 24px; margin: 24px; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.06); }
-.left-panel{ flex:0 0 4%; max-width:4%; }
+/* Responsive adjustments for flag panel */
+@media (max-width: 900px) { 
+  .left-panel { 
+    flex: 0 0 60px; 
+    min-width: 40px; 
+  } 
+  
+  .flag-panel { 
+    border-radius: 20px 0 0 20px; 
+  } 
+}
 /* Apple-style responsive design */
 @media (max-width: 900px) { 
   .login-container { 
@@ -811,18 +808,26 @@ body {
     margin: 1rem;
   } 
   
-  .flag-strip { 
-    width: 100%; 
+  .left-panel { 
+    flex: 0 0 20px; 
     min-width: 0; 
-    height: 20px; 
-    border-radius: 20px 20px 0 0; 
-    background: linear-gradient(to right, #000 0 20%, #bc0103 20% 40%, #fff 40% 44%, #006817 44% 100%);
   } 
   
-  .welcome-section { 
-    min-width: 0; 
-    padding: 40px 20px; 
-    border-radius: 0 0 20px 20px;
+  .flag-panel { 
+    height: 20px; 
+    flex-direction: row; 
+    border-radius: 20px 20px 0 0; 
+  } 
+  
+  .flag-segment { 
+    width: 20%; 
+    height: 100%; 
+    flex: 1; 
+  } 
+  
+  .flag-segment.white { 
+    width: 2px; 
+    flex: 0 0 2px; 
   } 
   
   .form-section { 
@@ -830,7 +835,7 @@ body {
     padding: 40px 20px;
   } 
   
-  .right-flag-bar { 
+  .right-panel { 
     display: none;
   } 
 }

@@ -2,9 +2,14 @@
   <div class="login-outer-wrapper">
     <div class="login-container">
       <div class="side-panel left-panel">
-        <!-- decorative left rail hidden on desktop in new design -->
-        <div class="flag-strip left-flag"></div>
-        <div class="pattern-bg pattern-bg-left"></div>
+        <!-- Kenyan flag-inspired vertical panel -->
+        <div class="flag-panel">
+          <div class="flag-segment black"></div>
+          <div class="flag-segment white"></div>
+          <div class="flag-segment red"></div>
+          <div class="flag-segment white"></div>
+          <div class="flag-segment green"></div>
+        </div>
       </div>
       <div class="center-panel">
         <div class="form-section">
@@ -256,8 +261,8 @@
         </div>
       </div>
       <div class="side-panel right-panel">
-        <!-- hero visual panel -->
-        <div class="hero-panel" aria-hidden="true"></div>
+        <!-- subtle pattern background -->
+        <div class="pattern-bg pattern-bg-right"></div>
       </div>
     </div>
   </div>
