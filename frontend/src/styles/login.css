@@ -55,13 +55,13 @@ body {
 
 .login-container { 
   display: flex; 
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08), 0 8px 16px rgba(0, 0, 0, 0.04); 
-  border-radius: 20px; 
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15), 0 10px 20px rgba(0, 0, 0, 0.08); 
+  border-radius: 24px; 
   background: #ffffff; 
   overflow: hidden; 
-  max-width: 1000px;
+  max-width: 1200px;
   width: 100%;
-  min-height: 600px;
+  min-height: 700px;
 }
 
 .side-panel { 
@@ -75,24 +75,24 @@ body {
 }
 
 .left-panel { 
-  flex: 0 0 40px; 
-  min-width: 30px; 
-  max-width: 50px; 
+  flex: 0 0 50px; 
+  min-width: 40px; 
+  max-width: 60px; 
 }
 
 .right-panel { 
-  flex: 0 0 45%; 
-  min-width: 300px; 
+  flex: 0 0 50%; 
+  min-width: 400px; 
 }
 
 .left-panel { 
-  border-top-left-radius: 20px; 
-  border-bottom-left-radius: 20px; 
+  border-top-left-radius: 24px; 
+  border-bottom-left-radius: 24px; 
 }
 
 .right-panel { 
-  border-top-right-radius: 20px; 
-  border-bottom-right-radius: 20px; 
+  border-top-right-radius: 24px; 
+  border-bottom-right-radius: 24px; 
 }
 
 .center-panel { 
@@ -120,7 +120,7 @@ body {
   height: 100%; 
   display: flex; 
   flex-direction: column; 
-  border-radius: 20px 0 0 20px; 
+  border-radius: 24px 0 0 24px; 
   overflow: hidden; 
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1); 
 }
@@ -129,12 +129,13 @@ body {
 .cover-panel { 
   width: 100%; 
   height: 100%; 
-  border-radius: 0 20px 20px 0; 
+  border-radius: 0 24px 24px 0; 
   overflow: hidden; 
   margin: 24px; 
-  background-size: cover; 
+  background-size: contain; 
   background-position: center; 
   background-repeat: no-repeat; 
+  background-color: #f8f9fa;
   box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.06);
 }
 
