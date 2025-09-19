@@ -13,7 +13,7 @@
   margin: 0; 
   padding: 0; 
   box-sizing: border-box; 
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif; 
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif; 
   font-weight: 400; 
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -184,14 +184,15 @@ body {
 .form-title { 
   text-align: center; 
   font-size: 2.25rem; 
-  font-weight: 600; 
+  font-weight: 700; 
   margin-bottom: 2.5rem; 
   margin-top: 0; 
   letter-spacing: -0.02em;
   line-height: 1.2;
   color: #1d1d1f;
+  font-family: 'Inter', sans-serif;
 }
-.form-subtitle{ text-align:center; color:#8e8e93; margin-top:-2rem; margin-bottom:2rem; font-weight:500; }
+.form-subtitle{ text-align:center; color:#8e8e93; margin-top:-2rem; margin-bottom:2rem; font-weight:600; font-family: 'Inter', sans-serif; }
 
 .step-indicator { 
   display: flex; 
@@ -286,7 +287,7 @@ body {
   border: 1px solid rgba(255, 59, 48, 0.2); 
   color: #ff3b30; 
   padding: 16px 20px; 
-  border-radius: 12px; 
+  border-radius: 20px; 
   margin-bottom: 2rem; 
   font-size: 15px; 
   text-align: center; 
@@ -299,7 +300,7 @@ body {
   border: 1px solid rgba(52, 199, 89, 0.2); 
   color: #34c759; 
   padding: 16px 20px; 
-  border-radius: 12px; 
+  border-radius: 20px; 
   margin-bottom: 2rem; 
   font-size: 15px; 
   text-align: center; 
@@ -325,7 +326,7 @@ body {
   width: 100%; 
   padding: 16px 20px; 
   border: 2px solid #e5e5ea; 
-  border-radius: 12px; 
+  border-radius: 20px; 
   font-size: 16px; 
   color: #1d1d1f; 
   background: #ffffff; 
@@ -391,7 +392,7 @@ body {
   flex: 1; 
   padding: 20px 16px; 
   border: 2px solid #e5e5ea; 
-  border-radius: 12px; 
+  border-radius: 20px; 
   cursor: pointer; 
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
   display: flex; 
@@ -439,7 +440,7 @@ body {
   width: 100%; 
   padding: 16px 48px 16px 20px; 
   border: 2px solid #e5e5ea; 
-  border-radius: 12px; 
+  border-radius: 20px; 
   font-size: 16px; 
   color: #1d1d1f; 
   background: #ffffff; 
@@ -499,7 +500,7 @@ body {
   margin-top: 1rem; 
   padding: 16px 20px; 
   background: rgba(30, 126, 52, 0.06); 
-  border-radius: 12px; 
+  border-radius: 20px; 
   border-left: 4px solid #1e7e34; 
   backdrop-filter: blur(20px);
 }
@@ -623,7 +624,7 @@ body {
   height: 52px; 
   text-align: center; 
   border: 2px solid #e5e5ea; 
-  border-radius: 12px; 
+  border-radius: 20px; 
   font-size: 20px; 
   font-weight: 600; 
   color: #1d1d1f; 
@@ -689,7 +690,7 @@ body {
   padding: 16px 20px; 
   width: 100%; 
   text-align: center; 
-  border-radius: 12px; 
+  border-radius: 30px; 
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
 }
 
@@ -712,7 +713,7 @@ body {
   background: #1e7e34; 
   color: #fff; 
   border: none; 
-  border-radius: 16px; 
+  border-radius: 30px; 
   font-size: 17px; 
   font-weight: 600; 
   cursor: pointer; 
@@ -987,7 +988,7 @@ body {
   height: auto; 
   object-fit: contain; 
   background: #fff; 
-  border-radius: 12px; 
+  border-radius: 20px; 
   padding: 8px 12px; 
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); 
   overflow: visible; 
