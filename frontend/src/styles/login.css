@@ -230,15 +230,12 @@ body {
   background: #ffffff; 
   color: #1d1d1f; 
   border-color: #1d1d1f;
+  font-weight: 700;
 }
 
 .step.active .step-number::after {
   content: "";
-  width: 10px;
-  height: 10px;
-  background: #1d1d1f;
-  border-radius: 50%;
-  position: absolute;
+  display: none;
 }
 
 .step.completed .step-number { 
