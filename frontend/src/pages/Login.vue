@@ -18,7 +18,7 @@
           </div>
           <h2 class="form-title">
             <span v-if="currentStep === 'email'">
-              Welcome to OPENCHS
+              Welcome to <strong>OPENCHS</strong>
             </span>
             <span v-else-if="currentStep === 'otp'">Enter verification code</span>
             <span v-else-if="currentStep === 'password'">Enter your password</span>
