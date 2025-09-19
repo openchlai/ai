@@ -173,46 +173,15 @@ const yTicks = computed(() => {
 
 // Format label based on timeframe
 function formatLabel(label) {
-  const timestamp = Number(label) * 1000 // convert seconds → milliseconds
-  const date = new Date(timestamp)
-
   switch (selectedTimeframe.value) {
-    case 'h': // Hourly
-      return `${date.getHours()}:00`
-
-    case 'dt': // Daily
-      return date.toLocaleDateString('en-US', {
-        day: '2-digit', month: 'short', year: 'numeric'
-      })
-
-    case 'wk': // Weekly
-      // Show starting week date (or use ISO week)
-      const weekStart = new Date(date)
-      weekStart.setDate(date.getDate() - date.getDay()) // Sunday start
-      return `W${getWeekNumber(date)} (${weekStart.toLocaleDateString('en-US', {
-        month: 'short', day: '2-digit'
-      })})`
-
-    case 'mn': // Monthly
-      return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-
-    case 'yr': // Yearly
-      return date.getFullYear()
-
-    default:
-      return label
+    case 'h': return `${label}:00`
+    case 'dt': return label // assume date string
+    case 'wk': return `W${label}`
+    case 'mn': return `M${label}`
+    case 'yr': return label
+    default: return label
   }
 }
-
-// Helper: ISO Week number
-function getWeekNumber(d) {
-  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))
-  const dayNum = date.getUTCDay() || 7
-  date.setUTCDate(date.getUTCDate() + 4 - dayNum)
-  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1))
-  return Math.ceil((((date - yearStart) / 86400000) + 1) / 7)
-}
-
 
 onMounted(fetchCases)
 watch(selectedTimeframe, fetchCases)
