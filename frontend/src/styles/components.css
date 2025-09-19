@@ -44,7 +44,7 @@ a.btn.btn--secondary:hover, .btn--secondary:hover { color: var(--text-color) !im
 .page-header { display:flex; flex-direction:column; gap:12px; margin-bottom:20px; }
 .header-top { display:flex; justify-content:space-between; align-items:center; }
 .header-left { display:flex; align-items:center; gap:16px; }
-.page-title { font-size: 28px; font-weight: 700; margin: 0; }
+.page-title { font-size: 28px; font-weight: 600; margin: 0 0 8px 0; }
 .search-and-controls-section { display:flex; align-items:center; gap:16px; margin-bottom:12px; }
 .search-container { position: relative; flex:1; max-width: 400px; }
 .search-container { background: transparent; border: 0; box-shadow: none; border-radius: 0; }
@@ -132,23 +132,26 @@ a.btn.btn--secondary:hover, .btn--secondary:hover { color: var(--text-color) !im
 .popup-section .file-list li { list-style: none; padding: 10px 12px; border:1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
 
 /* Dashboard Styles */
+.call-status-container { display: none !important; }
 .dashboard-grid {
   display: grid !important;
   grid-template-columns: repeat(3, 1fr) !important;
   gap: 16px !important;
-  margin-bottom: 30px !important;
+  margin-bottom: 16px !important;
 }
 
 .dashboard-card {
   background-color: var(--card-bg) !important;
   border-radius: 20px !important;
-  padding: 16px !important;
+  padding: 20px !important;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
   transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s !important;
-  min-height: 100px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: space-between !important;
+  height: 140px !important;
+  display: grid !important;
+  grid-template-rows: auto 1fr auto !important;
+  align-items: center !important;
+  gap: 6px !important;
+  overflow: hidden !important;
 }
 
 .dashboard-card:hover {
@@ -160,12 +163,13 @@ a.btn.btn--secondary:hover, .btn--secondary:hover { color: var(--text-color) !im
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin: 0;
 }
 
 .card-title {
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 500;
+  color: #666;
 }
 
 .card-icon {
@@ -191,25 +195,31 @@ a.btn.btn--secondary:hover, .btn--secondary:hover { color: var(--text-color) !im
 }
 
 .card-value {
-  font-size: 24px;
-  font-weight: 800;
-  margin-bottom: 4px;
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1;
+  align-self: center;
 }
 
 .card-subtitle {
   font-size: 12px;
   font-weight: 600;
   color: var(--text-secondary);
+  align-self: start;
+  margin-top: 4px;
 }
 
 .queue-activity {
   background-color: var(--card-bg);
   border-radius: 30px;
   padding: 20px;
-  margin-bottom: 30px;
+  margin-top: 24px;
+  margin-bottom: 16px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   transition: background-color 0.3s;
 }
+.queue-activity .section-header { border-bottom: none; }
+.queue-activity .section-header::after { content: none; }
 
 .section-header {
   display: flex;
@@ -220,7 +230,7 @@ a.btn.btn--secondary:hover, .btn--secondary:hover { color: var(--text-color) !im
 
 .section-title {
   font-size: 20px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .queue-table {
@@ -237,11 +247,12 @@ a.btn.btn--secondary:hover, .btn--secondary:hover { color: var(--text-color) !im
 .queue-table th {
   text-align: left;
   padding: 16px 20px;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  color: #888;
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
 }
 
 .queue-table td {
@@ -250,7 +261,9 @@ a.btn.btn--secondary:hover, .btn--secondary:hover { color: var(--text-color) !im
   font-weight: 600;
   border-bottom: 1px solid var(--color-border);
   background: var(--color-surface);
+  vertical-align: middle;
 }
+.queue-table tr { height: 52px; }
 
 .queue-table tr:last-child td {
   border-bottom: none;
@@ -261,15 +274,18 @@ a.btn.btn--secondary:hover, .btn--secondary:hover { color: var(--text-color) !im
 }
 
 .agent-status {
-  display: inline-block;
-  padding: 8px 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  width: 100px;
+  padding: 0 12px;
   border-radius: 20px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   background-color: var(--background-color);
   color: var(--text-color);
   text-align: center;
-  min-width: 100px;
   border: 1px solid var(--color-border);
 }
 
@@ -3453,7 +3469,7 @@ input:checked + .toggle-slider:before {
 .quick-action-btn .action-icon svg { stroke: currentColor; }
 
 /* Content containers */
-.main-scroll-content { padding: 20px; }
+.main-scroll-content { padding: 24px; }
 
 /* Ensure cards are visually separated under headers */
 .table-card { margin-top: 16px; }

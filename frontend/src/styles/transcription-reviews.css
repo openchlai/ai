@@ -1,5 +1,5 @@
 /* Styles moved from TranscriptionReviews.vue */
-.main-content { margin-left: 280px; min-height: 100vh; background: var(--color-surface); transition: margin-left 0.3s ease; }
+.main-content { margin-left: var(--sidebar-width); min-height: 100vh; background: var(--color-surface); transition: margin-left 0.3s ease; }
 @media (max-width: 768px) { .main-content { margin-left: 0; } }
 .page-container { padding: 20px; min-height: 100vh; }
 .header { display: flex; align-items: flex-start; gap: 20px; margin-bottom: 24px; }
