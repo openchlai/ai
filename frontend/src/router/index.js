@@ -26,6 +26,7 @@ import AdminAIAssistant from '../pages/admin/AdminAIAssistant.vue'
 import AdminCategories from '../pages/admin/AdminCategories.vue'
 import AdminWorkflows from '../pages/admin/AdminWorkflows.vue'
 import AdminSettings from '../pages/admin/AdminSettings.vue'
+import Demo from '../pages/Demo.vue'
 
 
 const routes = [
@@ -44,6 +45,7 @@ const routes = [
   { path: '/reports', component: Reports, name: 'Reports' },
   { path: '/reports/:category', component: ReportsCategory, name: 'ReportsCategory' },
   { path: '/reviews', component: TranscriptionReviews, name: 'TranscriptionReviews' },
+  { path: '/demo', component: Demo, name: 'Demo' },
   
   // Admin Routes
   {

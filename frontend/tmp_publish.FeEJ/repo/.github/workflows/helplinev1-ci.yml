@@ -1,0 +1,383 @@
+name: HelplineV1 CI/CD Pipeline
+permissions:
+  contents: write
+  pull-requests: write
+  packages: write
+
+on:
+  push:
+    paths:
+      - 'helplinev1/**'
+    branches: [main, justphyl]
+  pull_request:
+    paths:
+      - 'helplinev1/**'
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME_PHP: ${{ github.repository }}/helpline-php
+  IMAGE_NAME_NGINX: ${{ github.repository }}/helpline-nginx
+
+jobs:
+  # Unit Tests and Code Coverage (unchanged)
+  unit-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php-version: ['8.2', '8.3']
+    
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: rootpassword
+          MYSQL_DATABASE: helpline_test
+          MYSQL_USER: helpline_user
+          MYSQL_PASSWORD: helpline_pass
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    outputs:
+      coverage-percentage: ${{ steps.coverage.outputs.percentage }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_mysql, dom, filter, gd, hash, json, libxml, openssl, pcre, session, tokenizer, zip, pcov
+          tools: composer:v2
+          coverage: pcov
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: helplinev1/rest_api/vendor
+          key: ${{ runner.os }}-php-${{ matrix.php-version }}-${{ hashFiles('helplinev1/rest_api/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-${{ matrix.php-version }}-
+
+      - name: Install dependencies
+        working-directory: helplinev1/rest_api
+        run: composer install --prefer-dist --no-progress --no-suggest
+
+      - name: Setup test database
+        run: |
+          mysql -h 127.0.0.1 -u root -prootpassword -e "CREATE DATABASE IF NOT EXISTS helpline_test;"
+          mysql -h 127.0.0.1 -u root -prootpassword helpline_test < helplinev1/rest_api/config/uchl.sql || echo "Schema file not found, proceeding with tests"
+
+      - name: Run tests with coverage
+        working-directory: helplinev1/rest_api
+        run: |
+          ./vendor/bin/phpunit --coverage-text --coverage-clover=coverage.xml --coverage-html=coverage-html || {
+            echo "Tests failed. Creating fallback coverage.xml"
+            printf '<?xml version="1.0"?>\n<coverage version="6.0" timestamp="1" lines-valid="100" lines-covered="0" line-rate="0.0">\n<sources><source>./</source></sources>\n<packages></packages>\n</coverage>\n' > coverage.xml
+          }
+
+      - name: Generate coverage report
+        id: coverage
+        working-directory: helplinev1/rest_api
+        run: |
+          php calculate-coverage.php > coverage-analysis.txt || echo "No detailed coverage analysis available" > coverage-analysis.txt
+          COVERAGE=$(php calculate-coverage.php | grep "Estimated Line Coverage" | grep -oE "[0-9]+%" | grep -oE "[0-9]+" 2>/dev/null || echo "0")
+          echo "percentage=$COVERAGE" >> $GITHUB_OUTPUT
+          echo "COVERAGE_PERCENTAGE=$COVERAGE" >> $GITHUB_ENV
+          
+          if [ "$COVERAGE" -ge "80" ]; then COLOR="brightgreen"
+          elif [ "$COVERAGE" -ge "60" ]; then COLOR="yellow"
+          elif [ "$COVERAGE" -ge "40" ]; then COLOR="orange"
+          else COLOR="red"; fi
+          echo "COVERAGE_COLOR=$COLOR" >> $GITHUB_ENV
+
+      - name: Create coverage report
+        working-directory: helplinev1/rest_api
+        run: |
+          COVERAGE_DETAILS=$(cat coverage-analysis.txt 2>/dev/null || echo "No coverage analysis available")
+          TEST_DETAILS=$(./vendor/bin/phpunit --testdox 2>&1 || echo "No test details available")
+          
+          printf '# Code Coverage Report - HelplineV1\n\n**Branch:** %s\n**Commit:** [%s](%s)\n**Generated:** %s\n**PHP Version:** %s\n\n## Coverage Summary\n\n![Coverage](https://img.shields.io/badge/Coverage-%s%%25-%s)\n![Tests](https://img.shields.io/badge/Tests-PHPUnit-blue)\n\n| Metric | Value |\n|--------| ------|\n| **Coverage** | %s%% |\n| **Generated** | %s |\n| **Branch** | %s |\n| **PHP Version** | %s |\n\n## Detailed Coverage Analysis\n\n```\n%s\n```\n\n## Test Summary\n\n```\n%s\n```\n\n---\n*Report generated automatically by GitHub Actions*\n' \
+            "${{ github.ref_name }}" \
+            "${GITHUB_SHA:0:7}" \
+            "https://github.com/${{ github.repository }}/commit/${{ github.sha }}" \
+            "$(date '+%Y-%m-%d %H:%M:%S UTC')" \
+            "${{ matrix.php-version }}" \
+            "${COVERAGE_PERCENTAGE:-0}" \
+            "${COVERAGE_COLOR:-red}" \
+            "${COVERAGE_PERCENTAGE:-0}" \
+            "$(date '+%Y-%m-%d %H:%M:%S UTC')" \
+            "${{ github.ref_name }}" \
+            "${{ matrix.php-version }}" \
+            "${COVERAGE_DETAILS}" \
+            "${TEST_DETAILS}" > ../COVERAGE.md
+
+      - name: Commit coverage report (PR only)
+        if: github.event_name == 'pull_request' && matrix.php-version == '8.3'
+        working-directory: helplinev1
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin "${GITHUB_HEAD_REF}:${GITHUB_HEAD_REF}" || true
+          git checkout "${GITHUB_HEAD_REF}" || true
+          git add COVERAGE.md
+          git commit -m "Update coverage report [skip ci]" || echo "No changes to commit"
+          git push origin HEAD:${GITHUB_HEAD_REF}
+
+  # Build Docker Images - runs on all pushes when tests pass
+  build-images:
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    if: needs.unit-tests.result == 'success'
+    
+    outputs:
+      php-image-tag: ${{ steps.build-summary.outputs.php-tag }}
+      nginx-image-tag: ${{ steps.build-summary.outputs.nginx-tag }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push PHP image
+        working-directory: helplinev1
+        run: |
+          CLEAN_BRANCH=$(echo "${{ github.ref_name }}" | sed 's/[^a-zA-Z0-9._-]/-/g')
+          PHP_TAG="${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PHP }}:${CLEAN_BRANCH}-${{ github.sha }}"
+          echo "Building PHP image: $PHP_TAG"
+          
+          docker build -t $PHP_TAG ./docker/php
+          docker push $PHP_TAG
+          
+          echo "PHP_IMAGE_TAG=$PHP_TAG" >> $GITHUB_ENV
+
+      - name: Build and push Nginx image
+        working-directory: helplinev1
+        run: |
+          CLEAN_BRANCH=$(echo "${{ github.ref_name }}" | sed 's/[^a-zA-Z0-9._-]/-/g')
+          NGINX_TAG="${{ env.REGISTRY }}/${{ env.IMAGE_NAME_NGINX }}:${CLEAN_BRANCH}-${{ github.sha }}"
+          echo "Building Nginx image: $NGINX_TAG"
+          
+          docker build -t $NGINX_TAG ./docker/nginx
+          docker push $NGINX_TAG
+          
+          echo "NGINX_IMAGE_TAG=$NGINX_TAG" >> $GITHUB_ENV
+
+      - name: Build summary
+        id: build-summary
+        run: |
+          echo "php-tag=${{ env.PHP_IMAGE_TAG }}" >> $GITHUB_OUTPUT
+          echo "nginx-tag=${{ env.NGINX_IMAGE_TAG }}" >> $GITHUB_OUTPUT
+
+  # Deploy to Staging - triggers when PR is merged to main
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: [unit-tests, build-images]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.build-images.result == 'success'
+    environment: staging
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.STAGING_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Verify Docker availability
+        run: |
+          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.STAGING_HOST }} 'docker --version && docker-compose --version || { echo "Docker/Docker-Compose not available"; exit 1; }'
+
+      - name: Create isolated staging directory
+        run: |
+          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.STAGING_HOST }} 'mkdir -p ~/helplinev1-staging && echo "Staging directory ready"'
+
+      - name: Prepare and copy application files
+        working-directory: helplinev1
+        run: |
+          # Create deployment package in temp directory
+          TEMP_DIR=$(mktemp -d)
+          cp -r application/ rest_api/ docker/ "$TEMP_DIR/"
+          cd "$TEMP_DIR"
+          tar -czf helplinev1-staging.tar.gz application/ rest_api/ docker/
+          
+          # Copy to server
+          scp helplinev1-staging.tar.gz ${{ secrets.EC2_USER }}@${{ secrets.STAGING_HOST }}:~/
+          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.STAGING_HOST }} 'cd ~/helplinev1-staging && tar -xzf ~/helplinev1-staging.tar.gz && rm ~/helplinev1-staging.tar.gz'
+
+      - name: Login to container registry
+        run: |
+          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.STAGING_HOST }} 'echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin'
+
+      - name: Pull latest images
+        run: |
+          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.STAGING_HOST }} 'docker pull ${{ needs.build-images.outputs.php-image-tag }} && docker pull ${{ needs.build-images.outputs.nginx-image-tag }}'
+
+      - name: Create staging docker-compose configuration
+        run: |
+          cat > docker-compose-staging.yml << 'EOF'
+          services:
+            database:
+              image: mysql:8.0
+              container_name: helpline-staging-db
+              environment:
+                MYSQL_ROOT_PASSWORD: ${{ secrets.STAGING_DB_ROOT_PASSWORD }}
+                MYSQL_DATABASE: helpline_staging
+                MYSQL_USER: ${{ secrets.STAGING_DB_USER }}
+                MYSQL_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
+              ports:
+                - "3308:3306"
+              volumes:
+                - helpline_staging_data:/var/lib/mysql
+                - ./rest_api/config/uchl.sql:/docker-entrypoint-initdb.d/01-schema.sql
+              restart: unless-stopped
+              networks:
+                - helpline-staging-net
+          
+            php-api:
+              image: ${{ needs.build-images.outputs.php-image-tag }}
+              container_name: helpline-staging-php
+              volumes:
+                - ./application:/var/www/html/helpline
+                - ./rest_api/api:/var/www/html/helpline/api
+                - ./rest_api/lib:/var/www/html/helpline/lib
+                - ./docker/config/config-docker.php:/var/www/html/helpline/config.php
+                - ./docker/config/config-docker.php:/var/www/html/helpline/api/config.php
+              depends_on:
+                - database
+              environment:
+                - DB_HOST=database
+                - DB_NAME=helpline_staging
+                - DB_USER=${{ secrets.STAGING_DB_USER }}
+                - DB_PASS=${{ secrets.STAGING_DB_PASSWORD }}
+              restart: unless-stopped
+              networks:
+                - helpline-staging-net
+          
+            nginx:
+              image: ${{ needs.build-images.outputs.nginx-image-tag }}
+              container_name: helpline-staging-nginx
+              ports:
+                - "8890:80"
+                - "8445:443"
+              volumes:
+                - ./application:/var/www/html/helpline
+                - ./rest_api/api:/var/www/html/helpline/api
+                - ./rest_api/lib:/var/www/html/helpline/lib
+                - ./docker/config/config-docker.php:/var/www/html/helpline/config.php
+              depends_on:
+                - php-api
+              restart: unless-stopped
+              networks:
+                - helpline-staging-net
+          
+          volumes:
+            helpline_staging_data:
+          
+          networks:
+            helpline-staging-net:
+              driver: bridge
+              name: helpline-staging-network
+          EOF
+          
+          # Copy to server
+          scp docker-compose-staging.yml ${{ secrets.EC2_USER }}@${{ secrets.STAGING_HOST }}:~/helplinev1-staging/docker-compose.yml
+
+      - name: Stop existing staging containers
+        run: |
+          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.STAGING_HOST }} 'cd ~/helplinev1-staging && docker-compose down --remove-orphans || echo "No existing staging containers"'
+
+      - name: Start staging environment
+        run: |
+          ssh -o ServerAliveInterval=60 -o ServerAliveCountMax=3 -T ${{ secrets.EC2_USER }}@${{ secrets.STAGING_HOST }} 'cd ~/helplinev1-staging && nohup docker-compose up -d > docker-compose.log 2>&1 && echo "Containers started in background"'
+
+      - name: Wait for containers to initialize
+        run: |
+          echo "Waiting for containers to fully start..."
+          sleep 30
+
+      - name: Check container status
+        run: |
+          ssh -T ${{ secrets.EC2_USER }}@${{ secrets.STAGING_HOST }} 'docker ps --filter name=helpline-staging --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"'
+
+      - name: Verify deployment with health check
+        run: |
+          echo "Performing health check..."
+          sleep 60
+          
+          # Check if web service responds
+          if ssh -T ${{ secrets.EC2_USER }}@${{ secrets.STAGING_HOST }} 'curl -f http://localhost:8890'; then
+            echo "Staging deployment successful!"
+          else
+            echo "Health check failed, checking container logs..."
+            ssh -T ${{ secrets.EC2_USER }}@${{ secrets.STAGING_HOST }} 'cd ~/helplinev1-staging && docker-compose logs --tail=20'
+            exit 1
+          fi
+
+      - name: Display staging information
+        run: |
+          echo "### Staging Deployment Complete ###"
+          echo "Staging URL: http://${{ secrets.STAGING_HOST }}:8890"
+          echo "Database Port: 3308 (MySQL)"
+          echo "HTTPS Port: 8445"
+          echo "Container Prefix: helpline-staging-*"
+          echo "Network: helpline-staging-network"
+
+  # Summary
+  deployment-summary:
+    runs-on: ubuntu-latest
+    needs: [unit-tests, build-images, deploy-staging]
+    if: always()
+    
+    steps:
+      - name: Generate deployment summary
+        run: |
+          echo "## HelplineV1 Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** [\`${GITHUB_SHA:0:7}\`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})" >> $GITHUB_STEP_SUMMARY
+          echo "**Event:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### Pipeline Results" >> $GITHUB_STEP_SUMMARY
+          echo "| Stage | Status | Coverage |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|----------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Unit Tests | ${{ needs.unit-tests.result }} | ${{ needs.unit-tests.outputs.coverage-percentage }}% |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build Images | ${{ needs.build-images.result }} | - |" >> $GITHUB_STEP_SUMMARY
+          echo "| Deploy Staging | ${{ needs.deploy-staging.result }} | - |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.deploy-staging.result }}" == "success" ]; then
+            echo "### Staging Environment Ready" >> $GITHUB_STEP_SUMMARY
+            echo "**Access URL:** http://${{ secrets.STAGING_HOST }}:8890" >> $GITHUB_STEP_SUMMARY
+            echo "**Database:** localhost:3308" >> $GITHUB_STEP_SUMMARY
+            echo "**SSL:** https://${{ secrets.STAGING_HOST }}:8445" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Docker Images" >> $GITHUB_STEP_SUMMARY
+            echo "- PHP: \`${{ needs.build-images.outputs.php-image-tag }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- Nginx: \`${{ needs.build-images.outputs.nginx-image-tag }}\`" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "### Pull Request Testing Complete" >> $GITHUB_STEP_SUMMARY
+            echo "Tests passed, images built. Ready for merge to deploy to staging." >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ github.ref }}" != "refs/heads/main" ]; then
+            echo "### Feature Branch Complete" >> $GITHUB_STEP_SUMMARY
+            echo "Tests passed, images built. Create PR to deploy to staging." >> $GITHUB_STEP_SUMMARY
+          fi

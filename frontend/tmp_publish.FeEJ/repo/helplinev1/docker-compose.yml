@@ -1,0 +1,71 @@
+services:
+  # MySQL ........................sql sql....sql................
+
+  database:
+    image: mysql:8.0
+    container_name: helpline-db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: helpline
+      MYSQL_USER: helpline_user
+      MYSQL_PASSWORD: helpline_pass
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./rest_api/config/uchl.sql:/docker-entrypoint-initdb.d/01-complete-schema.sql
+      - ./docker/mysql/init-user.sql:/docker-entrypoint-initdb.d/02-init-user.sql
+      - ./docker/mysql/03-missing-columns.sql:/docker-entrypoint-initdb.d/03-missing-columns.sql
+    restart: unless-stopped
+    networks:
+      - helpline-network
+
+  # PHP-FPM Backend API   # PHP-FPM Backend APi................
+  php-api:
+    build:
+      context: ./docker/php    # CHANGED: from . to ./docker/php.....
+      dockerfile: Dockerfile   # CHANGED: from docker/php/Dockerfile to Dockerfile......
+    container_name: helpline-php-api
+    volumes:
+      - ./application:/var/www/html/helpline
+      - ./rest_api/api:/var/www/html/helpline/api
+      - ./rest_api/lib:/var/www/html/helpline/lib
+      - ./docker/config/config-docker.php:/var/www/html/helpline/config.php
+      - ./docker/config/config-docker.php:/var/www/html/helpline/api/config.php
+    depends_on:
+      - database
+    environment:
+      - DB_HOST=database
+      - DB_NAME=helpline
+      - DB_USER=helpline_user
+      - DB_PASS=helpline_pass
+    restart: unless-stopped
+    networks:
+      - helpline-network
+
+  # Nginx Web Server
+  nginx:
+    build:
+      context: ./docker/nginx  # CHANGED: from . to ./docker/nginx
+      dockerfile: Dockerfile   # CHANGED: from docker/nginx/Dockerfile to Dockerfile
+    container_name: helpline-nginx
+    ports:
+      - "8888:80"
+      - "8443:443"
+    volumes:
+      - ./application:/var/www/html/helpline
+      - ./rest_api/api:/var/www/html/helpline/api
+      - ./rest_api/lib:/var/www/html/helpline/lib
+      - ./docker/config/config-docker.php:/var/www/html/helpline/config.php
+    depends_on:
+      - php-api
+    restart: unless-stopped
+    networks:
+      - helpline-network
+
+volumes:
+  db_data:
+
+networks:
+  helpline-network:
+    driver: bridge

@@ -26,6 +26,20 @@
       Back to Cases
     </router-link>
 
+    <div
+      v-if="ongoingCall && ongoingCall.state === 'in_call'"
+      class="ongoing-call-overlay"
+    >
+      <div class="overlay-content">
+        <div class="dot"></div>
+        <div class="info">
+          <div class="line">On call · {{ formattedCallDuration }}</div>
+          <div class="line">{{ ongoingCall.number }}</div>
+        </div>
+        <button class="overlay-btn" @click="endOngoingCall">End</button>
+      </div>
+    </div>
+
     <div class="case-container">
       <div class="main-form-container">
         <CaseCreationHeader :description="stepDescriptions[currentStep - 1]" :isAIEnabled="isAIEnabled" @update:isAIEnabled="val => isAIEnabled = val" />
@@ -44,7 +58,8 @@
             <div class="form-section">
               <div class="section-title">Select Reporter</div>
               <p class="section-description">
-                Choose an existing contact or create a new reporter for this case.
+                Choose an existing contact or create a new reporter for this
+                case.
               </p>
 
               <div class="search-section">
@@ -78,26 +93,37 @@
                     />
                     <!-- Suggestions will render inline below using contacts-list -->
                   </div>
-                  <button type="button" class="btn btn--primary new-reporter-btn" @click="createNewReporter">
+                  <button
+                    type="button"
+                    class="btn btn--primary new-reporter-btn"
+                    @click="createNewReporter"
+                  >
                     + New Reporter
                   </button>
                 </div>
               </div>
 
               <!-- Inline results under search -->
-              <div class="contacts-list" v-if="debouncedQuery && filteredContacts.length">
+              <div
+                class="contacts-list"
+                v-if="debouncedQuery && filteredContacts.length"
+              >
                 <div
                   v-for="contact in filteredContacts"
                   :key="contact[casesStore.cases_k.id[0]]"
                   class="contact-item"
-                  :class="{ selected: selectedReporter && selectedReporter[casesStore.cases_k.id[0]] === contact[casesStore.cases_k.id[0]] }"
+                  :class="{
+                    selected:
+                      selectedReporter &&
+                      selectedReporter[casesStore.cases_k.id[0]] ===
+                        contact[casesStore.cases_k.id[0]],
+                  }"
                   @click="selectExistingReporter(contact)"
                 >
                   <div class="contact-avatar">
                     <span>{{
                       getInitials(
-                        contact[casesStore.cases_k.reporter_fullname[0]] ||
-                          "NA"
+                        contact[casesStore.cases_k.reporter_fullname[0]] || "NA"
                       )
                         .slice(0, 2)
                         .toUpperCase()
@@ -111,25 +137,59 @@
                           "Untitled Case"
                         }}
                       </div>
-                      <div class="contact-phone">{{ contact[casesStore.cases_k.reporter_phone[0]] }}</div>
+                      <div class="contact-phone">
+                        {{ contact[casesStore.cases_k.reporter_phone[0]] }}
+                      </div>
                     </div>
                     <div class="contact-meta-info">
                       <div class="contact-tags">
-                        <span class="contact-tag">{{ contact[casesStore.cases_k.reporter_age[0]] }}y</span>
-                        <span class="contact-tag">{{ contact[casesStore.cases_k.reporter_sex[0]]}}</span>
-                        <span class="contact-tag location">📍 {{ contact[casesStore.cases_k.reporter_location[0]]}}</span>
+                        <span class="contact-tag"
+                          >{{
+                            contact[casesStore.cases_k.reporter_age[0]]
+                          }}y</span
+                        >
+                        <span class="contact-tag">{{
+                          contact[casesStore.cases_k.reporter_sex[0]]
+                        }}</span>
+                        <span class="contact-tag location"
+                          >📍
+                          {{
+                            contact[casesStore.cases_k.reporter_location[0]]
+                          }}</span
+                        >
                       </div>
-                      <div class="contact-timestamp">{{ new Date(contact[casesStore.cases_k.dt[0]] * 1000).toLocaleString('en-US') }}</div>
+                      <div class="contact-timestamp">
+                        {{
+                          new Date(
+                            contact[casesStore.cases_k.dt[0]] * 1000
+                          ).toLocaleString("en-US")
+                        }}
+                      </div>
                     </div>
                   </div>
                   <div class="contact-select-indicator">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <polyline points="9,18 15,12 9,6" stroke="currentColor" stroke-width="2"/>
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <polyline
+                        points="9,18 15,12 9,6"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      />
                     </svg>
                   </div>
                 </div>
               </div>
-              <div class="search-empty" v-else-if="debouncedQuery && !filteredContacts.length">No matches found</div>
+              <div
+                class="search-empty"
+                v-else-if="debouncedQuery && !filteredContacts.length"
+              >
+                No matches found
+              </div>
 
               <div class="action-buttons">
                 <button
@@ -152,7 +212,10 @@
                       stroke-linejoin="round"
                     />
                   </svg>
-                  Continue with {{ selectedReporter?.[casesStore.cases_k.reporter_fullname[0]] }}
+                  Continue with
+                  {{
+                    selectedReporter?.[casesStore.cases_k.reporter_fullname[0]]
+                  }}
                 </button>
               </div>
             </div>
@@ -161,8 +224,12 @@
                 Cancel
               </button>
               <div>
-                <BaseButton variant="secondary" @click="skipStep(1)">Skip</BaseButton>
-                <BaseButton type="submit" :disabled="!selectedReporter">Next</BaseButton>
+                <BaseButton variant="secondary" @click="skipStep(1)"
+                  >Skip</BaseButton
+                >
+                <BaseButton type="submit" :disabled="!selectedReporter"
+                  >Next</BaseButton
+                >
               </div>
             </div>
           </form>
@@ -184,85 +251,130 @@
               </p>
 
               <div class="form-row">
-                <BaseInput id="reporter-name" label="Full Name*" v-model="formData.step2.name" placeholder="Enter full name" :readonly="!!selectedReporter" />
-                <BaseInput id="reporter-age" label="Age" type="number" v-model="formData.step2.age" placeholder="Enter age" />
+                <BaseInput
+                  id="reporter-name"
+                  label="Full Name*"
+                  v-model="formData.step2.name"
+                  placeholder="Enter full name"
+                  :readonly="!!selectedReporter"
+                />
+                <BaseInput
+                  id="reporter-age"
+                  label="Age"
+                  type="number"
+                  v-model="formData.step2.age"
+                  placeholder="Enter age"
+                />
               </div>
 
               <div class="form-row">
-                <BaseInput id="reporter-dob" label="DOB" type="date" v-model="formData.step2.dob" />
-                <BaseSelect id="reporter-age-group" label="Age Group" v-model="formData.step2.ageGroup" placeholder="Select age group">
-                  <option value="">Select age group</option>
-                  <option>0-5</option>
-                  <option>6-12</option>
-                  <option>13-17</option>
-                  <option>18-24</option>
-                  <option>25-34</option>
-                  <option>35-49</option>
-                  <option>50+</option>
-                </BaseSelect>
+                <BaseInput
+                  id="reporter-dob"
+                  label="DOB"
+                  type="date"
+                  v-model="formData.step2.dob"
+                />
+                <BaseSelect
+                  id="reporter-age-group"
+                  label="Age Group"
+                  v-model="formData.step2.ageGroup"
+                  placeholder="Select age group"
+                  :category-id="101"
+                />
+                 
               </div>
 
               <div class="form-row">
-                <BaseSelect id="reporter-gender" label="Sex" v-model="formData.step2.gender" placeholder="Select sex">
-                  <option value="female">Female</option>
-                  <option value="male">Male</option>
-                  <option value="non-binary">Non-binary</option>
-                  <option value="other">Other</option>
-                </BaseSelect>
-                <BaseInput id="reporter-location" label="Location" v-model="formData.step2.location" placeholder="Enter location" />
+                <BaseSelect
+                  id="reporter-gender"
+                  label="Sex"
+                  v-model="formData.step2.gender"
+                  placeholder="Select sex"
+                  :category-id="120"
+                />
+                
+                <BaseSelect
+                  id="reporter-location"
+                  label="Location"
+                  v-model="formData.step2.location"
+                  placeholder="Enter location"
+                  :category-id="88"
+                />
               </div>
 
               <div class="form-row">
-                <BaseInput id="reporter-landmark" label="Nearest Landmark" v-model="formData.step2.nearestLandmark" placeholder="Enter nearest landmark" />
-                <BaseSelect id="reporter-nationality" label="Nationality" v-model="formData.step2.nationality" placeholder="Select nationality">
-                  <option value="">Select nationality</option>
-                  <option>Kenyan</option>
-                  <option>Ugandan</option>
-                  <option>Tanzanian</option>
-                  <option>Somali</option>
-                  <option>South Sudanese</option>
-                  <option>Other</option>
-                </BaseSelect>
+                <BaseInput
+                  id="reporter-landmark"
+                  label="Nearest Landmark"
+                  v-model="formData.step2.nearestLandmark"
+                  placeholder="Enter nearest landmark"
+                />
+                <BaseSelect
+                  id="reporter-nationality"
+                  label="Nationality"
+                  v-model="formData.step2.nationality"
+                  placeholder="Select nationality"
+                  :category-id="126"
+                />                 
               </div>
 
               <div class="form-row">
-                <BaseSelect id="reporter-language" label="Language" v-model="formData.step2.language" placeholder="Select language">
-                  <option value="">Select language</option>
-                  <option>English</option>
-                  <option>Kiswahili</option>
-                  <option>Somali</option>
-                  <option>Arabic</option>
-                  <option value="other">Other</option>
-                </BaseSelect>
-                <BaseSelect id="reporter-tribe" label="Tribe" v-model="formData.step2.tribe" placeholder="Select tribe">
-                  <option value="">Select tribe</option>
-                  <option>Kikuyu</option>
-                  <option>Luhya</option>
-                  <option>Luo</option>
-                  <option>Kalenjin</option>
-                  <option>Kamba</option>
-                  <option>Somali</option>
-                  <option>Other</option>
-                </BaseSelect>
+                <BaseSelect
+                  id="reporter-language"
+                  label="Language"
+                  v-model="formData.step2.language"
+                  placeholder="Select language"
+                  :category-id="123"
+                />                  
+                <BaseSelect
+                  id="reporter-tribe"
+                  label="Tribe"
+                  v-model="formData.step2.tribe"
+                  placeholder="Select tribe"
+                  :category-id="133"
+                />                 
               </div>
 
               <div class="form-row">
-                <BaseInput id="reporter-phone" label="Phone Number*" type="tel" v-model="formData.step2.phone" placeholder="Enter phone number" />
-                <BaseInput id="reporter-alt-phone" label="Alternative Phone" type="tel" v-model="formData.step2.altPhone" placeholder="Enter alternative phone" />
+                <BaseInput
+                  id="reporter-phone"
+                  label="Phone Number*"
+                  type="tel"
+                  v-model="formData.step2.phone"
+                  placeholder="Enter phone number"
+                />
+                <BaseInput
+                  id="reporter-alt-phone"
+                  label="Alternative Phone"
+                  type="tel"
+                  v-model="formData.step2.altPhone"
+                  placeholder="Enter alternative phone"
+                />
               </div>
 
-              <BaseInput id="reporter-email" label="Email Address" type="email" v-model="formData.step2.email" placeholder="Enter email address" />
+              <BaseInput
+                id="reporter-email"
+                label="Email Address"
+                type="email"
+                v-model="formData.step2.email"
+                placeholder="Enter email address"
+              />
 
               <div class="form-row">
-                <BaseSelect id="reporter-id-type" label="ID Type" v-model="formData.step2.idType" placeholder="Select ID type">
-                  <option value="national-id">National ID</option>
-                  <option value="passport">Passport</option>
-                  <option value="drivers-license">Driver's License</option>
-                  <option value="other">Other</option>
-                </BaseSelect>
-                <BaseInput id="reporter-id-number" label="ID Number" v-model="formData.step2.idNumber" placeholder="Enter ID number" />
+                <BaseSelect
+                  id="reporter-id-type"
+                  label="ID Type"
+                  v-model="formData.step2.idType"
+                  placeholder="Select ID type"
+                  :category-id="362409"
+                />                 
+                <BaseInput
+                  id="reporter-id-number"
+                  label="ID Number"
+                  v-model="formData.step2.idNumber"
+                  placeholder="Enter ID number"
+                />
               </div>
-
 
               <div class="form-row">
                 <div class="form-group">
@@ -294,38 +406,84 @@
                 <div class="form-group">
                   <label>Perpetrators</label>
                   <div class="perpetrators-section">
-                    <div v-if="formData.step2.perpetrators.length" class="perpetrators-list">
-                      <div v-for="(perpetrator, index) in formData.step2.perpetrators" :key="index" class="perpetrator-item">
+                    <div
+                      v-if="formData.step2.perpetrators.length"
+                      class="perpetrators-list"
+                    >
+                      <div
+                        v-for="(perpetrator, index) in formData.step2
+                          .perpetrators"
+                        :key="index"
+                        class="perpetrator-item"
+                      >
                         <div class="perpetrator-info">
-                          <div class="perpetrator-name">{{ perpetrator.name }}</div>
-                          <div class="perpetrator-details">{{ perpetrator.age }} {{ perpetrator.sex }} - {{ perpetrator.location }}</div>
+                          <div class="perpetrator-name">
+                            {{ perpetrator.name }}
+                          </div>
+                          <div class="perpetrator-details">
+                            {{ perpetrator.age }} {{ perpetrator.sex }} -
+                            {{ perpetrator.location }}
+                          </div>
                         </div>
-                        <button type="button" class="remove-perpetrator" @click="removePerpetrator(index)">×</button>
+                        <button
+                          type="button"
+                          class="remove-perpetrator"
+                          @click="removePerpetrator(index)"
+                        >
+                          ×
+                        </button>
                       </div>
                     </div>
-                    <button type="button" class="btn btn--primary btn--sm add-perpetrator-btn" @click="openPerpetratorModal">
+                    <button
+                      type="button"
+                      class="btn btn--primary btn--sm add-perpetrator-btn"
+                      @click="openPerpetratorModal"
+                    >
                       + Add Perpetrator
                     </button>
                   </div>
                 </div>
 
                 <!-- Clients Section - Only show if "Is Reporter a Client?" is "No" -->
-                <div v-if="formData.step2.isClient === false" class="form-group">
+                <div
+                  v-if="formData.step2.isClient === false"
+                  class="form-group"
+                >
                   <label>Clients</label>
                   <div class="clients-section">
-                    <div v-if="formData.step2.clients.length" class="clients-list">
-                      <div v-for="(client, index) in formData.step2.clients" :key="index" class="client-item">
+                    <div
+                      v-if="formData.step2.clients.length"
+                      class="clients-list"
+                    >
+                      <div
+                        v-for="(client, index) in formData.step2.clients"
+                        :key="index"
+                        class="client-item"
+                      >
                         <div class="client-info">
                           <div class="client-name">{{ client.name }}</div>
-                          <div class="client-details">{{ client.age }} {{ client.sex }} - {{ client.phone || 'No phone' }}</div>
+                          <div class="client-details">
+                            {{ client.age }} {{ client.sex }} -
+                            {{ client.phone || "No phone" }}
+                          </div>
                         </div>
-                        <button type="button" class="remove-client" @click="removeClient(index)">×</button>
+                        <button
+                          type="button"
+                          class="remove-client"
+                          @click="removeClient(index)"
+                        >
+                          ×
+                        </button>
                       </div>
                     </div>
                     <div v-else class="empty-state">
                       <p>No clients added yet</p>
                     </div>
-                    <button type="button" class="btn btn--primary btn--sm add-client-btn" @click="openClientModal">
+                    <button
+                      type="button"
+                      class="btn btn--primary btn--sm add-client-btn"
+                      @click="openClientModal"
+                    >
                       + Add Client
                     </button>
                   </div>
@@ -333,9 +491,13 @@
               </div>
             </div>
             <div class="form-actions">
-              <BaseButton variant="secondary" @click="goToStep(1)">Back</BaseButton>
+              <BaseButton variant="secondary" @click="goToStep(1)"
+                >Back</BaseButton
+              >
               <div>
-                <BaseButton variant="secondary" @click="skipStep(2)">Skip</BaseButton>
+                <BaseButton variant="secondary" @click="skipStep(2)"
+                  >Skip</BaseButton
+                >
                 <BaseButton type="submit">Next</BaseButton>
               </div>
             </div>
@@ -350,8 +512,6 @@
               <p class="section-description">
                 Provide detailed information about the case and incident.
               </p>
-
-              
 
               <BaseTextarea
                 id="case-narrative"
@@ -396,26 +556,12 @@
               <div class="form-group">
                 <label>Is this Case GBV Related?*</label>
                 <div class="radio-group">
-                  <label class="radio-option">
-                    <input
-                      v-model="formData.step3.isGBVRelated"
-                      type="radio"
-                      :value="true"
-                      required
-                    />
-                    <span class="radio-indicator"></span>
-                    <span class="radio-label">Yes</span>
-                  </label>
-                  <label class="radio-option">
-                    <input
-                      v-model="formData.step3.isGBVRelated"
-                      type="radio"
-                      :value="false"
-                      required
-                    />
-                    <span class="radio-indicator"></span>
-                    <span class="radio-label">No</span>
-                  </label>
+                  <BaseSelect                  
+                  v-model="formData.step3.isGBVRelated"
+                  placeholder="Select an option"
+                  :category-id="118"
+                />
+                  
                 </div>
               </div>
 
@@ -431,9 +577,13 @@
               </div>
             </div>
             <div class="form-actions">
-              <BaseButton variant="secondary" @click="goToStep(2)">Back</BaseButton>
+              <BaseButton variant="secondary" @click="goToStep(2)"
+                >Back</BaseButton
+              >
               <div>
-                <BaseButton variant="secondary" @click="skipStep(3)">Skip</BaseButton>
+                <BaseButton variant="secondary" @click="skipStep(3)"
+                  >Skip</BaseButton
+                >
                 <BaseButton type="submit">Next</BaseButton>
               </div>
             </div>
@@ -475,156 +625,100 @@
                     </label>
                   </div>
                 </div>
-                
+
                 <!-- Labor Department - Client Passport Search -->
-                <div v-if="formData.step4.department === 'labor'" class="form-group labor-search-section">
+                <div
+                  v-if="formData.step4.department === 'labor'"
+                  class="form-group labor-search-section"
+                >
                   <label>Client's Passport Number</label>
                   <div class="passport-search-container">
-                    <input 
-                      v-model="formData.step4.clientPassportNumber" 
-                      type="text" 
+                    <input
+                      v-model="formData.step4.clientPassportNumber"
+                      type="text"
                       placeholder="Enter passport number"
                       class="passport-input"
                     />
-                    <button type="button" @click="searchClientByPassport" class="search-btn">
+                    <button
+                      type="button"
+                      @click="searchClientByPassport"
+                      class="search-btn"
+                    >
                       Search
                     </button>
                   </div>
-                  
+
                   <!-- Search Results -->
-                  <div v-if="clientSearchResults.length > 0" class="search-results">
+                  <div
+                    v-if="clientSearchResults.length > 0"
+                    class="search-results"
+                  >
                     <h4>Search Results:</h4>
-                    <div v-for="client in clientSearchResults" :key="client.id" class="client-result">
+                    <div
+                      v-for="client in clientSearchResults"
+                      :key="client.id"
+                      class="client-result"
+                    >
                       <div class="client-info">
                         <strong>{{ client.name }}</strong>
-                        <span class="client-details">{{ client.passportNumber }} • {{ client.nationality }}</span>
+                        <span class="client-details"
+                          >{{ client.passportNumber }} •
+                          {{ client.nationality }}</span
+                        >
                       </div>
-                      <button @click="selectClient(client)" class="select-client-btn">Select</button>
+                      <button
+                        @click="selectClient(client)"
+                        class="select-client-btn"
+                      >
+                        Select
+                      </button>
                     </div>
                   </div>
-                  
+
                   <!-- No Results -->
-                  <div v-if="clientSearchResults.length === 0 && hasSearched" class="no-results">
+                  <div
+                    v-if="clientSearchResults.length === 0 && hasSearched"
+                    class="no-results"
+                  >
                     <p>No client found with this passport number.</p>
-                    <button @click="createNewClient" class="create-client-btn">Create New Client</button>
+                    <button @click="createNewClient" class="create-client-btn">
+                      Create New Client
+                    </button>
                   </div>
                 </div>
                 <div class="form-group">
-                  <label for="case-category">Case Category*</label>
-                  <div class="hierarchical-dropdown">
-                    <div class="dropdown-trigger" @click="toggleCategoryDropdown">
-                      <div class="selected-categories">
-                        <span 
-                          v-for="category in formData.step4.categories" 
-                          :key="category" 
-                          class="category-tag"
-                        >
-                          {{ category }}
-                          <button type="button" @click.stop="removeCategory(category)" class="tag-remove">×</button>
-                        </span>
-                        <span v-if="formData.step4.categories.length === 0" class="placeholder">Select Category</span>
-                      </div>
-                      <svg class="dropdown-arrow" :class="{ 'open': showCategoryDropdown }" width="12" height="12" viewBox="0 0 12 12">
-                        <path d="M6 8L2 4h8L6 8z" fill="currentColor"/>
-                      </svg>
-                    </div>
-                    
-                    <div v-if="showCategoryDropdown" class="category-dropdown-panel">
-                      <div class="panel-header">
-                        <span class="panel-title">Case Category</span>
-                        <button @click="expandCategoryPanel" class="expand-btn">
-                          <svg width="16" height="16" viewBox="0 0 16 16">
-                            <path d="M2 2h12v12H2V2zm1 1v10h10V3H3z" fill="currentColor"/>
-                            <path d="M5 5h6v6H5V5zm1 1v4h4V6H6z" fill="currentColor"/>
-                          </svg>
-                        </button>
-                      </div>
-                      
-                      <div class="category-tree">
-                        <div 
-                          v-for="category in caseCategories" 
-                          :key="category.value"
-                          class="category-item"
-                          :class="{ 'expanded': category.expanded }"
-                        >
-                          <div 
-                            class="category-row"
-                            @click="toggleCategory(category)"
-                          >
-                            <span class="category-icon" v-if="category.children && category.children.length > 0">
-                              <svg width="12" height="12" viewBox="0 0 12 12">
-                                <path d="M4 2l4 4-4 4V2z" fill="currentColor"/>
-                              </svg>
-                            </span>
-                            <span class="category-name">{{ category.label }}</span>
-                            <input 
-                              type="checkbox" 
-                              :value="category.value"
-                              v-model="formData.step4.categories"
-                              @click.stop
-                              class="category-checkbox"
-                            />
-                          </div>
-                          
-                          <div v-if="category.expanded && category.children" class="subcategories">
-                            <div 
-                              v-for="subcategory in category.children" 
-                              :key="subcategory.value"
-                              class="subcategory-item"
-                            >
-                              <div class="subcategory-row">
-                                <span class="subcategory-name">{{ subcategory.label }}</span>
-                                <input 
-                                  type="checkbox" 
-                                  :value="subcategory.value"
-                                  v-model="formData.step4.categories"
-                                  @click.stop
-                                  class="category-checkbox"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div class="pagination-info">
-                        <span>{{ caseCategories.length }} categories available</span>
-                      </div>
-                    </div>
-                  </div>
+                  <BaseSelect
+                  id="case-category"
+                  label="case category"
+                  v-model="formData.step4.categories"
+                  placeholder="Select case category"
+                  :category-id="362557"
+                />                   
                 </div>
               </div>
 
               <div class="form-row">
                 <div class="form-group">
-                  <label for="priority">Priority*</label>
-                  <select
-                    v-model="formData.step4.priority"
-                    id="priority"
-                    class="form-control"
-                    required
-                  >
-                    <option value="">Select priority</option>
-                    <option value="critical">🔴 Critical</option>
-                    <option value="high">🟠 High</option>
-                    <option value="medium">🟡 Medium</option>
-                    <option value="low">🟢 Low</option>
-                  </select>
+                  <BaseSelect
+                  id="priority"
+                  label="priority"
+                   v-model="formData.step4.priority"
+                  placeholder="Select priority"
+                  :category-id="362557"
+                  required
+                />
+                  
                 </div>
                 <div class="form-group">
-                  <label for="status">Status*</label>
-                  <select
-                    v-model="formData.step4.status"
-                    id="status"
-                    class="form-control"
-                    required
-                  >
-                    <option value="">Select status</option>
-                    <option value="new">New</option>
-                    <option value="in-progress">In Progress</option>
-                    <option value="pending">Pending</option>
-                    <option value="resolved">Resolved</option>
-                  </select>
+                  <BaseSelect
+                  id="status"
+                  label="status"
+                   v-model="formData.step4.status"
+                  placeholder="Select priority"
+                  :category-id="362557"                 
+                  required
+                />
+                  
                 </div>
               </div>
 
@@ -646,7 +740,9 @@
 
               <div class="form-row">
                 <div class="form-group">
-                  <label for="justice-system-state">State of the Case in the Justice System</label>
+                  <label for="justice-system-state"
+                    >State of the Case in the Justice System</label
+                  >
                   <select
                     v-model="formData.step4.justiceSystemState"
                     id="justice-system-state"
@@ -654,7 +750,9 @@
                   >
                     <option value="">Select state...</option>
                     <option value="Social Worker">Social Worker</option>
-                    <option value="Police Investigation">Police Investigation</option>
+                    <option value="Police Investigation">
+                      Police Investigation
+                    </option>
                     <option value="Court Proceedings">Court Proceedings</option>
                     <option value="Prosecution">Prosecution</option>
                     <option value="Sentencing">Sentencing</option>
@@ -662,7 +760,9 @@
                   </select>
                 </div>
                 <div class="form-group">
-                  <label for="general-assessment">General Case Assessment</label>
+                  <label for="general-assessment"
+                    >General Case Assessment</label
+                  >
                   <select
                     v-model="formData.step4.generalAssessment"
                     id="general-assessment"
@@ -694,7 +794,9 @@
                   <option value="Financial Support">Financial Support</option>
                   <option value="Referral Services">Referral Services</option>
                   <option value="Emergency Response">Emergency Response</option>
-                  <option value="Crisis Intervention">Crisis Intervention</option>
+                  <option value="Crisis Intervention">
+                    Crisis Intervention
+                  </option>
                   <option value="Support Groups">Support Groups</option>
                   <option value="Education Programs">Education Programs</option>
                   <option value="Community Outreach">Community Outreach</option>
@@ -709,7 +811,9 @@
                   class="form-control"
                 >
                   <option value="">Select source...</option>
-                  <option value="Community Sensitizations">Community Sensitizations</option>
+                  <option value="Community Sensitizations">
+                    Community Sensitizations
+                  </option>
                   <option value="Facebook">Facebook</option>
                   <option value="Friend">Friend</option>
                   <option value="IEC Material">IEC Material</option>
@@ -717,7 +821,9 @@
                   <option value="News Papers">News Papers</option>
                   <option value="NGO/CSO/Partners">NGO/CSO/Partners</option>
                   <option value="Radio">Radio</option>
-                  <option value="Relative/Family Member">Relative/Family Member</option>
+                  <option value="Relative/Family Member">
+                    Relative/Family Member
+                  </option>
                   <option value="School">School</option>
                   <option value="Television">Television</option>
                   <option value="WhatsApp">WhatsApp</option>
@@ -727,9 +833,13 @@
               </div>
             </div>
             <div class="form-actions">
-              <BaseButton variant="secondary" @click="goToStep(3)">Back</BaseButton>
+              <BaseButton variant="secondary" @click="goToStep(3)"
+                >Back</BaseButton
+              >
               <div>
-                <BaseButton variant="secondary" @click="skipStep(4)">Skip</BaseButton>
+                <BaseButton variant="secondary" @click="skipStep(4)"
+                  >Skip</BaseButton
+                >
                 <BaseButton type="submit">Next</BaseButton>
               </div>
             </div>
@@ -908,8 +1018,15 @@
                 <div class="review-item review-item-full">
                   <div class="review-label">Categories</div>
                   <div class="review-value">
-                    <div v-if="formData.step4.categories.length > 0" class="category-tags">
-                      <span v-for="category in formData.step4.categories" :key="category" class="category-tag">
+                    <div
+                      v-if="formData.step4.categories.length > 0"
+                      class="category-tags"
+                    >
+                      <span
+                        v-for="category in formData.step4.categories"
+                        :key="category"
+                        class="category-tag"
+                      >
                         {{ category }}
                       </span>
                     </div>
@@ -970,7 +1087,9 @@
           </div>
 
           <div class="form-actions">
-            <BaseButton variant="secondary" @click="goToStep(4)">Back</BaseButton>
+            <BaseButton variant="secondary" @click="goToStep(4)"
+              >Back</BaseButton
+            >
             <BaseButton @click="submitCase">Create Case</BaseButton>
           </div>
         </div>
@@ -978,7 +1097,15 @@
 
       <!-- Enhanced AI Insights Panel -->
       <div v-if="isAIEnabled" class="ai-preview-container">
-        <div class="ai-preview" style="border:1px solid var(--border-color, rgba(0,0,0,0.08)); border-radius:12px; overflow:hidden; background: var(--card-bg, #fff);">
+        <div
+          class="ai-preview"
+          style="
+            border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+            border-radius: 12px;
+            overflow: hidden;
+            background: var(--card-bg, #fff);
+          "
+        >
           <div class="ai-preview-header">
             <svg
               width="24"
@@ -1026,13 +1153,27 @@
             <!-- Audio Upload (AI Panel) -->
             <div v-if="aiMode === 'transcription'" class="ai-preview-section">
               <div class="ai-preview-section-title">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" stroke="currentColor" stroke-width="2"/>
-                  <path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="currentColor" stroke-width="2"/>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
+                  <path
+                    d="M19 10v2a7 7 0 0 1-14 0v-2"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
                 </svg>
                 Upload Audio
               </div>
-              <div 
+              <div
                 class="ai-audio-upload"
                 :class="{ 'has-file': audioFile, 'drag-over': isDragOver }"
                 @drop="onAudioDrop"
@@ -1040,44 +1181,114 @@
                 @dragleave.prevent="isDragOver = false"
                 @dragenter.prevent
               >
-                <input 
+                <input
                   ref="audioFileInput"
-                  type="file" 
-                  accept="audio/*" 
-                  @change="onAudioUpload" 
-                  style="display: none;"
+                  type="file"
+                  accept="audio/*"
+                  @change="onAudioUpload"
+                  style="display: none"
                 />
-                
+
                 <div v-if="!audioFile" class="upload-placeholder">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" stroke="currentColor" stroke-width="2"/>
-                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="currentColor" stroke-width="2"/>
+                  <svg
+                    width="32"
+                    height="32"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    />
+                    <path
+                      d="M19 10v2a7 7 0 0 1-14 0v-2"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    />
                   </svg>
                   <div class="upload-text">
                     <span class="upload-title">Drop audio file here</span>
                     <span class="upload-subtitle">or click to browse</span>
                   </div>
-                  <button type="button" class="upload-btn" @click="$refs.audioFileInput.click()">
+                  <button
+                    type="button"
+                    class="upload-btn"
+                    @click="$refs.audioFileInput.click()"
+                  >
                     Choose File
                   </button>
                 </div>
-                
+
                 <div v-else class="audio-file-info">
                   <div class="audio-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M9 18V5l12-2v13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      <circle cx="6" cy="18" r="3" stroke="currentColor" stroke-width="2"/>
-                      <circle cx="18" cy="16" r="3" stroke="currentColor" stroke-width="2"/>
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M9 18V5l12-2v13"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                      <circle
+                        cx="6"
+                        cy="18"
+                        r="3"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      />
+                      <circle
+                        cx="18"
+                        cy="16"
+                        r="3"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      />
                     </svg>
                   </div>
                   <div class="audio-details">
-                    <div class="audio-name">{{ audioFile.name || 'Audio file' }}</div>
-                    <div class="audio-meta">{{ formatFileSize(audioFile.size) }} • {{ audioDuration }}s</div>
+                    <div class="audio-name">
+                      {{ audioFile.name || "Audio file" }}
+                    </div>
+                    <div class="audio-meta">
+                      {{ formatFileSize(audioFile.size) }} •
+                      {{ audioDuration }}s
+                    </div>
                   </div>
-                  <button type="button" class="remove-audio-btn" @click="removeAudio" title="Remove audio">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      <path d="M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <button
+                    type="button"
+                    class="remove-audio-btn"
+                    @click="removeAudio"
+                    title="Remove audio"
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M18 6L6 18"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                      <path
+                        d="M6 6L18 18"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -1087,24 +1298,82 @@
             <!-- Transcription Output -->
             <div v-if="aiMode === 'transcription' && audioTranscription" class="ai-preview-section">
               <div class="ai-preview-section-title">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="2"/>
-                  <polyline points="14,2 14,8 20,8" stroke="currentColor" stroke-width="2"/>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
+                  <polyline
+                    points="14,2 14,8 20,8"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
                 </svg>
                 Case Transcription
-                <button type="button" class="btn-copy" @click="copyTranscription" style="margin-left:auto;">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke="currentColor" stroke-width="2"/>
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2"/>
+                <button
+                  type="button"
+                  class="btn-copy"
+                  @click="copyTranscription"
+                  style="margin-left: auto"
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <rect
+                      x="9"
+                      y="9"
+                      width="13"
+                      height="13"
+                      rx="2"
+                      ry="2"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    />
+                    <path
+                      d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    />
                   </svg>
                   Copy
                 </button>
               </div>
               <div class="transcription-text">{{ audioTranscription }}</div>
-              <div class="transcription-verify" style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
-                <div class="question" style="font-weight:600;">Is the transcription correct?</div>
-                <div class="options" style="display:flex; gap:16px; align-items:center;">
-                  <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+              <div
+                class="transcription-verify"
+                style="
+                  margin-top: 10px;
+                  display: flex;
+                  flex-direction: column;
+                  gap: 8px;
+                "
+              >
+                <div class="question" style="font-weight: 600">
+                  Is the transcription correct?
+                </div>
+                <div
+                  class="options"
+                  style="display: flex; gap: 16px; align-items: center"
+                >
+                  <label
+                    style="
+                      display: flex;
+                      align-items: center;
+                      gap: 6px;
+                      cursor: pointer;
+                    "
+                  >
                     <input
                       type="radio"
                       name="transcription-correct"
@@ -1113,7 +1382,14 @@
                     />
                     <span>Yes</span>
                   </label>
-                  <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                  <label
+                    style="
+                      display: flex;
+                      align-items: center;
+                      gap: 6px;
+                      cursor: pointer;
+                    "
+                  >
                     <input
                       type="radio"
                       name="transcription-correct"
@@ -1183,11 +1459,39 @@
               </div>
             </div>
               <div class="ai-preview-section-title">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="2"/>
-                  <polyline points="14,2 14,8 20,8" stroke="currentColor" stroke-width="2"/>
-                  <line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="2"/>
-                  <line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="2"/>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
+                  <polyline
+                    points="14,2 14,8 20,8"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
+                  <line
+                    x1="16"
+                    y1="13"
+                    x2="8"
+                    y2="13"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
+                  <line
+                    x1="16"
+                    y1="17"
+                    x2="8"
+                    y2="17"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
                 </svg>
                 Case Summary
               </div>
@@ -1195,7 +1499,10 @@
                 <div class="summary-item">
                   <div class="summary-label">Risk Level</div>
                   <div class="summary-value">
-                    <span class="risk-badge" :class="`risk-${caseSummary.riskLevel}`">
+                    <span
+                      class="risk-badge"
+                      :class="`risk-${caseSummary.riskLevel}`"
+                    >
                       {{ caseSummary.riskLevel.toUpperCase() }}
                     </span>
                   </div>
@@ -1208,7 +1515,11 @@
                   <div class="summary-label">Key Concerns</div>
                   <div class="summary-value">
                     <div class="concern-tags">
-                      <span v-for="concern in caseSummary.keyConcerns" :key="concern" class="concern-tag">
+                      <span
+                        v-for="concern in caseSummary.keyConcerns"
+                        :key="concern"
+                        class="concern-tag"
+                      >
                         {{ concern }}
                       </span>
                     </div>
@@ -1216,7 +1527,9 @@
                 </div>
                 <div class="summary-item full-width">
                   <div class="summary-label">AI Analysis</div>
-                  <div class="summary-value summary-text">{{ caseSummary.analysis }}</div>
+                  <div class="summary-value summary-text">
+                    {{ caseSummary.analysis }}
+                  </div>
                 </div>
               </div>
             </div>
@@ -1224,20 +1537,44 @@
             <!-- Smart Insights Section -->
             <div class="ai-preview-section">
               <div class="ai-preview-section-title">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" stroke-width="2"/>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="3"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
+                  <path
+                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
                 </svg>
                 Smart Insights
               </div>
               <div class="ai-suggestions">
-                <div v-for="insight in aiInsights" :key="insight.id" class="ai-suggestion" :class="`suggestion-${insight.type}`">
+                <div
+                  v-for="insight in aiInsights"
+                  :key="insight.id"
+                  class="ai-suggestion"
+                  :class="`suggestion-${insight.type}`"
+                >
                   <div class="suggestion-icon">{{ insight.icon }}</div>
                   <div class="suggestion-content">
                     <div class="suggestion-title">{{ insight.title }}</div>
                     <div class="suggestion-text">{{ insight.message }}</div>
                     <div v-if="insight.action" class="suggestion-action">
-                      <button class="btn-suggestion" @click="applyInsight(insight)">
+                      <button
+                        class="btn-suggestion"
+                        @click="applyInsight(insight)"
+                      >
                         {{ insight.action }}
                       </button>
                     </div>
@@ -1249,16 +1586,44 @@
             <!-- Recommendations Section -->
             <div v-if="recommendations.length > 0" class="ai-preview-section">
               <div class="ai-preview-section-title">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M9 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-4" stroke="currentColor" stroke-width="2"/>
-                  <polyline points="9,11 12,14 15,11" stroke="currentColor" stroke-width="2"/>
-                  <line x1="12" y1="2" x2="12" y2="14" stroke="currentColor" stroke-width="2"/>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M9 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-4"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
+                  <polyline
+                    points="9,11 12,14 15,11"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
+                  <line
+                    x1="12"
+                    y1="2"
+                    x2="12"
+                    y2="14"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
                 </svg>
                 Recommendations
               </div>
               <div class="recommendations-list">
-                <div v-for="rec in recommendations" :key="rec.id" class="recommendation-item">
-                  <div class="rec-priority" :class="`priority-${rec.priority}`"></div>
+                <div
+                  v-for="rec in recommendations"
+                  :key="rec.id"
+                  class="recommendation-item"
+                >
+                  <div
+                    class="rec-priority"
+                    :class="`priority-${rec.priority}`"
+                  ></div>
                   <div class="rec-content">
                     <div class="rec-title">{{ rec.title }}</div>
                     <div class="rec-description">{{ rec.description }}</div>
@@ -1277,30 +1642,45 @@
           <h3>New Client</h3>
           <span class="simple-modal-close" @click="closeClientModal">×</span>
         </div>
-        
+
         <div class="simple-modal-body">
           <!-- Show existing clients -->
-          <div v-if="formData.step2.clients.length > 0" class="existing-clients">
+          <div
+            v-if="formData.step2.clients.length > 0"
+            class="existing-clients"
+          >
             <h4>Added Clients:</h4>
-            <div v-for="(client, index) in formData.step2.clients" :key="index" class="client-display">
+            <div
+              v-for="(client, index) in formData.step2.clients"
+              :key="index"
+              class="client-display"
+            >
               <span>{{ client.name }} ({{ client.age }} {{ client.sex }})</span>
-              <button @click="removeClient(index)" class="remove-btn">Remove</button>
+              <button @click="removeClient(index)" class="remove-btn">
+                Remove
+              </button>
             </div>
           </div>
-          
+
           <!-- Multi-step Client Form -->
           <div class="add-client-form">
             <h4>Add New Client:</h4>
-            
+
             <!-- Progress Steps -->
             <div class="form-steps">
               <div class="step-indicator">
-                <div v-for="(step, index) in clientSteps" :key="index" 
-                     :class="['step', { 
-                       active: currentClientStep === index, 
-                       completed: currentClientStep > index,
-                       future: currentClientStep < index
-                     }]">
+                <div
+                  v-for="(step, index) in clientSteps"
+                  :key="index"
+                  :class="[
+                    'step',
+                    {
+                      active: currentClientStep === index,
+                      completed: currentClientStep > index,
+                      future: currentClientStep < index,
+                    },
+                  ]"
+                >
                   <span class="step-number">
                     <span>{{ index + 1 }}</span>
                   </span>
@@ -1308,7 +1688,7 @@
                 </div>
               </div>
             </div>
-            
+
             <!-- Step Content -->
             <div class="step-content">
               <!-- Step 1: Basic Information -->
@@ -1316,19 +1696,27 @@
                 <div class="form-fields">
                   <div class="field-group">
                     <label>Client's Name *</label>
-                    <input v-model="clientForm.name" type="text" placeholder="Enter Client's Names" />
+                    <input
+                      v-model="clientForm.name"
+                      type="text"
+                      placeholder="Enter Client's Names"
+                    />
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Age</label>
-                    <input v-model="clientForm.age" type="number" placeholder="Enter age" />
+                    <input
+                      v-model="clientForm.age"
+                      type="number"
+                      placeholder="Enter age"
+                    />
                   </div>
-                  
+
                   <div class="field-group">
                     <label>DOB</label>
                     <input v-model="clientForm.dob" type="date" />
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Age Group</label>
                     <select v-model="clientForm.ageGroup">
@@ -1342,7 +1730,7 @@
                       <option value="51+">51+ years</option>
                     </select>
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Location</label>
                     <select v-model="clientForm.location">
@@ -1355,7 +1743,7 @@
                       <option value="Other">Other</option>
                     </select>
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Sex</label>
                     <select v-model="clientForm.sex">
@@ -1368,15 +1756,19 @@
                   </div>
                 </div>
               </div>
-              
+
               <!-- Step 2: Contact & Identity -->
               <div v-if="currentClientStep === 1" class="form-step">
                 <div class="form-fields">
                   <div class="field-group">
                     <label>Nearest Landmark</label>
-                    <input v-model="clientForm.landmark" type="text" placeholder="Enter Nearest Landmark" />
+                    <input
+                      v-model="clientForm.landmark"
+                      type="text"
+                      placeholder="Enter Nearest Landmark"
+                    />
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Nationality</label>
                     <select v-model="clientForm.nationality">
@@ -1389,24 +1781,30 @@
                       <option value="Other">Other</option>
                     </select>
                   </div>
-                  
+
                   <div class="field-group">
                     <label>ID Type</label>
                     <select v-model="clientForm.idType">
                       <option value="">Select ID Type</option>
                       <option value="National ID">National ID</option>
                       <option value="Passport">Passport</option>
-                      <option value="Birth Certificate">Birth Certificate</option>
+                      <option value="Birth Certificate">
+                        Birth Certificate
+                      </option>
                       <option value="Refugee ID">Refugee ID</option>
                       <option value="Other">Other</option>
                     </select>
                   </div>
-                  
+
                   <div class="field-group">
                     <label>ID Number</label>
-                    <input v-model="clientForm.idNumber" type="text" placeholder="Enter Reporter's ID Number" />
+                    <input
+                      v-model="clientForm.idNumber"
+                      type="text"
+                      placeholder="Enter Reporter's ID Number"
+                    />
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Language</label>
                     <select v-model="clientForm.language">
@@ -1420,22 +1818,34 @@
                       <option value="Other">Other</option>
                     </select>
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Is the Client a Refugee?</label>
                     <div class="radio-group">
                       <label class="radio-option">
-                        <input type="radio" v-model="clientForm.isRefugee" value="yes" />
+                        <input
+                          type="radio"
+                          v-model="clientForm.isRefugee"
+                          value="yes"
+                        />
                         <span class="radio-indicator"></span>
                         <span class="radio-label">Yes</span>
                       </label>
                       <label class="radio-option">
-                        <input type="radio" v-model="clientForm.isRefugee" value="no" />
+                        <input
+                          type="radio"
+                          v-model="clientForm.isRefugee"
+                          value="no"
+                        />
                         <span class="radio-indicator"></span>
                         <span class="radio-label">No</span>
                       </label>
                       <label class="radio-option">
-                        <input type="radio" v-model="clientForm.isRefugee" value="unknown" />
+                        <input
+                          type="radio"
+                          v-model="clientForm.isRefugee"
+                          value="unknown"
+                        />
                         <span class="radio-indicator"></span>
                         <span class="radio-label">Unknown</span>
                       </label>
@@ -1443,7 +1853,7 @@
                   </div>
                 </div>
               </div>
-              
+
               <!-- Step 3: Contact Information -->
               <div v-if="currentClientStep === 2" class="form-step">
                 <div class="form-fields">
@@ -1461,22 +1871,34 @@
                       <option value="Other">Other</option>
                     </select>
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Phone Number</label>
-                    <input v-model="clientForm.phone" type="tel" placeholder="Enter Reporter's Phone Number" />
+                    <input
+                      v-model="clientForm.phone"
+                      type="tel"
+                      placeholder="Enter Reporter's Phone Number"
+                    />
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Alternative Phone</label>
-                    <input v-model="clientForm.alternativePhone" type="tel" placeholder="Enter Alternate Phone Number" />
+                    <input
+                      v-model="clientForm.alternativePhone"
+                      type="tel"
+                      placeholder="Enter Alternate Phone Number"
+                    />
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Email</label>
-                    <input v-model="clientForm.email" type="email" placeholder="Enter Reporter's Email Address" />
+                    <input
+                      v-model="clientForm.email"
+                      type="email"
+                      placeholder="Enter Reporter's Email Address"
+                    />
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Reporter's Relationship with Client</label>
                     <select v-model="clientForm.relationship">
@@ -1491,22 +1913,30 @@
                       <option value="Other">Other</option>
                     </select>
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Relationship Comment</label>
-                    <textarea v-model="clientForm.relationshipComment" placeholder="Enter Comments about the relationship" rows="3"></textarea>
+                    <textarea
+                      v-model="clientForm.relationshipComment"
+                      placeholder="Enter Comments about the relationship"
+                      rows="3"
+                    ></textarea>
                   </div>
                 </div>
               </div>
-              
+
               <!-- Step 4: Household & Background -->
               <div v-if="currentClientStep === 3" class="form-step">
                 <div class="form-fields">
                   <div class="field-group">
                     <label>Number of Adults in Household</label>
-                    <input v-model="clientForm.adultsInHousehold" type="number" placeholder="Enter number" />
+                    <input
+                      v-model="clientForm.adultsInHousehold"
+                      type="number"
+                      placeholder="Enter number"
+                    />
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Household Type</label>
                     <select v-model="clientForm.householdType">
@@ -1519,7 +1949,7 @@
                       <option value="Other">Other</option>
                     </select>
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Head of Household Occupation</label>
                     <select v-model="clientForm.headOccupation">
@@ -1532,12 +1962,16 @@
                       <option value="Other">Other</option>
                     </select>
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Parent/Guardian's Name</label>
-                    <input v-model="clientForm.parentGuardianName" type="text" placeholder="Enter name" />
+                    <input
+                      v-model="clientForm.parentGuardianName"
+                      type="text"
+                      placeholder="Enter name"
+                    />
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Parent/Guardian's Marital Status</label>
                     <select v-model="clientForm.parentMaritalStatus">
@@ -1549,14 +1983,18 @@
                       <option value="Separated">Separated</option>
                     </select>
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Parent/Guardian's Identification Number</label>
-                    <input v-model="clientForm.parentIdNumber" type="text" placeholder="Enter ID number" />
+                    <input
+                      v-model="clientForm.parentIdNumber"
+                      type="text"
+                      placeholder="Enter ID number"
+                    />
                   </div>
                 </div>
               </div>
-              
+
               <!-- Step 5: Health & Status -->
               <div v-if="currentClientStep === 4" class="form-step">
                 <div class="form-fields">
@@ -1570,7 +2008,7 @@
                       <option value="Unknown">Unknown</option>
                     </select>
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Client's HIV Status</label>
                     <select v-model="clientForm.hivStatus">
@@ -1581,7 +2019,7 @@
                       <option value="Not Tested">Not Tested</option>
                     </select>
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Client's Marital Status</label>
                     <select v-model="clientForm.maritalStatus">
@@ -1593,37 +2031,52 @@
                       <option value="Separated">Separated</option>
                     </select>
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Is the Client Attending School?</label>
                     <div class="radio-group">
                       <label class="radio-option">
-                        <input type="radio" v-model="clientForm.attendingSchool" value="yes" />
+                        <input
+                          type="radio"
+                          v-model="clientForm.attendingSchool"
+                          value="yes"
+                        />
                         <span class="radio-indicator"></span>
                         <span class="radio-label">Yes</span>
                       </label>
                       <label class="radio-option">
-                        <input type="radio" v-model="clientForm.attendingSchool" value="no" />
+                        <input
+                          type="radio"
+                          v-model="clientForm.attendingSchool"
+                          value="no"
+                        />
                         <span class="radio-indicator"></span>
                         <span class="radio-label">No</span>
                       </label>
                       <label class="radio-option">
-                        <input type="radio" v-model="clientForm.attendingSchool" value="unknown" />
+                        <input
+                          type="radio"
+                          v-model="clientForm.attendingSchool"
+                          value="unknown"
+                        />
                         <span class="radio-indicator"></span>
                         <span class="radio-label">Unknown</span>
                       </label>
                     </div>
-                    
+
                     <!-- Conditional field for school name when "Yes" is selected -->
-                    <div v-if="clientForm.attendingSchool === 'yes'" class="conditional-field">
+                    <div
+                      v-if="clientForm.attendingSchool === 'yes'"
+                      class="conditional-field"
+                    >
                       <label>School Name</label>
-                      <input 
-                        v-model="clientForm.schoolName" 
-                        type="text" 
+                      <input
+                        v-model="clientForm.schoolName"
+                        type="text"
                         placeholder="Enter school name"
                         class="school-input"
                       />
-                      
+
                       <label>School Level</label>
                       <select v-model="clientForm.schoolLevel">
                         <option value="">Select School Level</option>
@@ -1632,26 +2085,34 @@
                         <option value="secondary">Secondary</option>
                         <option value="tertiary">Tertiary</option>
                       </select>
-                      
+
                       <label>School Address</label>
-                      <input 
-                        v-model="clientForm.schoolAddress" 
-                        type="text" 
+                      <input
+                        v-model="clientForm.schoolAddress"
+                        type="text"
                         placeholder="Enter school address"
                       />
-                      
+
                       <label>School Type</label>
                       <select v-model="clientForm.schoolType">
                         <option value="">Select School Type</option>
-                        <option value="government-boarding">Government Boarding</option>
+                        <option value="government-boarding">
+                          Government Boarding
+                        </option>
                         <option value="government-day">Government Day</option>
-                        <option value="government-day-boarding">Government Day and Boarding</option>
+                        <option value="government-day-boarding">
+                          Government Day and Boarding
+                        </option>
                         <option value="none">None</option>
-                        <option value="private-boarding">Private Boarding</option>
+                        <option value="private-boarding">
+                          Private Boarding
+                        </option>
                         <option value="private-day">Private Day</option>
-                        <option value="private-day-boarding">Private Day and Boarding</option>
+                        <option value="private-day-boarding">
+                          Private Day and Boarding
+                        </option>
                       </select>
-                      
+
                       <label>School Attendance</label>
                       <select v-model="clientForm.schoolAttendance">
                         <option value="">Select Attendance Status</option>
@@ -1663,29 +2124,44 @@
                       </select>
                     </div>
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Is the Client Disabled?</label>
                     <div class="radio-group">
                       <label class="radio-option">
-                        <input type="radio" v-model="clientForm.isDisabled" value="yes" />
+                        <input
+                          type="radio"
+                          v-model="clientForm.isDisabled"
+                          value="yes"
+                        />
                         <span class="radio-indicator"></span>
                         <span class="radio-label">Yes</span>
                       </label>
                       <label class="radio-option">
-                        <input type="radio" v-model="clientForm.isDisabled" value="no" />
+                        <input
+                          type="radio"
+                          v-model="clientForm.isDisabled"
+                          value="no"
+                        />
                         <span class="radio-indicator"></span>
                         <span class="radio-label">No</span>
                       </label>
                       <label class="radio-option">
-                        <input type="radio" v-model="clientForm.isDisabled" value="unknown" />
+                        <input
+                          type="radio"
+                          v-model="clientForm.isDisabled"
+                          value="unknown"
+                        />
                         <span class="radio-indicator"></span>
                         <span class="radio-label">Unknown</span>
                       </label>
                     </div>
-                    
+
                     <!-- Conditional field for disability details when "Yes" is selected -->
-                    <div v-if="clientForm.isDisabled === 'yes'" class="conditional-field">
+                    <div
+                      v-if="clientForm.isDisabled === 'yes'"
+                      class="conditional-field"
+                    >
                       <label>Disability</label>
                       <select v-model="clientForm.disability">
                         <option value="">Select Type of Disability</option>
@@ -1693,76 +2169,117 @@
                         <option value="visual">Visual Impairment</option>
                         <option value="hearing">Hearing Impairment</option>
                         <option value="speech">Speech Impairment</option>
-                        <option value="intellectual">Intellectual Disability</option>
-                        <option value="developmental">Developmental Disability</option>
-                        <option value="mental-health">Mental Health Condition</option>
+                        <option value="intellectual">
+                          Intellectual Disability
+                        </option>
+                        <option value="developmental">
+                          Developmental Disability
+                        </option>
+                        <option value="mental-health">
+                          Mental Health Condition
+                        </option>
                         <option value="multiple">Multiple Disabilities</option>
                         <option value="other">Other</option>
                       </select>
                     </div>
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Is the Client Referred for Special Services?</label>
                     <div class="radio-group">
                       <label class="radio-option">
-                        <input type="radio" v-model="clientForm.specialServicesReferred" value="yes" />
+                        <input
+                          type="radio"
+                          v-model="clientForm.specialServicesReferred"
+                          value="yes"
+                        />
                         <span class="radio-indicator"></span>
                         <span class="radio-label">Yes</span>
                       </label>
                       <label class="radio-option">
-                        <input type="radio" v-model="clientForm.specialServicesReferred" value="no" />
+                        <input
+                          type="radio"
+                          v-model="clientForm.specialServicesReferred"
+                          value="no"
+                        />
                         <span class="radio-indicator"></span>
                         <span class="radio-label">No</span>
                       </label>
                       <label class="radio-option">
-                        <input type="radio" v-model="clientForm.specialServicesReferred" value="unknown" />
+                        <input
+                          type="radio"
+                          v-model="clientForm.specialServicesReferred"
+                          value="unknown"
+                        />
                         <span class="radio-indicator"></span>
                         <span class="radio-label">Unknown</span>
                       </label>
                     </div>
-                    
+
                     <!-- Conditional field for special services referral when "Yes" is selected -->
-                    <div v-if="clientForm.specialServicesReferred === 'yes'" class="conditional-field">
+                    <div
+                      v-if="clientForm.specialServicesReferred === 'yes'"
+                      class="conditional-field"
+                    >
                       <label>Special Services Referral</label>
                       <div class="multi-select-dropdown">
-                        <div class="dropdown-trigger" @click="toggleSpecialServicesDropdown">
+                        <div
+                          class="dropdown-trigger"
+                          @click="toggleSpecialServicesDropdown"
+                        >
                           <span class="selected-text">
-                            {{ getSelectedSpecialServicesText() || 'Select Special Services Referral' }}
+                            {{
+                              getSelectedSpecialServicesText() ||
+                              "Select Special Services Referral"
+                            }}
                           </span>
-                          <svg class="dropdown-arrow" :class="{ 'open': showSpecialServicesDropdown }" width="12" height="12" viewBox="0 0 12 12">
-                            <path d="M6 8L2 4h8L6 8z" fill="currentColor"/>
+                          <svg
+                            class="dropdown-arrow"
+                            :class="{ open: showSpecialServicesDropdown }"
+                            width="12"
+                            height="12"
+                            viewBox="0 0 12 12"
+                          >
+                            <path d="M6 8L2 4h8L6 8z" fill="currentColor" />
                           </svg>
                         </div>
-                        
-                        <div v-if="showSpecialServicesDropdown" class="dropdown-options">
+
+                        <div
+                          v-if="showSpecialServicesDropdown"
+                          class="dropdown-options"
+                        >
                           <div class="search-box">
-                            <input 
-                              v-model="specialServicesSearch" 
-                              type="text" 
+                            <input
+                              v-model="specialServicesSearch"
+                              type="text"
                               placeholder="Search services..."
                               @click.stop
                             />
                           </div>
-                          
+
                           <div class="options-list">
-                            <label 
-                              v-for="service in filteredSpecialServices" 
+                            <label
+                              v-for="service in filteredSpecialServices"
                               :key="service.value"
                               class="checkbox-option"
                             >
-                              <input 
-                                type="checkbox" 
+                              <input
+                                type="checkbox"
                                 :value="service.value"
                                 v-model="clientForm.specialServicesReferral"
                                 @click.stop
                               />
-                              <span class="checkbox-label">{{ service.label }}</span>
+                              <span class="checkbox-label">{{
+                                service.label
+                              }}</span>
                             </label>
                           </div>
-                          
+
                           <div class="pagination-info">
-                            <span>{{ filteredSpecialServices.length }} of {{ specialServicesOptions.length }}</span>
+                            <span
+                              >{{ filteredSpecialServices.length }} of
+                              {{ specialServicesOptions.length }}</span
+                            >
                           </div>
                         </div>
                       </div>
@@ -1771,12 +2288,33 @@
                 </div>
               </div>
             </div>
-            
+
             <!-- Step Navigation -->
             <div class="step-navigation">
-              <button v-if="currentClientStep > 0" @click="prevClientStep" type="button" class="btn btn--secondary">Previous</button>
-              <button v-if="currentClientStep < clientSteps.length - 1" @click="nextClientStep" type="button" class="btn btn--primary">Next</button>
-              <button v-if="currentClientStep === clientSteps.length - 1" @click="addClient" type="button" class="btn btn--primary">Create</button>
+              <button
+                v-if="currentClientStep > 0"
+                @click="prevClientStep"
+                type="button"
+                class="btn btn--secondary"
+              >
+                Previous
+              </button>
+              <button
+                v-if="currentClientStep < clientSteps.length - 1"
+                @click="nextClientStep"
+                type="button"
+                class="btn btn--primary"
+              >
+                Next
+              </button>
+              <button
+                v-if="currentClientStep === clientSteps.length - 1"
+                @click="addClient"
+                type="button"
+                class="btn btn--primary"
+              >
+                Create
+              </button>
             </div>
           </div>
         </div>
@@ -1788,32 +2326,52 @@
       <div class="simple-modal-content perpetrator-modal-large">
         <div class="simple-modal-header">
           <h3>New Perpetrator</h3>
-          <span class="simple-modal-close" @click="closePerpetratorModal">×</span>
+          <span class="simple-modal-close" @click="closePerpetratorModal"
+            >×</span
+          >
         </div>
-        
+
         <div class="simple-modal-body">
           <!-- Show existing perpetrators -->
-          <div v-if="formData.step2.perpetrators.length > 0" class="existing-perpetrators">
+          <div
+            v-if="formData.step2.perpetrators.length > 0"
+            class="existing-perpetrators"
+          >
             <h4>Added Perpetrators:</h4>
-            <div v-for="(perpetrator, index) in formData.step2.perpetrators" :key="index" class="perpetrator-display">
-              <span>{{ perpetrator.name }} ({{ perpetrator.age }} {{ perpetrator.sex }})</span>
-              <button @click="removePerpetrator(index)" class="remove-btn">Remove</button>
+            <div
+              v-for="(perpetrator, index) in formData.step2.perpetrators"
+              :key="index"
+              class="perpetrator-display"
+            >
+              <span
+                >{{ perpetrator.name }} ({{ perpetrator.age }}
+                {{ perpetrator.sex }})</span
+              >
+              <button @click="removePerpetrator(index)" class="remove-btn">
+                Remove
+              </button>
             </div>
           </div>
-          
+
           <!-- Multi-step Perpetrator Form -->
           <div class="add-perpetrator-form">
             <h4>Add New Perpetrator:</h4>
-            
+
             <!-- Progress Steps -->
             <div class="form-steps">
               <div class="step-indicator">
-                <div v-for="(step, index) in perpetratorSteps" :key="index" 
-                     :class="['step', { 
-                       active: currentPerpetratorStep === index, 
-                       completed: currentPerpetratorStep > index,
-                       future: currentPerpetratorStep < index
-                     }]">
+                <div
+                  v-for="(step, index) in perpetratorSteps"
+                  :key="index"
+                  :class="[
+                    'step',
+                    {
+                      active: currentPerpetratorStep === index,
+                      completed: currentPerpetratorStep > index,
+                      future: currentPerpetratorStep < index,
+                    },
+                  ]"
+                >
                   <span class="step-number">
                     <span>{{ index + 1 }}</span>
                   </span>
@@ -1821,7 +2379,7 @@
                 </div>
               </div>
             </div>
-            
+
             <!-- Step Content -->
             <div class="step-content">
               <!-- Step 1: Basic Information -->
@@ -1829,67 +2387,64 @@
                 <div class="form-fields">
                   <div class="field-group">
                     <label>Perpetrator's Name *</label>
-                    <input v-model="perpetratorForm.name" type="text" placeholder="Enter Perpetrator's Names" />
+                    <input
+                      v-model="perpetratorForm.name"
+                      type="text"
+                      placeholder="Enter Perpetrator's Names"
+                    />
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Age</label>
-                    <input v-model="perpetratorForm.age" type="number" placeholder="Enter age" />
+                    <input
+                      v-model="perpetratorForm.age"
+                      type="number"
+                      placeholder="Enter age"
+                    />
                   </div>
-                  
+
                   <div class="field-group">
                     <label>DOB</label>
                     <input v-model="perpetratorForm.dob" type="date" />
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Age Group</label>
-                    <select v-model="perpetratorForm.ageGroup">
-                      <option value="">Select Age Group</option>
-                      <option value="0-5">0-5 years</option>
-                      <option value="6-12">6-12 years</option>
-                      <option value="13-17">13-17 years</option>
-                      <option value="18-25">18-25 years</option>
-                      <option value="26-35">26-35 years</option>
-                      <option value="36-50">36-50 years</option>
-                      <option value="51+">51+ years</option>
-                    </select>
+                    <BaseSelect v-model="perpetratorForm.ageGroup" placeholder="Select age group"
+                  :category-id="101"/>
+                      
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Location</label>
-                    <select v-model="perpetratorForm.location">
-                      <option value="">Select Location</option>
-                      <option value="Nairobi">Nairobi</option>
-                      <option value="Mombasa">Mombasa</option>
-                      <option value="Kisumu">Kisumu</option>
-                      <option value="Nakuru">Nakuru</option>
-                      <option value="Eldoret">Eldoret</option>
-                      <option value="Other">Other</option>
-                    </select>
+                    <BaseSelect v-model="perpetratorForm.location" placeholder="Enter location"
+                  :category-id="88"
+                />
+                      
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Sex</label>
-                    <select v-model="perpetratorForm.sex">
-                      <option value="">Select Gender</option>
-                      <option value="female">Female</option>
-                      <option value="male">Male</option>
-                      <option value="non-binary">Non-binary</option>
-                      <option value="other">Other</option>
-                    </select>
+                    <BaseSelect v-model="perpetratorForm.sex" placeholder="Select sex"
+                  :category-id="120"
+                  />
+                      
                   </div>
                 </div>
               </div>
-              
+
               <!-- Step 2: Identity & Contact -->
               <div v-if="currentPerpetratorStep === 1" class="form-step">
                 <div class="form-fields">
                   <div class="field-group">
                     <label>Nearest Landmark</label>
-                    <input v-model="perpetratorForm.landmark" type="text" placeholder="Enter Nearest Landmark" />
+                    <input
+                      v-model="perpetratorForm.landmark"
+                      type="text"
+                      placeholder="Enter Nearest Landmark"
+                    />
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Nationality</label>
                     <select v-model="perpetratorForm.nationality">
@@ -1902,24 +2457,30 @@
                       <option value="Other">Other</option>
                     </select>
                   </div>
-                  
+
                   <div class="field-group">
                     <label>ID Type</label>
                     <select v-model="perpetratorForm.idType">
                       <option value="">Select ID Type</option>
                       <option value="National ID">National ID</option>
                       <option value="Passport">Passport</option>
-                      <option value="Birth Certificate">Birth Certificate</option>
+                      <option value="Birth Certificate">
+                        Birth Certificate
+                      </option>
                       <option value="Refugee ID">Refugee ID</option>
                       <option value="Other">Other</option>
                     </select>
                   </div>
-                  
+
                   <div class="field-group">
                     <label>ID Number</label>
-                    <input v-model="perpetratorForm.idNumber" type="text" placeholder="Enter Reporter's ID Number" />
+                    <input
+                      v-model="perpetratorForm.idNumber"
+                      type="text"
+                      placeholder="Enter Reporter's ID Number"
+                    />
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Language</label>
                     <select v-model="perpetratorForm.language">
@@ -1933,22 +2494,34 @@
                       <option value="Other">Other</option>
                     </select>
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Is the Perpetrator a Refugee?</label>
                     <div class="radio-group">
                       <label class="radio-option">
-                        <input type="radio" v-model="perpetratorForm.isRefugee" value="yes" />
+                        <input
+                          type="radio"
+                          v-model="perpetratorForm.isRefugee"
+                          value="yes"
+                        />
                         <span class="radio-indicator"></span>
                         <span class="radio-label">Yes</span>
                       </label>
                       <label class="radio-option">
-                        <input type="radio" v-model="perpetratorForm.isRefugee" value="no" />
+                        <input
+                          type="radio"
+                          v-model="perpetratorForm.isRefugee"
+                          value="no"
+                        />
                         <span class="radio-indicator"></span>
                         <span class="radio-label">No</span>
                       </label>
                       <label class="radio-option">
-                        <input type="radio" v-model="perpetratorForm.isRefugee" value="unknown" />
+                        <input
+                          type="radio"
+                          v-model="perpetratorForm.isRefugee"
+                          value="unknown"
+                        />
                         <span class="radio-indicator"></span>
                         <span class="radio-label">Unknown</span>
                       </label>
@@ -1956,7 +2529,7 @@
                   </div>
                 </div>
               </div>
-              
+
               <!-- Step 3: Contact & Background -->
               <div v-if="currentPerpetratorStep === 2" class="form-step">
                 <div class="form-fields">
@@ -1974,22 +2547,34 @@
                       <option value="Other">Other</option>
                     </select>
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Phone Number</label>
-                    <input v-model="perpetratorForm.phone" type="tel" placeholder="Enter Reporter's Phone Number" />
+                    <input
+                      v-model="perpetratorForm.phone"
+                      type="tel"
+                      placeholder="Enter Reporter's Phone Number"
+                    />
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Alternative Phone</label>
-                    <input v-model="perpetratorForm.alternativePhone" type="tel" placeholder="Enter Alternate Phone Number" />
+                    <input
+                      v-model="perpetratorForm.alternativePhone"
+                      type="tel"
+                      placeholder="Enter Alternate Phone Number"
+                    />
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Email</label>
-                    <input v-model="perpetratorForm.email" type="email" placeholder="Enter Reporter's Email Address" />
+                    <input
+                      v-model="perpetratorForm.email"
+                      type="email"
+                      placeholder="Enter Reporter's Email Address"
+                    />
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Relationship with Client?</label>
                     <select v-model="perpetratorForm.relationship">
@@ -2004,22 +2589,34 @@
                       <option value="Other">Other</option>
                     </select>
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Shares Home with Client?</label>
                     <div class="radio-group">
                       <label class="radio-option">
-                        <input type="radio" v-model="perpetratorForm.sharesHome" value="yes" />
+                        <input
+                          type="radio"
+                          v-model="perpetratorForm.sharesHome"
+                          value="yes"
+                        />
                         <span class="radio-indicator"></span>
                         <span class="radio-label">Yes</span>
                       </label>
                       <label class="radio-option">
-                        <input type="radio" v-model="perpetratorForm.sharesHome" value="no" />
+                        <input
+                          type="radio"
+                          v-model="perpetratorForm.sharesHome"
+                          value="no"
+                        />
                         <span class="radio-indicator"></span>
                         <span class="radio-label">No</span>
                       </label>
                       <label class="radio-option">
-                        <input type="radio" v-model="perpetratorForm.sharesHome" value="unknown" />
+                        <input
+                          type="radio"
+                          v-model="perpetratorForm.sharesHome"
+                          value="unknown"
+                        />
                         <span class="radio-indicator"></span>
                         <span class="radio-label">Unknown</span>
                       </label>
@@ -2027,7 +2624,7 @@
                   </div>
                 </div>
               </div>
-              
+
               <!-- Step 4: Status & Details -->
               <div v-if="currentPerpetratorStep === 3" class="form-step">
                 <div class="form-fields">
@@ -2041,7 +2638,7 @@
                       <option value="Unknown">Unknown</option>
                     </select>
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Perpetrator's Profession</label>
                     <select v-model="perpetratorForm.profession">
@@ -2054,7 +2651,7 @@
                       <option value="Other">Other</option>
                     </select>
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Perpetrator's Marital Status</label>
                     <select v-model="perpetratorForm.maritalStatus">
@@ -2066,25 +2663,54 @@
                       <option value="Separated">Separated</option>
                     </select>
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Perpetrator's Guardian's Name</label>
-                    <input v-model="perpetratorForm.guardianName" type="text" placeholder="Enter Perpetrator's Guardian Name" />
+                    <input
+                      v-model="perpetratorForm.guardianName"
+                      type="text"
+                      placeholder="Enter Perpetrator's Guardian Name"
+                    />
                   </div>
-                  
+
                   <div class="field-group">
                     <label>Additional Details</label>
-                    <textarea v-model="perpetratorForm.additionalDetails" placeholder="Enter Additional Details" rows="4"></textarea>
+                    <textarea
+                      v-model="perpetratorForm.additionalDetails"
+                      placeholder="Enter Additional Details"
+                      rows="4"
+                    ></textarea>
                   </div>
                 </div>
               </div>
             </div>
-            
+
             <!-- Step Navigation -->
             <div class="step-navigation">
-              <button v-if="currentPerpetratorStep > 0" @click="prevPerpetratorStep" type="button" class="btn btn--secondary">Previous</button>
-              <button v-if="currentPerpetratorStep < perpetratorSteps.length - 1" @click="nextPerpetratorStep" type="button" class="btn btn--primary">Next</button>
-              <button v-if="currentPerpetratorStep === perpetratorSteps.length - 1" @click="addPerpetrator" type="button" class="btn btn--primary">Create</button>
+              <button
+                v-if="currentPerpetratorStep > 0"
+                @click="prevPerpetratorStep"
+                type="button"
+                class="btn btn--secondary"
+              >
+                Previous
+              </button>
+              <button
+                v-if="currentPerpetratorStep < perpetratorSteps.length - 1"
+                @click="nextPerpetratorStep"
+                type="button"
+                class="btn btn--primary"
+              >
+                Next
+              </button>
+              <button
+                v-if="currentPerpetratorStep === perpetratorSteps.length - 1"
+                @click="addPerpetrator"
+                type="button"
+                class="btn btn--primary"
+              >
+                Create
+              </button>
             </div>
           </div>
         </div>
@@ -2094,7 +2720,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, watch } from 'vue'
+  import { ref, reactive, computed, onMounted, watch, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseInput from '@/components/base/BaseInput.vue'
@@ -2104,6 +2730,7 @@ import { useTranscriptionsStore } from '@/stores/transcriptionsStore'
 import { useCaseStore } from '@/stores/cases'
 import CaseCreationHeader from '@/components/CaseCreationHeader.vue'
 import CaseCreationProgress from '@/components/CaseCreationProgress.vue'
+
 
 const router = useRouter()
 const transcriptionsStore = useTranscriptionsStore()
@@ -2122,123 +2749,52 @@ const clientModalOpen = ref(false)
 const perpetratorModalOpen = ref(false)
 
 // Special Services dropdown state
-const showSpecialServicesDropdown = ref(false)
-const specialServicesSearch = ref('')
+const showSpecialServicesDropdown = ref(false);
+const specialServicesSearch = ref("");
 
 // Case Category dropdown state
-const showCategoryDropdown = ref(false)
-const isCategoryPanelExpanded = ref(false)
+const showCategoryDropdown = ref(false);
+const isCategoryPanelExpanded = ref(false);
 
-// Case Categories with hierarchical structure
-const caseCategories = ref([
-  {
-    value: 'abuse',
-    label: 'Abuse',
-    expanded: false,
-    children: [
-      { value: 'child-exploitation', label: 'Child Exploitation' },
-      { value: 'child-neglect', label: 'Child Neglect' },
-      { value: 'economic-violence', label: 'Economic Violence' },
-      { value: 'emotional-psychological-abuse', label: 'Emotional & Psychological Abuse' },
-      { value: 'harmful-traditional-practices', label: 'Harmful Traditional Practices' },
-      { value: 'murder', label: 'Murder' },
-      { value: 'online-sexual-abuse-violence', label: 'Online Sexual Abuse & Violence' },
-      { value: 'others', label: 'Others' },
-      { value: 'physical-violence', label: 'Physical Violence' },
-      { value: 'sexual-violence', label: 'Sexual Violence' }
-    ]
-  },
-  {
-    value: 'counseling',
-    label: 'Counseling',
-    expanded: false,
-    children: [
-      { value: 'family-counseling', label: 'Family Counseling' },
-      { value: 'individual-counseling', label: 'Individual Counseling' },
-      { value: 'group-counseling', label: 'Group Counseling' },
-      { value: 'crisis-counseling', label: 'Crisis Counseling' }
-    ]
-  },
-  {
-    value: 'distress',
-    label: 'Distress',
-    expanded: false,
-    children: [
-      { value: 'emotional-distress', label: 'Emotional Distress' },
-      { value: 'mental-health-crisis', label: 'Mental Health Crisis' },
-      { value: 'suicidal-ideation', label: 'Suicidal Ideation' },
-      { value: 'panic-attacks', label: 'Panic Attacks' }
-    ]
-  },
-  {
-    value: 'fraud-theft',
-    label: 'Fraud/Theft',
-    expanded: false,
-    children: [
-      { value: 'identity-theft', label: 'Identity Theft' },
-      { value: 'financial-fraud', label: 'Financial Fraud' },
-      { value: 'cyber-crime', label: 'Cyber Crime' },
-      { value: 'property-theft', label: 'Property Theft' }
-    ]
-  },
-  {
-    value: 'health',
-    label: 'Health',
-    expanded: false,
-    children: [
-      { value: 'medical-emergency', label: 'Medical Emergency' },
-      { value: 'mental-health', label: 'Mental Health' },
-      { value: 'substance-abuse', label: 'Substance Abuse' },
-      { value: 'healthcare-access', label: 'Healthcare Access' }
-    ]
-  },
-  {
-    value: 'information-inquiry',
-    label: 'Information Inquiry',
-    expanded: false,
-    children: [
-      { value: 'general-information', label: 'General Information' },
-      { value: 'service-inquiry', label: 'Service Inquiry' },
-      { value: 'resource-request', label: 'Resource Request' },
-      { value: 'referral-inquiry', label: 'Referral Inquiry' }
-    ]
-  }
-])
+
 
 // Special Services options
 const specialServicesOptions = ref([
-  { value: 'assistant-commissioner-ees', label: 'Assistant Commissioner EES' },
-  { value: 'childrens-home', label: 'Children\'s Home' },
-  { value: 'commissioner-ees', label: 'Commissioner EES' },
-  { value: 'foreign-affairs', label: 'Foreign Affairs' },
-  { value: 'gbv-shelters', label: 'GBV Shelters' },
-  { value: 'head-eeu', label: 'Head EEU' },
-  { value: 'head-ieu', label: 'Head IEU' },
-  { value: 'health-facility', label: 'Health Facility' },
-  { value: 'labour-officer', label: 'Labour Officer (LO)' },
-  { value: 'labour-support-officer', label: 'Labour Support Officer (LSO)' },
-  { value: 'lcs-lcs', label: 'LCs LCs' },
-  { value: 'legal-aid', label: 'Legal Aid' },
-  { value: 'local-recruitment-agency', label: 'Local Recruitment Agency/Associations' },
-  { value: 'mia-uganda-police', label: 'MIA (Uganda Police Force)' },
-  { value: 'ngos-csos-cbos', label: 'NGOs/CSOs/CBOs' },
-  { value: 'other', label: 'Other' },
-  { value: 'police', label: 'Police' },
-  { value: 'probation-office', label: 'Probation Office' },
-  { value: 'special-needs-facility', label: 'Special Needs Facility' }
-])
+  { value: "assistant-commissioner-ees", label: "Assistant Commissioner EES" },
+  { value: "childrens-home", label: "Children's Home" },
+  { value: "commissioner-ees", label: "Commissioner EES" },
+  { value: "foreign-affairs", label: "Foreign Affairs" },
+  { value: "gbv-shelters", label: "GBV Shelters" },
+  { value: "head-eeu", label: "Head EEU" },
+  { value: "head-ieu", label: "Head IEU" },
+  { value: "health-facility", label: "Health Facility" },
+  { value: "labour-officer", label: "Labour Officer (LO)" },
+  { value: "labour-support-officer", label: "Labour Support Officer (LSO)" },
+  { value: "lcs-lcs", label: "LCs LCs" },
+  { value: "legal-aid", label: "Legal Aid" },
+  {
+    value: "local-recruitment-agency",
+    label: "Local Recruitment Agency/Associations",
+  },
+  { value: "mia-uganda-police", label: "MIA (Uganda Police Force)" },
+  { value: "ngos-csos-cbos", label: "NGOs/CSOs/CBOs" },
+  { value: "other", label: "Other" },
+  { value: "police", label: "Police" },
+  { value: "probation-office", label: "Probation Office" },
+  { value: "special-needs-facility", label: "Special Needs Facility" },
+]);
 
 // Audio recording state
-const isRecording = ref(false)
-const recordingTime = ref(0)
-const audioFile = ref(null)
-const audioDuration = ref(0)
-const isPlaying = ref(false)
-const audioTranscription = ref('')
-const isTranscriptionCorrect = ref(false)
-const isDragOver = ref(false)
-let mediaRecorder = null
-let recordingInterval = null
+const isRecording = ref(false);
+const recordingTime = ref(0);
+const audioFile = ref(null);
+const audioDuration = ref(0);
+const isPlaying = ref(false);
+const audioTranscription = ref("");
+const isTranscriptionCorrect = ref(false);
+const isDragOver = ref(false);
+let mediaRecorder = null;
+let recordingInterval = null;
 
 // AI panel mode and IO state
 const aiMode = ref('transcription')
@@ -2259,215 +2815,244 @@ const aiInsights = ref([])
 const recommendations = ref([])
 
 // Client and Perpetrator forms
-const currentClientStep = ref(0)
+const currentClientStep = ref(0);
 
 // Client form steps
 const clientSteps = ref([
-  { title: 'Basic Info' },
-  { title: 'Identity' },
-  { title: 'Contact' },
-  { title: 'Household' },
-  { title: 'Health & Status' }
-])
+  { title: "Basic Info" },
+  { title: "Identity" },
+  { title: "Contact" },
+  { title: "Household" },
+  { title: "Health & Status" },
+]);
 
 const clientForm = reactive({
-  name: '',
-  age: '',
-  dob: '',
-  ageGroup: '',
-  location: '',
-  sex: '',
-  landmark: '',
-  nationality: '',
-  idType: '',
-  idNumber: '',
-  language: '',
-  isRefugee: '',
-  tribe: '',
-  phone: '',
-  alternativePhone: '',
-  email: '',
-  relationship: '',
-  relationshipComment: '',
-  adultsInHousehold: '',
-  householdType: '',
-  headOccupation: '',
-  parentGuardianName: '',
-  parentMaritalStatus: '',
-  parentIdNumber: '',
-  healthStatus: '',
-  hivStatus: '',
-  maritalStatus: '',
-  attendingSchool: '',
-  previousSchool: '',
-  schoolName: '',
-  schoolLevel: '',
-  schoolAddress: '',
-  schoolType: '',
-  schoolAttendance: '',
-  isDisabled: '',
-  disability: '',
-  specialServicesReferred: '',
-  specialServicesReferral: []
-})
+  name: "",
+  age: "",
+  dob: "",
+  ageGroup: "",
+  location: "",
+  sex: "",
+  landmark: "",
+  nationality: "",
+  idType: "",
+  idNumber: "",
+  language: "",
+  isRefugee: "",
+  tribe: "",
+  phone: "",
+  alternativePhone: "",
+  email: "",
+  relationship: "",
+  relationshipComment: "",
+  adultsInHousehold: "",
+  householdType: "",
+  headOccupation: "",
+  parentGuardianName: "",
+  parentMaritalStatus: "",
+  parentIdNumber: "",
+  healthStatus: "",
+  hivStatus: "",
+  maritalStatus: "",
+  attendingSchool: "",
+  previousSchool: "",
+  schoolName: "",
+  schoolLevel: "",
+  schoolAddress: "",
+  schoolType: "",
+  schoolAttendance: "",
+  isDisabled: "",
+  disability: "",
+  specialServicesReferred: "",
+  specialServicesReferral: [],
+});
 
 // Perpetrator form steps
 const perpetratorSteps = ref([
-  { title: 'Basic Info' },
-  { title: 'Identity' },
-  { title: 'Contact' },
-  { title: 'Status & Details' }
-])
+  { title: "Basic Info" },
+  { title: "Identity" },
+  { title: "Contact" },
+  { title: "Status & Details" },
+]);
 
-const currentPerpetratorStep = ref(0)
+const currentPerpetratorStep = ref(0);
 
 const perpetratorForm = reactive({
-  name: '',
-  age: '',
-  dob: '',
-  ageGroup: '',
-  location: '',
-  sex: '',
-  landmark: '',
-  nationality: '',
-  idType: '',
-  idNumber: '',
-  language: '',
-  isRefugee: '',
-  tribe: '',
-  phone: '',
-  alternativePhone: '',
-  email: '',
-  relationship: '',
-  sharesHome: '',
-  healthStatus: '',
-  profession: '',
-  maritalStatus: '',
-  guardianName: '',
-  additionalDetails: ''
-})
+  name: "",
+  age: "",
+  dob: "",
+  ageGroup: "",
+  location: "",
+  sex: "",
+  landmark: "",
+  nationality: "",
+  idType: "",
+  idNumber: "",
+  language: "",
+  isRefugee: "",
+  tribe: "",
+  phone: "",
+  alternativePhone: "",
+  email: "",
+  relationship: "",
+  sharesHome: "",
+  healthStatus: "",
+  profession: "",
+  maritalStatus: "",
+  guardianName: "",
+  additionalDetails: "",
+});
 
 // Using real Pinia cases store (mock removed)
 
 // Form data
 const formData = reactive({
   step2: {
-    name: '',
-    age: '',
-    dob: '',
-    ageGroup: '',
-    gender: '',
-    location: '',
-    nearestLandmark: '',
-    nationality: '',
-    language: '',
-    tribe: '',
-    phone: '',
-    altPhone: '',
-    email: '',
-    idType: '',
-    idNumber: '',
-    isRefugee: '',
+    name: "",
+    age: "",
+    dob: "",
+    ageGroup: "",
+    gender: "",
+    location: "",
+    nearestLandmark: "",
+    nationality: "",
+    language: "",
+    tribe: "",
+    phone: "",
+    altPhone: "",
+    email: "",
+    idType: "",
+    idNumber: "",
+    isRefugee: "",
     isClient: null,
     clients: [],
-    perpetrators: []
+    perpetrators: [],
   },
   step3: {
-    narrative: '',
-    incidentDate: '',
-    incidentTime: '',
-    location: '',
+    narrative: "",
+    incidentDate: "",
+    incidentTime: "",
+    location: "",
     isGBVRelated: null,
-    casePlan: ''
+    casePlan: "",
   },
   step4: {
-    department: '',
-    clientPassportNumber: '',
+    department: "",
+    clientPassportNumber: "",
     selectedClient: null,
-    categories: [],
-    priority: '',
-    status: '',
-    escalatedTo: '',
-    justiceSystemState: '',
-    generalAssessment: '',
-    servicesOffered: '',
-    referralSource: ''
-  }
-})
+    categories: "",
+    priority: "",
+    status: "",
+    escalatedTo: "",
+    justiceSystemState: "",
+    generalAssessment: "",
+    servicesOffered: "",
+    referralSource: "",
+  },
+});
 
 // Step information
 const stepLabels = [
-  'Select Reporter',
-  'Reporter Details',
-  'Case Information',
-  'Classification',
-  'Review'
-]
+  "Select Reporter",
+  "Reporter Details",
+  "Case Information",
+  "Classification",
+  "Review",
+];
 
 const stepDescriptions = [
-  'Step 1: Select an existing contact or create a new reporter',
-  'Step 2: Enter reporter details and contact information',
-  'Step 3: Provide case narrative and incident details',
-  'Step 4: Classify case and assign priority',
-  'Step 5: Review all information before creating the case'
-]
+  "Step 1: Select an existing contact or create a new reporter",
+  "Step 2: Enter reporter details and contact information",
+  "Step 3: Provide case narrative and incident details",
+  "Step 4: Classify case and assign priority",
+  "Step 5: Review all information before creating the case",
+];
 
 // Labor Department - Client Search
-const clientSearchResults = ref([])
-const hasSearched = ref(false)
+const clientSearchResults = ref([]);
+const hasSearched = ref(false);
 
 // Mock client database for demonstration
 const mockClients = [
-  { id: 1, name: 'John Doe', passportNumber: 'A1234567', nationality: 'Kenyan', phone: '254700123456' },
-  { id: 2, name: 'Jane Smith', passportNumber: 'B2345678', nationality: 'Ugandan', phone: '254700234567' },
-  { id: 3, name: 'Ahmed Hassan', passportNumber: 'C3456789', nationality: 'Somali', phone: '254700345678' },
-  { id: 4, name: 'Maria Garcia', passportNumber: 'D4567890', nationality: 'Spanish', phone: '254700456789' }
-]
+  {
+    id: 1,
+    name: "John Doe",
+    passportNumber: "A1234567",
+    nationality: "Kenyan",
+    phone: "254700123456",
+  },
+  {
+    id: 2,
+    name: "Jane Smith",
+    passportNumber: "B2345678",
+    nationality: "Ugandan",
+    phone: "254700234567",
+  },
+  {
+    id: 3,
+    name: "Ahmed Hassan",
+    passportNumber: "C3456789",
+    nationality: "Somali",
+    phone: "254700345678",
+  },
+  {
+    id: 4,
+    name: "Maria Garcia",
+    passportNumber: "D4567890",
+    nationality: "Spanish",
+    phone: "254700456789",
+  },
+];
 
 const searchClientByPassport = () => {
   if (!formData.step4.clientPassportNumber.trim()) {
-    alert('Please enter a passport number')
-    return
+    alert("Please enter a passport number");
+    return;
   }
-  
-  hasSearched.value = true
-  
+
+  hasSearched.value = true;
+
   // Search in mock database
-  const results = mockClients.filter(client => 
-    client.passportNumber.toLowerCase().includes(formData.step4.clientPassportNumber.toLowerCase())
-  )
-  
-  clientSearchResults.value = results
-  
+  const results = mockClients.filter((client) =>
+    client.passportNumber
+      .toLowerCase()
+      .includes(formData.step4.clientPassportNumber.toLowerCase())
+  );
+
+  clientSearchResults.value = results;
+
   if (results.length === 0) {
-    console.log('No client found with passport:', formData.step4.clientPassportNumber)
+    console.log(
+      "No client found with passport:",
+      formData.step4.clientPassportNumber
+    );
   }
-}
+};
 
 const selectClient = (client) => {
-  formData.step4.selectedClient = client
-  console.log('Selected client:', client)
-  
+  formData.step4.selectedClient = client;
+  console.log("Selected client:", client);
+
   // Clear search results
-  clientSearchResults.value = []
-  hasSearched.value = false
-  
+  clientSearchResults.value = [];
+  hasSearched.value = false;
+
   // You could also populate some form fields with client data
   // formData.step2.name = client.name
   // formData.step2.phone = client.phone
-}
+};
 
 const createNewClient = () => {
   // Open the client modal for creating a new client
-  clientModalOpen.value = true
-}
+  clientModalOpen.value = true;
+};
 
 watch(searchQuery, (val) => {
-  clearTimeout(debounceTimer)
-  debounceTimer = setTimeout(() => { 
-    debouncedQuery.value = val.trim() 
-  }, 200)
-})
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    debouncedQuery.value = val.trim();
+  }, 200);
+});
 
 const filteredContacts = computed(() => {
   if (!debouncedQuery.value) return []
@@ -2514,323 +3099,339 @@ const filteredContacts = computed(() => {
 })
 
 // Watch for form changes to generate AI insights
-watch([formData, currentStep], () => {
-  if (isAIEnabled.value) {
-    generateAIInsights()
-    generateCaseSummary()
-  }
-}, { deep: true })
+watch(
+  [formData, currentStep],
+  () => {
+    if (isAIEnabled.value) {
+      generateAIInsights();
+      generateCaseSummary();
+    }
+  },
+  { deep: true }
+);
 
 // Methods
 const getInitials = (name) => {
   return name
-    .split(' ')
+    .split(" ")
     .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-}
+    .join("")
+    .toUpperCase();
+};
 
 const navigateToStep = (step) => {
   if (step <= currentStep.value + 1) {
-    currentStep.value = step
+    currentStep.value = step;
   }
-}
+};
 
 const selectExistingReporter = (contact) => {
-  selectedReporter.value = contact
-}
+  selectedReporter.value = contact;
+};
 
 const createNewReporter = () => {
-  selectedReporter.value = null
+  selectedReporter.value = null;
   Object.keys(formData.step2).forEach((key) => {
-    formData.step2[key] = key === 'isClient' ? null : ''
-  })
-  currentStep.value = 2
-}
+    formData.step2[key] = key === "isClient" ? null : "";
+  });
+  currentStep.value = 2;
+};
 
 // Client and Perpetrator Methods
 const handleClientSelection = () => {
   if (formData.step2.isClient === true) {
     // If reporter is a client, clear any existing clients
-    formData.step2.clients = []
+    formData.step2.clients = [];
   } else if (formData.step2.isClient === false) {
     // If reporter is not a client, open the client modal
-    clientModalOpen.value = true
+    clientModalOpen.value = true;
   }
-}
+};
 
 const openClientModal = () => {
-  clientModalOpen.value = true
-}
+  clientModalOpen.value = true;
+};
 
 const closeClientModal = () => {
-  clientModalOpen.value = false
-  resetClientForm()
-}
+  clientModalOpen.value = false;
+  resetClientForm();
+};
 
 const resetClientForm = () => {
-  Object.keys(clientForm).forEach(key => {
-    clientForm[key] = ''
-  })
-  currentClientStep.value = 0
-}
+  Object.keys(clientForm).forEach((key) => {
+    clientForm[key] = "";
+  });
+  currentClientStep.value = 0;
+};
 
 const nextClientStep = () => {
   if (currentClientStep.value < clientSteps.value.length - 1) {
-    currentClientStep.value++
+    currentClientStep.value++;
   }
-}
+};
 
 const prevClientStep = () => {
   if (currentClientStep.value > 0) {
-    currentClientStep.value--
+    currentClientStep.value--;
   }
-}
+};
 
 const addClient = () => {
-  console.log('addClient called', clientForm)
-  
+  console.log("addClient called", clientForm);
+
   if (!clientForm.name.trim()) {
-    alert('Please enter client name')
-    return
+    alert("Please enter client name");
+    return;
   }
-  
-  console.log('Adding client:', clientForm)
-  formData.step2.clients.push({ ...clientForm })
-  console.log('Clients after add:', formData.step2.clients)
-  
-  resetClientForm()
-  closeClientModal()
-  
-  console.log('Client added successfully')
-}
+
+  console.log("Adding client:", clientForm);
+  formData.step2.clients.push({ ...clientForm });
+  console.log("Clients after add:", formData.step2.clients);
+
+  resetClientForm();
+  closeClientModal();
+
+  console.log("Client added successfully");
+};
 
 const removeClient = (index) => {
-  formData.step2.clients.splice(index, 1)
-}
+  formData.step2.clients.splice(index, 1);
+};
 
 // Special Services Dropdown Methods
 const toggleSpecialServicesDropdown = () => {
-  showSpecialServicesDropdown.value = !showSpecialServicesDropdown.value
-}
+  showSpecialServicesDropdown.value = !showSpecialServicesDropdown.value;
+};
 
 const filteredSpecialServices = computed(() => {
-  if (!specialServicesSearch.value) return specialServicesOptions.value
-  
-  return specialServicesOptions.value.filter(service =>
-    service.label.toLowerCase().includes(specialServicesSearch.value.toLowerCase())
-  )
-})
+  if (!specialServicesSearch.value) return specialServicesOptions.value;
+
+  return specialServicesOptions.value.filter((service) =>
+    service.label
+      .toLowerCase()
+      .includes(specialServicesSearch.value.toLowerCase())
+  );
+});
 
 const getSelectedSpecialServicesText = () => {
-  if (!clientForm.specialServicesReferral || clientForm.specialServicesReferral.length === 0) {
-    return ''
+  if (
+    !clientForm.specialServicesReferral ||
+    clientForm.specialServicesReferral.length === 0
+  ) {
+    return "";
   }
-  
+
   if (clientForm.specialServicesReferral.length === 1) {
-    const selected = specialServicesOptions.value.find(opt => opt.value === clientForm.specialServicesReferral[0])
-    return selected ? selected.label : ''
+    const selected = specialServicesOptions.value.find(
+      (opt) => opt.value === clientForm.specialServicesReferral[0]
+    );
+    return selected ? selected.label : "";
   }
-  
-  return `${clientForm.specialServicesReferral.length} services selected`
-}
+
+  return `${clientForm.specialServicesReferral.length} services selected`;
+};
 
 // Case Category Dropdown Methods
 const toggleCategoryDropdown = () => {
-  showCategoryDropdown.value = !showCategoryDropdown.value
-}
+  showCategoryDropdown.value = !showCategoryDropdown.value;
+};
 
 const toggleCategory = (category) => {
-  category.expanded = !category.expanded
-}
+  category.expanded = !category.expanded;
+};
 
 const expandCategoryPanel = () => {
-  isCategoryPanelExpanded.value = !isCategoryPanelExpanded.value
+  isCategoryPanelExpanded.value = !isCategoryPanelExpanded.value;
   // This could open a modal or expand the panel further
-  console.log('Expand category panel:', isCategoryPanelExpanded.value)
-}
+  console.log("Expand category panel:", isCategoryPanelExpanded.value);
+};
 
 const openPerpetratorModal = () => {
-  perpetratorModalOpen.value = true
-}
+  perpetratorModalOpen.value = true;
+};
 
 const closePerpetratorModal = () => {
-  perpetratorModalOpen.value = false
-  resetPerpetratorForm()
-}
+  perpetratorModalOpen.value = false;
+  resetPerpetratorForm();
+};
 
 const resetPerpetratorForm = () => {
-  Object.keys(perpetratorForm).forEach(key => {
-    perpetratorForm[key] = ''
-  })
-  currentPerpetratorStep.value = 0
-}
+  Object.keys(perpetratorForm).forEach((key) => {
+    perpetratorForm[key] = "";
+  });
+  currentPerpetratorStep.value = 0;
+};
 
 const nextPerpetratorStep = () => {
   if (currentPerpetratorStep.value < perpetratorSteps.value.length - 1) {
-    currentPerpetratorStep.value++
+    currentPerpetratorStep.value++;
   }
-}
+};
 
 const prevPerpetratorStep = () => {
   if (currentPerpetratorStep.value > 0) {
-    currentPerpetratorStep.value--
+    currentPerpetratorStep.value--;
   }
-}
+};
 
 const addPerpetrator = () => {
   if (!perpetratorForm.name.trim()) {
-    alert('Please enter perpetrator name')
-    return
+    alert("Please enter perpetrator name");
+    return;
   }
-  
-  formData.step2.perpetrators.push({ ...perpetratorForm })
-  resetPerpetratorForm()
-}
+
+  formData.step2.perpetrators.push({ ...perpetratorForm });
+  resetPerpetratorForm();
+};
 
 const removePerpetrator = (index) => {
-  formData.step2.perpetrators.splice(index, 1)
-}
+  formData.step2.perpetrators.splice(index, 1);
+};
 
 const addCategory = () => {
-  if (selectedCategory.value && !formData.step4.categories.includes(selectedCategory.value)) {
-    formData.step4.categories.push(selectedCategory.value)
-    selectedCategory.value = ''
+  if (
+    selectedCategory.value &&
+    !formData.step4.categories.includes(selectedCategory.value)
+  ) {
+    formData.step4.categories.push(selectedCategory.value);
+    selectedCategory.value = "";
   }
-}
+};
 
 const removeCategory = (category) => {
-  const index = formData.step4.categories.indexOf(category)
+  const index = formData.step4.categories.indexOf(category);
   if (index > -1) {
-    formData.step4.categories.splice(index, 1)
+    formData.step4.categories.splice(index, 1);
   }
-}
+};
 
 const goToStep = (step) => {
-  currentStep.value = step
-}
+  currentStep.value = step;
+};
 
 const validateAndProceed = (step) => {
   if (step === 1 && selectedReporter.value) {
-    const reporter = selectedReporter.value
-    const nameIdx = casesStore.cases_k.reporter_fullname[0]
-    const ageIdx = casesStore.cases_k.reporter_age[0]
-    const genderIdx = casesStore.cases_k.reporter_sex[0]
-    const locationIdx = casesStore.cases_k.reporter_location[0]
-    const phoneIdx = casesStore.cases_k.reporter_phone[0]
+    const reporter = selectedReporter.value;
+    const nameIdx = casesStore.cases_k.reporter_fullname[0];
+    const ageIdx = casesStore.cases_k.reporter_age[0];
+    const genderIdx = casesStore.cases_k.reporter_sex[0];
+    const locationIdx = casesStore.cases_k.reporter_location[0];
+    const phoneIdx = casesStore.cases_k.reporter_phone[0];
 
-    formData.step2.name = reporter[nameIdx]
-    formData.step2.age = reporter[ageIdx]
-    formData.step2.gender = reporter[genderIdx]?.toLowerCase() || ''
-    formData.step2.location = reporter[locationIdx]
-    formData.step2.phone = reporter[phoneIdx]
+    formData.step2.name = reporter[nameIdx];
+    formData.step2.age = reporter[ageIdx];
+    formData.step2.gender = reporter[genderIdx]?.toLowerCase() || "";
+    formData.step2.location = reporter[locationIdx];
+    formData.step2.phone = reporter[phoneIdx];
 
-    currentStep.value = 2
+    currentStep.value = 2;
   }
-}
+};
 
 const skipStep = (step) => {
-  currentStep.value = step + 1
-}
+  currentStep.value = step + 1;
+};
 
 const saveAndProceed = (step) => {
-  currentStep.value = step + 1
-}
+  currentStep.value = step + 1;
+};
 
 // Audio recording methods
 const startRecording = async () => {
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-    mediaRecorder = new MediaRecorder(stream)
-    const chunks = []
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    const chunks = [];
 
     mediaRecorder.ondataavailable = (event) => {
-      chunks.push(event.data)
-    }
+      chunks.push(event.data);
+    };
 
     mediaRecorder.onstop = () => {
-      const blob = new Blob(chunks, { type: 'audio/wav' })
-      audioFile.value = new File([blob], 'recording.wav', { type: 'audio/wav' })
-      audioDuration.value = recordingTime.value
-      transcribeAudio()
-    }
+      const blob = new Blob(chunks, { type: "audio/wav" });
+      audioFile.value = new File([blob], "recording.wav", {
+        type: "audio/wav",
+      });
+      audioDuration.value = recordingTime.value;
+      transcribeAudio();
+    };
 
-    mediaRecorder.start()
-    isRecording.value = true
-    recordingTime.value = 0
-    
+    mediaRecorder.start();
+    isRecording.value = true;
+    recordingTime.value = 0;
+
     recordingInterval = setInterval(() => {
-      recordingTime.value++
-    }, 1000)
+      recordingTime.value++;
+    }, 1000);
   } catch (error) {
-    console.error('Error starting recording:', error)
+    console.error("Error starting recording:", error);
   }
-}
+};
 
 const stopRecording = () => {
   if (mediaRecorder && isRecording.value) {
-    mediaRecorder.stop()
-    mediaRecorder.stream.getTracks().forEach(track => track.stop())
-    isRecording.value = false
-    clearInterval(recordingInterval)
+    mediaRecorder.stop();
+    mediaRecorder.stream.getTracks().forEach((track) => track.stop());
+    isRecording.value = false;
+    clearInterval(recordingInterval);
   }
-}
+};
 
 const togglePlayback = () => {
   // Mock playback toggle
-  isPlaying.value = !isPlaying.value
+  isPlaying.value = !isPlaying.value;
   if (isPlaying.value) {
     setTimeout(() => {
-      isPlaying.value = false
-    }, audioDuration.value * 1000)
+      isPlaying.value = false;
+    }, audioDuration.value * 1000);
   }
-}
+};
 
 const removeAudio = () => {
-  audioFile.value = null
-  audioTranscription.value = ''
-  isTranscriptionCorrect.value = false
-  audioDuration.value = 0
-  isPlaying.value = false
-}
+  audioFile.value = null;
+  audioTranscription.value = "";
+  isTranscriptionCorrect.value = false;
+  audioDuration.value = 0;
+  isPlaying.value = false;
+};
 
 // Handle uploaded audio file
 const onAudioUpload = async (event) => {
-  const file = event.target?.files?.[0]
-  if (!file) return
-  audioFile.value = file
-  isTranscriptionCorrect.value = false
+  const file = event.target?.files?.[0];
+  if (!file) return;
+  audioFile.value = file;
+  isTranscriptionCorrect.value = false;
   // Compute duration via HTMLAudioElement
   try {
-    const url = URL.createObjectURL(file)
-    const audioEl = new Audio()
-    audioEl.src = url
+    const url = URL.createObjectURL(file);
+    const audioEl = new Audio();
+    audioEl.src = url;
     await new Promise((resolve, reject) => {
-      audioEl.addEventListener('loadedmetadata', () => resolve())
-      audioEl.addEventListener('error', (e) => reject(e))
-    })
-    audioDuration.value = Math.round(audioEl.duration || 0)
-    URL.revokeObjectURL(url)
+      audioEl.addEventListener("loadedmetadata", () => resolve());
+      audioEl.addEventListener("error", (e) => reject(e));
+    });
+    audioDuration.value = Math.round(audioEl.duration || 0);
+    URL.revokeObjectURL(url);
   } catch (e) {
-    audioDuration.value = 0
+    audioDuration.value = 0;
   }
   // Trigger transcription (mock)
-  transcribeAudio()
-}
+  transcribeAudio();
+};
 
 // Handle drag and drop
 const onAudioDrop = async (event) => {
-  event.preventDefault()
-  isDragOver.value = false
-  
-  const files = event.dataTransfer.files
+  event.preventDefault();
+  isDragOver.value = false;
+
+  const files = event.dataTransfer.files;
   if (files.length > 0) {
-    const file = files[0]
-    if (file.type.startsWith('audio/')) {
-      await onAudioUpload({ target: { files: [file] } })
+    const file = files[0];
+    if (file.type.startsWith("audio/")) {
+      await onAudioUpload({ target: { files: [file] } });
     }
   }
-}
+};
 
 // Simple mocked AI runners (replace with backend calls later)
 const runTranslation = () => {
@@ -2851,264 +3452,287 @@ const runNER = () => {
 const transcribeAudio = async () => {
   // Mock transcription - in real app, this would call an AI service
   setTimeout(() => {
-    audioTranscription.value = "This is a mock transcription of the audio recording. The reporter described an incident that occurred on the evening of the 15th involving domestic violence. The victim is seeking immediate assistance and shelter services."
-    
+    audioTranscription.value =
+      "This is a mock transcription of the audio recording. The reporter described an incident that occurred on the evening of the 15th involving domestic violence. The victim is seeking immediate assistance and shelter services.";
+
     // Auto-fill narrative if empty
     if (!formData.step3.narrative) {
-      formData.step3.narrative = audioTranscription.value
+      formData.step3.narrative = audioTranscription.value;
     }
-  }, 2000)
-}
+  }, 2000);
+};
 
 const copyTranscription = () => {
-  navigator.clipboard.writeText(audioTranscription.value)
-}
+  navigator.clipboard.writeText(audioTranscription.value);
+};
 
 const enqueueForTranscriptionReview = () => {
   if (isTranscriptionCorrect.value === false && audioTranscription.value) {
-    let audioUrl = null
+    let audioUrl = null;
     if (audioFile.value instanceof File) {
-      audioUrl = URL.createObjectURL(audioFile.value)
+      audioUrl = URL.createObjectURL(audioFile.value);
     }
     transcriptionsStore.addItem({
       audioFile: audioFile.value || null,
       audioUrl,
       transcription: audioTranscription.value,
-      counsellor: 'Current User',
-      uploadedAt: Date.now()
-    })
+      counsellor: "Current User",
+      uploadedAt: Date.now(),
+    });
   }
-}
+};
 
 const formatFileSize = (bytes) => {
-  if (bytes === 0) return '0 Bytes'
-  const k = 1024
-  const sizes = ['Bytes', 'KB', 'MB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}
+  if (bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+};
 
 // AI Methods
 const generateCaseSummary = () => {
-  if (!formData.step3.narrative && !audioTranscription.value) return
+  if (!formData.step3.narrative && !audioTranscription.value) return;
 
   // Mock AI analysis
-  const narrative = formData.step3.narrative || audioTranscription.value
-  const isGBV = formData.step3.isGBVRelated
-  
+  const narrative = formData.step3.narrative || audioTranscription.value;
+  const isGBV = formData.step3.isGBVRelated;
+
   caseSummary.value = {
-    riskLevel: isGBV ? 'high' : 'medium',
-    urgency: isGBV ? 'Immediate attention required' : 'Standard processing',
-    keyConcerns: isGBV ? ['Safety Risk', 'Trauma Support', 'Legal Protection'] : ['Support Services', 'Documentation'],
-    analysis: `Based on the case narrative, this appears to be a ${isGBV ? 'high-priority GBV case requiring immediate intervention' : 'standard case requiring appropriate support services'}. Key indicators suggest the need for ${isGBV ? 'emergency shelter, counseling, and legal aid' : 'counseling and referral services'}.`
-  }
-}
+    riskLevel: isGBV ? "high" : "medium",
+    urgency: isGBV ? "Immediate attention required" : "Standard processing",
+    keyConcerns: isGBV
+      ? ["Safety Risk", "Trauma Support", "Legal Protection"]
+      : ["Support Services", "Documentation"],
+    analysis: `Based on the case narrative, this appears to be a ${
+      isGBV
+        ? "high-priority GBV case requiring immediate intervention"
+        : "standard case requiring appropriate support services"
+    }. Key indicators suggest the need for ${
+      isGBV
+        ? "emergency shelter, counseling, and legal aid"
+        : "counseling and referral services"
+    }.`,
+  };
+};
 
 const generateAIInsights = () => {
-  const insights = []
-  
+  const insights = [];
+
   // Step-specific insights
-  if (currentStep.value === 2 && formData.step2.age && formData.step2.age < 18) {
+  if (
+    currentStep.value === 2 &&
+    formData.step2.age &&
+    formData.step2.age < 18
+  ) {
     insights.push({
-      id: 'minor-alert',
-      type: 'warning',
-      icon: '⚠️',
-      title: 'Minor Detected',
-      message: 'Reporter is under 18. Additional child protection protocols may apply.',
-      action: 'Review Child Protection Guidelines'
-    })
+      id: "minor-alert",
+      type: "warning",
+      icon: "⚠️",
+      title: "Minor Detected",
+      message:
+        "Reporter is under 18. Additional child protection protocols may apply.",
+      action: "Review Child Protection Guidelines",
+    });
   }
 
   if (currentStep.value === 3 && formData.step3.isGBVRelated === true) {
     insights.push({
-      id: 'gbv-protocol',
-      type: 'critical',
-      icon: '🚨',
-      title: 'GBV Case Detected',
-      message: 'This case requires immediate attention and specialized handling protocols.',
-      action: 'Apply GBV Protocol'
-    })
+      id: "gbv-protocol",
+      type: "critical",
+      icon: "🚨",
+      title: "GBV Case Detected",
+      message:
+        "This case requires immediate attention and specialized handling protocols.",
+      action: "Apply GBV Protocol",
+    });
   }
 
-  if (currentStep.value === 4 && !formData.step4.priority && formData.step3.isGBVRelated) {
+  if (
+    currentStep.value === 4 &&
+    !formData.step4.priority &&
+    formData.step3.isGBVRelated
+  ) {
     insights.push({
-      id: 'priority-suggestion',
-      type: 'info',
-      icon: '💡',
-      title: 'Priority Recommendation',
-      message: 'Based on case details, we recommend setting priority to "High" or "Critical".',
-      action: 'Set High Priority'
-    })
+      id: "priority-suggestion",
+      type: "info",
+      icon: "💡",
+      title: "Priority Recommendation",
+      message:
+        'Based on case details, we recommend setting priority to "High" or "Critical".',
+      action: "Set High Priority",
+    });
   }
 
   if (audioTranscription.value) {
     insights.push({
-      id: 'transcription-ready',
-      type: 'success',
-      icon: '✅',
-      title: 'Audio Transcribed',
-      message: 'Audio has been successfully transcribed and can be used to populate case narrative.',
-      action: 'Use Transcription'
-    })
+      id: "transcription-ready",
+      type: "success",
+      icon: "✅",
+      title: "Audio Transcribed",
+      message:
+        "Audio has been successfully transcribed and can be used to populate case narrative.",
+      action: "Use Transcription",
+    });
   }
 
-  aiInsights.value = insights
+  aiInsights.value = insights;
 
   // Generate recommendations
-  generateRecommendations()
-}
+  generateRecommendations();
+};
 
 const generateRecommendations = () => {
-  const recs = []
-  
+  const recs = [];
+
   if (formData.step3.isGBVRelated === true) {
     recs.push({
-      id: 'shelter-rec',
-      priority: 'high',
-      title: 'Emergency Shelter',
-      description: 'Consider immediate shelter placement for victim safety'
-    })
-    
+      id: "shelter-rec",
+      priority: "high",
+      title: "Emergency Shelter",
+      description: "Consider immediate shelter placement for victim safety",
+    });
+
     recs.push({
-      id: 'legal-rec',
-      priority: 'high',
-      title: 'Legal Protection',
-      description: 'Initiate legal protection order proceedings'
-    })
+      id: "legal-rec",
+      priority: "high",
+      title: "Legal Protection",
+      description: "Initiate legal protection order proceedings",
+    });
   }
 
   if (formData.step2.age && formData.step2.age < 18) {
     recs.push({
-      id: 'child-services',
-      priority: 'critical',
-      title: 'Child Protection Services',
-      description: 'Notify child protection services immediately'
-    })
+      id: "child-services",
+      priority: "critical",
+      title: "Child Protection Services",
+      description: "Notify child protection services immediately",
+    });
   }
 
   recs.push({
-    id: 'counseling-rec',
-    priority: 'medium',
-    title: 'Counseling Services',
-    description: 'Schedule trauma-informed counseling session'
-  })
+    id: "counseling-rec",
+    priority: "medium",
+    title: "Counseling Services",
+    description: "Schedule trauma-informed counseling session",
+  });
 
-  recommendations.value = recs
-}
+  recommendations.value = recs;
+};
 
 const progressWidth = computed(() => {
-  const completeCount = [1,2,3,4].filter(s => stepStatus(s) === 'completed' || currentStep.value > s).length
-  const totalSegments = totalSteps - 1
-  const percent = Math.min(100, Math.round((completeCount / totalSegments) * 100))
-  return percent + '%'
-})
+  const completeCount = [1, 2, 3, 4].filter(
+    (s) => stepStatus(s) === "completed" || currentStep.value > s
+  ).length;
+  const totalSegments = totalSteps - 1;
+  const percent = Math.min(
+    100,
+    Math.round((completeCount / totalSegments) * 100)
+  );
+  return percent + "%";
+});
 
 const applyInsight = (insight) => {
   switch (insight.id) {
-    case 'priority-suggestion':
-      formData.step4.priority = 'high'
-      break
-    case 'transcription-ready':
+    case "priority-suggestion":
+      formData.step4.priority = "high";
+      break;
+    case "transcription-ready":
       if (!formData.step3.narrative) {
-        formData.step3.narrative = audioTranscription.value
+        formData.step3.narrative = audioTranscription.value;
       }
-      break
-    case 'gbv-protocol':
-      formData.step4.servicesOffered = ['counseling', 'legal-aid', 'shelter']
-      break
+      break;
+    case "gbv-protocol":
+      formData.step4.servicesOffered = ["counseling", "legal-aid", "shelter"];
+      break;
   }
-}
+};
 
 // Determine step completion/error status for timeline colors
 const stepStatus = (step) => {
   switch (step) {
     case 1:
-      return selectedReporter.value ? 'completed' : 'idle'
+      return selectedReporter.value ? "completed" : "idle";
     case 2:
       // basic validation: name and phone
-      if (!formData.step2.name || !formData.step2.phone) return 'error'
-      return 'completed'
+      if (!formData.step2.name || !formData.step2.phone) return "error";
+      return "completed";
     case 3:
-      if (!formData.step3.narrative) return 'error'
-      return 'completed'
+      if (!formData.step3.narrative) return "error";
+      return "completed";
     case 4:
-      if (!formData.step4.priority || !formData.step4.status || formData.step4.categories.length === 0) return 'error'
-      return 'completed'
+      if (
+        !formData.step4.priority ||
+        !formData.step4.status ||
+        formData.step4.categories.length === 0
+      )
+        return "error";
+      return "completed";
     default:
-      return 'idle'
+      return "idle";
   }
-}
+};
 
 // Formatting methods
 const formatDepartment = (dept) => {
   const deptMap = {
-    '116': '116 (Emergency Helpline)',
-    'labor': 'Labor Department'
-  }
-  return deptMap[dept] || dept
-}
+    116: "116 (Emergency Helpline)",
+    labor: "Labor Department",
+  };
+  return deptMap[dept] || dept;
+};
 
 const formatCategory = (category) => {
   const categoryMap = {
-    'domestic-violence': 'Domestic Violence',
-    'sexual-assault': 'Sexual Assault',
-    'child-abuse': 'Child Abuse',
-    'human-trafficking': 'Human Trafficking',
-    'labor-exploitation': 'Labor Exploitation',
-    'elder-abuse': 'Elder Abuse',
-    'stalking': 'Stalking',
-    'substance-abuse': 'Substance Abuse',
-    'other': 'Other'
-  }
-  return categoryMap[category] || category
-}
+    "domestic-violence": "Domestic Violence",
+    "sexual-assault": "Sexual Assault",
+    "child-abuse": "Child Abuse",
+    "human-trafficking": "Human Trafficking",
+    "labor-exploitation": "Labor Exploitation",
+    "elder-abuse": "Elder Abuse",
+    stalking: "Stalking",
+    "substance-abuse": "Substance Abuse",
+    other: "Other",
+  };
+  return categoryMap[category] || category;
+};
 
 const formatPriority = (priority) => {
   const priorityMap = {
-    'critical': 'Critical',
-    'high': 'High',
-    'medium': 'Medium',
-    'low': 'Low'
-  }
-  return priorityMap[priority] || priority
-}
+    critical: "Critical",
+    high: "High",
+    medium: "Medium",
+    low: "Low",
+  };
+  return priorityMap[priority] || priority;
+};
 
 const formatStatus = (status) => {
   const statusMap = {
-    'new': 'New',
-    'in-progress': 'In Progress',
-    'pending': 'Pending',
-    'resolved': 'Resolved'
-  }
-  return statusMap[status] || status
-}
+    new: "New",
+    "in-progress": "In Progress",
+    pending: "Pending",
+    resolved: "Resolved",
+  };
+  return statusMap[status] || status;
+};
 
-const formatService = (service) => {
-  const serviceMap = {
-    'counseling': 'Counseling',
-    'legal-aid': 'Legal Aid',
-    'shelter': 'Shelter',
-    'medical-assistance': 'Medical Assistance',
-    'financial-support': 'Financial Support',
-    'referral': 'Referral Services'
-  }
-  return serviceMap[service] || service
-}
+
 
 const cancelForm = () => {
-  router.push('/cases')
-}
+  router.push("/cases");
+};
 
 const submitCase = async () => {
-  console.log('Submitting case:', formData)
-  alert('Case created successfully!')
-  router.push('/cases')
-}
+  console.log("Submitting case:", formData);
+  alert("Case created successfully!");
+  router.push("/cases");
+};
 
 // Initialize AI insights on mount
 onMounted(async () => {
   if (isAIEnabled.value) {
-    generateAIInsights()
+    generateAIInsights();
   }
   // Ensure cases are available for search suggestions
   try { await casesStore.listCases({ src: 'call' }) } catch (e) {}
@@ -3133,18 +3757,53 @@ onMounted(async () => {
     }
   }
   // update CSS var for vertical progress fill
-  updateStepCSSVar()
-})
+  updateStepCSSVar();
+});
 
-watch(currentStep, () => updateStepCSSVar())
+watch(currentStep, () => updateStepCSSVar());
 
 const updateStepCSSVar = () => {
   // compute progress ratio 0..1 based on current step index
-  const ratio = (currentStep.value - 1) / (totalSteps - 1)
-  const root = document.querySelector('.progress-steps')
+  const ratio = (currentStep.value - 1) / (totalSteps - 1);
+  const root = document.querySelector(".progress-steps");
   if (root) {
-    root.style.setProperty('--progress-ratio', String(ratio))
+    root.style.setProperty("--progress-ratio", String(ratio));
   }
+};
+
+const ongoingCall = ref(null);
+const tick = ref(0);
+let intervalId = null;
+
+onMounted(() => {
+  try {
+    const raw = localStorage.getItem("ongoingCall");
+    if (raw) ongoingCall.value = JSON.parse(raw);
+  } catch (e) {}
+  intervalId = setInterval(() => {
+    tick.value++;
+  }, 1000);
+});
+
+onUnmounted(() => {
+  if (intervalId) clearInterval(intervalId);
+});
+
+const formattedCallDuration = computed(() => {
+  if (!ongoingCall.value?.startedAt) return "00:00";
+  const secs = Math.floor((Date.now() - ongoingCall.value.startedAt) / 1000);
+  const m = Math.floor(secs / 60)
+    .toString()
+    .padStart(2, "0");
+  const s = (secs % 60).toString().padStart(2, "0");
+  return `${m}:${s}`;
+});
+
+function endOngoingCall() {
+  ongoingCall.value = null;
+  try {
+    localStorage.removeItem("ongoingCall");
+  } catch (e) {}
 }
 </script>
 
@@ -3163,7 +3822,9 @@ const updateStepCSSVar = () => {
   gap: 20px;
 }
 @media (min-width: 1100px) {
-  .case-container { grid-template-columns: 1fr 360px; }
+  .case-container {
+    grid-template-columns: 1fr 360px;
+  }
 }
 
 .main-form-container {
@@ -3174,64 +3835,265 @@ const updateStepCSSVar = () => {
   padding: 16px;
 }
 
-.case-header { display:flex; align-items:center; justify-content:space-between; gap: 12px; }
-.case-header h1 { margin:0; font-size: 26px; font-weight: 900; letter-spacing: -0.2px; color: var(--text-color); }
-.case-header h1::after { content: ""; display:block; width: 48px; height: 3px; border-radius: 2px; background: var(--color-primary); margin-top: 6px; }
-.case-header p { margin:6px 0 0; color: var(--color-muted); font-size: 13px; }
+.case-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.case-header h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: -0.2px;
+  color: var(--text-color);
+}
+.case-header h1::after {
+  content: "";
+  display: block;
+  width: 48px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--color-primary);
+  margin-top: 6px;
+}
+.case-header p {
+  margin: 6px 0 0;
+  color: var(--color-muted);
+  font-size: 13px;
+}
 
 /* Stepper */
-.progress-container { padding: 6px 0 12px; }
-.progress-steps { position:relative; display:flex; justify-content:space-between; align-items:flex-start; gap: 24px; padding-top: 28px; }
-.progress-step { display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; flex:1; }
-.progress-step .step-circle { font-weight:800; font-size:14px; color: var(--color-muted); line-height:1; }
-.progress-step .step-label { font-weight:700; color: var(--color-muted); font-size:12px; text-align:center; }
-.progress-step.active .step-circle { color: var(--text-color); }
-.progress-step.active .step-label { color: var(--text-color); }
-.progress-step.completed .step-circle { color: #fff; background: var(--success-color); width:24px; height:24px; border-radius:999px; display:flex; align-items:center; justify-content:center; }
-.progress-step.completed .step-label { color: var(--success-color); }
-.progress-step.error .step-circle { color: var(--color-primary); background: transparent; }
-.progress-step.error .step-label { color: var(--color-primary); }
-.progress-steps::before { content: none; }
-.progress-steps::after { content: none; }
+.progress-container {
+  padding: 6px 0 12px;
+}
+.progress-steps {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  padding-top: 28px;
+}
+.progress-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  flex: 1;
+}
+.progress-step .step-circle {
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--color-muted);
+  line-height: 1;
+}
+.progress-step .step-label {
+  font-weight: 700;
+  color: var(--color-muted);
+  font-size: 12px;
+  text-align: center;
+}
+.progress-step.active .step-circle {
+  color: var(--text-color);
+}
+.progress-step.active .step-label {
+  color: var(--text-color);
+}
+.progress-step.completed .step-circle {
+  color: #fff;
+  background: var(--success-color);
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.progress-step.completed .step-label {
+  color: var(--success-color);
+}
+.progress-step.error .step-circle {
+  color: var(--color-primary);
+  background: transparent;
+}
+.progress-step.error .step-label {
+  color: var(--color-primary);
+}
+.progress-steps::before {
+  content: none;
+}
+.progress-steps::after {
+  content: none;
+}
 
 /* Search / contacts */
-.search-row { display:flex; gap: 8px; align-items:center; }
-.search-box { position:relative; display:flex; align-items:center; gap:8px; border:1px solid var(--color-border); border-radius: 12px; padding: 8px 10px; background: var(--color-surface); color: var(--text-color); width: 180px; }
-.new-reporter-btn { height: 36px; }
-.search-input { border:0; outline:0; width:100%; background: transparent; font-size:13px; color: var(--text-color); }
-.search-empty { margin-top: 8px; background: var(--color-surface); border:1px solid var(--color-border); border-radius: 12px; padding:10px; color: var(--color-muted); }
+.search-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 8px 10px;
+  background: var(--color-surface);
+  color: var(--text-color);
+  width: 180px;
+}
+.new-reporter-btn {
+  height: 36px;
+}
+.search-input {
+  border: 0;
+  outline: 0;
+  width: 100%;
+  background: transparent;
+  font-size: 13px;
+  color: var(--text-color);
+}
+.search-empty {
+  margin-top: 8px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 10px;
+  color: var(--color-muted);
+}
 
-.create-reporter-btn { border:1px solid var(--color-border); background: var(--color-surface); padding: 8px 12px; border-radius: 12px; font-weight:600; cursor:pointer; }
-.create-reporter-btn:hover { transform: translateY(-1px); }
+.create-reporter-btn {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.create-reporter-btn:hover {
+  transform: translateY(-1px);
+}
 
-.contacts-list { display:flex; flex-direction:column; gap:8px; margin-top: 8px; }
-.contact-item { display:flex; align-items:center; gap:12px; border:1px solid var(--color-border); border-radius: 14px; padding: 12px; background: var(--color-surface); cursor:pointer; transition: background .15s ease, border-color .15s ease; }
-.contact-item:hover { background: var(--color-surface-muted); }
-.contact-item.selected { outline: 2px solid color-mix(in oklab, var(--color-primary) 28%, transparent); }
-.contact-avatar { width:40px; height:40px; border-radius:999px; display:flex; align-items:center; justify-content:center; background: var(--color-surface-muted); font-weight:700; }
-.contact-details { flex:1; display:grid; grid-template-columns: 1fr auto; align-items:center; column-gap: 12px; min-width: 0; }
-.contact-main-info { display:flex; align-items:center; gap:10px; min-width:0; }
-.contact-name { font-weight:700; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.contact-phone { color: var(--color-muted); font-size: 12px; white-space: nowrap; }
-.contact-meta-info { display:flex; align-items:center; gap:10px; flex-wrap: wrap; justify-content:flex-end; }
-.contact-tags { display:flex; gap:6px; flex-wrap:wrap; max-width: 420px; }
-.contact-tag { border:1px solid var(--color-border); border-radius:999px; padding:2px 8px; font-size: 12px; }
-.contact-tag.location { background: var(--color-surface-muted); }
-.contact-select-indicator { color: var(--color-muted); }
+.contacts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  padding: 12px;
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.contact-item:hover {
+  background: var(--color-surface-muted);
+}
+.contact-item.selected {
+  outline: 2px solid color-mix(in oklab, var(--color-primary) 28%, transparent);
+}
+.contact-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface-muted);
+  font-weight: 700;
+}
+.contact-details {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  column-gap: 12px;
+  min-width: 0;
+}
+.contact-main-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.contact-name {
+  font-weight: 700;
+  font-size: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.contact-phone {
+  color: var(--color-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.contact-meta-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.contact-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  max-width: 420px;
+}
+.contact-tag {
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 12px;
+}
+.contact-tag.location {
+  background: var(--color-surface-muted);
+}
+.contact-select-indicator {
+  color: var(--color-muted);
+}
 
 /* Forms */
-.case-form { display:flex; flex-direction:column; gap: 14px; }
-.form-row { display:grid; grid-template-columns: 1fr; gap: 12px; }
-@media (min-width: 780px) { .form-row { grid-template-columns: 1fr 1fr; } }
-.form-actions { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top: 10px; }
+.case-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+@media (min-width: 780px) {
+  .form-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
 
 /* AI upload dropzone */
-.ai-audio-upload { 
-  border: 2px dashed var(--color-border); 
-  border-radius: 12px; 
-  padding: 20px; 
-  background: var(--color-surface); 
-  text-align: center; 
+.ai-audio-upload {
+  border: 2px dashed var(--color-border);
+  border-radius: 12px;
+  padding: 20px;
+  background: var(--color-surface);
+  text-align: center;
   position: relative;
   transition: all 0.2s ease;
   cursor: pointer;
@@ -3367,13 +4229,39 @@ const updateStepCSSVar = () => {
 }
 
 /* Review styles */
-.review-sections { display:flex; flex-direction:column; gap:12px; }
-.review-section { border:1px solid var(--color-border); border-radius: 14px; background: var(--color-surface); }
-.section-header { display:flex; align-items:center; justify-content:space-between; padding: 10px 12px; border-bottom:1px solid var(--color-border); }
-.review-content { padding: 10px 12px; display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
-.review-item-full { grid-column: 1 / -1; }
-.review-label { font-weight:600; color: var(--color-muted); }
-.review-value { color: var(--text-color); }
+.review-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.review-section {
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-surface);
+}
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+.review-content {
+  padding: 10px 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.review-item-full {
+  grid-column: 1 / -1;
+}
+.review-label {
+  font-weight: 600;
+  color: var(--color-muted);
+}
+.review-value {
+  color: var(--text-color);
+}
 
 .ai-preview-container {
   font-family: inherit;
@@ -3397,7 +4285,7 @@ const updateStepCSSVar = () => {
 
 .ai-preview-header {
   padding: 12px 14px;
-  border-bottom: 1px solid var(--border-color, rgba(0,0,0,0.06));
+  border-bottom: 1px solid var(--border-color, rgba(0, 0, 0, 0.06));
   position: sticky;
   top: 0;
   background: var(--card-bg, #fff);
@@ -3412,7 +4300,7 @@ const updateStepCSSVar = () => {
 
 .ai-preview-section {
   padding: 14px;
-  border-bottom: 1px dashed var(--border-color, rgba(0,0,0,0.06));
+  border-bottom: 1px dashed var(--border-color, rgba(0, 0, 0, 0.06));
 }
 
 .ai-preview-section:last-child {
@@ -3442,17 +4330,46 @@ const updateStepCSSVar = () => {
   white-space: pre-wrap;
   line-height: 1.5;
   font-size: 14px;
-  background: var(--surface-muted, rgba(0,0,0,0.02));
+  background: var(--surface-muted, rgba(0, 0, 0, 0.02));
   padding: 10px;
   border-radius: 8px;
 }
 
-.ai-suggestion { display:flex; gap:10px; padding:12px; border:1px solid var(--color-border); border-radius:12px; background: var(--color-surface); margin-bottom:8px; }
-.suggestion-icon { font-size:16px; }
-.suggestion-content { flex:1; }
-.suggestion-title { font-weight:700; color: var(--text-color); margin-bottom:4px; }
-.suggestion-text { color: var(--color-muted); font-size:13px; margin-bottom:8px; }
-.btn-suggestion { background: var(--color-primary); color:#fff; border:0; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; }
+.ai-suggestion {
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  margin-bottom: 8px;
+}
+.suggestion-icon {
+  font-size: 16px;
+}
+.suggestion-content {
+  flex: 1;
+}
+.suggestion-title {
+  font-weight: 700;
+  color: var(--text-color);
+  margin-bottom: 4px;
+}
+.suggestion-text {
+  color: var(--color-muted);
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+.btn-suggestion {
+  background: var(--color-primary);
+  color: #fff;
+  border: 0;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
 
 /* Ensure ancestors don't block child overflow scrolling */
 .case-container {
@@ -3464,7 +4381,9 @@ const updateStepCSSVar = () => {
   overflow: visible;
 }
 
-.back-button { margin-bottom: 12px; }
+.back-button {
+  margin-bottom: 12px;
+}
 
 /* Category tags */
 .category-tags-container {
@@ -3656,7 +4575,7 @@ const updateStepCSSVar = () => {
 }
 
 .step:not(:last-child)::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 16px;
   left: 50%;
@@ -3739,8 +4658,14 @@ const updateStepCSSVar = () => {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateX(20px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .step-navigation {
@@ -3852,7 +4777,6 @@ const updateStepCSSVar = () => {
   margin: 0;
 }
 
-
 .field-group label {
   font-weight: 600;
   color: var(--color-fg);
@@ -3876,7 +4800,8 @@ const updateStepCSSVar = () => {
 .field-group textarea:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary) 20%, transparent);
+  box-shadow: 0 0 0 2px
+    color-mix(in oklab, var(--color-primary) 20%, transparent);
 }
 
 .field-group textarea {
@@ -4009,18 +4934,18 @@ const updateStepCSSVar = () => {
     grid-template-columns: 1fr;
     gap: 16px;
   }
-  
+
   .simple-modal-content {
     width: 95%;
     margin: 10px;
   }
-  
+
   .client-modal-large,
   .perpetrator-modal-large {
     width: 95%;
     max-width: 95vw;
   }
-  
+
   .radio-options {
     flex-direction: column;
     gap: 8px;
@@ -4280,7 +5205,7 @@ const updateStepCSSVar = () => {
 }
 
 .radio-options label input[type="radio"]:checked::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 50%;
   left: 50%;
@@ -4382,7 +5307,8 @@ const updateStepCSSVar = () => {
   background: var(--color-surface, #ffffff);
   border: 1px solid var(--color-border, #d1d5db);
   border-radius: var(--radius-md, 6px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
   max-height: 300px;
   overflow: hidden;
   margin-top: 4px;
@@ -4445,7 +5371,8 @@ const updateStepCSSVar = () => {
   font-size: 11px;
   color: var(--color-text-secondary, #6b7280);
   text-align: center;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
 }
 
 /* Scrollbar styles for options list */
@@ -4470,7 +5397,8 @@ const updateStepCSSVar = () => {
 .hierarchical-dropdown {
   position: relative;
   width: 100%;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
 }
 
 .hierarchical-dropdown .dropdown-trigger {
@@ -4509,7 +5437,8 @@ const updateStepCSSVar = () => {
   border-radius: 12px;
   font-size: 11px;
   font-weight: 500;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
 }
 
 .tag-remove {
@@ -4537,7 +5466,8 @@ const updateStepCSSVar = () => {
   color: var(--color-text-secondary, #6b7280);
   font-style: italic;
   font-size: 13px;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
 }
 
 .category-dropdown-panel {
@@ -4549,11 +5479,13 @@ const updateStepCSSVar = () => {
   background: var(--color-surface, #ffffff);
   border: 1px solid var(--color-border, #d1d5db);
   border-radius: var(--radius-md, 6px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
   max-height: 300px;
   overflow: hidden;
   margin-top: 4px;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
 }
 
 .panel-header {
@@ -4569,7 +5501,8 @@ const updateStepCSSVar = () => {
   font-weight: 600;
   color: var(--color-text, #1f2937);
   font-size: 13px;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
 }
 
 .expand-btn {
@@ -4641,7 +5574,8 @@ const updateStepCSSVar = () => {
   color: var(--color-text, #1f2937);
   font-weight: 500;
   font-size: 13px;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
 }
 
 .category-checkbox {
@@ -4680,7 +5614,8 @@ const updateStepCSSVar = () => {
   flex: 1;
   color: var(--color-text, #1f2937);
   font-size: 12px;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
 }
 
 /* Scrollbar styles for category tree */
@@ -4699,5 +5634,59 @@ const updateStepCSSVar = () => {
 
 .category-tree::-webkit-scrollbar-thumb:hover {
   background: var(--color-text-secondary, #6b7280);
+}
+
+.ongoing-call-overlay {
+  position: fixed;
+  top: 12px;
+  right: 16px;
+  z-index: 1100;
+}
+
+.ongoing-call-overlay .overlay-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--content-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 8px 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+.ongoing-call-overlay .dot {
+  width: 10px;
+  height: 10px;
+  background: #10b981;
+  border-radius: 50%;
+  animation: pulse 1.2s infinite ease-in-out;
+}
+.ongoing-call-overlay .info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.ongoing-call-overlay .line {
+  font-size: 12px;
+  color: var(--text-color);
+}
+.ongoing-call-overlay .overlay-btn {
+  border: none;
+  background: #991b1b;
+  color: #fff;
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+@keyframes pulse {
+  0% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.4;
+  }
 }
 </style>
