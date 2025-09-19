@@ -1,194 +1,178 @@
 <template>
   <!-- Step 1: Reporter Selection -->
-        <div v-show="currentStep === 1" class="step-content">
-          <form class="case-form" @submit.prevent="validateAndProceed(1)">
-            <div class="form-section">
-              <div class="section-title">Select Reporter</div>
-              <p class="section-description">
-                Choose an existing contact or create a new reporter for this
-                case.
-              </p>
+  <div v-show="currentStep === 1" class="step-content">
+    <form class="case-form" @submit.prevent="validateAndProceed(1)">
+      <div class="form-section">
+        <div class="section-title">Select Reporter</div>
+        <p class="section-description">
+          Choose an existing contact or create a new reporter for this case.
+        </p>
 
-              <div class="search-section">
-                <div class="search-row">
-                  <div class="search-box">
-                    <svg
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <circle
-                        cx="11"
-                        cy="11"
-                        r="8"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      />
-                      <path
-                        d="m21 21-4.35-4.35"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      />
-                    </svg>
-                    <input
-                      v-model="searchQuery"
-                      type="text"
-                      placeholder="Search by name or phone..."
-                      class="search-input"
-                    />
-                    <!-- Suggestions will render inline below using contacts-list -->
-                  </div>
-                  <button
-                    type="button"
-                    class="btn btn--primary new-reporter-btn"
-                    @click="createNewReporter"
-                  >
-                    + New Reporter
-                  </button>
-                </div>
-              </div>
-
-              <!-- Inline results under search -->
-              <div
-                class="contacts-list"
-                v-if="debouncedQuery && filteredContacts.length"
+        <div class="search-section">
+          <div class="search-row">
+            <div class="search-box">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
               >
-                <div
-                  v-for="contact in filteredContacts"
-                  :key="contact[casesStore.cases_k.id[0]]"
-                  class="contact-item"
-                  :class="{
-                    selected:
-                      selectedReporter &&
-                      selectedReporter[casesStore.cases_k.id[0]] ===
-                        contact[casesStore.cases_k.id[0]],
-                  }"
-                  @click="selectExistingReporter(contact)"
-                >
-                  <div class="contact-avatar">
-                    <span>{{
-                      getInitials(
-                        contact[casesStore.cases_k.reporter_fullname[0]] || "NA"
-                      )
-                        .slice(0, 2)
-                        .toUpperCase()
-                    }}</span>
-                  </div>
-                  <div class="contact-details">
-                    <div class="contact-main-info">
-                      <div class="contact-name">
-                        {{
-                          contact[casesStore.cases_k.reporter_fullname[0]] ||
-                          "Untitled Case"
-                        }}
-                      </div>
-                      <div class="contact-phone">
-                        {{ contact[casesStore.cases_k.reporter_phone[0]] }}
-                      </div>
-                    </div>
-                    <div class="contact-meta-info">
-                      <div class="contact-tags">
-                        <span class="contact-tag"
-                          >{{
-                            contact[casesStore.cases_k.reporter_age[0]]
-                          }}y</span
-                        >
-                        <span class="contact-tag">{{
-                          contact[casesStore.cases_k.reporter_sex[0]]
-                        }}</span>
-                        <span class="contact-tag location"
-                          >📍
-                          {{
-                            contact[casesStore.cases_k.reporter_location[0]]
-                          }}</span
-                        >
-                      </div>
-                      <div class="contact-timestamp">
-                        {{
-                          new Date(
-                            contact[casesStore.cases_k.dt[0]] * 1000
-                          ).toLocaleString("en-US")
-                        }}
-                      </div>
-                    </div>
-                  </div>
-                  <div class="contact-select-indicator">
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <polyline
-                        points="9,18 15,12 9,6"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-              <div
-                class="search-empty"
-                v-else-if="debouncedQuery && !filteredContacts.length"
-              >
-                No matches found
-              </div>
-
-              <div class="action-buttons">
-                <button
-                  v-if="selectedReporter"
-                  type="submit"
-                  class="btn btn-primary btn-large"
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M5 12l5 5L20 7"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                  Continue with
-                  {{
-                    selectedReporter?.[casesStore.cases_k.reporter_fullname[0]]
-                  }}
-                </button>
-              </div>
+                <circle
+                  cx="11"
+                  cy="11"
+                  r="8"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
+                <path
+                  d="m21 21-4.35-4.35"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
+              </svg>
+              <input
+                v-model="searchQuery"
+                type="text"
+                placeholder="Search by name or phone..."
+                class="search-input"
+              />
             </div>
-            <div class="form-actions">
-              <button type="button" class="btn btn-cancel" @click="cancelForm">
-                Cancel
-              </button>
-              <div>
-                <BaseButton variant="secondary" @click="skipStep(1)"
-                  >Skip</BaseButton
-                >
-                <BaseButton type="submit" :disabled="!selectedReporter"
-                  >Next</BaseButton
-                >
-              </div>
-            </div>
-          </form>
+            <button
+              type="button"
+              class="btn btn--primary new-reporter-btn"
+              @click="createNewReporter"
+            >
+              + New Reporter
+            </button>
+          </div>
         </div>
+
+        <!-- Inline results under search -->
+        <div
+          class="contacts-list"
+          v-if="debouncedQuery && filteredContacts.length"
+        >
+          <div
+            v-for="contact in filteredContacts"
+            :key="contact[reportersStore.reporters_k.id?.[0]]"
+            class="contact-item"
+            :class="{
+              selected:
+                selectedReporter &&
+                selectedReporter[reportersStore.reporters_k.id?.[0]] ===
+                  contact[reportersStore.reporters_k.id?.[0]],
+            }"
+            @click="selectExistingReporter(contact)"
+          >
+            <div class="contact-avatar">
+              <span>{{
+                getInitials(
+                  contact[reportersStore.reporters_k.fullname?.[0]] || "NA"
+                )
+                  .slice(0, 2)
+                  .toUpperCase()
+              }}</span>
+            </div>
+            <div class="contact-details">
+              <div class="contact-main-info">
+                <div class="contact-name">
+                  {{
+                    contact[reportersStore.reporters_k.fullname?.[0]] ||
+                    "Unnamed Reporter"
+                  }}
+                </div>
+                <div class="contact-phone">
+                  {{ contact[reportersStore.reporters_k.phone?.[0]] }}
+                </div>
+              </div>
+              <div class="contact-meta-info">
+                <div class="contact-tags">
+                  <span class="contact-tag">{{
+                    contact[reportersStore.reporters_k.age?.[0]]
+                  }}y</span>
+                  <span class="contact-tag">{{
+                    contact[reportersStore.reporters_k.sex?.[0]]
+                  }}</span>
+                  <span class="contact-tag location"
+                    >📍
+                    {{ contact[reportersStore.reporters_k.location?.[0]] }}</span
+                  >
+                </div>
+              </div>
+            </div>
+            <div class="contact-select-indicator">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <polyline
+                  points="9,18 15,12 9,6"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="search-empty"
+          v-else-if="debouncedQuery && !filteredContacts.length"
+        >
+          No matches found
+        </div>
+
+        <div class="action-buttons">
+          <button
+            v-if="selectedReporter"
+            type="submit"
+            class="btn btn-primary btn-large"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M5 12l5 5L20 7"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            Continue with
+            {{ selectedReporter?.[reportersStore.reporters_k.fullname[0]] }}
+          </button>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-cancel" @click="cancelForm">
+          Cancel
+        </button>
+        <div>
+          <BaseButton variant="secondary" @click="skipStep(1)">Skip</BaseButton>
+          <BaseButton type="submit" :disabled="!selectedReporter"
+            >Next</BaseButton
+          >
+        </div>
+      </div>
+    </form>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed, watch } from "vue"
-import { useCaseStore } from "@/stores/cases"
+import { ref, computed, watch, onMounted } from "vue"
+import { useReporterStore } from "@/stores/reporters"
 import BaseButton from "@/components/base/BaseButton.vue"
 
-// Props from parent CaseCreation
 const props = defineProps({
   currentStep: {
     type: Number,
@@ -198,15 +182,22 @@ const props = defineProps({
 
 const emit = defineEmits(["validate-and-proceed", "skip-step", "cancel-form"])
 
-// Access store
-const casesStore = useCaseStore()
+// ✅ Access reporters store
+const reportersStore = useReporterStore()
+
+// Fetch reporters on mount
+onMounted(() => {
+  if (!reportersStore.reporters.length) {
+    reportersStore.listReporters()
+  }
+})
 
 // State
 const searchQuery = ref("")
 const debouncedQuery = ref("")
 const selectedReporter = ref(null)
 
-// Debounce search input (simple watcher-based debounce)
+// Debounce search input
 let debounceTimeout
 watch(searchQuery, (newVal) => {
   clearTimeout(debounceTimeout)
@@ -215,37 +206,38 @@ watch(searchQuery, (newVal) => {
   }, 300)
 })
 
-// Filter contacts by query
+// ✅ Filter contacts from reporters
 const filteredContacts = computed(() => {
   if (!debouncedQuery.value) return []
   const query = debouncedQuery.value.toLowerCase()
-  return casesStore.cases.filter((contact) => {
+
+  return reportersStore.reporters.filter((contact) => {
     const name =
-      contact[casesStore.cases_k.reporter_fullname[0]]?.toLowerCase() || ""
+      contact[reportersStore.reporters_k.fullname?.[0]]?.toLowerCase() || ""
     const phone =
-      contact[casesStore.cases_k.reporter_phone[0]]?.toLowerCase() || ""
+      contact[reportersStore.reporters_k.phone?.[0]]?.toLowerCase() || ""
     return name.includes(query) || phone.includes(query)
   })
 })
 
-// Select reporter
+
+// ✅ Select reporter
 const selectExistingReporter = (contact) => {
   selectedReporter.value = contact
 }
 
-// Create new reporter flow (placeholder)
+// Create new reporter (placeholder)
 const createNewReporter = () => {
-  // You might open a modal/form for adding new reporter
   selectedReporter.value = {
-    [casesStore.cases_k.reporter_fullname[0]]: "New Reporter",
-    [casesStore.cases_k.reporter_phone[0]]: "",
-    [casesStore.cases_k.reporter_age[0]]: "",
-    [casesStore.cases_k.reporter_sex[0]]: "",
-    [casesStore.cases_k.reporter_location[0]]: ""
+    [reportersStore.reporters_k.fullname[0]]: "New Reporter",
+    [reportersStore.reporters_k.phone[0]]: "",
+    [reportersStore.reporters_k.age[0]]: "",
+    [reportersStore.reporters_k.sex[0]]: "",
+    [reportersStore.reporters_k.location[0]]: ""
   }
 }
 
-// Utilities
+// Utils
 const getInitials = (name) => {
   return name
     .split(" ")
@@ -268,7 +260,6 @@ const cancelForm = () => {
   emit("cancel-form")
 }
 </script>
-
 
 <style scoped>
 .step-content {
