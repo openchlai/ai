@@ -1,11 +1,16 @@
 <template>
-<div class="app-container">
+<div>
   <SidePanel :userRole="userRole" :isInQueue="isInQueue" :isProcessingQueue="isProcessingQueue" :currentCall="currentCall" @toggle-queue="handleQueueToggle" @logout="handleLogout" @sidebar-toggle="handleSidebarToggle" />
-  <div class="qa-statistics-container" :class="{ 'sidebar-collapsed': isSidebarCollapsed }" overflow-y="auto" height="100vh">
-    <div class="header">
-      <button class="back-btn glass-btn" v-if="selectedCounsellor || selectedCall" @click="handleBack">Back</button>
-      <div class="page-title">QA Management System</div>
-      <div class="header-actions"></div>
+  <div class="main-content">
+    <div class="page-header">
+      <div class="header-top">
+        <div class="header-left">
+          <h1 class="page-title">QA Management</h1>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn--secondary btn--sm" v-if="selectedCounsellor || selectedCall" @click="handleBack">Back</button>
+        </div>
+      </div>
     </div>
     <div class="qa-main-content">
       <!-- Step 1: Counsellors List -->
@@ -35,14 +40,14 @@
         <div class="calls-list">
           <div v-for="call in counsellorCalls" :key="call.id" class="call-card qa-card fine-border" @click="selectCall(call)">
             <div class="call-header">
-                <span class="call-id">Call #{{ call.id }}</span>
+              <span class="call-id">Call #{{ call.id }}</span>
               <span class="call-date">{{ formatDateTime(call.dateTime) }}</span>
-              </div>
+            </div>
             <div class="call-score">Score: {{ call.evaluation?.overallScore ?? '-' }}%</div>
             <div class="call-issue">Issue: {{ call.issueType }}</div>
-                </div>
-                </div>
-              </div>
+          </div>
+        </div>
+      </div>
       <!-- Step 3: Evaluation Details for Selected Call -->
       <div v-else-if="selectedCall" class="evaluation-section">
         <h3 class="section-title">Evaluation for Call #{{ selectedCall.id }}</h3>
@@ -51,7 +56,7 @@
             <div v-for="(score, key) in editableScores" :key="key" class="modal-field">
               <label><strong>{{ formatCategory(key) }}:</strong></label>
               <input type="number" v-model.number="editableScores[key]" min="0" max="100" />
-              </div>
+            </div>
             <div class="modal-field">
               <label><strong>Notes:</strong></label>
               <textarea v-model="editableNotes" rows="3"></textarea>
@@ -59,19 +64,19 @@
             <div class="modal-field">
               <label><strong>Evaluated By:</strong></label>
               <input v-model="editableEvaluator" />
-          </div>
+            </div>
             <div class="modal-field">
               <label><strong>Date:</strong></label>
               <input type="datetime-local" v-model="editableDate" />
-        </div>
+            </div>
             <div class="modal-actions">
               <button type="submit">Save</button>
               <button type="button" @click="handleBack">Back</button>
-              </div>
+            </div>
           </form>
-            </div>
-              </div>
-            </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 </template>
@@ -879,7 +884,8 @@ function getInitials(name) {
 }
 </script>
 
-<style scoped>
+<style>
+@import url("@/styles/qa-statistics.css");
 .qa-statistics-container {
   transition: margin-left 0.3s, width 0.3s;
   margin-left: 250px;

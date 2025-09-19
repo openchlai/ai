@@ -3,5 +3,12 @@
 @import url('../assets/styles/base.css');
 @import url('./tokens.css');
 @import url('./components.css');
+@import url('./cases.css');
+@import url('./transcription-reviews.css');
+@import url('./case-creation.css');
+@import url('./calls.css');
+@import url('./chats.css');
+@import url('./login.css');
+@import url('./qa-statistics.css');
 
 
