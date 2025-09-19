@@ -253,20 +253,14 @@ body {
 .step-divider { 
   flex: 0 0 160px; 
   height: 3px; 
-  background: #e5e5ea; 
+  background: #1e7e34; 
   border-radius: 999px; 
   align-self: center; 
   margin: 0 12px; 
 }
 
-/* Progress states without pseudo-elements to avoid misalignment */
-.step.active + .step-divider { 
-  background: linear-gradient(90deg, #1e7e34 0 65%, #e5e5ea 65% 100%); 
-}
-
-.step.completed + .step-divider { 
-  background: #1e7e34; 
-}
+/* Remove state variations so it's always a single green connector */
+/* .step.active + .step-divider, .step.completed + .step-divider { background: #1e7e34; } */
 /* Apple-style form layout and animations */
 .login-form { 
   width: 100%; 
