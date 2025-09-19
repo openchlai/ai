@@ -781,8 +781,8 @@
                   id="status"
                   label="status"
                    v-model="formData.step4.status"
-                  placeholder="Select priority"
-                  :category-id="362557"                 
+                  placeholder="Select status"
+                  :category-id="236696"                 
                   required
                 />
                   
@@ -1162,482 +1162,7 @@
         </div>
       </div>
 
-      <!-- Enhanced AI Insights Panel -->
-      <div v-if="isAIEnabled" class="ai-preview-container">
-        <div
-          class="ai-preview"
-          style="
-            border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
-            border-radius: 12px;
-            overflow: hidden;
-            background: var(--card-bg, #fff);
-          "
-        >
-          <div class="ai-preview-header">
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M12 2L2 7L12 12L22 7L12 2Z"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <path
-                d="M2 17L12 22L22 17"
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <path
-                d="M2 12L12 17L22 12"
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-            <div class="ai-preview-title">
-              AI Insights <span class="ai-badge">LIVE</span>
-            </div>
-          </div>
-          <div class="ai-preview-content">
-            <!-- Audio Upload (AI Panel) -->
-            <div class="ai-preview-section">
-              <div class="ai-preview-section-title">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  />
-                  <path
-                    d="M19 10v2a7 7 0 0 1-14 0v-2"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  />
-                </svg>
-                Upload Audio
-              </div>
-              <div
-                class="ai-audio-upload"
-                :class="{ 'has-file': audioFile, 'drag-over': isDragOver }"
-                @drop="onAudioDrop"
-                @dragover.prevent="isDragOver = true"
-                @dragleave.prevent="isDragOver = false"
-                @dragenter.prevent
-              >
-                <input
-                  ref="audioFileInput"
-                  type="file"
-                  accept="audio/*"
-                  @change="onAudioUpload"
-                  style="display: none"
-                />
-
-                <div v-if="!audioFile" class="upload-placeholder">
-                  <svg
-                    width="32"
-                    height="32"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"
-                      stroke="currentColor"
-                      stroke-width="2"
-                    />
-                    <path
-                      d="M19 10v2a7 7 0 0 1-14 0v-2"
-                      stroke="currentColor"
-                      stroke-width="2"
-                    />
-                  </svg>
-                  <div class="upload-text">
-                    <span class="upload-title">Drop audio file here</span>
-                    <span class="upload-subtitle">or click to browse</span>
-                  </div>
-                  <button
-                    type="button"
-                    class="upload-btn"
-                    @click="$refs.audioFileInput.click()"
-                  >
-                    Choose File
-                  </button>
-                </div>
-
-                <div v-else class="audio-file-info">
-                  <div class="audio-icon">
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M9 18V5l12-2v13"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                      <circle
-                        cx="6"
-                        cy="18"
-                        r="3"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      />
-                      <circle
-                        cx="18"
-                        cy="16"
-                        r="3"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      />
-                    </svg>
-                  </div>
-                  <div class="audio-details">
-                    <div class="audio-name">
-                      {{ audioFile.name || "Audio file" }}
-                    </div>
-                    <div class="audio-meta">
-                      {{ formatFileSize(audioFile.size) }} •
-                      {{ audioDuration }}s
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    class="remove-audio-btn"
-                    @click="removeAudio"
-                    title="Remove audio"
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M18 6L6 18"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                      <path
-                        d="M6 6L18 18"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Transcription Section (AI Panel) -->
-            <div v-if="audioTranscription" class="ai-preview-section">
-              <div class="ai-preview-section-title">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  />
-                  <polyline
-                    points="14,2 14,8 20,8"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  />
-                </svg>
-                Case Transcription
-                <button
-                  type="button"
-                  class="btn-copy"
-                  @click="copyTranscription"
-                  style="margin-left: auto"
-                >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <rect
-                      x="9"
-                      y="9"
-                      width="13"
-                      height="13"
-                      rx="2"
-                      ry="2"
-                      stroke="currentColor"
-                      stroke-width="2"
-                    />
-                    <path
-                      d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
-                      stroke="currentColor"
-                      stroke-width="2"
-                    />
-                  </svg>
-                  Copy
-                </button>
-              </div>
-              <div class="transcription-text">{{ audioTranscription }}</div>
-              <div
-                class="transcription-verify"
-                style="
-                  margin-top: 10px;
-                  display: flex;
-                  flex-direction: column;
-                  gap: 8px;
-                "
-              >
-                <div class="question" style="font-weight: 600">
-                  Is the transcription correct?
-                </div>
-                <div
-                  class="options"
-                  style="display: flex; gap: 16px; align-items: center"
-                >
-                  <label
-                    style="
-                      display: flex;
-                      align-items: center;
-                      gap: 6px;
-                      cursor: pointer;
-                    "
-                  >
-                    <input
-                      type="radio"
-                      name="transcription-correct"
-                      v-model="isTranscriptionCorrect"
-                      :value="true"
-                    />
-                    <span>Yes</span>
-                  </label>
-                  <label
-                    style="
-                      display: flex;
-                      align-items: center;
-                      gap: 6px;
-                      cursor: pointer;
-                    "
-                  >
-                    <input
-                      type="radio"
-                      name="transcription-correct"
-                      v-model="isTranscriptionCorrect"
-                      :value="false"
-                      @change="enqueueForTranscriptionReview"
-                    />
-                    <span>No</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <!-- Case Summary Section -->
-            <div v-if="caseSummary" class="ai-preview-section">
-              <div class="ai-preview-section-title">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  />
-                  <polyline
-                    points="14,2 14,8 20,8"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  />
-                  <line
-                    x1="16"
-                    y1="13"
-                    x2="8"
-                    y2="13"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  />
-                  <line
-                    x1="16"
-                    y1="17"
-                    x2="8"
-                    y2="17"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  />
-                </svg>
-                Case Summary
-              </div>
-              <div class="case-summary">
-                <div class="summary-item">
-                  <div class="summary-label">Risk Level</div>
-                  <div class="summary-value">
-                    <span
-                      class="risk-badge"
-                      :class="`risk-${caseSummary.riskLevel}`"
-                    >
-                      {{ caseSummary.riskLevel.toUpperCase() }}
-                    </span>
-                  </div>
-                </div>
-                <div class="summary-item">
-                  <div class="summary-label">Urgency</div>
-                  <div class="summary-value">{{ caseSummary.urgency }}</div>
-                </div>
-                <div class="summary-item">
-                  <div class="summary-label">Key Concerns</div>
-                  <div class="summary-value">
-                    <div class="concern-tags">
-                      <span
-                        v-for="concern in caseSummary.keyConcerns"
-                        :key="concern"
-                        class="concern-tag"
-                      >
-                        {{ concern }}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div class="summary-item full-width">
-                  <div class="summary-label">AI Analysis</div>
-                  <div class="summary-value summary-text">
-                    {{ caseSummary.analysis }}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Smart Insights Section -->
-            <div class="ai-preview-section">
-              <div class="ai-preview-section-title">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="3"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  />
-                  <path
-                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  />
-                </svg>
-                Smart Insights
-              </div>
-              <div class="ai-suggestions">
-                <div
-                  v-for="insight in aiInsights"
-                  :key="insight.id"
-                  class="ai-suggestion"
-                  :class="`suggestion-${insight.type}`"
-                >
-                  <div class="suggestion-icon">{{ insight.icon }}</div>
-                  <div class="suggestion-content">
-                    <div class="suggestion-title">{{ insight.title }}</div>
-                    <div class="suggestion-text">{{ insight.message }}</div>
-                    <div v-if="insight.action" class="suggestion-action">
-                      <button
-                        class="btn-suggestion"
-                        @click="applyInsight(insight)"
-                      >
-                        {{ insight.action }}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Recommendations Section -->
-            <div v-if="recommendations.length > 0" class="ai-preview-section">
-              <div class="ai-preview-section-title">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M9 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-4"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  />
-                  <polyline
-                    points="9,11 12,14 15,11"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  />
-                  <line
-                    x1="12"
-                    y1="2"
-                    x2="12"
-                    y2="14"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  />
-                </svg>
-                Recommendations
-              </div>
-              <div class="recommendations-list">
-                <div
-                  v-for="rec in recommendations"
-                  :key="rec.id"
-                  class="recommendation-item"
-                >
-                  <div
-                    class="rec-priority"
-                    :class="`priority-${rec.priority}`"
-                  ></div>
-                  <div class="rec-content">
-                    <div class="rec-title">{{ rec.title }}</div>
-                    <div class="rec-description">{{ rec.description }}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+      
 
     <!-- Client Modal -->
     <div v-if="clientModalOpen" class="simple-modal">
@@ -2715,6 +2240,483 @@
               >
                 Create
               </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Enhanced AI Insights Panel -->
+      <div v-if="isAIEnabled" class="ai-preview-container">
+        <div
+          class="ai-preview"
+          style="
+            border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+            border-radius: 12px;
+            overflow: hidden;
+            background: var(--card-bg, #fff);
+          "
+        >
+          <div class="ai-preview-header">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12 2L2 7L12 12L22 7L12 2Z"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M2 17L12 22L22 17"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M2 12L12 17L22 12"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <div class="ai-preview-title">
+              AI Insights <span class="ai-badge">LIVE</span>
+            </div>
+          </div>
+          <div class="ai-preview-content">
+            <!-- Audio Upload (AI Panel) -->
+            <div class="ai-preview-section">
+              <div class="ai-preview-section-title">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
+                  <path
+                    d="M19 10v2a7 7 0 0 1-14 0v-2"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
+                </svg>
+                Upload Audio
+              </div>
+              <div
+                class="ai-audio-upload"
+                :class="{ 'has-file': audioFile, 'drag-over': isDragOver }"
+                @drop="onAudioDrop"
+                @dragover.prevent="isDragOver = true"
+                @dragleave.prevent="isDragOver = false"
+                @dragenter.prevent
+              >
+                <input
+                  ref="audioFileInput"
+                  type="file"
+                  accept="audio/*"
+                  @change="onAudioUpload"
+                  style="display: none"
+                />
+
+                <div v-if="!audioFile" class="upload-placeholder">
+                  <svg
+                    width="32"
+                    height="32"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    />
+                    <path
+                      d="M19 10v2a7 7 0 0 1-14 0v-2"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    />
+                  </svg>
+                  <div class="upload-text">
+                    <span class="upload-title">Drop audio file here</span>
+                    <span class="upload-subtitle">or click to browse</span>
+                  </div>
+                  <button
+                    type="button"
+                    class="upload-btn"
+                    @click="$refs.audioFileInput.click()"
+                  >
+                    Choose File
+                  </button>
+                </div>
+
+                <div v-else class="audio-file-info">
+                  <div class="audio-icon">
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M9 18V5l12-2v13"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                      <circle
+                        cx="6"
+                        cy="18"
+                        r="3"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      />
+                      <circle
+                        cx="18"
+                        cy="16"
+                        r="3"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      />
+                    </svg>
+                  </div>
+                  <div class="audio-details">
+                    <div class="audio-name">
+                      {{ audioFile.name || "Audio file" }}
+                    </div>
+                    <div class="audio-meta">
+                      {{ formatFileSize(audioFile.size) }} •
+                      {{ audioDuration }}s
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    class="remove-audio-btn"
+                    @click="removeAudio"
+                    title="Remove audio"
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M18 6L6 18"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                      <path
+                        d="M6 6L18 18"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Transcription Section (AI Panel) -->
+            <div v-if="audioTranscription" class="ai-preview-section">
+              <div class="ai-preview-section-title">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
+                  <polyline
+                    points="14,2 14,8 20,8"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
+                </svg>
+                Case Transcription
+                <button
+                  type="button"
+                  class="btn-copy"
+                  @click="copyTranscription"
+                  style="margin-left: auto"
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <rect
+                      x="9"
+                      y="9"
+                      width="13"
+                      height="13"
+                      rx="2"
+                      ry="2"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    />
+                    <path
+                      d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    />
+                  </svg>
+                  Copy
+                </button>
+              </div>
+              <div class="transcription-text">{{ audioTranscription }}</div>
+              <div
+                class="transcription-verify"
+                style="
+                  margin-top: 10px;
+                  display: flex;
+                  flex-direction: column;
+                  gap: 8px;
+                "
+              >
+                <div class="question" style="font-weight: 600">
+                  Is the transcription correct?
+                </div>
+                <div
+                  class="options"
+                  style="display: flex; gap: 16px; align-items: center"
+                >
+                  <label
+                    style="
+                      display: flex;
+                      align-items: center;
+                      gap: 6px;
+                      cursor: pointer;
+                    "
+                  >
+                    <input
+                      type="radio"
+                      name="transcription-correct"
+                      v-model="isTranscriptionCorrect"
+                      :value="true"
+                    />
+                    <span>Yes</span>
+                  </label>
+                  <label
+                    style="
+                      display: flex;
+                      align-items: center;
+                      gap: 6px;
+                      cursor: pointer;
+                    "
+                  >
+                    <input
+                      type="radio"
+                      name="transcription-correct"
+                      v-model="isTranscriptionCorrect"
+                      :value="false"
+                      @change="enqueueForTranscriptionReview"
+                    />
+                    <span>No</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Case Summary Section -->
+            <div v-if="caseSummary" class="ai-preview-section">
+              <div class="ai-preview-section-title">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
+                  <polyline
+                    points="14,2 14,8 20,8"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
+                  <line
+                    x1="16"
+                    y1="13"
+                    x2="8"
+                    y2="13"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
+                  <line
+                    x1="16"
+                    y1="17"
+                    x2="8"
+                    y2="17"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
+                </svg>
+                Case Summary
+              </div>
+              <div class="case-summary">
+                <div class="summary-item">
+                  <div class="summary-label">Risk Level</div>
+                  <div class="summary-value">
+                    <span
+                      class="risk-badge"
+                      :class="`risk-${caseSummary.riskLevel}`"
+                    >
+                      {{ caseSummary.riskLevel.toUpperCase() }}
+                    </span>
+                  </div>
+                </div>
+                <div class="summary-item">
+                  <div class="summary-label">Urgency</div>
+                  <div class="summary-value">{{ caseSummary.urgency }}</div>
+                </div>
+                <div class="summary-item">
+                  <div class="summary-label">Key Concerns</div>
+                  <div class="summary-value">
+                    <div class="concern-tags">
+                      <span
+                        v-for="concern in caseSummary.keyConcerns"
+                        :key="concern"
+                        class="concern-tag"
+                      >
+                        {{ concern }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div class="summary-item full-width">
+                  <div class="summary-label">AI Analysis</div>
+                  <div class="summary-value summary-text">
+                    {{ caseSummary.analysis }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Smart Insights Section -->
+            <div class="ai-preview-section">
+              <div class="ai-preview-section-title">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="3"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
+                  <path
+                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
+                </svg>
+                Smart Insights
+              </div>
+              <div class="ai-suggestions">
+                <div
+                  v-for="insight in aiInsights"
+                  :key="insight.id"
+                  class="ai-suggestion"
+                  :class="`suggestion-${insight.type}`"
+                >
+                  <div class="suggestion-icon">{{ insight.icon }}</div>
+                  <div class="suggestion-content">
+                    <div class="suggestion-title">{{ insight.title }}</div>
+                    <div class="suggestion-text">{{ insight.message }}</div>
+                    <div v-if="insight.action" class="suggestion-action">
+                      <button
+                        class="btn-suggestion"
+                        @click="applyInsight(insight)"
+                      >
+                        {{ insight.action }}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recommendations Section -->
+            <div v-if="recommendations.length > 0" class="ai-preview-section">
+              <div class="ai-preview-section-title">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M9 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-4"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
+                  <polyline
+                    points="9,11 12,14 15,11"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
+                  <line
+                    x1="12"
+                    y1="2"
+                    x2="12"
+                    y2="14"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
+                </svg>
+                Recommendations
+              </div>
+              <div class="recommendations-list">
+                <div
+                  v-for="rec in recommendations"
+                  :key="rec.id"
+                  class="recommendation-item"
+                >
+                  <div
+                    class="rec-priority"
+                    :class="`priority-${rec.priority}`"
+                  ></div>
+                  <div class="rec-content">
+                    <div class="rec-title">{{ rec.title }}</div>
+                    <div class="rec-description">{{ rec.description }}</div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
