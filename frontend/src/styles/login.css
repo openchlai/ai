@@ -199,7 +199,7 @@ body {
   align-items: center; 
   justify-content: center; 
   margin-bottom: 3rem; 
-  gap: 2rem; 
+  gap: 1.75rem; 
 }
 
 .step { 
@@ -251,12 +251,12 @@ body {
 }
 
 .step-divider { 
-  flex: 0 0 160px; 
+  flex: 1; 
   height: 3px; 
   background: #1e7e34; 
   border-radius: 999px; 
   align-self: center; 
-  margin: 0 12px; 
+  margin: 0 16px; 
 }
 
 /* Remove state variations so it's always a single green connector */
