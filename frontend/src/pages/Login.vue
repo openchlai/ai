@@ -2,13 +2,8 @@
   <div class="login-outer-wrapper">
     <div class="login-container">
       <div class="side-panel left-panel">
-        <div class="flag-strip left-flag">
-          <div class="flag-segment black"></div>
-          <div class="flag-segment white"></div>
-          <div class="flag-segment red"></div>
-          <div class="flag-segment white"></div>
-          <div class="flag-segment green"></div>
-        </div>
+        <!-- decorative left rail hidden on desktop in new design -->
+        <div class="flag-strip left-flag"></div>
         <div class="pattern-bg pattern-bg-left"></div>
       </div>
       <div class="center-panel">
@@ -18,11 +13,12 @@
           </div>
           <h2 class="form-title">
             <span v-if="currentStep === 'email'">
-              Welcome to <span class="openchs-kenya-flag">OPENCHS</span>
+              Welcome home
             </span>
             <span v-else-if="currentStep === 'otp'">Enter verification code</span>
             <span v-else-if="currentStep === 'password'">Enter your password</span>
           </h2>
+          <p v-if="currentStep === 'email'" class="form-subtitle">Please enter your details.</p>
           <div class="step-indicator">
             <div class="step" :class="{ active: currentStep === 'email', completed: currentStep === 'otp' || currentStep === 'password' }">
               <span class="step-number">1</span>
@@ -151,13 +147,16 @@
                 </div>
               </div>
 
-              <!-- Remember Me Checkbox -->
-              <div class="remember-me">
-                <label class="checkbox-container">
-                  <input type="checkbox" v-model="rememberMe" :disabled="loading">
-                  <span class="checkmark"></span>
-                  Remember me
-                </label>
+              <!-- Remember / Forgot row -->
+              <div class="remember-forgot-row">
+                <div class="remember-me">
+                  <label class="checkbox-container">
+                    <input type="checkbox" v-model="rememberMe" :disabled="loading">
+                    <span class="checkmark"></span>
+                    Remember me for 30 days
+                  </label>
+                </div>
+                <a href="#" class="forgot-inline" @click.prevent="handleForgotPassword">Forgot password?</a>
               </div>
             </div>
 
@@ -227,9 +226,12 @@
             </button>
           </form>
 
-          <!-- Forgot Password Link -->
-          <div class="forgot-password">
-            <a href="#" class="forgot-link" @click.prevent="handleForgotPassword">Forgot your password?</a>
+          <!-- Social Sign-in -->
+          <div class="divider"><span>or</span></div>
+          <div class="social-row">
+            <button type="button" class="social-btn" aria-label="Sign in with Apple"></button>
+            <button type="button" class="social-btn" aria-label="Sign in with Google">G</button>
+            <button type="button" class="social-btn" aria-label="Sign in with Facebook">f</button>
           </div>
 
           <!-- Help Text -->
@@ -254,14 +256,8 @@
         </div>
       </div>
       <div class="side-panel right-panel">
-        <div class="flag-strip right-flag-bar">
-          <div class="flag-segment black"></div>
-          <div class="flag-segment white"></div>
-          <div class="flag-segment red"></div>
-          <div class="flag-segment white"></div>
-          <div class="flag-segment green"></div>
-        </div>
-        <div class="pattern-bg pattern-bg-right"></div>
+        <!-- hero visual panel -->
+        <div class="hero-panel" aria-hidden="true"></div>
       </div>
     </div>
   </div>
