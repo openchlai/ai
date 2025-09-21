@@ -49,7 +49,7 @@
             </div>
           </div>
 
-          <!-- ✅ Step Content (what you gave me) -->
+          <!-- Step Content -->
           <div class="step-content">
             <!-- Step 1: Basic Information -->
             <div v-if="currentPerpetratorStep === 0" class="form-step">
@@ -75,41 +75,33 @@
                 </div>
 
                 <div class="field-group">
-                  <label>Age Group</label>
-                  <select v-model="perpetratorForm.ageGroup">
-                    <option value="">Select Age Group</option>
-                    <option value="0-5">0-5 years</option>
-                    <option value="6-12">6-12 years</option>
-                    <option value="13-17">13-17 years</option>
-                    <option value="18-25">18-25 years</option>
-                    <option value="26-35">26-35 years</option>
-                    <option value="36-50">36-50 years</option>
-                    <option value="51+">51+ years</option>
-                  </select>
+                  <BaseSelect
+                    id="perpetrator-age-group"
+                    label="Age Group"
+                    v-model="perpetratorForm.ageGroup"
+                    placeholder="Select Age Group"
+                    :category-id="101"
+                  />
                 </div>
 
                 <div class="field-group">
-                  <label>Location</label>
-                  <select v-model="perpetratorForm.location">
-                    <option value="">Select Location</option>
-                    <option value="Nairobi">Nairobi</option>
-                    <option value="Mombasa">Mombasa</option>
-                    <option value="Kisumu">Kisumu</option>
-                    <option value="Nakuru">Nakuru</option>
-                    <option value="Eldoret">Eldoret</option>
-                    <option value="Other">Other</option>
-                  </select>
+                  <BaseSelect
+                    id="perpetrator-location"
+                    label="Location"
+                    v-model="perpetratorForm.location"
+                    placeholder="Select Location"
+                    :category-id="88"
+                  />
                 </div>
 
                 <div class="field-group">
-                  <label>Sex</label>
-                  <select v-model="perpetratorForm.sex">
-                    <option value="">Select Gender</option>
-                    <option value="female">Female</option>
-                    <option value="male">Male</option>
-                    <option value="non-binary">Non-binary</option>
-                    <option value="other">Other</option>
-                  </select>
+                  <BaseSelect
+                    id="perpetrator-sex"
+                    label="Sex"
+                    v-model="perpetratorForm.sex"
+                    placeholder="Select Gender"
+                    :category-id="120"
+                  />
                 </div>
               </div>
             </div>
@@ -127,28 +119,23 @@
                 </div>
 
                 <div class="field-group">
-                  <label>Nationality</label>
-                  <select v-model="perpetratorForm.nationality">
-                    <option value="">Select Nationality</option>
-                    <option value="Kenyan">Kenyan</option>
-                    <option value="Ugandan">Ugandan</option>
-                    <option value="Tanzanian">Tanzanian</option>
-                    <option value="Somali">Somali</option>
-                    <option value="South Sudanese">South Sudanese</option>
-                    <option value="Other">Other</option>
-                  </select>
+                  <BaseSelect
+                    id="perpetrator-nationality"
+                    label="Nationality"
+                    v-model="perpetratorForm.nationality"
+                    placeholder="Select Nationality"
+                    :category-id="126"
+                  />
                 </div>
 
                 <div class="field-group">
-                  <label>ID Type</label>
-                  <select v-model="perpetratorForm.idType">
-                    <option value="">Select ID Type</option>
-                    <option value="National ID">National ID</option>
-                    <option value="Passport">Passport</option>
-                    <option value="Birth Certificate">Birth Certificate</option>
-                    <option value="Refugee ID">Refugee ID</option>
-                    <option value="Other">Other</option>
-                  </select>
+                  <BaseSelect
+                    id="perpetrator-id-type"
+                    label="ID Type"
+                    v-model="perpetratorForm.idType"
+                    placeholder="Select ID Type"
+                    :category-id="362409"
+                  />
                 </div>
 
                 <div class="field-group">
@@ -161,17 +148,13 @@
                 </div>
 
                 <div class="field-group">
-                  <label>Language</label>
-                  <select v-model="perpetratorForm.language">
-                    <option value="">Select Language</option>
-                    <option value="English">English</option>
-                    <option value="Kiswahili">Kiswahili</option>
-                    <option value="Luo">Luo</option>
-                    <option value="Kikuyu">Kikuyu</option>
-                    <option value="Luhya">Luhya</option>
-                    <option value="Kalenjin">Kalenjin</option>
-                    <option value="Other">Other</option>
-                  </select>
+                  <BaseSelect
+                    id="perpetrator-language"
+                    label="Language"
+                    v-model="perpetratorForm.language"
+                    placeholder="Select Language"
+                    :category-id="123"
+                  />
                 </div>
 
                 <div class="field-group">
@@ -202,18 +185,13 @@
             <div v-if="currentPerpetratorStep === 2" class="form-step">
               <div class="form-fields">
                 <div class="field-group">
-                  <label>Tribe</label>
-                  <select v-model="perpetratorForm.tribe">
-                    <option value="">Select Tribe</option>
-                    <option value="Kikuyu">Kikuyu</option>
-                    <option value="Luhya">Luhya</option>
-                    <option value="Kalenjin">Kalenjin</option>
-                    <option value="Luo">Luo</option>
-                    <option value="Kamba">Kamba</option>
-                    <option value="Kisii">Kisii</option>
-                    <option value="Meru">Meru</option>
-                    <option value="Other">Other</option>
-                  </select>
+                  <BaseSelect
+                    id="perpetrator-tribe"
+                    label="Tribe"
+                    v-model="perpetratorForm.tribe"
+                    placeholder="Select Tribe"
+                    :category-id="133"
+                  />
                 </div>
 
                 <div class="field-group">
@@ -244,40 +222,25 @@
                 </div>
 
                 <div class="field-group">
-                  <label>Relationship with Client?</label>
-                  <select v-model="perpetratorForm.relationship">
-                    <option value="">Select Relationship</option>
-                    <option value="Parent">Parent</option>
-                    <option value="Guardian">Guardian</option>
-                    <option value="Sibling">Sibling</option>
-                    <option value="Relative">Relative</option>
-                    <option value="Friend">Friend</option>
-                    <option value="Neighbor">Neighbor</option>
-                    <option value="Teacher">Teacher</option>
-                    <option value="Other">Other</option>
-                  </select>
+                  
+                  <BaseSelect
+                    id="Relationship with Client"
+                    label="Relationship with Client?"
+                    v-model="perpetratorForm.relationship"
+                    placeholder=""
+                    :category-id="236634"
+                  />
                 </div>
 
                 <div class="field-group">
-                  <label>Shares Home with Client?</label>
-                  <div class="radio-group">
-                    <label class="radio-option">
-                      <input type="radio" v-model="perpetratorForm.sharesHome" value="yes" />
-                      <span class="radio-label">Yes</span>
-                    </label>
-                    <label class="radio-option">
-                      <input type="radio" v-model="perpetratorForm.sharesHome" value="no" />
-                      <span class="radio-label">No</span>
-                    </label>
-                    <label class="radio-option">
-                      <input
-                        type="radio"
-                        v-model="perpetratorForm.sharesHome"
-                        value="unknown"
-                      />
-                      <span class="radio-label">Unknown</span>
-                    </label>
-                  </div>
+                  
+                  <BaseSelect
+                    id="Shares Home with Client"
+                    label="Shares Home with Client?"
+                    v-model="perpetratorForm.sharesHome"
+                    placeholder=""
+                    :category-id="236631"
+                  />
                 </div>
               </div>
             </div>
@@ -286,39 +249,36 @@
             <div v-if="currentPerpetratorStep === 3" class="form-step">
               <div class="form-fields">
                 <div class="field-group">
-                  <label>Health Status</label>
-                  <select v-model="perpetratorForm.healthStatus">
-                    <option value="">Select Health Status</option>
-                    <option value="Good">Good</option>
-                    <option value="Fair">Fair</option>
-                    <option value="Poor">Poor</option>
-                    <option value="Unknown">Unknown</option>
-                  </select>
+                  
+                  <BaseSelect
+                    id="Health Status"
+                    label="Health Status"
+                    v-model="perpetratorForm.healthStatus"
+                    placeholder=""
+                    :category-id="236660"
+                  />
                 </div>
 
                 <div class="field-group">
-                  <label>Perpetrator's Profession</label>
-                  <select v-model="perpetratorForm.profession">
-                    <option value="">Select Work Status</option>
-                    <option value="Employed">Employed</option>
-                    <option value="Self-employed">Self-employed</option>
-                    <option value="Unemployed">Unemployed</option>
-                    <option value="Student">Student</option>
-                    <option value="Retired">Retired</option>
-                    <option value="Other">Other</option>
-                  </select>
+                  
+                  <BaseSelect
+                    id="Perpetrator's Profession"
+                    label="Perpetrator's Profession"
+                    v-model="perpetratorForm.profession"
+                    placeholder=""
+                    :category-id="236648"
+                  />
                 </div>
 
                 <div class="field-group">
-                  <label>Perpetrator's Marital Status</label>
-                  <select v-model="perpetratorForm.maritalStatus">
-                    <option value="">Select Marital Status</option>
-                    <option value="Single">Single</option>
-                    <option value="Married">Married</option>
-                    <option value="Divorced">Divorced</option>
-                    <option value="Widowed">Widowed</option>
-                    <option value="Separated">Separated</option>
-                  </select>
+                  
+                  <BaseSelect
+                    id="Perpetrator's Marital Status"
+                    label="Perpetrator's Marital Status"
+                    v-model="perpetratorForm.maritalStatus"
+                    placeholder=""
+                    :category-id="36654"
+                  />
                 </div>
 
                 <div class="field-group">
@@ -376,6 +336,8 @@
 </template>
 
 <script setup>
+import BaseSelect from "@/components/base/BaseSelect.vue";
+
 // Props from parent
 const props = defineProps({
   perpetratorModalOpen: { type: Boolean, required: true },
@@ -669,6 +631,52 @@ const prevStep = () => emit("prev-perpetrator-step");
   margin-bottom: 24px;
 }
 
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field-group label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+  margin-bottom: 4px;
+}
+
+.field-group input,
+.field-group select,
+.field-group textarea {
+  padding: 12px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  background: var(--color-background);
+  color: var(--color-text);
+  transition: all 0.2s ease;
+}
+
+.field-group input:focus,
+.field-group select:focus,
+.field-group textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.1);
+}
+
+.radio-group {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
 .step-navigation {
   display: flex;
   justify-content: space-between;
@@ -676,5 +684,32 @@ const prevStep = () => emit("prev-perpetrator-step");
   margin-top: 24px;
   padding-top: 20px;
   border-top: 1px solid var(--color-border);
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn--primary {
+  background-color: #007bff;
+  color: white;
+}
+
+.btn--primary:hover {
+  background-color: #0056b3;
+}
+
+.btn--secondary {
+  background-color: #6c757d;
+  color: white;
+}
+
+.btn--secondary:hover {
+  background-color: #545b62;
 }
 </style>

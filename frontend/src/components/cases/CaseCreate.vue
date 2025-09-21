@@ -41,31 +41,34 @@
   @save-step="saveStep"
   @open-client-modal="openClientModal"
   @open-perpetrator-modal="openPerpetratorModal"
+  @remove-client="removeClient"
+  @remove-perpetrator="removePerpetrator"
 />
  
     <Step3CaseDetails
-      v-if="currentStep === 3"
-       :currentStep="currentStep"
-      :formData="formData.step3"
-      @form-update="updateFormData('step3', $event)"
-      @save-and-proceed="saveAndProceed(3)"
-      @go-to-step="goToStep(3)"
-      @skip-step="skipStep(3)"
-    />
+  v-if="currentStep === 3"
+  :currentStep="currentStep"
+  :formData="formData.step3"
+  @form-update="updateFormData('step3', $event)"
+  @save-and-proceed="saveAndProceed(3)"
+  @step-change="goToStep"            
+  @skip-step="skipStep(3)"
+/>
     
     <Step4CaseClassification
-      v-if="currentStep === 4"
-      :formData="formData.step4"
-      :clientSearchResults="clientSearchResults"
-      :hasSearched="hasSearched"
-      @form-update="updateFormData('step4', $event)"
-      @search-client-by-passport="searchClientByPassport"
-      @select-client="selectClient"
-      @create-new-client="createNewClient"
-      @save-and-proceed="saveAndProceed(4)"
-      @go-to-step="goToStep(4)"
-      @skip-step="skipStep(4)"
-    />
+  v-if="currentStep === 4"
+  :currentStep="currentStep"              
+  :formData="formData.step4"
+  :clientSearchResults="clientSearchResults"
+  :hasSearched="hasSearched"
+  @form-update="updateFormData('step4', $event)"
+  @search-client-by-passport="searchClientByPassport"
+  @select-client="selectClient"
+  @create-new-client="createNewClient"
+  @save-and-proceed="saveAndProceed(4)"
+  @step-change="goToStep"                 
+  @skip-step="skipStep(4)"
+/>
     
     <Step5Review
   v-if="currentStep === 5"
@@ -359,7 +362,10 @@ const validateAndProceed = (step) => {
     
     // Modal methods
     const openClientModal = () => {
+      console.log('openClientModal called in parent'); // Debug
+      console.log('clientModalOpen before:', clientModalOpen.value); // Debug
       clientModalOpen.value = true;
+      console.log('clientModalOpen after:', clientModalOpen.value); // Debug
     };
     
     const closeClientModal = () => {
@@ -516,7 +522,7 @@ const validateAndProceed = (step) => {
   plan: formData.step3.casePlan || "---",
   priority: "1",
   status:  "1",
-  escalated_to_id: mapEscalationToBackend(formData.step4.escalatedTo) || "0",
+  escalated_to_id: formData.step4.escalatedTo || "none",
   gbv_related: mapGBVRelatedToBackend(formData.step3.isGBVRelated) || "0",
 
   reporters_uuid: {
@@ -524,15 +530,15 @@ const validateAndProceed = (step) => {
     age_t: "0",
     age: formData.step2.age || "",
     dob: "",
-    age_group_id: mapAgeGroupToBackend(formData.step2.ageGroup) || "",
-    location_id: mapLocationToBackend(formData.step2.location) || "258783",
-    sex_id: mapGenderToBackend(formData.step2.gender) || "",
+    age_group_id: formData.step2.ageGroup || "",
+    location_id: formData.step2.location || "258783",
+    sex_id: formData.step2.gender || "",
     landmark: formData.step2.nearestLandmark || "",
-    nationality_id: mapNationalityToBackend(formData.step2.nationality) || "",
-    national_id_type_id: mapIdTypeToBackend(formData.step2.idType) || "1",
+    nationality_id: formData.step2.nationality || "",
+    national_id_type_id: formData.step2.idType || "1",
     national_id: formData.step2.idNumber || "C7845123",
-    lang_id: mapLanguageToBackend(formData.step2.language) || "",
-    tribe_id: mapTribeToBackend(formData.step2.tribe) || "",
+    lang_id: formData.step2.language || "",
+    tribe_id: formData.step2.tribe || "",
     phone: formData.step2.phone || "256701234567",
     phone2: formData.step2.altPhone || "",
     email: formData.step2.email || "",
@@ -544,15 +550,15 @@ const validateAndProceed = (step) => {
     age_t: "0",
     age: client.age || formData.step2.age || "",
     dob: client.dob || "",
-    age_group_id: mapAgeGroupToBackend(client.ageGroup || formData.step2.ageGroup) || "",
-    location_id: mapLocationToBackend(client.location || formData.step2.location) || "258783",
-    sex_id: mapGenderToBackend(client.sex || formData.step2.gender) || "",
+    age_group_id: (client.ageGroup || formData.step2.ageGroup) || "",
+    location_id: (client.location || formData.step2.location) || "258783",
+    sex_id: (client.sex || formData.step2.gender) || "",
     landmark: client.landmark || formData.step2.nearestLandmark || "",
-    nationality_id: mapNationalityToBackend(client.nationality || formData.step2.nationality) || "",
-    national_id_type_id: mapIdTypeToBackend(client.idType || formData.step2.idType) || "1",
+    nationality_id: (client.nationality || formData.step2.nationality) || "",
+    national_id_type_id: (client.idType || formData.step2.idType) || "1",
     national_id: client.idNumber || formData.step2.idNumber || "C7845123",
-    lang_id: mapLanguageToBackend(client.language || formData.step2.language) || "",
-    tribe_id: mapTribeToBackend(client.tribe || formData.step2.tribe) || "",
+    lang_id: (client.language || formData.step2.language) || "",
+    tribe_id: (client.tribe || formData.step2.tribe) || "",
     phone: client.phone || formData.step2.phone || "256701234567",
     phone2: client.alternativePhone || formData.step2.altPhone || "",
     email: client.email || formData.step2.email || "",
@@ -564,26 +570,26 @@ const validateAndProceed = (step) => {
     age_t: "0",
     age: perpetrator.age || "",
     dob: perpetrator.dob || "",
-    age_group_id: mapAgeGroupToBackend(perpetrator.ageGroup) || "",
+    age_group_id: perpetrator.ageGroup || "",
     age_group: perpetrator.ageGroup || "",
-    location_id: mapLocationToBackend(perpetrator.location) || "258783",
-    sex_id: mapGenderToBackend(perpetrator.sex) || "",
+    location_id: perpetrator.location || "258783",
+    sex_id: perpetrator.sex || "",
     sex: perpetrator.sex || "",
     landmark: perpetrator.landmark || "",
-    nationality_id: mapNationalityToBackend(perpetrator.nationality) || "",
-    national_id_type_id: mapIdTypeToBackend(perpetrator.idType) || "2",
+    nationality_id: perpetrator.nationality || "",
+    national_id_type_id: perpetrator.idType || "",
     national_id: perpetrator.idNumber || "EMP789456",
-    lang_id: mapLanguageToBackend(perpetrator.language) || "",
-    tribe_id: mapTribeToBackend(perpetrator.tribe) || "",
+    lang_id: perpetrator.language || "",
+    tribe_id: perpetrator.tribe || "",
     phone: perpetrator.phone || "",
     phone2: perpetrator.alternativePhone || "",
     email: perpetrator.email || "",
-    relationship_id: mapRelationshipToBackend(perpetrator.relationship) || "",
+    relationship_id: perpetrator.relationship || "",
     relationship: perpetrator.relationship || "Employer",
-    shareshome_id: mapSharesHomeToBackend(perpetrator.sharesHome) || "",
-    health_id: mapHealthStatusToBackend(perpetrator.healthStatus) || "",
-    employment_id: mapEmploymentToBackend(perpetrator.profession) || "1",
-    marital_id: mapMaritalStatusToBackend(perpetrator.maritalStatus) || "",
+    shareshome_id: perpetrator.sharesHome || "",
+    health_id: perpetrator.healthStatus || "",
+    employment_id: perpetrator.profession || "",
+    marital_id: perpetrator.maritalStatus) || "",
     guardian_fullname: perpetrator.guardianName || "",
     notes: perpetrator.additionalDetails || "Employer in Housemaid sector",
     ".id": ""
@@ -629,78 +635,8 @@ const mapStatusToBackend = (status) => {
 };
 
     
-    const mapEscalationToBackend = (escalatedTo) => {
-      const escalationMap = {
-        "": '0',
-        'none': '0',
-        'supervisor': '1',
-        'manager': '2',
-        'director': '3',
-        'external-agency': '4',
-        'law-enforcement': '5'
-      };
-      return escalationMap[escalatedTo?.toLowerCase()]|| '0';
-    };
+  
     
-    // Add other mapping functions as needed
-    const mapAgeGroupToBackend = (ageGroup) => {
-      // Implementation depends on your age group mapping
-      return '';
-    };
-    
-    const mapLocationToBackend = (location) => {
-      // Implementation depends on your location mapping
-      return '';
-    };
-    
-    const mapGenderToBackend = (gender) => {
-      const genderMap = {
-        'male': '1',
-        'female': '2',
-        'other': '3'
-      };
-      return genderMap[gender] || '';
-    };
-    
-    const mapNationalityToBackend = (nationality) => {
-      // Implementation depends on your nationality mapping
-      return '';
-    };
-    
-    const mapIdTypeToBackend = (idType) => {
-      const idTypeMap = {
-        'national-id': '1',
-        'passport': '2',
-        'birth-certificate': '3',
-        'refugee-id': '4',
-        'other': '5'
-      };
-      return idTypeMap[idType] || '1';
-    };
-    
-    const mapLanguageToBackend = (language) => {
-      // Implementation depends on your language mapping
-      return '';
-    };
-    
-    const mapTribeToBackend = (tribe) => {
-      // Implementation depends on your tribe mapping
-      return '';
-    };
-    
-    const mapRelationshipToBackend = (relationship) => {
-      // Implementation depends on your relationship mapping
-      return '';
-    };
-    
-    const mapSharesHomeToBackend = (sharesHome) => {
-      const sharesHomeMap = {
-        'yes': '1',
-        'no': '0',
-        'unknown': '2'
-      };
-      return sharesHomeMap[sharesHome] || '';
-    };
     
     const mapGBVRelatedToBackend = (gbv) => {
   const gbvMap = {
@@ -715,44 +651,26 @@ const mapStatusToBackend = (status) => {
   return gbvMap[gbv] || '0';
 };
 
-    const mapHealthStatusToBackend = (healthStatus) => {
-      const healthMap = {
-        'good': '1',
-        'fair': '2',
-        'poor': '3',
-        'unknown': '4'
-      };
-      return healthMap[healthStatus] || '';
-    };
     
-    const mapEmploymentToBackend = (employment) => {
-      const employmentMap = {
-        'employed': '1',
-        'self-employed': '2',
-        'unemployed': '3',
-        'student': '4',
-        'retired': '5',
-        'other': '6'
-      };
-      return employmentMap[employment] || '1';
-    };
     
-    const mapMaritalStatusToBackend = (maritalStatus) => {
-      const maritalMap = {
-        'single': '1',
-        'married': '2',
-        'divorced': '3',
-        'widowed': '4',
-        'separated': '5'
-      };
-      return maritalMap[maritalStatus] || '';
-    };
     
     // Add inside setup()
 const saveStep = ({ step, data }) => {
-  formData[step] = { ...formData[step], ...data };
-  stepStatus[step] = "completed";
-  console.log("Step saved:", step, data);
+  // Handle step number vs step string
+  const stepNumber = typeof step === 'string' ? parseInt(step.replace('step', '')) : step;
+  const stepKey = typeof step === 'string' ? step : `step${step}`;
+  
+  // Save the data
+  formData[stepKey] = { ...formData[stepKey], ...data };
+  stepStatus[stepNumber] = "completed";
+  console.log("Step saved:", stepNumber, data);
+  
+  // Navigate to the next step
+  const nextStep = stepNumber + 1;
+  if (nextStep <= totalSteps) {
+    console.log("Navigating to step:", nextStep);
+    navigateToStep(nextStep);
+  }
 };
 
     return {

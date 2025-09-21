@@ -1,77 +1,39 @@
-<!-- src/views/UsersView.vue -->
+<!-- src/views/CasesView.vue -->
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useReporterStore } from "@/stores/reporters" 
+import { useCaseStore } from '@/stores/cases';
 
-const reporterStore = useReporterStore();
+const caseStore = useCaseStore();
 
-// Filters for list, CSV, and pivot
+// Filters for listing, CSV and pivot
 const filters = ref({
   _a: '',
   _c: 20,
-  phone: '',
-  email: ''
+  category_main: '',
+  status: ''
 });
 
-// Pivot report data
+// Pivot data
 const pivotData = ref([]);
 const pivotColumns = ref([]);
 
-// Load initial user list
 onMounted(() => {
-  reporterStore.listReporters({ _c: filters.value._c });
+  caseStore.listCases({ _c: filters.value._c });
 });
 
-// View User details
-const handleViewUser = async (userId) => {
-  try {
-    const details = await reporterStore.viewUser(userId);
-    alert(JSON.stringify(details, null, 2));
-  } catch (err) {
-    console.error('Failed to view user:', err.message);
-  }
-};
-
-// Create a new user (mock data for demo)
-const handleCreateUser = async () => {
-  const payload = {
-    usn: 'newuser',
-    exten: '8123',
-    photo: '123244554556',
-    fname: 'Jane',
-    lname: 'Doe',
-    phone: '0700000000',
-    email: 'jane.doe@example.com'
-  };
-  try {
-    const created = await reporterStore.createUser(payload);
-    alert('User Created: ' + JSON.stringify(created, null, 2));
-    reporterStore.listReporters({ _c: filters.value._c });
-  } catch (err) {
-    console.error('Create failed:', err.message);
-  }
-};
-
-// Edit a user (mock data for demo)
-const handleEditUser = async (userId) => {
-  const payload = { fname: 'UpdatedName' };
-  try {
-    const updated = await reporterStore.editUser(userId, payload);
-    alert('User Updated: ' + JSON.stringify(updated, null, 2));
-    reporterStore.listReporters({ _c: filters.value._c });
-  } catch (err) {
-    console.error('Edit failed:', err.message);
-  }
-};
-
-// Download CSV
+// Download CSV handler
 const handleDownloadCSV = async () => {
   try {
-    const blob = await reporterStore.downloadCSV(filters.value);
+    const blob = await caseStore.downloadCSV({ 
+      _a: filters.value._a,
+      _c: filters.value._c,
+      category_main: filters.value.category_main,
+      status: filters.value.status
+    });
     const url = window.URL.createObjectURL(new Blob([blob], { type: 'text/csv' }));
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', 'users.csv');
+    link.setAttribute('download', 'cases.csv');
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -81,13 +43,16 @@ const handleDownloadCSV = async () => {
   }
 };
 
-// Get Pivot Report
+// Pivot report handler
 const handlePivotReport = async () => {
   try {
-    const data = await reporterStore.getPivotReport({
-      ...filters.value,
-      xaxis: 'role',
-      yaxis: 'enabled'
+    const data = await caseStore.getPivotReport({
+      _a: filters.value._a,
+      _c: filters.value._c,
+      category_main: filters.value.category_main,
+      status: filters.value.status,
+      xaxis: 'status',
+      yaxis: 'priority'
     });
     if (Array.isArray(data) && data.length > 0) {
       pivotColumns.value = Object.keys(data[0]);
@@ -103,52 +68,46 @@ const handlePivotReport = async () => {
 </script>
 
 <template>
-  <section class="users-view">
-    <h2>Users List</h2>
+  <section class="cases-view">
+    <h2>Cases List</h2>
 
     <!-- Filters -->
     <div class="filters">
-      <input v-model="filters._a" placeholder="Start position (_a)" />
+      <input v-model="filters._a" placeholder="Start (_a)" />
       <input v-model.number="filters._c" type="number" placeholder="Count (_c)" />
-      <input v-model="filters.phone" placeholder="Phone" />
-      <input v-model="filters.email" placeholder="Email" />
-      <button @click="reporterStore.listReporters(filters)">Apply Filters</button>
+      <input v-model="filters.category_main" placeholder="Category Main" />
+      <input v-model="filters.status" placeholder="Status" />
+      <button @click="caseStore.listCases(filters)">Refresh List</button>
       <button @click="handleDownloadCSV">Download CSV</button>
       <button @click="handlePivotReport">Get Pivot Report</button>
     </div>
 
-    <!-- Error and Loading states -->
-    <p v-if="reporterStore.loading">Loading…</p>
-    <p v-else-if="reporterStore.error" class="error">{{ reporterStore.error }}</p>
+    <p v-if="caseStore.loading">Loading…</p>
+    <p v-else-if="caseStore.error" class="error">{{ caseStore.error }}</p>
 
-    <!-- Users Table -->
     <div v-else>
-      <h3>Total Users: {{ reporterStore.users.length }}</h3>
+      <h3>Total Cases: {{ caseStore.caseCount }}</h3>
 
-      <table v-if="reporterStore.users.length">
+      <!-- Case Table -->
+      <table v-if="caseStore.caseCount">
         <thead>
           <tr>
-            <th v-for="(meta, key) in reporterStore.users_k" :key="key">
+            <th v-for="(meta, key) in caseStore.cases_k" :key="key">
               {{ meta[3] || key }}
             </th>
-            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="user in reporterStore.users" :key="user[0]">
-            <td v-for="(meta, key) in reporterStore.users_k" :key="key">
-              {{ user[parseInt(meta[0])] }}
-            </td>
-            <td>
-              <button @click="handleViewUser(user[0])">View</button>
-              <button @click="handleEditUser(user[0])">Edit</button>
+          <tr v-for="item in caseStore.cases" :key="item[0]">
+            <td v-for="(meta, key) in caseStore.cases_k" :key="key">
+              {{ item[parseInt(meta[0])] }}
             </td>
           </tr>
         </tbody>
       </table>
 
       <div v-else>
-        <p>No users available.</p>
+        <p>No cases available.</p>
       </div>
 
       <!-- Pivot Table -->
@@ -172,28 +131,28 @@ const handlePivotReport = async () => {
 </template>
 
 <style scoped>
-.users-view {
+.cases-view {
   padding: 1rem;
+  overflow-x: auto;
 }
+
 .filters {
   margin-bottom: 1rem;
 }
-.filters input {
-  margin-right: 8px;
-}
-.filters button {
-  margin-right: 8px;
-}
+
 table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 8px;
+  font-size: 14px;
 }
+
 th, td {
   border: 1px solid #ccc;
   padding: 6px 8px;
   text-align: left;
 }
+
 button {
   margin-right: 5px;
   padding: 4px 8px;
@@ -203,9 +162,11 @@ button {
   border: none;
   border-radius: 4px;
 }
+
 button:hover {
   background: #45a049;
 }
+
 .error {
   color: #e74c3c;
 }
