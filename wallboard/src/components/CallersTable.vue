@@ -32,15 +32,30 @@
 </template>
 
 <script setup>
-    defineProps({
+/**
+ * A component that displays a table of current callers with their details.
+ */
+defineProps({
+        /**
+         * An array of caller objects to display in the table.
+         * @type {Array}
+         */
         callers: {
             type: Array,
             default: () => [],
         },
+        /**
+         * The total number of online callers.
+         * @type {Number}
+         */
         count: {
             type: Number,
             default: 0,
         },
+        /**
+         * A function that returns a CSS class based on the caller's status.
+         * @type {Function}
+         */
         statusClass: {
             type: Function,
             default: () => () => "status-neutral",

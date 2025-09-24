@@ -1,7 +1,7 @@
 import { createApp } from 'vue'
 import App from './App.vue'
-// import '@/assets/styles/main.css'
-import "./assets/styles/main.css"; // centralized css
+import '@/assets/styles/main.css'
+// import "./tailwind.css";
 
 
 

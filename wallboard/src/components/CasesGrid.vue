@@ -10,5 +10,14 @@
 </template>
 
 <script setup>
-    defineProps({ casesTiles: Array });
+/**
+ * A component that displays a grid of case statistics.
+ */
+    defineProps({
+    /**
+     * An array of objects, where each object represents a tile in the grid.
+     * @type {Array}
+     */
+    casesTiles: Array
+});
 </script>

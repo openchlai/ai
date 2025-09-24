@@ -18,10 +18,35 @@
 </template>
 
 <script setup>
+/**
+ * The main header of the application.
+ * Displays the title, connection status, and a dark mode toggle.
+ */
     defineProps({
+        /**
+         * Whether dark mode is enabled.
+         * @type {Boolean}
+         */
         isDarkMode: Boolean,
+        /**
+         * The CSS class for the connection status dot.
+         * @type {String}
+         */
         connectionClass: String,
+        /**
+         * The label for the connection status.
+         * @type {String}
+         */
         connectionLabel: String,
+        /**
+         * The timestamp of the last update.
+         * @type {String}
+         */
         lastUpdate: String,
     });
+
+    /**
+     * Emitted when the dark mode toggle is clicked.
+     * @event toggleDarkMode
+     */
 </script>

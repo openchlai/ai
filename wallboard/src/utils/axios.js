@@ -1,8 +1,15 @@
 import axios from "axios";
 
+/**
+ * This file creates and configures an Axios instance for making API requests.
+ */
+
 const username = "test";
 const password = "p@ssw0rd";
 
+/**
+ * A pre-configured Axios instance with a base URL, timeout, and authentication headers.
+ */
 const axiosInstance = axios.create({
     baseURL:
         import.meta.env.MODE === "development"
@@ -17,6 +24,9 @@ const axiosInstance = axios.create({
     },
 });
 
+/**
+ * A request interceptor that adds an `X-API-Key` header to requests that include `/cases/` in their URL.
+ */
 axiosInstance.interceptors.request.use(
     (config) => {
         if (config.url && config.url.includes("/cases/")) {
@@ -27,7 +37,10 @@ axiosInstance.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// For dashboard tiles (example: today’s summary)
+/**
+ * Fetches the wallboard report data.
+ * @returns {Promise<object|null>} The data from the API, or null if an error occurs.
+ */
 export async function fetchCasesData() {
     try {
         const { data } = await axiosInstance.get("/api/wallonly/rpt", {

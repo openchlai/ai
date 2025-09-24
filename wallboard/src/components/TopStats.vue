@@ -10,5 +10,14 @@
 </template>
 
 <script setup>
-    defineProps({ stats: Array });
+/**
+ * A component that displays a row of key statistics.
+ */
+    defineProps({
+    /**
+     * An array of objects, where each object represents a stat card.
+     * @type {Array}
+     */
+    stats: Array
+});
 </script>

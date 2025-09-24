@@ -36,15 +36,30 @@
 </template>
 
 <script setup>
+/**
+ * A component that displays a table of online counsellors and their real-time statistics.
+ */
   defineProps({
+    /**
+     * An array of counsellor objects to display in the table.
+     * @type {Array}
+     */
     counsellors: {
       type: Array,
       default: () => [],   // ensure empty array
     },
+    /**
+     * The total number of online counsellors.
+     * @type {Number}
+     */
     count: {
       type: Number,
       default: 0,
     },
+    /**
+     * A function that returns a CSS class based on the counsellor's status.
+     * @type {Function}
+     */
     statusClass: {
       type: Function,
       default: () => () => "status-neutral",
