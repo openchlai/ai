@@ -737,7 +737,7 @@ onMounted(() => {
 
 .main-content {
   flex: 1;
-  margin-left: 250px;
+  margin-left: var(--sidebar-width);
   height: 100vh;
   background-color: var(--color-bg);
   transition: margin-left 0.3s ease, width 0.3s ease;

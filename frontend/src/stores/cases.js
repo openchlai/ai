@@ -10,6 +10,77 @@ export const useCaseStore = defineStore('cases', {
     error: null,
   }),
 
+  getters: {
+    // Returns a function so we can pass the search query from components
+    searchCases: (state) => (query) => {
+      const list = Array.isArray(state.cases) ? state.cases : [];
+      const text = (query || '').toString().trim().toLowerCase();
+      if (!text) return list;
+
+      const k = state.cases_k || {};
+
+      const getByKey = (item, keyDef) => {
+        if (!keyDef || !Array.isArray(keyDef) || keyDef.length === 0) return '';
+        const key = keyDef[0];
+        const value = item?.[key];
+        return value == null ? '' : String(value);
+      };
+
+      return list.filter((c) => {
+        const title = getByKey(c, k.cat_1);
+        const assignedTo = getByKey(c, k.assigned_to);
+        const createdBy = getByKey(c, k.created_by);
+        const source = getByKey(c, k.source);
+        const idValue = getByKey(c, k.id);
+
+        return (
+          title.toLowerCase().includes(text) ||
+          assignedTo.toLowerCase().includes(text) ||
+          createdBy.toLowerCase().includes(text) ||
+          source.toLowerCase().includes(text) ||
+          idValue.toLowerCase().includes(text)
+        );
+      });
+    },
+    // Search contacts (reporters) by name and phone using cases_k mappings
+    searchContacts: (state) => (query) => {
+      const list = Array.isArray(state.cases) ? state.cases : [];
+      const text = (query || '').toString().trim().toLowerCase();
+      if (!text) return [];
+
+      const k = state.cases_k || {};
+      const getByKey = (item, keyDef) => {
+        if (!keyDef || !Array.isArray(keyDef) || keyDef.length === 0) return '';
+        const key = keyDef[0];
+        const value = item?.[key];
+        return value == null ? '' : String(value);
+      };
+
+      const nameKey = k.reporter_fullname;
+      const phoneKey = k.reporter_phone;
+      const primaryMatches = list.filter((c) => {
+        const name = getByKey(c, nameKey).toLowerCase();
+        const phone = getByKey(c, phoneKey);
+        return (name && name.includes(text)) || (phone && phone.includes(query));
+      });
+
+      if (primaryMatches.length > 0) return primaryMatches;
+
+      // Fallback: generic scan across all string-ish fields on each item
+      return list.filter((item) => {
+        // Support both array-like rows and object rows
+        const values = Array.isArray(item)
+          ? item
+          : Object.values(item ?? {});
+        return values.some((val) => {
+          if (val == null) return false;
+          const s = String(val).toLowerCase();
+          return s.includes(text);
+        });
+      });
+    }
+  },
+
   actions: {
     // 1. Create Case
     async createCase(payload) {

@@ -293,15 +293,17 @@ onMounted(() => {
 .nav-item {
   display: flex;
   align-items: center;
-  padding: 10px 12px;
+  padding: 10px 16px;
   cursor: pointer;
-  margin-bottom: 4px;
+  margin-bottom: 12px;
   border-radius: 12px;
   text-decoration: none;
   color: var(--text-color);
   transition: all 0.3s ease;
   min-height: 44px;
   background: transparent;
+  gap: 10px;
+  font-size: 15px;
 }
 
 .nav-item:hover {
@@ -329,7 +331,6 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 12px;
   border-radius: 8px;
   background-color: rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;

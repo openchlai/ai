@@ -42,82 +42,15 @@
 
     <div class="case-container">
       <div class="main-form-container">
-        <div class="case-header">
-          <div>
-            <h1>Create New Case</h1>
-            <p>{{ stepDescriptions[currentStep - 1] }}</p>
-          </div>
-          <div class="toggle-container">
-            <span class="toggle-label">
-              <span class="ai-icon">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M12 2L2 7L12 12L22 7L12 2Z"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                  />
-                  <path
-                    d="M2 17L12 22L22 17"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                  />
-                  <path
-                    d="M2 12L12 17L22 12"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                  />
-                </svg>
-              </span>
-              AI Enabled
-            </span>
-            <label class="toggle-switch">
-              <input v-model="isAIEnabled" type="checkbox" />
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-        </div>
+        <CaseCreationHeader :description="stepDescriptions[currentStep - 1]" :isAIEnabled="isAIEnabled" @update:isAIEnabled="val => isAIEnabled = val" />
 
-        <div class="progress-container">
-          <div class="progress-steps">
-            <div
-              v-for="step in totalSteps"
-              :key="step"
-              class="progress-step clickable-step"
-              :class="{
-                active: currentStep === step,
-                completed: stepStatus(step) === 'completed',
-                error: stepStatus(step) === 'error',
-              }"
-              @click="navigateToStep(step)"
-            >
-              <div
-                class="step-circle"
-                :class="{
-                  active: currentStep === step,
-                  completed: stepStatus(step) === 'completed',
-                  error: stepStatus(step) === 'error',
-                }"
-              >
-                {{ stepStatus(step) === "completed" ? "✓" : step }}
-              </div>
-              <div class="step-label" :class="{ active: currentStep === step }">
-                {{ stepLabels[step - 1] }}
-              </div>
-            </div>
-          </div>
-        </div>
+        <CaseCreationProgress
+          :total-steps="totalSteps"
+          :current-step="currentStep"
+          :step-labels="stepLabels"
+          :step-status="stepStatus"
+          @navigate="navigateToStep"
+        />
 
         <!-- Step 1: Reporter Selection -->
         <div v-show="currentStep === 1" class="step-content">
@@ -386,20 +319,24 @@
               </div>
 
               <div class="form-row">
-                <BaseSelect
-                  id="reporter-language"
-                  label="Language"
-                  v-model="formData.step2.language"
-                  placeholder="Select language"
-                  :category-id="123"
-                />                  
-                <BaseSelect
-                  id="reporter-tribe"
-                  label="Tribe"
-                  v-model="formData.step2.tribe"
-                  placeholder="Select tribe"
-                  :category-id="133"
-                />                 
+                <BaseSelect id="reporter-language" label="Language" v-model="formData.step2.language" placeholder="Select language">
+                  <option value="">Select language</option>
+                  <option>English</option>
+                  <option>Kiswahili</option>
+                  <option>Somali</option>
+                  <option>Arabic</option>
+                  <option value="other">Other</option>
+                </BaseSelect>
+                <BaseSelect id="reporter-tribe" label="Tribe" v-model="formData.step2.tribe" placeholder="Select tribe">
+                  <option value="">Select tribe</option>
+                  <option>Kikuyu</option>
+                  <option>Luhya</option>
+                  <option>Luo</option>
+                  <option>Kalenjin</option>
+                  <option>Kamba</option>
+                  <option>Somali</option>
+                  <option>Other</option>
+                </BaseSelect>
               </div>
 
               <div class="form-row">
@@ -2290,8 +2227,19 @@
             </div>
           </div>
           <div class="ai-preview-content">
+            <!-- AI Mode Selector -->
+            <div class="ai-mode-row">
+              <label class="ai-mode-label">Mode</label>
+              <select v-model="aiMode" class="ai-mode-select ai-mode-select--elevated">
+                <option value="transcription">Transcription</option>
+                <option value="translation">Translation</option>
+                <option value="ner">NER</option>
+                <option value="summary">Case Summary</option>
+                <option value="qa">QA Analysis</option>
+              </select>
+            </div>
             <!-- Audio Upload (AI Panel) -->
-            <div class="ai-preview-section">
+            <div v-if="aiMode === 'transcription'" class="ai-preview-section">
               <div class="ai-preview-section-title">
                 <svg
                   width="16"
@@ -2435,8 +2383,8 @@
               </div>
             </div>
 
-            <!-- Transcription Section (AI Panel) -->
-            <div v-if="audioTranscription" class="ai-preview-section">
+            <!-- Transcription Output -->
+            <div v-if="aiMode === 'transcription' && audioTranscription" class="ai-preview-section">
               <div class="ai-preview-section-title">
                 <svg
                   width="16"
@@ -2542,9 +2490,65 @@
                 </div>
               </div>
             </div>
+<<<<<<< HEAD
+=======
+            
+            <!-- Translation Input/Output -->
+            <div v-if="aiMode === 'translation'" class="ai-preview-section">
+              <div class="ai-preview-section-title">Translate Text</div>
+              <textarea v-model="translationInput" class="form-control" rows="4" placeholder="Enter text to translate..."></textarea>
+              <div class="ai-action-row">
+                <button class="btn btn--primary btn--sm" @click="runTranslation">Translate</button>
+              </div>
+              <div v-if="translationOutput" class="ai-io-output">{{ translationOutput }}</div>
+            </div>
+
+            <!-- NER Input/Output -->
+            <div v-if="aiMode === 'ner'" class="ai-preview-section">
+              <div class="ai-preview-section-title">Named Entity Recognition</div>
+              <textarea v-model="nerInput" class="form-control" rows="4" placeholder="Enter text for entity extraction..."></textarea>
+              <div class="ai-action-row">
+                <button class="btn btn--primary btn--sm" @click="runNER">Extract Entities</button>
+              </div>
+              <div v-if="nerOutput && nerOutput.length" class="ner-output">
+                <div v-for="(ent, idx) in nerOutput" :key="idx" class="ner-chip">
+                  <span class="ent-text">{{ ent.text }}</span>
+                  <span class="ent-label">{{ ent.label }}</span>
+                </div>
+              </div>
+            </div>
+>>>>>>> 3a930d7fa9aec9d83d1d8be526e60b91f4c8fc6a
 
             <!-- Case Summary Section -->
-            <div v-if="caseSummary" class="ai-preview-section">
+            <div v-if="aiMode === 'summary'" class="ai-preview-section">
+              <div class="ai-preview-section-title">Case Summary</div>
+              <div class="summary-textarea">
+                <textarea class="form-control" rows="6" v-model="caseSummaryText" placeholder="Summary will appear here..."></textarea>
+              </div>
+            </div>
+
+            <!-- QA Analysis -->
+            <div v-if="aiMode === 'qa'" class="ai-preview-section">
+              <div class="ai-preview-section-title">QA Analysis</div>
+              <div class="qa-grid">
+                <div class="qa-card">
+                  <div class="qa-card-title">Call Quality</div>
+                  <div class="qa-score">—</div>
+                </div>
+                <div class="qa-card">
+                  <div class="qa-card-title">Compliance</div>
+                  <div class="qa-score">—</div>
+                </div>
+                <div class="qa-card">
+                  <div class="qa-card-title">Empathy</div>
+                  <div class="qa-score">—</div>
+                </div>
+                <div class="qa-card qa-card-full">
+                  <div class="qa-card-title">Notes</div>
+                  <div class="qa-notes">QA insights will appear here when available.</div>
+                </div>
+              </div>
+            </div>
               <div class="ai-preview-section-title">
                 <svg
                   width="16"
@@ -2721,34 +2725,860 @@
           </div>
         </div>
       </div>
+<<<<<<< HEAD
+=======
+
+    <!-- Client Modal -->
+    <div v-if="clientModalOpen" class="simple-modal">
+      <div class="simple-modal-content client-modal-large">
+        <div class="simple-modal-header">
+          <h3>New Client</h3>
+          <span class="simple-modal-close" @click="closeClientModal">×</span>
+        </div>
+        
+        <div class="simple-modal-body">
+          <!-- Show existing clients -->
+          <div v-if="formData.step2.clients.length > 0" class="existing-clients">
+            <h4>Added Clients:</h4>
+            <div v-for="(client, index) in formData.step2.clients" :key="index" class="client-display">
+              <span>{{ client.name }} ({{ client.age }} {{ client.sex }})</span>
+              <button @click="removeClient(index)" class="remove-btn">Remove</button>
+            </div>
+          </div>
+          
+          <!-- Multi-step Client Form -->
+          <div class="add-client-form">
+            <h4>Add New Client:</h4>
+            
+            <!-- Progress Steps -->
+            <div class="form-steps">
+              <div class="step-indicator">
+                <div v-for="(step, index) in clientSteps" :key="index" 
+                     :class="['step', { 
+                       active: currentClientStep === index, 
+                       completed: currentClientStep > index,
+                       future: currentClientStep < index
+                     }]">
+                  <span class="step-number">
+                    <span>{{ index + 1 }}</span>
+                  </span>
+                  <span class="step-title">{{ step.title }}</span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Step Content -->
+            <div class="step-content">
+              <!-- Step 1: Basic Information -->
+              <div v-if="currentClientStep === 0" class="form-step">
+                <div class="form-fields">
+                  <div class="field-group">
+                    <label>Client's Name *</label>
+                    <input v-model="clientForm.name" type="text" placeholder="Enter Client's Names" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Age</label>
+                    <input v-model="clientForm.age" type="number" placeholder="Enter age" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>DOB</label>
+                    <input v-model="clientForm.dob" type="date" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Age Group</label>
+                    <select v-model="clientForm.ageGroup">
+                      <option value="">Select Age Group</option>
+                      <option value="0-5">0-5 years</option>
+                      <option value="6-12">6-12 years</option>
+                      <option value="13-17">13-17 years</option>
+                      <option value="18-25">18-25 years</option>
+                      <option value="26-35">26-35 years</option>
+                      <option value="36-50">36-50 years</option>
+                      <option value="51+">51+ years</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Location</label>
+                    <select v-model="clientForm.location">
+                      <option value="">Select Location</option>
+                      <option value="Nairobi">Nairobi</option>
+                      <option value="Mombasa">Mombasa</option>
+                      <option value="Kisumu">Kisumu</option>
+                      <option value="Nakuru">Nakuru</option>
+                      <option value="Eldoret">Eldoret</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Sex</label>
+                    <select v-model="clientForm.sex">
+                      <option value="">Select Gender</option>
+                      <option value="female">Female</option>
+                      <option value="male">Male</option>
+                      <option value="non-binary">Non-binary</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Step 2: Contact & Identity -->
+              <div v-if="currentClientStep === 1" class="form-step">
+                <div class="form-fields">
+                  <div class="field-group">
+                    <label>Nearest Landmark</label>
+                    <input v-model="clientForm.landmark" type="text" placeholder="Enter Nearest Landmark" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Nationality</label>
+                    <select v-model="clientForm.nationality">
+                      <option value="">Select Nationality</option>
+                      <option value="Kenyan">Kenyan</option>
+                      <option value="Ugandan">Ugandan</option>
+                      <option value="Tanzanian">Tanzanian</option>
+                      <option value="Somali">Somali</option>
+                      <option value="South Sudanese">South Sudanese</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>ID Type</label>
+                    <select v-model="clientForm.idType">
+                      <option value="">Select ID Type</option>
+                      <option value="National ID">National ID</option>
+                      <option value="Passport">Passport</option>
+                      <option value="Birth Certificate">Birth Certificate</option>
+                      <option value="Refugee ID">Refugee ID</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>ID Number</label>
+                    <input v-model="clientForm.idNumber" type="text" placeholder="Enter Reporter's ID Number" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Language</label>
+                    <select v-model="clientForm.language">
+                      <option value="">Select Language</option>
+                      <option value="English">English</option>
+                      <option value="Kiswahili">Kiswahili</option>
+                      <option value="Luo">Luo</option>
+                      <option value="Kikuyu">Kikuyu</option>
+                      <option value="Luhya">Luhya</option>
+                      <option value="Kalenjin">Kalenjin</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Is the Client a Refugee?</label>
+                    <div class="radio-group">
+                      <label class="radio-option">
+                        <input type="radio" v-model="clientForm.isRefugee" value="yes" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">Yes</span>
+                      </label>
+                      <label class="radio-option">
+                        <input type="radio" v-model="clientForm.isRefugee" value="no" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">No</span>
+                      </label>
+                      <label class="radio-option">
+                        <input type="radio" v-model="clientForm.isRefugee" value="unknown" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">Unknown</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Step 3: Contact Information -->
+              <div v-if="currentClientStep === 2" class="form-step">
+                <div class="form-fields">
+                  <div class="field-group">
+                    <label>Tribe</label>
+                    <select v-model="clientForm.tribe">
+                      <option value="">Select Tribe</option>
+                      <option value="Kikuyu">Kikuyu</option>
+                      <option value="Luhya">Luhya</option>
+                      <option value="Kalenjin">Kalenjin</option>
+                      <option value="Luo">Luo</option>
+                      <option value="Kamba">Kamba</option>
+                      <option value="Kisii">Kisii</option>
+                      <option value="Meru">Meru</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Phone Number</label>
+                    <input v-model="clientForm.phone" type="tel" placeholder="Enter Reporter's Phone Number" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Alternative Phone</label>
+                    <input v-model="clientForm.alternativePhone" type="tel" placeholder="Enter Alternate Phone Number" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Email</label>
+                    <input v-model="clientForm.email" type="email" placeholder="Enter Reporter's Email Address" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Reporter's Relationship with Client</label>
+                    <select v-model="clientForm.relationship">
+                      <option value="">Select Relationship</option>
+                      <option value="Parent">Parent</option>
+                      <option value="Guardian">Guardian</option>
+                      <option value="Sibling">Sibling</option>
+                      <option value="Relative">Relative</option>
+                      <option value="Friend">Friend</option>
+                      <option value="Neighbor">Neighbor</option>
+                      <option value="Teacher">Teacher</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Relationship Comment</label>
+                    <textarea v-model="clientForm.relationshipComment" placeholder="Enter Comments about the relationship" rows="3"></textarea>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Step 4: Household & Background -->
+              <div v-if="currentClientStep === 3" class="form-step">
+                <div class="form-fields">
+                  <div class="field-group">
+                    <label>Number of Adults in Household</label>
+                    <input v-model="clientForm.adultsInHousehold" type="number" placeholder="Enter number" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Household Type</label>
+                    <select v-model="clientForm.householdType">
+                      <option value="">Select Household Type</option>
+                      <option value="Nuclear">Nuclear Family</option>
+                      <option value="Extended">Extended Family</option>
+                      <option value="Single Parent">Single Parent</option>
+                      <option value="Child Headed">Child Headed</option>
+                      <option value="Institutional">Institutional</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Head of Household Occupation</label>
+                    <select v-model="clientForm.headOccupation">
+                      <option value="">Select Employment Status</option>
+                      <option value="Employed">Employed</option>
+                      <option value="Self-employed">Self-employed</option>
+                      <option value="Unemployed">Unemployed</option>
+                      <option value="Student">Student</option>
+                      <option value="Retired">Retired</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Parent/Guardian's Name</label>
+                    <input v-model="clientForm.parentGuardianName" type="text" placeholder="Enter name" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Parent/Guardian's Marital Status</label>
+                    <select v-model="clientForm.parentMaritalStatus">
+                      <option value="">Select Marital Status</option>
+                      <option value="Single">Single</option>
+                      <option value="Married">Married</option>
+                      <option value="Divorced">Divorced</option>
+                      <option value="Widowed">Widowed</option>
+                      <option value="Separated">Separated</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Parent/Guardian's Identification Number</label>
+                    <input v-model="clientForm.parentIdNumber" type="text" placeholder="Enter ID number" />
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Step 5: Health & Status -->
+              <div v-if="currentClientStep === 4" class="form-step">
+                <div class="form-fields">
+                  <div class="field-group">
+                    <label>Client's Health Status</label>
+                    <select v-model="clientForm.healthStatus">
+                      <option value="">Select Health Status</option>
+                      <option value="Good">Good</option>
+                      <option value="Fair">Fair</option>
+                      <option value="Poor">Poor</option>
+                      <option value="Unknown">Unknown</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Client's HIV Status</label>
+                    <select v-model="clientForm.hivStatus">
+                      <option value="">Select HIV Status</option>
+                      <option value="Positive">Positive</option>
+                      <option value="Negative">Negative</option>
+                      <option value="Unknown">Unknown</option>
+                      <option value="Not Tested">Not Tested</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Client's Marital Status</label>
+                    <select v-model="clientForm.maritalStatus">
+                      <option value="">Select Marital Status</option>
+                      <option value="Single">Single</option>
+                      <option value="Married">Married</option>
+                      <option value="Divorced">Divorced</option>
+                      <option value="Widowed">Widowed</option>
+                      <option value="Separated">Separated</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Is the Client Attending School?</label>
+                    <div class="radio-group">
+                      <label class="radio-option">
+                        <input type="radio" v-model="clientForm.attendingSchool" value="yes" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">Yes</span>
+                      </label>
+                      <label class="radio-option">
+                        <input type="radio" v-model="clientForm.attendingSchool" value="no" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">No</span>
+                      </label>
+                      <label class="radio-option">
+                        <input type="radio" v-model="clientForm.attendingSchool" value="unknown" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">Unknown</span>
+                      </label>
+                    </div>
+                    
+                    <!-- Conditional field for school name when "Yes" is selected -->
+                    <div v-if="clientForm.attendingSchool === 'yes'" class="conditional-field">
+                      <label>School Name</label>
+                      <input 
+                        v-model="clientForm.schoolName" 
+                        type="text" 
+                        placeholder="Enter school name"
+                        class="school-input"
+                      />
+                      
+                      <label>School Level</label>
+                      <select v-model="clientForm.schoolLevel">
+                        <option value="">Select School Level</option>
+                        <option value="nursery">Nursery</option>
+                        <option value="primary">Primary</option>
+                        <option value="secondary">Secondary</option>
+                        <option value="tertiary">Tertiary</option>
+                      </select>
+                      
+                      <label>School Address</label>
+                      <input 
+                        v-model="clientForm.schoolAddress" 
+                        type="text" 
+                        placeholder="Enter school address"
+                      />
+                      
+                      <label>School Type</label>
+                      <select v-model="clientForm.schoolType">
+                        <option value="">Select School Type</option>
+                        <option value="government-boarding">Government Boarding</option>
+                        <option value="government-day">Government Day</option>
+                        <option value="government-day-boarding">Government Day and Boarding</option>
+                        <option value="none">None</option>
+                        <option value="private-boarding">Private Boarding</option>
+                        <option value="private-day">Private Day</option>
+                        <option value="private-day-boarding">Private Day and Boarding</option>
+                      </select>
+                      
+                      <label>School Attendance</label>
+                      <select v-model="clientForm.schoolAttendance">
+                        <option value="">Select Attendance Status</option>
+                        <option value="regular">Regular</option>
+                        <option value="irregular">Irregular</option>
+                        <option value="absent">Frequently Absent</option>
+                        <option value="dropped">Dropped Out</option>
+                        <option value="unknown">Unknown</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Is the Client Disabled?</label>
+                    <div class="radio-group">
+                      <label class="radio-option">
+                        <input type="radio" v-model="clientForm.isDisabled" value="yes" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">Yes</span>
+                      </label>
+                      <label class="radio-option">
+                        <input type="radio" v-model="clientForm.isDisabled" value="no" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">No</span>
+                      </label>
+                      <label class="radio-option">
+                        <input type="radio" v-model="clientForm.isDisabled" value="unknown" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">Unknown</span>
+                      </label>
+                    </div>
+                    
+                    <!-- Conditional field for disability details when "Yes" is selected -->
+                    <div v-if="clientForm.isDisabled === 'yes'" class="conditional-field">
+                      <label>Disability</label>
+                      <select v-model="clientForm.disability">
+                        <option value="">Select Type of Disability</option>
+                        <option value="physical">Physical Disability</option>
+                        <option value="visual">Visual Impairment</option>
+                        <option value="hearing">Hearing Impairment</option>
+                        <option value="speech">Speech Impairment</option>
+                        <option value="intellectual">Intellectual Disability</option>
+                        <option value="developmental">Developmental Disability</option>
+                        <option value="mental-health">Mental Health Condition</option>
+                        <option value="multiple">Multiple Disabilities</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Is the Client Referred for Special Services?</label>
+                    <div class="radio-group">
+                      <label class="radio-option">
+                        <input type="radio" v-model="clientForm.specialServicesReferred" value="yes" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">Yes</span>
+                      </label>
+                      <label class="radio-option">
+                        <input type="radio" v-model="clientForm.specialServicesReferred" value="no" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">No</span>
+                      </label>
+                      <label class="radio-option">
+                        <input type="radio" v-model="clientForm.specialServicesReferred" value="unknown" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">Unknown</span>
+                      </label>
+                    </div>
+                    
+                    <!-- Conditional field for special services referral when "Yes" is selected -->
+                    <div v-if="clientForm.specialServicesReferred === 'yes'" class="conditional-field">
+                      <label>Special Services Referral</label>
+                      <div class="multi-select-dropdown">
+                        <div class="dropdown-trigger" @click="toggleSpecialServicesDropdown">
+                          <span class="selected-text">
+                            {{ getSelectedSpecialServicesText() || 'Select Special Services Referral' }}
+                          </span>
+                          <svg class="dropdown-arrow" :class="{ 'open': showSpecialServicesDropdown }" width="12" height="12" viewBox="0 0 12 12">
+                            <path d="M6 8L2 4h8L6 8z" fill="currentColor"/>
+                          </svg>
+                        </div>
+                        
+                        <div v-if="showSpecialServicesDropdown" class="dropdown-options">
+                          <div class="search-box">
+                            <input 
+                              v-model="specialServicesSearch" 
+                              type="text" 
+                              placeholder="Search services..."
+                              @click.stop
+                            />
+                          </div>
+                          
+                          <div class="options-list">
+                            <label 
+                              v-for="service in filteredSpecialServices" 
+                              :key="service.value"
+                              class="checkbox-option"
+                            >
+                              <input 
+                                type="checkbox" 
+                                :value="service.value"
+                                v-model="clientForm.specialServicesReferral"
+                                @click.stop
+                              />
+                              <span class="checkbox-label">{{ service.label }}</span>
+                            </label>
+                          </div>
+                          
+                          <div class="pagination-info">
+                            <span>{{ filteredSpecialServices.length }} of {{ specialServicesOptions.length }}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Step Navigation -->
+            <div class="step-navigation">
+              <button v-if="currentClientStep > 0" @click="prevClientStep" type="button" class="btn btn--secondary">Previous</button>
+              <button v-if="currentClientStep < clientSteps.length - 1" @click="nextClientStep" type="button" class="btn btn--primary">Next</button>
+              <button v-if="currentClientStep === clientSteps.length - 1" @click="addClient" type="button" class="btn btn--primary">Create</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Perpetrator Modal -->
+    <div v-if="perpetratorModalOpen" class="simple-modal">
+      <div class="simple-modal-content perpetrator-modal-large">
+        <div class="simple-modal-header">
+          <h3>New Perpetrator</h3>
+          <span class="simple-modal-close" @click="closePerpetratorModal">×</span>
+        </div>
+        
+        <div class="simple-modal-body">
+          <!-- Show existing perpetrators -->
+          <div v-if="formData.step2.perpetrators.length > 0" class="existing-perpetrators">
+            <h4>Added Perpetrators:</h4>
+            <div v-for="(perpetrator, index) in formData.step2.perpetrators" :key="index" class="perpetrator-display">
+              <span>{{ perpetrator.name }} ({{ perpetrator.age }} {{ perpetrator.sex }})</span>
+              <button @click="removePerpetrator(index)" class="remove-btn">Remove</button>
+            </div>
+          </div>
+          
+          <!-- Multi-step Perpetrator Form -->
+          <div class="add-perpetrator-form">
+            <h4>Add New Perpetrator:</h4>
+            
+            <!-- Progress Steps -->
+            <div class="form-steps">
+              <div class="step-indicator">
+                <div v-for="(step, index) in perpetratorSteps" :key="index" 
+                     :class="['step', { 
+                       active: currentPerpetratorStep === index, 
+                       completed: currentPerpetratorStep > index,
+                       future: currentPerpetratorStep < index
+                     }]">
+                  <span class="step-number">
+                    <span>{{ index + 1 }}</span>
+                  </span>
+                  <span class="step-title">{{ step.title }}</span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Step Content -->
+            <div class="step-content">
+              <!-- Step 1: Basic Information -->
+              <div v-if="currentPerpetratorStep === 0" class="form-step">
+                <div class="form-fields">
+                  <div class="field-group">
+                    <label>Perpetrator's Name *</label>
+                    <input v-model="perpetratorForm.name" type="text" placeholder="Enter Perpetrator's Names" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Age</label>
+                    <input v-model="perpetratorForm.age" type="number" placeholder="Enter age" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>DOB</label>
+                    <input v-model="perpetratorForm.dob" type="date" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Age Group</label>
+                    <select v-model="perpetratorForm.ageGroup">
+                      <option value="">Select Age Group</option>
+                      <option value="0-5">0-5 years</option>
+                      <option value="6-12">6-12 years</option>
+                      <option value="13-17">13-17 years</option>
+                      <option value="18-25">18-25 years</option>
+                      <option value="26-35">26-35 years</option>
+                      <option value="36-50">36-50 years</option>
+                      <option value="51+">51+ years</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Location</label>
+                    <select v-model="perpetratorForm.location">
+                      <option value="">Select Location</option>
+                      <option value="Nairobi">Nairobi</option>
+                      <option value="Mombasa">Mombasa</option>
+                      <option value="Kisumu">Kisumu</option>
+                      <option value="Nakuru">Nakuru</option>
+                      <option value="Eldoret">Eldoret</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Sex</label>
+                    <select v-model="perpetratorForm.sex">
+                      <option value="">Select Gender</option>
+                      <option value="female">Female</option>
+                      <option value="male">Male</option>
+                      <option value="non-binary">Non-binary</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Step 2: Identity & Contact -->
+              <div v-if="currentPerpetratorStep === 1" class="form-step">
+                <div class="form-fields">
+                  <div class="field-group">
+                    <label>Nearest Landmark</label>
+                    <input v-model="perpetratorForm.landmark" type="text" placeholder="Enter Nearest Landmark" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Nationality</label>
+                    <select v-model="perpetratorForm.nationality">
+                      <option value="">Select Nationality</option>
+                      <option value="Kenyan">Kenyan</option>
+                      <option value="Ugandan">Ugandan</option>
+                      <option value="Tanzanian">Tanzanian</option>
+                      <option value="Somali">Somali</option>
+                      <option value="South Sudanese">South Sudanese</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>ID Type</label>
+                    <select v-model="perpetratorForm.idType">
+                      <option value="">Select ID Type</option>
+                      <option value="National ID">National ID</option>
+                      <option value="Passport">Passport</option>
+                      <option value="Birth Certificate">Birth Certificate</option>
+                      <option value="Refugee ID">Refugee ID</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>ID Number</label>
+                    <input v-model="perpetratorForm.idNumber" type="text" placeholder="Enter Reporter's ID Number" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Language</label>
+                    <select v-model="perpetratorForm.language">
+                      <option value="">Select Language</option>
+                      <option value="English">English</option>
+                      <option value="Kiswahili">Kiswahili</option>
+                      <option value="Luo">Luo</option>
+                      <option value="Kikuyu">Kikuyu</option>
+                      <option value="Luhya">Luhya</option>
+                      <option value="Kalenjin">Kalenjin</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Is the Perpetrator a Refugee?</label>
+                    <div class="radio-group">
+                      <label class="radio-option">
+                        <input type="radio" v-model="perpetratorForm.isRefugee" value="yes" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">Yes</span>
+                      </label>
+                      <label class="radio-option">
+                        <input type="radio" v-model="perpetratorForm.isRefugee" value="no" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">No</span>
+                      </label>
+                      <label class="radio-option">
+                        <input type="radio" v-model="perpetratorForm.isRefugee" value="unknown" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">Unknown</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Step 3: Contact & Background -->
+              <div v-if="currentPerpetratorStep === 2" class="form-step">
+                <div class="form-fields">
+                  <div class="field-group">
+                    <label>Tribe</label>
+                    <select v-model="perpetratorForm.tribe">
+                      <option value="">Select Tribe</option>
+                      <option value="Kikuyu">Kikuyu</option>
+                      <option value="Luhya">Luhya</option>
+                      <option value="Kalenjin">Kalenjin</option>
+                      <option value="Luo">Luo</option>
+                      <option value="Kamba">Kamba</option>
+                      <option value="Kisii">Kisii</option>
+                      <option value="Meru">Meru</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Phone Number</label>
+                    <input v-model="perpetratorForm.phone" type="tel" placeholder="Enter Reporter's Phone Number" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Alternative Phone</label>
+                    <input v-model="perpetratorForm.alternativePhone" type="tel" placeholder="Enter Alternate Phone Number" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Email</label>
+                    <input v-model="perpetratorForm.email" type="email" placeholder="Enter Reporter's Email Address" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Relationship with Client?</label>
+                    <select v-model="perpetratorForm.relationship">
+                      <option value="">Select Relationship</option>
+                      <option value="Parent">Parent</option>
+                      <option value="Guardian">Guardian</option>
+                      <option value="Sibling">Sibling</option>
+                      <option value="Relative">Relative</option>
+                      <option value="Friend">Friend</option>
+                      <option value="Neighbor">Neighbor</option>
+                      <option value="Teacher">Teacher</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Shares Home with Client?</label>
+                    <div class="radio-group">
+                      <label class="radio-option">
+                        <input type="radio" v-model="perpetratorForm.sharesHome" value="yes" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">Yes</span>
+                      </label>
+                      <label class="radio-option">
+                        <input type="radio" v-model="perpetratorForm.sharesHome" value="no" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">No</span>
+                      </label>
+                      <label class="radio-option">
+                        <input type="radio" v-model="perpetratorForm.sharesHome" value="unknown" />
+                        <span class="radio-indicator"></span>
+                        <span class="radio-label">Unknown</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Step 4: Status & Details -->
+              <div v-if="currentPerpetratorStep === 3" class="form-step">
+                <div class="form-fields">
+                  <div class="field-group">
+                    <label>Health Status</label>
+                    <select v-model="perpetratorForm.healthStatus">
+                      <option value="">Select Health Status</option>
+                      <option value="Good">Good</option>
+                      <option value="Fair">Fair</option>
+                      <option value="Poor">Poor</option>
+                      <option value="Unknown">Unknown</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Perpetrator's Profession</label>
+                    <select v-model="perpetratorForm.profession">
+                      <option value="">Select Work Status</option>
+                      <option value="Employed">Employed</option>
+                      <option value="Self-employed">Self-employed</option>
+                      <option value="Unemployed">Unemployed</option>
+                      <option value="Student">Student</option>
+                      <option value="Retired">Retired</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Perpetrator's Marital Status</label>
+                    <select v-model="perpetratorForm.maritalStatus">
+                      <option value="">Select Marital Status</option>
+                      <option value="Single">Single</option>
+                      <option value="Married">Married</option>
+                      <option value="Divorced">Divorced</option>
+                      <option value="Widowed">Widowed</option>
+                      <option value="Separated">Separated</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Perpetrator's Guardian's Name</label>
+                    <input v-model="perpetratorForm.guardianName" type="text" placeholder="Enter Perpetrator's Guardian Name" />
+                  </div>
+                  
+                  <div class="field-group">
+                    <label>Additional Details</label>
+                    <textarea v-model="perpetratorForm.additionalDetails" placeholder="Enter Additional Details" rows="4"></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Step Navigation -->
+            <div class="step-navigation">
+              <button v-if="currentPerpetratorStep > 0" @click="prevPerpetratorStep" type="button" class="btn btn--secondary">Previous</button>
+              <button v-if="currentPerpetratorStep < perpetratorSteps.length - 1" @click="nextPerpetratorStep" type="button" class="btn btn--primary">Next</button>
+              <button v-if="currentPerpetratorStep === perpetratorSteps.length - 1" @click="addPerpetrator" type="button" class="btn btn--primary">Create</button>
+            </div>
+          </div>
+        </div>
+      </div>
+>>>>>>> 3a930d7fa9aec9d83d1d8be526e60b91f4c8fc6a
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, watch, onUnmounted } from "vue";
-import { useRouter } from "vue-router";
-import BaseButton from "@/components/base/BaseButton.vue";
-import BaseInput from "@/components/base/BaseInput.vue";
-import BaseTextarea from "@/components/base/BaseTextarea.vue";
-import BaseSelect from "@/components/base/BaseSelect.vue";
-import { useTranscriptionsStore } from "@/stores/transcriptionsStore";
+import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import BaseButton from '@/components/base/BaseButton.vue'
+import BaseInput from '@/components/base/BaseInput.vue'
+import BaseTextarea from '@/components/base/BaseTextarea.vue'
+import BaseSelect from '@/components/base/BaseSelect.vue'
+import { useTranscriptionsStore } from '@/stores/transcriptionsStore'
+import { useCaseStore } from '@/stores/cases'
+import CaseCreationHeader from '@/components/CaseCreationHeader.vue'
+import CaseCreationProgress from '@/components/CaseCreationProgress.vue'
 
-const router = useRouter();
-const transcriptionsStore = useTranscriptionsStore();
+const router = useRouter()
+const transcriptionsStore = useTranscriptionsStore()
+const casesStore = useCaseStore()
 
 // State
-const currentStep = ref(1);
-const totalSteps = 5;
-const isAIEnabled = ref(true);
-const searchQuery = ref("");
-// Debounced version of the search query used for filtering
-const debouncedQuery = ref("");
-let debounceTimer = null;
-const selectedReporter = ref(null);
-const selectedCategory = ref("");
-const clientModalOpen = ref(false);
-const perpetratorModalOpen = ref(false);
+const currentStep = ref(1)
+const totalSteps = 5
+const isAIEnabled = ref(true)
+const searchQuery = ref('')
+const debouncedQuery = ref('')
+let debounceTimer = null
+const selectedReporter = ref(null)
+const selectedCategory = ref('')
+const clientModalOpen = ref(false)
+const perpetratorModalOpen = ref(false)
 
 // Special Services dropdown state
 const showSpecialServicesDropdown = ref(false);
@@ -2798,10 +3628,23 @@ const isDragOver = ref(false);
 let mediaRecorder = null;
 let recordingInterval = null;
 
+// AI panel mode and IO state
+const aiMode = ref('transcription')
+const translationInput = ref('')
+const translationOutput = ref('')
+const nerInput = ref('')
+const nerOutput = ref([])
+const caseSummaryText = ref('')
+
 // AI state
-const caseSummary = ref(null);
-const aiInsights = ref([]);
-const recommendations = ref([]);
+const caseSummary = ref({
+  riskLevel: 'low',
+  urgency: 'Normal',
+  keyConcerns: [],
+  analysis: ''
+})
+const aiInsights = ref([])
+const recommendations = ref([])
 
 // Client and Perpetrator forms
 const currentClientStep = ref(0);
@@ -2892,23 +3735,7 @@ const perpetratorForm = reactive({
   additionalDetails: "",
 });
 
-// Mock store for demonstration
-const casesStore = {
-  cases_k: {
-    id: [0],
-    reporter_fullname: [1],
-    reporter_phone: [2],
-    reporter_age: [3],
-    reporter_sex: [4],
-    reporter_location: [5],
-    dt: [6],
-  },
-  cases: [
-    [1, "Ivan Somondi", "254700112233", 16, "Male", "Narok County", 1640995200],
-    [2, "Susan Kirigwa", "254700445566", 45, "Female", "Narok", 1640908800],
-    [3, "Amira", "254700778899", 28, "Female", "Nairobi", 1641081600],
-  ],
-};
+// Using real Pinia cases store (mock removed)
 
 // Form data
 const formData = reactive({
@@ -3060,27 +3887,48 @@ watch(searchQuery, (val) => {
 });
 
 const filteredContacts = computed(() => {
-  if (!debouncedQuery.value) return [];
-  const q = debouncedQuery.value.toLowerCase();
-  const nameIdx = casesStore.cases_k.reporter_fullname[0];
-  const phoneIdx = casesStore.cases_k.reporter_phone[0];
+  if (!debouncedQuery.value) return []
 
-  return casesStore.cases.filter((contact) => {
-    const name = (contact[nameIdx] || "").toString().toLowerCase();
-    const rawPhone = (contact[phoneIdx] || "").toString();
-    // Normalize phone by removing non-digits for robust matching
-    const phoneDigits = rawPhone.replace(/\D+/g, "");
-    const qDigits = debouncedQuery.value.replace(/\D+/g, "");
+  const text = debouncedQuery.value.toString().trim().toLowerCase()
+  const digits = text.replace(/\D+/g, '')
 
-    const matchesName = name.includes(q);
-    const matchesPhone =
-      qDigits.length > 0
-        ? phoneDigits.includes(qDigits)
-        : rawPhone.includes(debouncedQuery.value);
+  const getField = (row, keyDef, fallbacks = []) => {
+    // Attempt by mapping
+    if (keyDef && Array.isArray(keyDef) && keyDef.length > 0) {
+      const k = keyDef[0]
+      const v = row?.[k]
+      if (v != null) return v
+    }
+    // Attempt by common keys
+    for (const k of fallbacks) {
+      const v = row?.[k]
+      if (v != null) return v
+    }
+    return ''
+  }
 
-    return matchesName || matchesPhone;
-  });
-});
+  const k = casesStore.cases_k || {}
+  const nameMap = k.reporter_fullname || k.created_by || k.name
+  const phoneMap = k.reporter_phone || k.phone
+
+  const nameFallbacks = ['reporter_fullname', 'reporter_name', 'created_by', 'name', 'full_name']
+  const phoneFallbacks = ['reporter_phone', 'phone', 'contact_phone', 'reporterPhone']
+
+  const list = Array.isArray(casesStore.cases) ? casesStore.cases : []
+
+  return list.filter((row) => {
+    const rawName = getField(row, nameMap, nameFallbacks)
+    const rawPhone = getField(row, phoneMap, phoneFallbacks)
+
+    const name = rawName == null ? '' : String(rawName).toLowerCase()
+    const phone = rawPhone == null ? '' : String(rawPhone)
+    const phoneDigits = phone.replace(/\D+/g, '')
+
+    const byName = text ? name.includes(text) : false
+    const byPhone = digits ? phoneDigits.includes(digits) : false
+    return byName || byPhone
+  })
+})
 
 // Watch for form changes to generate AI insights
 watch(
@@ -3417,6 +4265,22 @@ const onAudioDrop = async (event) => {
   }
 };
 
+// Simple mocked AI runners (replace with backend calls later)
+const runTranslation = () => {
+  translationOutput.value = translationInput.value
+    ? `Translated: ${translationInput.value}`
+    : ''
+}
+
+const runNER = () => {
+  if (!nerInput.value) { nerOutput.value = []; return }
+  nerOutput.value = nerInput.value
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 12)
+    .map(t => ({ text: t.replace(/[^\w-]/g,''), label: t[0] === t[0]?.toUpperCase() ? 'PERSON' : 'MISC' }))
+}
+
 const transcribeAudio = async () => {
   // Mock transcription - in real app, this would call an AI service
   setTimeout(() => {
@@ -3698,9 +4562,31 @@ const submitCase = async () => {
 };
 
 // Initialize AI insights on mount
-onMounted(() => {
+onMounted(async () => {
   if (isAIEnabled.value) {
     generateAIInsights();
+  }
+  // Ensure cases are available for search suggestions
+  try { await casesStore.listCases({ src: 'call' }) } catch (e) {}
+
+  // Dev fallback: if no data loaded, seed a few demo contacts so filtering can be verified live
+  if (import.meta.env.DEV && (!Array.isArray(casesStore.cases) || casesStore.cases.length === 0)) {
+    // Use object rows with friendly keys; computed uses fallbacks so this works
+    casesStore.cases = [
+      { id: 1, reporter_fullname: 'Amira Karim', reporter_phone: '254700112233', reporter_age: 28, reporter_sex: 'Female', reporter_location: 'Nairobi', dt: 1641081600 },
+      { id: 2, reporter_fullname: 'Brian Newton', reporter_phone: '254711223344', reporter_age: 34, reporter_sex: 'Male', reporter_location: 'Nakuru', dt: 1640908800 },
+      { id: 3, reporter_fullname: 'Susan Kirigwa', reporter_phone: '254722334455', reporter_age: 45, reporter_sex: 'Female', reporter_location: 'Narok', dt: 1640995200 },
+      { id: 4, reporter_fullname: 'Ivan Somondi', reporter_phone: '254733445566', reporter_age: 16, reporter_sex: 'Male', reporter_location: 'Narok County', dt: 1640995200 }
+    ]
+    casesStore.cases_k = {
+      id: ['id'],
+      reporter_fullname: ['reporter_fullname'],
+      reporter_phone: ['reporter_phone'],
+      reporter_age: ['reporter_age'],
+      reporter_sex: ['reporter_sex'],
+      reporter_location: ['reporter_location'],
+      dt: ['dt']
+    }
   }
   // update CSS var for vertical progress fill
   updateStepCSSVar();
@@ -3753,7 +4639,8 @@ function endOngoingCall() {
 }
 </script>
 
-<style scoped>
+<style>
+@import url("@/styles/case-creation.css");
 /* Ensure consistent typography and polished AI panel UI */
 .case-creation-page {
   min-height: 0;
@@ -4101,6 +4988,29 @@ function endOngoingCall() {
   background: color-mix(in oklab, var(--color-primary) 80%, black);
   transform: translateY(-1px);
 }
+
+/* AI mode controls and IO */
+.ai-mode-row { display:flex; align-items:center; gap:12px; }
+.ai-mode-label { font-weight:700; color: var(--text-color); }
+.ai-mode-select { padding:10px 14px; border:1px solid var(--color-border); border-radius:14px; background:#fff; color:#111; font-weight:600; font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; }
+.ai-mode-select--elevated { box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 4px 10px rgba(0,0,0,0.04); }
+.ai-mode-select:focus { outline: none; box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-primary) 20%, white); }
+.ai-mode-select option { font-weight:600; }
+.ai-action-row { margin-top:8px; }
+.ai-io-output { margin-top:10px; padding:12px; border:1px solid var(--color-border); border-radius:12px; background: var(--color-surface); color: var(--text-color); }
+.ner-output { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.ner-chip { display:inline-flex; gap:6px; padding:6px 10px; border:1px solid var(--color-border); border-radius:999px; background: var(--color-surface); }
+.ner-chip .ent-text { font-weight:600; }
+.ner-chip .ent-label { text-transform:uppercase; font-size:12px; color: var(--color-muted); }
+.summary-textarea .form-control { width:100%; }
+
+/* QA cards */
+.qa-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; }
+.qa-card { border:1px solid var(--color-border); border-radius:14px; background: var(--color-surface); padding:12px; }
+.qa-card-title { font-weight:700; color: var(--text-color); margin-bottom:6px; }
+.qa-score { font-size:22px; font-weight:800; color: var(--text-color); }
+.qa-card-full { grid-column: 1 / -1; }
+.qa-notes { color: var(--color-muted); }
 
 .audio-file-info {
   display: flex;

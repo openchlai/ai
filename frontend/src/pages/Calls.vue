@@ -3032,13 +3032,11 @@ const minimizedPhone = ref(false);
 
 </script>
 
-<style scoped>
-:root {
-  --accent-color: #ff8c00;
-}
+<style>
+@import url("@/styles/calls.css");
 .main-content {
   transition: margin-left 0.3s, width 0.3s;
-  margin-left: 250px;
+  margin-left: var(--sidebar-width);
   width: calc(100% - 250px);
 }
 .main-content.sidebar-collapsed {
