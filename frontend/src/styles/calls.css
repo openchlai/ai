@@ -1,6 +1,6 @@
 /* Calls page stylesheet extracted from Calls.vue (consolidated) */
 :root { --accent-color: #ff8c00; }
-.main-content { transition: margin-left 0.3s, width 0.3s; margin-left: 250px; width: calc(100% - 250px); flex: 1; height: 100vh; background-color: var(--background-color); display:flex; flex-direction:column; overflow:hidden; color: var(--text-color); }
+.main-content { transition: margin-left 0.3s, width 0.3s; margin-left: var(--sidebar-width); width: calc(100% - var(--sidebar-width)); flex: 1; height: 100vh; background-color: var(--background-color); display:flex; flex-direction:column; overflow:hidden; color: var(--text-color); }
 .main-content.sidebar-collapsed { margin-left: 20px; width: calc(100% - 20px); }
 .calls-container { flex:1; padding:20px; overflow-y:auto; overflow-x:hidden; background: var(--background-color); scrollbar-width: thin; }
 .calls-container::-webkit-scrollbar, .view-container::-webkit-scrollbar, .call-details-panel::-webkit-scrollbar, .call-details-content::-webkit-scrollbar { width:8px; }

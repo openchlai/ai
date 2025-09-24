@@ -711,7 +711,7 @@ onMounted(async () => {
 @import url("@/styles/chats.css");
 /* Main content layout with SidePanel */
 .main-content {
-  margin-left: 280px;
+  margin-left: var(--sidebar-width);
   min-height: 100vh;
   background: var(--color-surface);
   transition: margin-left 0.3s ease;
