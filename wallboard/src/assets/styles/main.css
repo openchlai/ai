@@ -1,3 +1,163 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Global Stylesheet */
+
+/* Theme Colors */
+:root {
+  --blue: #2196f3;
+  --amber: #ff9800;
+  --red: #f44336;
+  --green: #4caf50;
+  --black: #212121;
+
+  --light-bg: #ffffff;
+  --dark-bg: #121212;
+  --light-text: #333;
+  --dark-text: #ddd;
+}
+
+/* Container */
+.container {
+  padding: 20px;
+  background-color: var(--light-bg);
+  color: var(--light-text);
+}
+
+.container.dark-mode {
+  background-color: var(--dark-bg);
+  color: var(--dark-text);
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.title-section h1 {
+  margin: 0;
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.connection-status .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.connection-status .on {
+  background: var(--green);
+}
+.connection-status .connecting {
+  background: var(--amber);
+}
+.connection-status .off,
+.connection-status .error {
+  background: var(--red);
+}
+
+.theme-toggle {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+/* Cases Grid */
+.cases-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 15px;
+  margin-bottom: 2rem;
+}
+
+.case-card {
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  color: #fff;
+}
+
+.case-card.c-blue { background: var(--blue); }
+.case-card.c-amber { background: var(--amber); }
+.case-card.c-red { background: var(--red); }
+.case-card.c-green { background: var(--green); }
+.case-card.c-black { background: var(--black); }
+
+/* Top Stats Row */
+.top-stats-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  flex: 1;
+  min-width: 120px;
+  padding: 15px;
+  border-radius: 8px;
+  background: #f5f5f5;
+  text-align: center;
+}
+
+.stat-content .stat-label {
+  font-size: 12px;
+  font-weight: bold;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+/* Counsellors and Callers Tables */
+.counsellors-section {
+  margin-top: 2rem;
+}
+
+.section-title {
+  margin-bottom: 1rem;
+}
+
+.counsellors-table {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.table-header,
+.table-row {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  background: #fafafa;
+  font-weight: bold;
+}
+
+.table-row {
+  background: #fff;
+}
+
+.table-row:nth-child(even) {
+  background: #f9f9f9;
+}
+
+.table-header.callers-header,
+.table-row.callers-row {
+  grid-template-columns: 180px 200px 120px 120px 140px 1fr;
+}
+
+.table-header > div,
+.table-row > div {
+  padding: 8px 12px;
+}
+
+/* Status classes */
+.status-oncall { color: var(--blue); font-weight: bold; }
+.status-ringing { color: var(--amber); font-weight: bold; }
+.status-inqueue { color: var(--red); font-weight: bold; }
+.status-available { color: var(--green); font-weight: bold; }
+.status-offline { color: #999; }
+.status-neutral { color: #555; }

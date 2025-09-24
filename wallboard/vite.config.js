@@ -11,7 +11,8 @@ export default defineConfig({
         hmr: true,
         proxy: {
             '/api-proxy': {
-                target: 'https://demo-openchs.bitz-itc.com/helpline',
+                // target: 'https://demo-openchs.bitz-itc.com',
+                target: 'https://helpline.sematanzania.org',
                 changeOrigin: true,
                 secure: false,
                 rewrite: (path) => path.replace(/^\/api-proxy/, '/helpline'),
