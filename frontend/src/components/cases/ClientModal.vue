@@ -296,7 +296,7 @@
                     label="Relationship with Client?"
                     v-model="localClientForm.householdType"
                     placeholder=""
-                    :category-id="236674"
+                    :category-id="236634"
                   />
                   </div>
 
@@ -322,24 +322,26 @@
                   </div>
 
                   <div class="field-group">
-                    <label>Parent/Guardian's Marital Status</label>
-                    <select v-model="localClientForm.parentMaritalStatus" @change="updateClientForm">
-                      <option value="">Select Marital Status</option>
-                      <option value="Single">Single</option>
-                      <option value="Married">Married</option>
-                      <option value="Divorced">Divorced</option>
-                      <option value="Widowed">Widowed</option>
-                      <option value="Separated">Separated</option>
-                    </select>
+                    
                     <BaseSelect
                     id="Parent/Guardian's Marital Status"
                     label="Parent/Guardian's Marital Status"
                     v-model="localClientForm.parentMaritalStatus"
                     placeholder=""
-                    :category-id="36654"
+                    :category-id="236654"
                   />
                   </div>
 
+                  <div class="field-group">
+                    
+                    <BaseSelect
+                    id="Household Type"
+                    label="Household Type"
+                    v-model="localClientForm.HouseholdType"
+                    placeholder="Household Type"
+                    :category-id="236674"
+                  />
+                  </div>
                   <div class="field-group">
                     <label>Parent/Guardian's Identification Number</label>
                     <input
@@ -378,22 +380,42 @@
                   </div>
 
                   <div class="field-group">
-                    <label>Client's Marital Status</label>
-                    <select v-model="localClientForm.maritalStatus" @change="updateClientForm">
-                      <option value="">Select Marital Status</option>
-                      <option value="Single">Single</option>
-                      <option value="Married">Married</option>
-                      <option value="Divorced">Divorced</option>
-                      <option value="Widowed">Widowed</option>
-                      <option value="Separated">Separated</option>
-                    </select>
+                    
                     <BaseSelect
                     id="Client's Marital Status"
                     label="Client's Marital Status"
                     v-model="localClientForm.maritalStatus"
                     placeholder=""
-                    :category-id="36654"
+                    :category-id="236654"
+                    @change="updateClientForm"
                   />
+
+                    
+                    <!-- Conditional Fields: Spouse Details -->
+                    <div v-if="showSpouseFields" class="conditional-field">
+                      <div class="spouse-fields">
+                        <div class="field-group">
+                          <label>Spouse Name</label>
+                          <input
+                            v-model="localClientForm.spouseName"
+                            type="text"
+                            placeholder="Enter spouse's name"
+                            @input="updateClientForm"
+                          />
+                        </div>
+                        
+                        <div class="field-group">
+                          <BaseSelect
+                            id="spouse-profession"
+                            label="Spouse Profession"
+                            v-model="localClientForm.spouseProfession"
+                            placeholder="Select spouse's profession"
+                            :category-id="236648"
+                            @change="updateClientForm"
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   <div class="field-group">
@@ -431,24 +453,74 @@
                       </label>
                     </div>
 
-                    <!-- School fields when attending -->
+                    <!-- School fields when attending YES -->
                     <div v-if="localClientForm.attendingSchool === 'yes'" class="conditional-field">
-                      <label>School Name</label>
-                      <input
-                        v-model="localClientForm.schoolName"
-                        type="text"
-                        placeholder="Enter school name"
-                        @input="updateClientForm"
-                      />
+                      <div class="school-fields">
+                        <div class="field-group">
+                          <label>School Name</label>
+                          <input
+                            v-model="localClientForm.schoolName"
+                            type="text"
+                            placeholder="Enter school name"
+                            @input="updateClientForm"
+                          />
+                        </div>
 
-                      <label>School Level</label>
-                      <select v-model="localClientForm.schoolLevel" @change="updateClientForm">
-                        <option value="">Select School Level</option>
-                        <option value="nursery">Nursery</option>
-                        <option value="primary">Primary</option>
-                        <option value="secondary">Secondary</option>
-                        <option value="tertiary">Tertiary</option>
-                      </select>
+                        <div class="field-group">
+                          <label>School Address</label>
+                          <input
+                            v-model="localClientForm.schoolAddress"
+                            type="text"
+                            placeholder="Enter school address"
+                            @input="updateClientForm"
+                          />
+                        </div>
+
+                        <div class="field-group">
+                          <BaseSelect
+                            id="school-level"
+                            label="School Level"
+                            v-model="localClientForm.schoolLevel"
+                            placeholder="Select school level"
+                            :category-id="236712"
+                            @change="updateClientForm"
+                          />
+                        </div>
+
+                        <div class="field-group">
+                          <BaseSelect
+                            id="school-type"
+                            label="School Type"
+                            v-model="localClientForm.schoolType"
+                            placeholder="Select school type"
+                            :category-id="236711"
+                            @change="updateClientForm"
+                          />
+                        </div>
+
+                        <div class="field-group">
+                          <label>School Attendance</label>
+                          <input
+                            v-model="localClientForm.schoolAttendance"
+                            type="text"
+                            placeholder="Enter attendance pattern (e.g., Regular, Irregular)"
+                            @input="updateClientForm"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Reason for not attending when NO -->
+                    <div v-if="localClientForm.attendingSchool === 'no'" class="conditional-field">
+                      <div class="field-group">
+                        <label>Reason for Not Attending School</label>
+                        <input
+                          v-model="localClientForm.reasonNotAttending"
+                          type="text"
+                          placeholder="Enter reason for not attending school"
+                          @input="updateClientForm"
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -487,18 +559,60 @@
                       </label>
                     </div>
 
-                    <!-- Disability details when disabled -->
+                    <!-- Disability details when disabled YES -->
                     <div v-if="localClientForm.isDisabled === 'yes'" class="conditional-field">
-                      <label>Disability</label>
-                      <select v-model="localClientForm.disability" @change="updateClientForm">
-                        <option value="">Select Type of Disability</option>
-                        <option value="physical">Physical Disability</option>
-                        <option value="visual">Visual Impairment</option>
-                        <option value="hearing">Hearing Impairment</option>
-                        <option value="speech">Speech Impairment</option>
-                        <option value="intellectual">Intellectual Disability</option>
-                        <option value="other">Other</option>
-                      </select>
+                      <div class="disability-fields">
+                        <div class="field-group">
+                          <BaseSelect
+                            id="disability-type"
+                            label="Type of Disability"
+                            v-model="localClientForm.disability"
+                            placeholder="Select type of disability"
+                            :category-id="236669"
+                            @change="updateClientForm"
+                          />
+                        </div>
+
+                        <div class="field-group">
+                          <label>Special Services Required?</label>
+                          <div class="radio-group">
+                            <label class="radio-option">
+                              <input
+                                type="radio"
+                                v-model="localClientForm.specialServicesRequired"
+                                value="yes"
+                                @change="updateClientForm"
+                              />
+                              <span class="radio-indicator"></span>
+                              <span class="radio-label">Yes</span>
+                            </label>
+                            <label class="radio-option">
+                              <input
+                                type="radio"
+                                v-model="localClientForm.specialServicesRequired"
+                                value="no"
+                                @change="updateClientForm"
+                              />
+                              <span class="radio-indicator"></span>
+                              <span class="radio-label">No</span>
+                            </label>
+                          </div>
+
+                          <!-- Referrals field when special services YES -->
+                          <div v-if="localClientForm.specialServicesRequired === 'yes'" class="conditional-field">
+                            <div class="field-group">
+                              <BaseOptions
+                                id="disability-referrals"
+                                label="Referrals Needed"
+                                v-model="localClientForm.disabilityReferrals"
+                                placeholder="Select referral types..."
+                                :category-id="114"
+                                @selection-change="updateClientForm"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -539,8 +653,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch } from "vue";
+import { ref, reactive, watch, computed } from "vue";
 import BaseSelect from "@/components/base/BaseSelect.vue";
+import BaseOptions from "@/components/base/BaseOptions.vue";
 
 // Props - receive data from parent
 const props = defineProps({
@@ -564,12 +679,69 @@ const emit = defineEmits([
 ]);
 
 // Local form data - sync with parent
-const localClientForm = reactive({ ...props.clientForm });
+const localClientForm = reactive({ 
+  ...props.clientForm,
+  // Initialize spouse fields
+  spouseName: props.clientForm.spouseName || '',
+  spouseProfession: props.clientForm.spouseProfession || '',
+  // Initialize school fields
+  schoolName: props.clientForm.schoolName || '',
+  schoolAddress: props.clientForm.schoolAddress || '',
+  schoolLevel: props.clientForm.schoolLevel || '',
+  schoolType: props.clientForm.schoolType || '',
+  schoolAttendance: props.clientForm.schoolAttendance || '',
+  reasonNotAttending: props.clientForm.reasonNotAttending || '',
+  // Initialize disability fields
+  disability: props.clientForm.disability || '',
+  specialServicesRequired: props.clientForm.specialServicesRequired || '',
+  disabilityReferrals: props.clientForm.disabilityReferrals || []
+});
 
 // Watch for changes from parent
 watch(() => props.clientForm, (newForm) => {
   Object.assign(localClientForm, newForm);
 }, { deep: true });
+
+// Array of marital status values that should NOT show spouse fields
+// These are the possible values that might come from your BaseSelect component
+const singleStatusValues = [
+  'single',         // lowercase
+  'Single',         // capitalized
+  'SINGLE',         // uppercase
+  'unknown',        // lowercase
+  'Unknown',        // capitalized
+  'UNKNOWN',        // uppercase
+  'unmarried',      // alternative for single
+  'Unmarried',      // capitalized
+  'never married',  // full phrase
+  'Never Married',  // capitalized
+  // Add more variations as needed based on your actual data
+  // If your BaseSelect returns IDs instead of text, add those IDs here:
+  // '123456',      // example ID for single
+  // '123457',      // example ID for unknown
+];
+
+// Computed property for showing spouse fields
+const showSpouseFields = computed(() => {
+  const maritalStatus = localClientForm.maritalStatus;
+  
+  // If no marital status selected, don't show spouse fields
+  if (!maritalStatus) {
+    return false;
+  }
+  
+  // Convert to string for comparison
+  const statusValue = String(maritalStatus);
+  
+  // Check if the current status is in the list of single/unknown statuses
+  const isSingleOrUnknown = singleStatusValues.some(singleStatus => {
+    // Case-insensitive comparison
+    return statusValue.toLowerCase() === String(singleStatus).toLowerCase();
+  });
+  
+  // Show spouse fields only if NOT single or unknown
+  return !isSingleOrUnknown;
+});
 
 // Update parent when local form changes
 const updateClientForm = () => {
@@ -593,7 +765,6 @@ const clientSteps = [
 </script>
 
 <style>
-/* Include all your existing modal styles here */
 .simple-modal {
   position: fixed;
   top: 0;
@@ -656,7 +827,6 @@ const clientSteps = [
   padding: 20px;
 }
 
-/* All your existing styles for steps, forms, etc. */
 .form-steps {
   margin-bottom: 24px;
   padding: 20px 0;
@@ -797,6 +967,12 @@ const clientSteps = [
   border-radius: var(--radius-md);
 }
 
+.spouse-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
 .step-navigation {
   display: flex;
   justify-content: space-between;
@@ -872,6 +1048,11 @@ const clientSteps = [
   .form-fields {
     grid-template-columns: 1fr;
     gap: 16px;
+  }
+
+  .spouse-fields {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 
   .simple-modal-content {

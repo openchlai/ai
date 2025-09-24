@@ -35,6 +35,7 @@
   v-if="currentStep === 2"
   :formData="formData.step2"
   :currentStep="currentStep"
+  :selectedReporter="formData.step1.selectedReporter"
   @update:formData="(val) => (formData.step2 = val)"
   @step-change="goToStep"
   @skip-step="skipStep"
@@ -117,6 +118,8 @@
 import { ref, reactive, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCaseStore } from '@/stores/cases';
+import { useReporterStore } from '@/stores/reporters';
+import { useCategoryStore } from '@/stores/categories';
 
 // Import components
 import CaseHeader from '@/components/cases/CaseHeader.vue';
@@ -145,19 +148,35 @@ export default {
   setup() {
     const router = useRouter();
     const casesStore = useCaseStore();
+    const reporterStore = useReporterStore();
+    const categoryStore = useCategoryStore();
+    
+    // Helper function to safely get values from reporter array using mapping
+    const getValue = (contact, fieldName) => {
+      if (!contact || !Array.isArray(contact)) return '';
+      
+      const mapping = reporterStore.reporters_k?.[`contact_${fieldName}`] || reporterStore.reporters_k?.[fieldName];
+      if (mapping && Array.isArray(mapping) && mapping.length > 0) {
+        const idx = mapping[0];
+        return contact[idx] || '';
+      }
+      return '';
+    };
     
     // UI State
     const currentStep = ref(1);
     const totalSteps = 5;
     const isAIEnabled = ref(false);
+    
     // Track each step status: "pending" | "active" | "completed" | "skipped"
-const stepStatus = reactive({
-  1: "active",
-  2: "pending",
-  3: "pending",
-  4: "pending",
-  5: "pending"
-});
+    const stepStatus = reactive({
+      1: "active",
+      2: "pending",
+      3: "pending",
+      4: "pending",
+      5: "pending"
+    });
+    
     const stepLabels = [
       'Reporter Selection',
       'Reporter Details',
@@ -217,7 +236,8 @@ const stepStatus = reactive({
         escalatedTo: '',
         justiceSystemState: '',
         generalAssessment: '',
-        servicesOffered: '',
+        servicesOffered: [], // Store service IDs
+        servicesOfferedText: [], // Store service text values
         referralSource: ''
       }
     });
@@ -307,50 +327,66 @@ const stepStatus = reactive({
       additionalDetails: ''
     });
     
-    // Helper function to update form data
+    // Helper function to update form data with service text handling
     const updateFormData = (step, data) => {
-      formData[step] = { ...formData[step], ...data };
+      if (step === 'step4' && data.servicesOffered) {
+        // Handle services data specially - extract both IDs and text values
+        if (data.servicesOfferedSelection) {
+          formData.step4.servicesOffered = data.servicesOfferedSelection.values || [];
+          formData.step4.servicesOfferedText = data.servicesOfferedSelection.options?.map(opt => opt.text) || [];
+        } else {
+          // Fallback for regular array updates
+          formData.step4.servicesOffered = Array.isArray(data.servicesOffered) ? data.servicesOffered : [];
+        }
+        
+        // Update other step4 data
+        Object.keys(data).forEach(key => {
+          if (key !== 'servicesOffered' && key !== 'servicesOfferedSelection') {
+            formData.step4[key] = data[key];
+          }
+        });
+      } else {
+        formData[step] = { ...formData[step], ...data };
+      }
     };
     
     // Navigation methods
-  // Update statuses when navigating
-const navigateToStep = (step) => {
-  if (step >= 1 && step <= totalSteps) {
-    // Mark all previous steps as completed if not already
-    for (let i = 1; i < step; i++) {
-      if (stepStatus[i] !== "completed") {
-        stepStatus[i] = "completed";
-      }
-    }
-    // Mark the current step as active
-    stepStatus[step] = "active";
-    // Mark all later steps as pending
-    for (let i = step + 1; i <= totalSteps; i++) {
-      if (stepStatus[i] !== "completed") {
-        stepStatus[i] = "pending";
-      }
-    }
+    const navigateToStep = (step) => {
+      if (step >= 1 && step <= totalSteps) {
+        // Mark all previous steps as completed if not already
+        for (let i = 1; i < step; i++) {
+          if (stepStatus[i] !== "completed") {
+            stepStatus[i] = "completed";
+          }
+        }
+        // Mark the current step as active
+        stepStatus[step] = "active";
+        // Mark all later steps as pending
+        for (let i = step + 1; i <= totalSteps; i++) {
+          if (stepStatus[i] !== "completed") {
+            stepStatus[i] = "pending";
+          }
+        }
 
-    currentStep.value = step;
-  }
-};
+        currentStep.value = step;
+      }
+    };
     
     const goToStep = (step) => {
       navigateToStep(step);
     };
     
-
-const validateAndProceed = (step) => {
-  // Add validation logic here
-  stepStatus[step] = "completed";
-  navigateToStep(step + 1);
-};
+    const validateAndProceed = (step) => {
+      // Add validation logic here
+      stepStatus[step] = "completed";
+      navigateToStep(step + 1);
+    };
     
-   const saveAndProceed = (step) => {
-  // Add save logic here
-  stepStatus[step] = "completed";
-  navigateToStep(step + 1);
-};
+    const saveAndProceed = (step) => {
+      // Add save logic here
+      stepStatus[step] = "completed";
+      navigateToStep(step + 1);
+    };
     
     const skipStep = (step) => {
       navigateToStep(step + 1);
@@ -362,10 +398,8 @@ const validateAndProceed = (step) => {
     
     // Modal methods
     const openClientModal = () => {
-      console.log('openClientModal called in parent'); // Debug
-      console.log('clientModalOpen before:', clientModalOpen.value); // Debug
+      console.log('openClientModal called in parent');
       clientModalOpen.value = true;
-      console.log('clientModalOpen after:', clientModalOpen.value); // Debug
     };
     
     const closeClientModal = () => {
@@ -407,7 +441,7 @@ const validateAndProceed = (step) => {
     };
     
     const nextClientStep = () => {
-      if (currentClientStep.value < 4) { // Assuming 5 steps (0-4)
+      if (currentClientStep.value < 4) {
         currentClientStep.value++;
       }
     };
@@ -433,7 +467,7 @@ const validateAndProceed = (step) => {
     };
     
     const nextPerpetratorStep = () => {
-      if (currentPerpetratorStep.value < 3) { // Assuming 4 steps (0-3)
+      if (currentPerpetratorStep.value < 3) {
         currentPerpetratorStep.value++;
       }
     };
@@ -454,15 +488,34 @@ const validateAndProceed = (step) => {
     };
     
     const selectExistingReporter = (reporter) => {
+      console.log('Main: Reporter selected:', reporter);
+      
       formData.step1.selectedReporter = reporter;
-      // Populate formData.step2 with reporter data
-      if (reporter) {
-        const rep = reporter;
-        formData.step2.name = rep[casesStore.cases_k.reporter_fullname[0]] || '';
-        formData.step2.age = rep[casesStore.cases_k.reporter_age[0]] || '';
-        formData.step2.gender = rep[casesStore.cases_k.reporter_sex[0]] || '';
-        formData.step2.location = rep[casesStore.cases_k.reporter_location[0]] || '';
-        formData.step2.phone = rep[casesStore.cases_k.reporter_phone[0]] || '';
+      
+      // Map reporter data to Step 2 form structure using the getValue helper
+      if (reporter && Array.isArray(reporter)) {
+        formData.step2.name = getValue(reporter, 'fullname');
+        formData.step2.age = getValue(reporter, 'age');
+        formData.step2.dob = getValue(reporter, 'dob');
+        formData.step2.ageGroup = getValue(reporter, 'age_group');
+        formData.step2.gender = getValue(reporter, 'sex');
+        formData.step2.location = getValue(reporter, 'location');
+        formData.step2.nearestLandmark = getValue(reporter, 'landmark');
+        formData.step2.nationality = getValue(reporter, 'nationality');
+        formData.step2.language = getValue(reporter, 'language');
+        formData.step2.tribe = getValue(reporter, 'tribe');
+        formData.step2.phone = getValue(reporter, 'phone');
+        formData.step2.altPhone = getValue(reporter, 'alternative_phone');
+        formData.step2.email = getValue(reporter, 'email');
+        formData.step2.idType = getValue(reporter, 'id_type');
+        formData.step2.idNumber = getValue(reporter, 'id_number');
+        
+        // Reset client/perpetrator data but keep isClient as null for user to decide
+        formData.step2.isClient = null;
+        formData.step2.clients = [];
+        formData.step2.perpetrators = [];
+        
+        console.log('Main: Step 2 form populated with reporter data:', formData.step2);
       }
     };
     
@@ -476,6 +529,7 @@ const validateAndProceed = (step) => {
       });
       formData.step2.perpetrators = [];
       formData.step2.clients = [];
+      formData.step2.isClient = null;
     };
     
     const searchClientByPassport = () => {
@@ -501,177 +555,179 @@ const validateAndProceed = (step) => {
     const submitCase = async () => {
       // Map form data to backend payload structure
       const casePayload = {
-  src: "ceemis",
-  src_uid: "ceemis-d0a0fca3-1753869019",
-  src_address: formData.step2.phone || "256701234567",
-  src_uid2: "walkin-100-1743763537",
-  src_usr: "ceemis",
-  src_vector: "2",
-  src_callid: "44dea031-f268-4ed6-af7b-9231dc3c1b29",
-  src_ts: "1753869019.836215",
-  reporter_nickname: "ceemis_user",
-  case_category: "COMPLAINT",
-  case_category_id: "362484",
-  narrative: formData.step3.narrative || "",
-  complaint_text: null,
-  complaint_image: null,
-  complaint_audio: null,
-  complaint_video: null,
-  message_id_ref: "",
-  session_id: "d47e3704-1dbb-45f1-82c8-9a8902005a60",
-  plan: formData.step3.casePlan || "---",
-  priority: "1",
-  status:  "1",
-  escalated_to_id: formData.step4.escalatedTo || "none",
-  gbv_related: mapGBVRelatedToBackend(formData.step3.isGBVRelated) || "0",
+        src: "ceemis",
+        src_uid: "ceemis-d0a0fca3-1753869019",
+        src_address: formData.step2.phone || "256701234567",
+        src_uid2: "walkin-100-1743763537",
+        src_usr: "ceemis",
+        src_vector: "2",
+        src_callid: "44dea031-f268-4ed6-af7b-9231dc3c1b29",
+        src_ts: "1753869019.836215",
+        reporter_nickname: "ceemis_user",
+        case_category: "COMPLAINT",
+        case_category_id: "362484",
+        narrative: formData.step3.narrative || "",
+        complaint_text: null,
+        complaint_image: null,
+        complaint_audio: null,
+        complaint_video: null,
+        message_id_ref: "",
+        session_id: "d47e3704-1dbb-45f1-82c8-9a8902005a60",
+        plan: formData.step3.casePlan || "---",
+        priority: mapPriorityToBackend(formData.step4.priority) || "1",
+        status: mapStatusToBackend(formData.step4.status) || "1",
+        escalated_to_id: formData.step4.escalatedTo || "none",
+        gbv_related: mapGBVRelatedToBackend(formData.step3.isGBVRelated) || "0",
 
-  reporters_uuid: {
-    fname: formData.step2.name || "",
-    age_t: "0",
-    age: formData.step2.age || "",
-    dob: "",
-    age_group_id: formData.step2.ageGroup || "",
-    location_id: formData.step2.location || "258783",
-    sex_id: formData.step2.gender || "",
-    landmark: formData.step2.nearestLandmark || "",
-    nationality_id: formData.step2.nationality || "",
-    national_id_type_id: formData.step2.idType || "1",
-    national_id: formData.step2.idNumber || "C7845123",
-    lang_id: formData.step2.language || "",
-    tribe_id: formData.step2.tribe || "",
-    phone: formData.step2.phone || "256701234567",
-    phone2: formData.step2.altPhone || "",
-    email: formData.step2.email || "",
-    ".id": ""
-  },
+        reporters_uuid: {
+          fname: formData.step2.name || "",
+          age_t: "0",
+          age: formData.step2.age || "",
+          dob: formData.step2.dob || "",
+          age_group_id: formData.step2.ageGroup || "",
+          location_id: formData.step2.location || "258783",
+          sex_id: formData.step2.gender || "",
+          landmark: formData.step2.nearestLandmark || "",
+          nationality_id: formData.step2.nationality || "",
+          national_id_type_id: formData.step2.idType || "1",
+          national_id: formData.step2.idNumber || "C7845123",
+          lang_id: formData.step2.language || "",
+          tribe_id: formData.step2.tribe || "",
+          phone: formData.step2.phone || "256701234567",
+          phone2: formData.step2.altPhone || "",
+          email: formData.step2.email || "",
+          ".id": ""
+        },
 
-  clients_case: (formData.step2.clients.length > 0 ? formData.step2.clients : [{}]).map(client => ({
-    fname: client.name || formData.step2.name || "",
-    age_t: "0",
-    age: client.age || formData.step2.age || "",
-    dob: client.dob || "",
-    age_group_id: (client.ageGroup || formData.step2.ageGroup) || "",
-    location_id: (client.location || formData.step2.location) || "258783",
-    sex_id: (client.sex || formData.step2.gender) || "",
-    landmark: client.landmark || formData.step2.nearestLandmark || "",
-    nationality_id: (client.nationality || formData.step2.nationality) || "",
-    national_id_type_id: (client.idType || formData.step2.idType) || "1",
-    national_id: client.idNumber || formData.step2.idNumber || "C7845123",
-    lang_id: (client.language || formData.step2.language) || "",
-    tribe_id: (client.tribe || formData.step2.tribe) || "",
-    phone: client.phone || formData.step2.phone || "256701234567",
-    phone2: client.alternativePhone || formData.step2.altPhone || "",
-    email: client.email || formData.step2.email || "",
-    ".id": ""
-  })),
+        clients_case: (formData.step2.clients.length > 0 ? formData.step2.clients : [{}]).map(client => ({
+          fname: client.name || formData.step2.name || "",
+          age_t: "0",
+          age: client.age || formData.step2.age || "",
+          dob: client.dob || "",
+          age_group_id: (client.ageGroup || formData.step2.ageGroup) || "",
+          location_id: (client.location || formData.step2.location) || "258783",
+          sex_id: (client.sex || formData.step2.gender) || "",
+          landmark: client.landmark || formData.step2.nearestLandmark || "",
+          nationality_id: (client.nationality || formData.step2.nationality) || "",
+          national_id_type_id: (client.idType || formData.step2.idType) || "1",
+          national_id: client.idNumber || formData.step2.idNumber || "C7845123",
+          lang_id: (client.language || formData.step2.language) || "",
+          tribe_id: (client.tribe || formData.step2.tribe) || "",
+          phone: client.phone || formData.step2.phone || "256701234567",
+          phone2: client.alternativePhone || formData.step2.altPhone || "",
+          email: client.email || formData.step2.email || "",
+          ".id": ""
+        })),
 
-  perpetrators_case: (formData.step2.perpetrators.length > 0 ? formData.step2.perpetrators : [{}]).map(perpetrator => ({
-    fname: perpetrator.name || "",
-    age_t: "0",
-    age: perpetrator.age || "",
-    dob: perpetrator.dob || "",
-    age_group_id: perpetrator.ageGroup || "",
-    age_group: perpetrator.ageGroup || "",
-    location_id: perpetrator.location || "258783",
-    sex_id: perpetrator.sex || "",
-    sex: perpetrator.sex || "",
-    landmark: perpetrator.landmark || "",
-    nationality_id: perpetrator.nationality || "",
-    national_id_type_id: perpetrator.idType || "",
-    national_id: perpetrator.idNumber || "EMP789456",
-    lang_id: perpetrator.language || "",
-    tribe_id: perpetrator.tribe || "",
-    phone: perpetrator.phone || "",
-    phone2: perpetrator.alternativePhone || "",
-    email: perpetrator.email || "",
-    relationship_id: perpetrator.relationship || "",
-    relationship: perpetrator.relationship || "Employer",
-    shareshome_id: perpetrator.sharesHome || "",
-    health_id: perpetrator.healthStatus || "",
-    employment_id: perpetrator.profession || "",
-    marital_id: perpetrator.maritalStatus) || "",
-    guardian_fullname: perpetrator.guardianName || "",
-    notes: perpetrator.additionalDetails || "Employer in Housemaid sector",
-    ".id": ""
-  })),
+        perpetrators_case: (formData.step2.perpetrators.length > 0 ? formData.step2.perpetrators : [{}]).map(perpetrator => ({
+          fname: perpetrator.name || "",
+          age_t: "0",
+          age: perpetrator.age || "",
+          dob: perpetrator.dob || "",
+          age_group_id: perpetrator.ageGroup || "",
+          age_group: perpetrator.ageGroup || "",
+          location_id: perpetrator.location || "258783",
+          sex_id: perpetrator.sex || "",
+          sex: perpetrator.sex || "",
+          landmark: perpetrator.landmark || "",
+          nationality_id: perpetrator.nationality || "",
+          national_id_type_id: perpetrator.idType || "",
+          national_id: perpetrator.idNumber || "EMP789456",
+          lang_id: perpetrator.language || "",
+          tribe_id: perpetrator.tribe || "",
+          phone: perpetrator.phone || "",
+          phone2: perpetrator.alternativePhone || "",
+          email: perpetrator.email || "",
+          relationship_id: perpetrator.relationship || "",
+          relationship: perpetrator.relationship || "Employer",
+          shareshome_id: perpetrator.sharesHome || "",
+          health_id: perpetrator.healthStatus || "",
+          employment_id: perpetrator.profession || "",
+          marital_id: perpetrator.maritalStatus || "",
+          guardian_fullname: perpetrator.guardianName || "",
+          notes: perpetrator.additionalDetails || "Employer in Housemaid sector",
+          ".id": ""
+        })),
 
-  attachments_case: [],
-  services: Array.isArray(formData.step4.servicesOffered) ? formData.step4.servicesOffered : (formData.step4.servicesOffered ? [formData.step4.servicesOffered] : [])
-};  
+        attachments_case: [],
+        // Use service text values instead of IDs
+        services: formData.step4.servicesOfferedText && formData.step4.servicesOfferedText.length > 0 
+          ? formData.step4.servicesOfferedText 
+          : []
+      };
+      
       try {
-        console.log('Case created:', casePayload);
+        console.log('Case payload:', casePayload);
         await casesStore.createCase(casePayload);
         alert("Case created successfully!");
-       // router.push("/cases");
+        // router.push("/cases");
       } catch (error) {
         console.error("Failed to create case:", error);
         alert("An error occurred while creating the case.");
       }
     };
     
-   // Mapping functions for backend values
-const mapPriorityToBackend = (priority) => {
-  const priorityMap = {
-    'low': '1',      // Low -> 1
-    'medium': '2',   // Medium -> 2
-    'high': '3',     // High -> 3
-    'none': '0',     // None -> 0
-    '': '0'          // Blank -> 0
-  };
-  console.log('Priority:', priority);
-  return priorityMap[priority?.toLowerCase()] || '1'; // default Low
-};
+    // Mapping functions for backend values
+    const mapPriorityToBackend = (priority) => {
+      const priorityMap = {
+        'low': '1',
+        'medium': '2',
+        'high': '3',
+        'none': '0',
+        '': '0'
+      };
+      return priorityMap[priority?.toLowerCase()] || '1';
+    };
 
-const mapStatusToBackend = (status) => {
-  const statusMap = {
-    'ongoing': '1',       // Ongoing -> 1
-    'closed': '2',        // Closed -> 2
-    'escalated': '3',     // Escalated -> 3
-    'none': '0',          // None -> 0
-    '': '0'               // Blank -> 0
-  };
-  console.log('Status:', status);
-  return statusMap[status?.toLowerCase()] || '1'; // default Ongoing
-};
-
-    
-  
-    
+    const mapStatusToBackend = (status) => {
+      const statusMap = {
+        'ongoing': '1',
+        'closed': '2',
+        'escalated': '3',
+        'none': '0',
+        '': '0'
+      };
+      return statusMap[status?.toLowerCase()] || '1';
+    };
     
     const mapGBVRelatedToBackend = (gbv) => {
-  const gbvMap = {
-    'Not GBV': '0',
-    'Test GBV': '1',
-    0: '0',
-    1: '1',
-    '': '0',      // default
-    null: '0',    // default
-    undefined: '0'
-  };
-  return gbvMap[gbv] || '0';
-};
-
-    
-    
+      const gbvMap = {
+        'Not GBV': '0',
+        'Test GBV': '1',
+        0: '0',
+        1: '1',
+        '': '0',
+        null: '0',
+        undefined: '0'
+      };
+      return gbvMap[gbv] || '0';
+    };
     
     // Add inside setup()
-const saveStep = ({ step, data }) => {
-  // Handle step number vs step string
-  const stepNumber = typeof step === 'string' ? parseInt(step.replace('step', '')) : step;
-  const stepKey = typeof step === 'string' ? step : `step${step}`;
-  
-  // Save the data
-  formData[stepKey] = { ...formData[stepKey], ...data };
-  stepStatus[stepNumber] = "completed";
-  console.log("Step saved:", stepNumber, data);
-  
-  // Navigate to the next step
-  const nextStep = stepNumber + 1;
-  if (nextStep <= totalSteps) {
-    console.log("Navigating to step:", nextStep);
-    navigateToStep(nextStep);
-  }
-};
+    const saveStep = ({ step, data }) => {
+      // Handle step number vs step string
+      const stepNumber = typeof step === 'string' ? parseInt(step.replace('step', '')) : step;
+      const stepKey = typeof step === 'string' ? step : `step${step}`;
+      
+      // Save the data with special handling for services
+      if (stepKey === 'step4' && data.servicesOfferedSelection) {
+        formData.step4 = { ...formData.step4, ...data };
+        formData.step4.servicesOffered = data.servicesOfferedSelection.values || [];
+        formData.step4.servicesOfferedText = data.servicesOfferedSelection.options?.map(opt => opt.text) || [];
+      } else {
+        formData[stepKey] = { ...formData[stepKey], ...data };
+      }
+      
+      stepStatus[stepNumber] = "completed";
+      console.log("Step saved:", stepNumber, data);
+      
+      // Navigate to the next step
+      const nextStep = stepNumber + 1;
+      if (nextStep <= totalSteps) {
+        console.log("Navigating to step:", nextStep);
+        navigateToStep(nextStep);
+      }
+    };
 
     return {
       // State
@@ -728,7 +784,10 @@ const saveStep = ({ step, data }) => {
       createNewClient,
       handleAIToggle,
       saveStep,
-      submitCase
+      submitCase,
+      
+      // Helper functions
+      getValue
     };
   }
 };

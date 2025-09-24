@@ -222,7 +222,6 @@
                 </div>
 
                 <div class="field-group">
-                  
                   <BaseSelect
                     id="Relationship with Client"
                     label="Relationship with Client?"
@@ -233,7 +232,6 @@
                 </div>
 
                 <div class="field-group">
-                  
                   <BaseSelect
                     id="Shares Home with Client"
                     label="Shares Home with Client?"
@@ -249,7 +247,6 @@
             <div v-if="currentPerpetratorStep === 3" class="form-step">
               <div class="form-fields">
                 <div class="field-group">
-                  
                   <BaseSelect
                     id="Health Status"
                     label="Health Status"
@@ -260,7 +257,6 @@
                 </div>
 
                 <div class="field-group">
-                  
                   <BaseSelect
                     id="Perpetrator's Profession"
                     label="Perpetrator's Profession"
@@ -271,14 +267,37 @@
                 </div>
 
                 <div class="field-group">
-                  
                   <BaseSelect
                     id="Perpetrator's Marital Status"
                     label="Perpetrator's Marital Status"
                     v-model="perpetratorForm.maritalStatus"
                     placeholder=""
-                    :category-id="36654"
+                    :category-id="236654"
                   />
+
+                  <!-- Conditional Fields: Spouse Details -->
+                  <div v-if="showSpouseFields" class="conditional-field">
+                    <div class="spouse-fields">
+                      <div class="field-group">
+                        <label>Spouse Name</label>
+                        <input
+                          v-model="perpetratorForm.spouseName"
+                          type="text"
+                          placeholder="Enter spouse's name"
+                        />
+                      </div>
+                      
+                      <div class="field-group">
+                        <BaseSelect
+                          id="spouse-profession"
+                          label="Spouse Profession"
+                          v-model="perpetratorForm.spouseProfession"
+                          placeholder="Select spouse's profession"
+                          :category-id="236648"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div class="field-group">
@@ -336,6 +355,7 @@
 </template>
 
 <script setup>
+import { computed } from "vue";
 import BaseSelect from "@/components/base/BaseSelect.vue";
 
 // Props from parent
@@ -362,6 +382,46 @@ const perpetratorSteps = [
   { title: "Contact & Background" },
   { title: "Status & Details" },
 ];
+
+// Array of marital status values that should NOT show spouse fields
+const singleStatusValues = [
+  'single',         // lowercase
+  'Single',         // capitalized
+  'SINGLE',         // uppercase
+  'unknown',        // lowercase
+  'Unknown',        // capitalized
+  'UNKNOWN',        // uppercase
+  'unmarried',      // alternative for single
+  'Unmarried',      // capitalized
+  'never married',  // full phrase
+  'Never Married',  // capitalized
+  // Add more variations as needed based on your actual data
+  // If your BaseSelect returns IDs instead of text, add those IDs here:
+  // '123456',      // example ID for single
+  // '123457',      // example ID for unknown
+];
+
+// Computed property for showing spouse fields
+const showSpouseFields = computed(() => {
+  const maritalStatus = props.perpetratorForm.maritalStatus;
+  
+  // If no marital status selected, don't show spouse fields
+  if (!maritalStatus) {
+    return false;
+  }
+  
+  // Convert to string for comparison
+  const statusValue = String(maritalStatus);
+  
+  // Check if the current status is in the list of single/unknown statuses
+  const isSingleOrUnknown = singleStatusValues.some(singleStatus => {
+    // Case-insensitive comparison
+    return statusValue.toLowerCase() === String(singleStatus).toLowerCase();
+  });
+  
+  // Show spouse fields only if NOT single or unknown
+  return !isSingleOrUnknown;
+});
 
 // Emit helpers
 const closeModal = () => emit("close-modal");
@@ -393,6 +453,11 @@ const prevStep = () => emit("prev-perpetrator-step");
   .radio-options {
     flex-direction: column;
     gap: 8px;
+  }
+
+  .spouse-fields {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 }
 
@@ -677,6 +742,20 @@ const prevStep = () => emit("prev-perpetrator-step");
   cursor: pointer;
 }
 
+.conditional-field {
+  margin-top: 16px;
+  padding: 16px;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.spouse-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
 .step-navigation {
   display: flex;
   justify-content: space-between;
@@ -711,5 +790,16 @@ const prevStep = () => emit("prev-perpetrator-step");
 
 .btn--secondary:hover {
   background-color: #545b62;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

@@ -32,8 +32,8 @@
           :key="option.id"
           @click.stop="handleOptionClick(option)"
           :class="{ 
-            selected: option.id === modelValue,
-            highlighted: option.id === modelValue,
+            selected: option.name === modelValue,
+            highlighted: option.name === modelValue,
             'has-children': option.hasChildren === true
           }"
         >
@@ -205,8 +205,9 @@ function selectOption(option) {
   console.log('BaseSelect: Final option selected:', option)
   
   selectedOption.value = option
-  emit('update:modelValue', option.id)
-  emit('change', option.id)
+  // 🔧 CHANGED: Emit option.name instead of option.id
+  emit('update:modelValue', option.name)
+  emit('change', option.name)
   
   // Close dropdown after selection
   isOpen.value = false
@@ -245,15 +246,15 @@ function clearSelection() {
 watch(() => props.modelValue, async (newValue) => {
   console.log('BaseSelect: modelValue changed to:', newValue)
   
-  if (newValue && newValue !== selectedOption.value?.id) {
-    // Try to find the option in current level
-    const matchingOption = levelOptions.value.find(opt => opt.id == newValue)
+  if (newValue && newValue !== selectedOption.value?.name) {
+    // 🔧 CHANGED: Look for option by name instead of id
+    const matchingOption = levelOptions.value.find(opt => opt.name == newValue)
     if (matchingOption) {
       selectedOption.value = matchingOption
     } else {
       // Value doesn't match current options - might be from a deeper level
-      // For now, create a placeholder option
-      selectedOption.value = { id: newValue, name: newValue, hasChildren: false }
+      // For now, create a placeholder option with the text value
+      selectedOption.value = { id: null, name: newValue, hasChildren: false }
       console.warn('BaseSelect: modelValue does not match current level options:', newValue)
     }
   } else if (!newValue) {

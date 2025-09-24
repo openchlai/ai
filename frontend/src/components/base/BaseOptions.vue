@@ -156,10 +156,12 @@ const fetchOptions = async () => {
         return null;
       }
 
+      const textValue = row[nameIdx] || `Option ${row[idIdx]}`;
+      
       return {
-        value: row[idIdx],
-        text: row[nameIdx] || `Option ${row[idIdx]}`,
-        description: null // Could add description mapping if needed
+        value: textValue,  // 🔧 CHANGED: Use text as value instead of ID
+        text: textValue,   // 🔧 Same text for display
+        description: null  // Could add description mapping if needed
       };
     }).filter(Boolean);
 
