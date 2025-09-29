@@ -68,3 +68,19 @@ The system aims to:
 openCHS is **MIT licensed** and openly available for adaptation, contribution, and integration.  
 [View Repository](https://github.com/openchlai/openCHS)  
 
+## Ownership
+
+Ownership Statement: OpenCHS is a digital public good owned and maintained by BITZ IT Consulting Ltd, an ICT solutions provider registered in Kenya and operating across East Africa.
+
+Official Website (OpenCHS): https://openchs.com
+ — This is the official platform for the OpenCHS solution, describing its features, scope, and deployments.
+
+Parent Organization Website (BITZ IT Consulting Ltd): https://bitz-itc.com
+ — The corporate website of BITZ IT Consulting Ltd, which owns and manages the OpenCHS solution.
+
+LinkedIn Presence: BITZ IT Consulting Ltd – LinkedIn
+ — Publicly available company profile linking BITZ ITC to OpenCHS.
+
+Terms & Privacy (if needed): The Privacy & Policy page on OpenCHS
+ includes ownership and governance details.
+
