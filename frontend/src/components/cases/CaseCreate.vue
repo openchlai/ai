@@ -1,12 +1,10 @@
 <template>
   <div class="case-creation-container">
-    <!-- Header Component -->
     <CaseHeader 
       :isAIEnabled="isAIEnabled" 
       @toggle-ai="handleAIToggle"
     />
     
-    <!-- Progress Tracker Component -->
     <ProgressTracker 
       :currentStep="currentStep"
       :totalSteps="totalSteps"
@@ -15,7 +13,6 @@
       @step-change="navigateToStep"
     />
     
-    <!-- Step Content Components -->
     <Step1ReporterSelection
       v-if="currentStep === 1"
       :currentStep="currentStep"
@@ -78,7 +75,6 @@
       @submit-case="submitCase"
     />
     
-    <!-- Modals -->
     <ClientModal
       v-if="clientModalOpen"
       :clients="formData.step2.clients"
@@ -119,7 +115,6 @@ import { useCaseStore } from '@/stores/cases';
 import { useReporterStore } from '@/stores/reporters';
 import { useCategoryStore } from '@/stores/categories';
 
-// Import components
 import CaseHeader from '@/components/cases/CaseHeader.vue';
 import ProgressTracker from '@/components/cases/ProgressTracker.vue';
 import Step1ReporterSelection from '@/components/cases/Step1ReporterSelection.vue';
@@ -149,7 +144,6 @@ export default {
     const reporterStore = useReporterStore();
     const categoryStore = useCategoryStore();
     
-    // Helper function to safely get values from reporter array using mapping
     const getValue = (contact, fieldName) => {
       if (!contact || !Array.isArray(contact)) return '';
       
@@ -161,12 +155,10 @@ export default {
       return '';
     };
     
-    // UI State
     const currentStep = ref(1);
     const totalSteps = 5;
     const isAIEnabled = ref(false);
     
-    // Track each step status: "pending" | "active" | "completed" | "skipped"
     const stepStatus = reactive({
       1: "active",
       2: "pending",
@@ -191,7 +183,6 @@ export default {
       'Review all information before creating the case.'
     ];
     
-    // Form Data
     const formData = reactive({
       step1: {
         searchQuery: '',
@@ -235,28 +226,25 @@ export default {
         escalatedTo: '',
         justiceSystemState: '',
         generalAssessment: '',
-        servicesOffered: [], // Store service IDs
-        servicesOfferedText: [], // Store service text values
+        servicesOffered: [],
+        servicesOfferedText: [],
         referralSource: '',
-        referralsType: [], // Store referral IDs
-        policeDetails: '', // Police OB number
-        otherServicesDetails: '', // Other services specification
+        referralsType: [],
+        policeDetails: '',
+        otherServicesDetails: '',
         attachments: []
       }
     });
     
-    // Search & Filtering
     const searchQuery = ref('');
     const debouncedQuery = ref('');
     const filteredContacts = ref([]);
     const clientSearchResults = ref([]);
     const hasSearched = ref(false);
     
-    // Modal State
     const clientModalOpen = ref(false);
     const perpetratorModalOpen = ref(false);
     
-    // Client Modal State
     const currentClientStep = ref(0);
     const clientForm = reactive({
       name: '',
@@ -302,7 +290,6 @@ export default {
     const specialServicesSearch = ref('');
     const filteredSpecialServices = ref([]);
     
-    // Perpetrator Modal State
     const currentPerpetratorStep = ref(0);
     const perpetratorForm = reactive({
       name: '',
@@ -330,15 +317,12 @@ export default {
       additionalDetails: ''
     });
     
-    // Helper function to update form data with service text handling
     const updateFormData = (step, data) => {
       if (step === 'step4') {
-        // Handle services data specially
         if (data.servicesOfferedSelection) {
           formData.step4.servicesOffered = data.servicesOfferedSelection.values || [];
           formData.step4.servicesOfferedText = data.servicesOfferedSelection.texts || [];
         }
-        // Update all step4 data
         Object.keys(data).forEach(key => {
           if (key !== 'servicesOfferedSelection') {
             formData.step4[key] = data[key];
@@ -349,7 +333,6 @@ export default {
       }
     };
     
-    // Navigation methods
     const navigateToStep = (step) => {
       if (step >= 1 && step <= totalSteps) {
         for (let i = 1; i < step; i++) {
@@ -389,7 +372,6 @@ export default {
       router.push('/cases');
     };
     
-    // Modal methods
     const openClientModal = () => {
       clientModalOpen.value = true;
     };
@@ -415,7 +397,6 @@ export default {
       });
     };
     
-    // Client modal methods
     const updateClientForm = (data) => {
       Object.assign(clientForm, data);
     };
@@ -445,7 +426,6 @@ export default {
       formData.step2.clients.splice(index, 1);
     };
     
-    // Perpetrator modal methods
     const updatePerpetratorForm = (data) => {
       Object.assign(perpetratorForm, data);
     };
@@ -471,7 +451,6 @@ export default {
       formData.step2.perpetrators.splice(index, 1);
     };
     
-    // Search methods
     const handleSearchChange = (query) => {
       searchQuery.value = query;
     };
@@ -530,7 +509,6 @@ export default {
       isAIEnabled.value = value;
     };
     
-    // Submit case method with all fields
     const submitCase = async () => {
       const timestamp = Date.now();
       const timestampSeconds = (timestamp / 1000).toFixed(3);
@@ -553,32 +531,26 @@ export default {
         src_vector: "2"
       };
       
-      // Build clients array with proper structure
       const clientsPayload = formData.step2.clients.map(client => ({
         client_id: client.id || ""
       }));
       
-      // Build perpetrators array with proper structure
       const perpetratorsPayload = formData.step2.perpetrators.map(perpetrator => ({
         perpetrator_id: perpetrator.id || ""
       }));
       
-      // Build services array with category_id format
       const servicesPayload = (formData.step4.servicesOffered || []).map(serviceId => ({
         category_id: String(serviceId)
       }));
       
-      // Build referrals array with category_id format
       const referralsPayload = (formData.step4.referralsType || []).map(referralId => ({
         category_id: String(referralId)
       }));
       
-      // Handle attachments
       const attachmentsPayload = (formData.step4.attachments || []).map((file, index) => ({
         attachment_id: String(index + 1)
       }));
       
-      // Map department to numeric value
       const mapDepartmentToBackend = (dept) => {
         const deptMap = {
           '116': '1',
@@ -587,31 +559,27 @@ export default {
         return deptMap[dept] || '0';
       };
       
-      // Map GBV related
       const mapGBVRelatedToBackend = (gbvId) => {
         if (!gbvId) return '0';
-        // Map based on your actual category IDs
         const gbvRelatedIds = ['118002', '363070'];
         return gbvRelatedIds.includes(String(gbvId)) ? '1' : '0';
       };
       
-      // Generate or get reporter UUID
-      const generateReporterUUID = () => {
-        if (formData.step1.selectedReporter) {
-          const reporterId = getValue(formData.step1.selectedReporter, 'id') || 
-                           getValue(formData.step1.selectedReporter, 'reporter_id');
-          if (reporterId) return reporterId;
-        }
-        return "86808";
-      };
-      
-      // Build main case payload
       const casePayload = {
         ".id": "",
         ...baseSourceFields,
         src_address: getValueOrDefault(formData.step2.phone),
         
-        // Case fields
+        reporter_contact_id: "86808",
+        reporter_fullname: getValueOrDefault(formData.step2.name),
+        reporter_age_group_id: getValueOrDefault(formData.step2.ageGroup),
+        reporter_sex_id: getValueOrDefault(formData.step2.gender),
+        
+        reporter_age: getValueOrDefault(formData.step2.age),
+        reporter_phone: getValueOrDefault(formData.step2.phone),
+        reporter_location_id: getValueOrDefault(formData.step2.location),
+        reporter_nationality_id: getValueOrDefault(formData.step2.nationality),
+        
         case_category_id: getValueOrDefault(formData.step4.categories),
         narrative: getValueOrDefault(formData.step3.narrative),
         plan: getValueOrDefault(formData.step3.casePlan),
@@ -621,11 +589,9 @@ export default {
         gbv_related: mapGBVRelatedToBackend(formData.step3.isGBVRelated),
         knowabout116_id: getValueOrDefault(formData.step4.referralSource),
         police_ob_no: getValueOrDefault(formData.step4.policeDetails),
-        priority: getValueOrDefault(formData.step4.priority) || "1" ,
+        priority: getValueOrDefault(formData.step4.priority) || "1",
         status: getValueOrDefault(formData.step4.status) || "1",
-        reporter_uuid_id: generateReporterUUID(),
         
-        // Reporter details (if creating new)
         reporters_uuid: formData.step1.selectedReporter ? undefined : {
           fname: formData.step2.name || "",
           age_t: "0",
@@ -646,7 +612,6 @@ export default {
           ".id": ""
         },
         
-        // Arrays
         services: servicesPayload,
         referals: referralsPayload,
         specify_service: getValueOrDefault(formData.step4.otherServicesDetails),
@@ -655,12 +620,14 @@ export default {
         attachments_case: attachmentsPayload
       };
       
-      // Remove undefined fields
       Object.keys(casePayload).forEach(key => {
         if (casePayload[key] === undefined) {
           delete casePayload[key];
         }
       });
+      
+      // FORCE REMOVE reporter_uuid_id if it somehow gets added
+      delete casePayload.reporter_uuid_id;
       
       try {
         console.log('Submitting payload:', JSON.stringify(casePayload, null, 2));
@@ -751,7 +718,6 @@ export default {
   }
 };
 </script>
-
 <style scoped>
 .case-creation-container {
   max-width: 1000px;
