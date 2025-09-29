@@ -1,72 +1,80 @@
+# 🌍 OpenCHS – Revolutionizing Child Protection with Smart Case Management
+
+OpenCHS equips child protection agencies with a powerful, all-in-one platform to manage cases more efficiently. From real-time reporting and automated workflows to multi-channel support, empower your teams to track, respond, and resolve cases faster. Strengthen collaboration, ensure compliance, and provide vulnerable children with the care they need, when they need it most.
+
 ---
-layout: doc
-title: About openCHS
----
 
-# About openCHS
+## ✨ Features
 
-**openCHS** is an AI- and ML-powered open-source call management system designed to support child protection and gender-based violence (GBV) helplines.  
-It streamlines call handling, enhances case triage, and provides actionable insights through AI-powered transcription, translation, classification, and workflow automation.
+<div class="vp-doc">
+<div class="vp-tabs-container">
+<div class="vp-tabs">
+<button class="vp-tab" aria-selected="true">Call Management</button>
+<button class="vp-tab">Case Management</button>
+<button class="vp-tab">Multi-Channel Support</button>
+<button class="vp-tab">Real-Time Reporting</button>
+<button class="vp-tab">New AI Features</button>
+</div>
+<div class="vp-tab-panels">
+<div class="vp-tab-panel" style="display: block;">
 
-## Purpose
+### Call Management
 
-The system aims to:
+**Core Features**
 
-- Improve operational efficiency for GBV and VAC helplines.
-- Enable AI-assisted call handling, case triage, and prioritization.
-- Ensure compliance with data privacy regulations and ethical AI practices.
-- Facilitate scalable, cross-lingual support across different regions.
-- Promote open-source collaboration and knowledge sharing.
+-   **Call Management:** Unlimited simultaneous calls, automatic call recording, call transfer, forwarding, and teleconferencing.
+-   **Voicemail & Notifications:** Voicemail-to-email with personalized greetings.
+-   **IVR (Auto Attendant):** Multi-level interactive voice response with time-based call routing.
+-   **Call Routing & Queuing:** Skill-based, time-based, and least-cost call routing with queue management.
+-   **Security & Encryption:** SIP authentication, TLS encryption, and IP blacklisting.
+-   **Reporting & Analytics:** Call detail records (CDR), queue statistics, and performance reports.
+-   **Unified Communications:** WebRTC browser-based calls.
+-   **API & Third-Party Integrations:** CRM systems, SMS gateways, and webhooks.
 
-## Key Features
+:::tip Incoming AI-Powered Features
+To enhance the helpline’s operational efficiency and user experience, we plan to integrate AI-powered Automatic Speech Recognition (ASR) and call filtering:
 
-- **Intelligent Call Routing:** AI-driven call assignment based on urgency and intent.  
-- **Real-Time Transcription & Translation:** Supports multiple languages and dialects.  
-- **Sentiment Analysis & Emotion Detection:** Provides agents insights for personalized support.  
-- **AI-Based Case Triage:** Automatically categorizes and prioritizes cases.  
-- **Predictive Analytics:** Forecasts trends and recommends proactive interventions.  
-- **Agent Assist:** Offers real-time guidance and knowledge support for operators.  
-- **Workflow Automation:** Streamlines case handling, reporting, and administrative tasks.  
-- **Quality Assurance & Compliance:** Monitors performance and ensures adherence to policies.
+-   **Automatic Speech Recognition (ASR):** Powered by OpenAI Whisper, enabling real-time transcription of calls for:
+    -   Enhanced caller experience
+    -   Accurate logging of conversations
+    -   Multilingual support
+    -   Sentiment analysis
+-   **Prank Call Filtering:** AI models trained to detect and block nuisance calls based on historical patterns and voice signals.
+-   **Blank Call Detection:** Automatic rejection of silent or low-noise calls using noise threshold detection.
+-   **Spam Call Identification:** AI-based pattern recognition to automatically flag and block spam calls.
+:::
 
-## Technical Overview
+</div>
+<div class="vp-tab-panel">
 
-- **Frontend:** Vanilla JavaScript  
-- **Backend:** Python  
-- **Inference Engine:** ONNX Runtime  
-- **Async Tasks:** Celery  
-- **Monitoring & Logging:** ELK Stack (Elasticsearch, Logstash, Kibana), Prometheus  
-- **Deployment:** On-premise with potential AWS support  
-- **AI Integration:** Fine-tuned open-source models for transcription, translation, NLP, and prediction  
+### Case Management
 
-## Stakeholders
+**Core Features**
 
-- **Project Sponsor:** UNICEF Venture Fund  
-- **Project Manager:** Nelson Adagi  
-- **Technical Lead:** Joseph Kimani  
-- **ML Experts:** Jimmy Wanyama, Franklin Karanja  
-- **CI/CD & Deployment:** Patrick Kabau, Phylis Kamau  
-- **Security & Privacy:** Ken Orwa  
-- **Development Team:** Jude Angendu, Miriam Shem, Brian Newton  
+-   **Case Intake & Registration:** Automatically logs cases from voice calls, SMS, or web forms, assigning a unique case ID for tracking.
+-   **Case Assignment & Prioritization:** Assigns cases to social workers or case officers based on urgency and workload, with the ability to flag high-priority cases.
+-   **Action Tracking:** Records every action taken on the case through time-stamped logs, including follow-ups, referrals, and case notes.
+-   **Collaboration & Referrals:** Facilitates seamless collaboration by assigning cases to multiple service providers and tracking the referral journey.
+-   **Reporting & Audit Trails:** Automatically generates case reports and maintains a detailed log of all case activities to ensure accountability and compliance.
 
-## Privacy, Security & Ethics
+:::tip Incoming AI-Powered Features
+To further enhance the system's efficiency and responsiveness, AI capabilities will be integrated to automate key processes:
 
-- **Data Privacy:** Full compliance with regulations and secure handling of sensitive information.  
-- **Security:** Robust measures to prevent breaches and unauthorized access.  
-- **Ethical AI:** AI algorithms are developed with fairness, transparency, and accountability in mind.
+-   **Automatic Speech Recognition (ASR):** Real-time transcription of voice calls using OpenAI Whisper, making it easier to document and analyze conversations.
+-   **AI-Based Call Filtering:** Automatically filters out blank, prank, and spam calls, allowing agents to focus on genuine cases.
+-   **Intelligent Case Prioritization:** Uses keyword detection and sentiment analysis to automatically flag urgent cases, ensuring faster response times for high-risk situations.
+-   **Automated Case Summarization:** Generates brief, structured summaries from call transcriptions and action logs, improving efficiency in case reporting.
+-   **Predictive Case Escalation:** Identifies cases that need immediate intervention based on language patterns and emotional distress signals.
+:::
 
-## Expected Outcomes
+</div>
+<div class="vp-tab-panel">
 
-- Improved call center efficiency and responsiveness.  
-- Enhanced caller experience through AI-assisted support.  
-- Increased agent productivity with real-time guidance and automation.  
-- Data-driven decision making enabled by predictive analytics.  
-- Scalable, multi-language system ready for regional and global expansion.
+### Multi-Channel Support for Case Management
 
-## License & Open Source
+**Current Features**
 
-openCHS is **MIT licensed** and openly available for adaptation, contribution, and integration.  
-[View Repository](https://github.com/openchlai/openCHS)  
+The system currently supports multiple channels to ensure that individuals can reach out in the way that best suits their situation:
 
 ## Ownership
 

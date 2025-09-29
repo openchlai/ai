@@ -228,14 +228,14 @@
         margin: 5px;
         border: none;
         border-radius: 4px;
-        background-color: #2196F3;
+        background-color: var(--accent-color);
         color: white;
         cursor: pointer;
         transition: background-color 0.3s;
     }
 
     button:hover {
-        background-color: #1976D2;
+        background-color: var(--accent-hover);
     }
 
     button:disabled {

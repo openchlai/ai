@@ -8,13 +8,15 @@ export default defineConfig({
 
   server: {
     port: 3000,
+    host: '0.0.0.0', // This allows access from any network interface
     open: true,
     hmr: true,
     proxy: {
       // Any request that starts with /api-proxy will be proxied
       // e.g. GET /api-proxy/auth/login --> https://demo-openchs.bitz-itc.com/helpline/auth/login
       '/api-proxy': {
-        target: 'https://demo-openchs.bitz-itc.com',
+        target: 'https://system.childlinekenya.co.ke',
+        // target: 'https://system.childlinekenya.co.ke/helpline',
         changeOrigin: true,     // rewrite Host header to target
         secure: false,          // allow self‑signed SSL certs
         rewrite: (path) => path.replace(/^\/api-proxy/, '/helpline'),

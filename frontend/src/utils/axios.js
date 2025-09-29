@@ -6,7 +6,7 @@ const password = 'p@ssw0rd';
 const axiosInstance = axios.create({
     baseURL: process.env.NODE_ENV === 'development'
         ? '/api-proxy'
-        : 'https://demo-openchs.bitz-itc.com/helpline/',
+        : 'https://system.childlinekenya.co.ke/helpline/',
     timeout: 10000,
     auth: {
         username,
