@@ -99,11 +99,12 @@ const props = defineProps({
   id: { type: String, required: true },
   label: { type: String, default: '' },
   placeholder: { type: String, default: 'Select options...' },
-  modelValue: { type: Array, default: () => [] }, // Array of selected values
+  modelValue: { type: Array, default: () => [] }, // Array of selected values (IDs)
   categoryId: { type: [String, Number], required: true },
   disabled: { type: Boolean, default: false },
   required: { type: Boolean, default: false },
   maxSelections: { type: Number, default: null }, // Limit number of selections
+  returnText: { type: Boolean, default: false } // NEW: Option to return text instead of IDs
 });
 
 // Emits
@@ -156,12 +157,14 @@ const fetchOptions = async () => {
         return null;
       }
 
+      const id = row[idIdx];
       const textValue = row[nameIdx] || `Option ${row[idIdx]}`;
       
       return {
-        value: textValue,  // 🔧 CHANGED: Use text as value instead of ID
-        text: textValue,   // 🔧 Same text for display
-        description: null  // Could add description mapping if needed
+        value: props.returnText ? textValue : id,  // CHANGED: Return ID by default, text if returnText is true
+        id: id,           // Always store the ID
+        text: textValue,  // Always store the text for display
+        description: null // Could add description mapping if needed
       };
     }).filter(Boolean);
 
@@ -211,20 +214,28 @@ const toggleSelection = (option) => {
     currentValues.push(option.value);
   }
   
-  updateValue(currentValues);
+  updateValue(currentValues, option, index > -1 ? 'remove' : 'add');
 };
 
 const removeSelection = (option) => {
   const currentValues = props.modelValue.filter(value => value !== option.value);
-  updateValue(currentValues);
+  updateValue(currentValues, option, 'remove');
 };
 
-const updateValue = (newValue) => {
+const updateValue = (newValue, changedOption = null, action = null) => {
+  // Emit the array of IDs (or text if returnText is true)
   emit('update:modelValue', newValue);
   emit('change', newValue);
+  
+  // Emit detailed selection data including both IDs and text
+  const selectedOpts = options.value.filter(opt => newValue.includes(opt.value));
   emit('selection-change', {
-    values: newValue,
-    options: options.value.filter(opt => newValue.includes(opt.value))
+    values: newValue,  // Array of IDs (or text if returnText is true)
+    ids: selectedOpts.map(opt => opt.id),  // Always provide IDs
+    texts: selectedOpts.map(opt => opt.text),  // Always provide text values
+    options: selectedOpts,  // Full option objects
+    changedOption: changedOption,  // Which option was just changed
+    action: action  // 'add' or 'remove'
   });
 };
 
@@ -257,7 +268,6 @@ watch(() => props.categoryId, () => {
   }
 });
 </script>
-
 <style scoped>
 .base-options {
   position: relative;

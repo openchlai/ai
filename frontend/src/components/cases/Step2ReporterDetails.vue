@@ -197,8 +197,8 @@
           </div>
         </div>
 
-        <!-- Clients Section - Now shows when isClient is true OR false (but not null) -->
-        <div v-if="formData.isClient !== null && formData.isClient !== undefined" class="form-group">
+        <!-- Clients Section - ALWAYS VISIBLE NOW -->
+        <div class="form-group">
           <label class="form-label">Clients</label>
           
           <div class="clients-section">
@@ -234,10 +234,13 @@
               </div>
             </div>
 
-            <!-- Show empty state when no clients (this shouldn't happen now) -->
+            <!-- Show empty state when no clients -->
             <div v-else class="empty-state">
               <div class="empty-icon">👥</div>
               <p class="empty-text">No clients added yet</p>
+              <p class="empty-subtext">
+                {{ formData.isClient === true ? 'Reporter will be added as client automatically' : 'Click below to add a client' }}
+              </p>
             </div>
 
             <!-- Add More Clients Button -->
@@ -247,7 +250,7 @@
               @click="handleAddClient"
             >
               <span class="btn-icon">+</span>
-              Add Another Client
+              {{ formData.clients.length > 0 ? 'Add Another Client' : 'Add Client' }}
             </button>
           </div>
         </div>
@@ -316,7 +319,7 @@ const handleFormSubmit = () => {
   emit("save-step", { step: 2, data: props.formData });
 };
 
-// Form validation
+// Form validation - UPDATED to remove isClient requirement
 const validateForm = () => {
   const errors = [];
   
@@ -329,9 +332,7 @@ const validateForm = () => {
     errors.push('Phone Number is required');
   }
   
-  if (props.formData.isClient === null || props.formData.isClient === undefined) {
-    errors.push('Please specify if the reporter is a client');
-  }
+  // Removed the isClient validation since it's optional now
   
   // Show validation errors if any
   if (errors.length > 0) {

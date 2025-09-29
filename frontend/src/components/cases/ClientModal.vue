@@ -606,7 +606,7 @@
                                 label="Referrals Needed"
                                 v-model="localClientForm.disabilityReferrals"
                                 placeholder="Select referral types..."
-                                :category-id="114"
+                                :category-id="236707"
                                 @selection-change="updateClientForm"
                               />
                             </div>
@@ -677,24 +677,33 @@ const emit = defineEmits([
   'next-client-step',
   'add-client'
 ]);
+// Add these to the localClientForm initialization in ClientModal:
 
-// Local form data - sync with parent
 const localClientForm = reactive({ 
   ...props.clientForm,
-  // Initialize spouse fields
-  spouseName: props.clientForm.spouseName || '',
-  spouseProfession: props.clientForm.spouseProfession || '',
-  // Initialize school fields
+  // Existing fields...
+  
+  // Add school-related fields
+  attendingSchool: props.clientForm.attendingSchool || '',
   schoolName: props.clientForm.schoolName || '',
   schoolAddress: props.clientForm.schoolAddress || '',
   schoolLevel: props.clientForm.schoolLevel || '',
   schoolType: props.clientForm.schoolType || '',
   schoolAttendance: props.clientForm.schoolAttendance || '',
   reasonNotAttending: props.clientForm.reasonNotAttending || '',
-  // Initialize disability fields
+  
+  // Add disability-related fields
+  isDisabled: props.clientForm.isDisabled || '',
   disability: props.clientForm.disability || '',
   specialServicesRequired: props.clientForm.specialServicesRequired || '',
-  disabilityReferrals: props.clientForm.disabilityReferrals || []
+  disabilityReferrals: props.clientForm.disabilityReferrals || [],
+  
+  // Add spouse fields
+  spouseName: props.clientForm.spouseName || '',
+  spouseProfession: props.clientForm.spouseProfession || '',
+  
+  // Add DOB field
+  dob: props.clientForm.dob || ''
 });
 
 // Watch for changes from parent
@@ -749,8 +758,17 @@ const updateClientForm = () => {
 };
 
 // Handle adding client
+// Update the handleAddClient method to ensure all fields are included:
 const handleAddClient = () => {
-  console.log('Adding client:', localClientForm);
+  console.log('Adding client with complete data:', localClientForm);
+  
+  // Validate required fields
+  if (!localClientForm.name) {
+    alert('Client name is required');
+    return;
+  }
+  
+  // Emit with all fields
   emit('add-client');
 };
 

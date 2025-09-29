@@ -90,16 +90,16 @@
           </div>
         </div>
 
-        <!-- Other Selects -->
+        <!-- Updated Escalated To with numeric values -->
         <div class="form-group">
           <label for="escalated-to">Escalated To</label>
           <select v-model="localForm.escalatedTo" id="escalated-to" class="form-control" @change="updateForm">
-            <option value="">Select escalation level</option>
-            <option value="supervisor">Supervisor</option>
-            <option value="manager">Manager</option>
-            <option value="director">Director</option>
-            <option value="external-agency">External Agency</option>
-            <option value="law-enforcement">Law Enforcement</option>
+            <option value="0">None</option>
+            <option value="1">Supervisor</option>
+            <option value="2">Manager</option>
+            <option value="3">Director</option>
+            <option value="4">External Agency</option>
+            <option value="5">Law Enforcement</option>
           </select>
         </div>
 
@@ -317,7 +317,7 @@ const emit = defineEmits([
   "skip-step",
 ])
 
-// Local copy with conditional fields initialized
+// Local copy with conditional fields initialized and new service fields
 const localForm = reactive({ 
   ...props.formData,
   // Initialize conditional fields
@@ -325,7 +325,9 @@ const localForm = reactive({
   referralsType: props.formData.referralsType || [],
   policeDetails: props.formData.policeDetails || '',
   otherServicesDetails: props.formData.otherServicesDetails || '',
-  attachments: props.formData.attachments || []
+  attachments: props.formData.attachments || [],
+  // Add service text storage
+  servicesOfferedText: props.formData.servicesOfferedText || []
 })
 
 // Store selected services options for conditional logic
@@ -373,12 +375,13 @@ const handleDepartmentChange = () => {
   updateForm()
 }
 
-// Handle services selection change with conditional field management
+// UPDATED: Handle services selection change with proper text storage
 const handleServicesChange = (selectionData) => {
   console.log('Services selection changed:', selectionData)
   
-  // Update selected services and options
+  // Store both IDs and text values
   localForm.servicesOffered = selectionData.values || []
+  localForm.servicesOfferedText = selectionData.options?.map(opt => opt.text) || []
   selectedServicesOptions.value = selectionData.options || []
   
   // Clear conditional fields if their trigger options are no longer selected
@@ -392,7 +395,7 @@ const handleServicesChange = (selectionData) => {
     localForm.otherServicesDetails = ''
   }
   
-  // Update parent
+  // Update parent with both service IDs and text
   updateForm()
 }
 
@@ -535,22 +538,40 @@ watch(() => props.formData, (newData) => {
   Object.assign(localForm, newData);
 }, { deep: true });
 
-// Update parent when local form changes
+// UPDATED: Update parent when local form changes with complete data
 const updateForm = () => {
   console.log('Step4: Form data updated');
-  emit("form-update", localForm);
+  
+  // Create payload with all fields including service text
+  const updatePayload = {
+    ...localForm,
+    servicesOfferedSelection: {
+      values: localForm.servicesOffered,
+      options: selectedServicesOptions.value
+    }
+  };
+  
+  emit("form-update", updatePayload);
 };
 
 // Sync changes back up (keep existing watch for backward compatibility)
 watch(localForm, (newVal) => {
-  emit("form-update", newVal)
+  // Include service selection data
+  const payload = {
+    ...newVal,
+    servicesOfferedSelection: {
+      values: localForm.servicesOffered,
+      options: selectedServicesOptions.value
+    }
+  }
+  emit("form-update", payload)
 }, { deep: true })
 
 // Navigation functions
 const goToStep = (step) => {
   console.log('Step4: Going to step', step);
   // Update parent with current data before navigating
-  emit("form-update", localForm);
+  updateForm();
   emit("step-change", step);
 };
 
@@ -587,7 +608,7 @@ const validateForm = () => {
   return true;
 };
 
-// Handle form submission (Next button)
+// UPDATED: Handle form submission with complete data
 const handleFormSubmit = () => {
   console.log('Step4: Form submitted - Next button clicked');
   
@@ -596,12 +617,20 @@ const handleFormSubmit = () => {
     return;
   }
   
+  // Prepare complete data payload
+  const completeData = {
+    ...localForm,
+    servicesOfferedSelection: {
+      values: localForm.servicesOffered,
+      options: selectedServicesOptions.value
+    }
+  };
+  
   // Save and proceed to next step
-  console.log('Step4: Emitting save-and-proceed with data:', localForm);
-  emit("save-and-proceed", { step: 4, data: localForm });
+  console.log('Step4: Emitting save-and-proceed with data:', completeData);
+  emit("save-and-proceed", { step: 4, data: completeData });
 };
 </script>
-
 <style>
 .step-content {
   min-height: 400px;

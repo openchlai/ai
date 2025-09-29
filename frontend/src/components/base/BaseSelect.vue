@@ -32,8 +32,8 @@
           :key="option.id"
           @click.stop="handleOptionClick(option)"
           :class="{ 
-            selected: option.name === modelValue,
-            highlighted: option.name === modelValue,
+            selected: option.id === selectedOption?.id,
+            highlighted: option.id === selectedOption?.id,
             'has-children': option.hasChildren === true
           }"
         >
@@ -75,7 +75,7 @@ const props = defineProps({
   id: String,
   placeholder: String,
   disabled: Boolean,
-  categoryId: [String, Number] // Category ID to fetch options from
+  categoryId: [String, Number]
 })
 
 const emit = defineEmits(['update:modelValue', 'change'])
@@ -83,190 +83,124 @@ const emit = defineEmits(['update:modelValue', 'change'])
 const store = useCategoryStore()
 const isOpen = ref(false)
 const loading = ref(false)
-const navigationPath = ref([]) // Path of categories navigated through
-const levelOptions = ref([]) // Options at different levels
+const navigationPath = ref([])
+const levelOptions = ref([])
 const selectedOption = ref(null)
 
 // Toggle dropdown
 function toggleDropdown() {
   if (props.disabled) return
-  
-  if (!isOpen.value) {
-    // Opening dropdown - load root options if needed
-    if (!levelOptions.value.length && props.categoryId) {
-      loadLevel(props.categoryId)
-    }
+  if (!isOpen.value && !levelOptions.value.length && props.categoryId) {
+    loadLevel(props.categoryId)
   }
-  
   isOpen.value = !isOpen.value
 }
 
-// Close dropdown when clicking outside
 function closeDropdown() {
   isOpen.value = false
 }
 
-// Load options for a specific level/category
+// Load options for a specific category level
 async function loadLevel(categoryId, isRoot = true) {
-  if (!categoryId) {
-    console.warn('BaseSelect: No categoryId provided')
-    return []
-  }
-
-  console.log('BaseSelect: Loading level for categoryId:', categoryId)
-  
+  if (!categoryId) return []
   try {
     loading.value = true
     await store.viewCategory(categoryId)
-    
-    // Parse the options using the store's mapping structure
-    const k = store.subcategories_k
-    if (!k) {
-      console.warn('BaseSelect: No subcategories_k mapping found')
-      return []
-    }
 
+    const k = store.subcategories_k
     const idIdx = Number(k?.id?.[0] ?? 0)
     const nameIdx = Number(k?.name?.[0] ?? 5)
-    
-    console.log('BaseSelect: Field indices - id:', idIdx, 'name:', nameIdx)
 
-    const parsedOptions = (store.subcategories || []).map(row => {
-      if (!Array.isArray(row)) {
-        console.warn('BaseSelect: Invalid row format:', row)
-        return null
-      }
-
-      return {
+    const parsedOptions = (store.subcategories || [])
+      .map(row => ({
         id: row[idIdx],
         name: row[nameIdx] || `Option ${row[idIdx]}`,
-        hasChildren: null // We'll check this only when clicked
-      }
-    }).filter(Boolean)
+        hasChildren: null
+      }))
+      .filter(Boolean)
 
     if (isRoot) {
       levelOptions.value = parsedOptions
     }
-
-    console.log('BaseSelect: Parsed options:', parsedOptions)
     return parsedOptions
-
   } catch (error) {
-    console.error('BaseSelect: Error loading level:', error)
+    console.error('Error loading level:', error)
     return []
   } finally {
     loading.value = false
   }
 }
 
-// Handle option click - either select or navigate deeper
+// Handle option click
 async function handleOptionClick(option) {
-  console.log('BaseSelect: Option clicked:', option)
-  
-  // Check if this option has children (only when clicked)
   if (option.hasChildren === null) {
-    console.log('BaseSelect: Checking for subcategories of:', option.name)
-    
     try {
       await store.viewCategory(option.id)
-      const hasSubcategories = store.subcategories && store.subcategories.length > 0
-      option.hasChildren = hasSubcategories
-      console.log(`BaseSelect: Option ${option.name} hasChildren:`, hasSubcategories)
-    } catch (error) {
+      option.hasChildren = store.subcategories && store.subcategories.length > 0
+    } catch {
       option.hasChildren = false
-      console.log(`BaseSelect: Option ${option.name} has no subcategories (error):`, error.message)
     }
   }
-  
+
   if (option.hasChildren) {
-    // Navigate to subcategory
     const subOptions = await loadLevel(option.id, false)
-    
     if (subOptions.length > 0) {
       navigationPath.value.push({
         id: option.id,
         name: option.name,
-        options: levelOptions.value // Store current level options
+        options: levelOptions.value
       })
       levelOptions.value = subOptions
-      console.log('BaseSelect: Navigated deeper to:', option.name)
     } else {
-      // No subcategories found, treat as final selection
       selectOption(option)
     }
   } else {
-    // Leaf node - make final selection
     selectOption(option)
   }
 }
 
-// Select an option (final selection)
+// ✅ Emit the ID but display the name
 function selectOption(option) {
-  console.log('BaseSelect: Final option selected:', option)
-  
   selectedOption.value = option
-  // 🔧 CHANGED: Emit option.name instead of option.id
-  emit('update:modelValue', option.name)
-  emit('change', option.name)
-  
-  // Close dropdown after selection
+  emit('update:modelValue', option.id)
+  emit('change', option.id)
   isOpen.value = false
 }
 
-// Go back to previous level
+// Go back a level
 function goBack() {
   if (navigationPath.value.length === 0) return
-  
   const previousLevel = navigationPath.value.pop()
   levelOptions.value = previousLevel.options
-  
-  console.log('BaseSelect: Navigated back from:', previousLevel.name)
 }
 
-// Clear selection and reset navigation
+// Clear selection
 function clearSelection() {
-  console.log('BaseSelect: Clearing selection')
-  
   selectedOption.value = null
   navigationPath.value = []
-  
-  // Reset to root level
-  if (props.categoryId) {
-    loadLevel(props.categoryId)
-  }
-  
+  if (props.categoryId) loadLevel(props.categoryId)
   emit('update:modelValue', '')
   emit('change', '')
-  
-  // Close dropdown after clearing
   isOpen.value = false
 }
 
-// Watch for external modelValue changes
+// ✅ Watch modelValue (now an ID) and update display name accordingly
 watch(() => props.modelValue, async (newValue) => {
-  console.log('BaseSelect: modelValue changed to:', newValue)
-  
-  if (newValue && newValue !== selectedOption.value?.name) {
-    // 🔧 CHANGED: Look for option by name instead of id
-    const matchingOption = levelOptions.value.find(opt => opt.name == newValue)
+  if (newValue && newValue !== selectedOption.value?.id) {
+    const matchingOption = levelOptions.value.find(opt => opt.id == newValue)
     if (matchingOption) {
       selectedOption.value = matchingOption
     } else {
-      // Value doesn't match current options - might be from a deeper level
-      // For now, create a placeholder option with the text value
-      selectedOption.value = { id: null, name: newValue, hasChildren: false }
-      console.warn('BaseSelect: modelValue does not match current level options:', newValue)
+      selectedOption.value = { id: newValue, name: `Option ${newValue}`, hasChildren: false }
     }
   } else if (!newValue) {
     selectedOption.value = null
   }
 })
 
-// Watch for categoryId changes
+// Reload on categoryId change
 watch(() => props.categoryId, (newCategoryId) => {
   if (newCategoryId) {
-    console.log('BaseSelect: categoryId changed to:', newCategoryId)
-    // Reset all state and load new options
     levelOptions.value = []
     navigationPath.value = []
     selectedOption.value = null
@@ -274,26 +208,15 @@ watch(() => props.categoryId, (newCategoryId) => {
   }
 }, { immediate: true })
 
-// Computed properties
+// Computed
 const currentOptions = computed(() => levelOptions.value)
-
-const breadcrumb = computed(() => {
-  return navigationPath.value.map(level => level.name)
-})
-
-const displayValue = computed(() => {
-  if (selectedOption.value) {
-    return selectedOption.value.name
-  }
-  return ''
-})
+const breadcrumb = computed(() => navigationPath.value.map(level => level.name))
+const displayValue = computed(() => selectedOption.value?.name || '')
 
 // Close dropdown when clicking outside
 onMounted(() => {
   document.addEventListener('click', (event) => {
-    if (!event.target.closest('.form-group')) {
-      closeDropdown()
-    }
+    if (!event.target.closest('.form-group')) closeDropdown()
   })
 })
 </script>
@@ -303,14 +226,12 @@ onMounted(() => {
   position: relative;
   max-width: 420px;
 }
-
 .form-label {
   display: block;
   font-weight: 600;
   margin-bottom: 6px;
   color: var(--color-text, #333);
 }
-
 .select-container {
   border: 1px solid var(--color-border, #ddd);
   border-radius: 6px;
@@ -323,22 +244,18 @@ onMounted(() => {
   transition: all 0.2s ease;
   min-height: 20px;
 }
-
 .select-container:hover:not(.disabled) {
   border-color: var(--color-primary, #007bff);
 }
-
 .select-container:focus-within:not(.disabled) {
   border-color: var(--color-primary, #007bff);
   box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 }
-
 .select-container.disabled {
   background: var(--color-surface-muted, #f5f5f5);
   color: var(--color-muted, #999);
   cursor: not-allowed;
 }
-
 .selected-value {
   color: var(--color-text, #333);
   flex: 1;
@@ -346,22 +263,18 @@ onMounted(() => {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
 .select-container.disabled .selected-value {
   color: var(--color-muted, #999);
 }
-
 .arrow {
   font-size: 12px;
   color: var(--color-muted, #666);
   margin-left: 8px;
   transition: transform 0.2s ease;
 }
-
 .arrow.open {
   transform: rotate(180deg);
 }
-
 .dropdown {
   border: 1px solid var(--color-border, #ddd);
   border-radius: 6px;
@@ -375,7 +288,6 @@ onMounted(() => {
   width: 100%;
   z-index: 1000;
 }
-
 .loading-state {
   display: flex;
   align-items: center;
@@ -384,7 +296,6 @@ onMounted(() => {
   justify-content: center;
   color: var(--color-muted, #666);
 }
-
 .loading-spinner {
   width: 16px;
   height: 16px;
@@ -393,18 +304,15 @@ onMounted(() => {
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
-
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
-
 .options {
   list-style: none;
   margin: 0;
   padding: 0;
 }
-
 .options li {
   padding: 10px 12px;
   cursor: pointer;
@@ -412,25 +320,21 @@ onMounted(() => {
   transition: background-color 0.2s ease;
   color: var(--color-text, #333);
 }
-
 .options li:hover {
   background: var(--color-surface-hover, #f8f9fa);
 }
-
 .options li.selected,
 .options li.highlighted {
   background: var(--color-primary-light, rgba(0, 123, 255, 0.1));
   color: var(--color-primary, #007bff);
   font-weight: 500;
 }
-
 .no-options {
   padding: 16px;
   text-align: center;
   color: var(--color-muted, #666);
   font-style: italic;
 }
-
 .controls {
   margin-top: 8px;
   display: flex;
@@ -438,7 +342,6 @@ onMounted(() => {
   border-top: 1px solid var(--color-border, #eee);
   padding-top: 8px;
 }
-
 .btn {
   padding: 6px 12px;
   border-radius: 4px;
@@ -448,28 +351,23 @@ onMounted(() => {
   font-size: 13px;
   transition: all 0.2s ease;
 }
-
 .btn:hover {
   background: var(--color-surface-hover, #f8f9fa);
   transform: translateY(-1px);
 }
-
 .reset {
   color: var(--color-danger, #dc3545);
   border-color: var(--color-danger, #dc3545);
 }
-
 .reset:hover {
   background: var(--color-danger, #dc3545);
   color: white;
 }
-
 .form-hint {
   font-size: 12px;
   color: var(--color-muted, #666);
   margin-top: 4px;
 }
-
 .form-error {
   font-size: 12px;
   color: var(--color-danger, #dc3545);

@@ -15,7 +15,7 @@
             :key="index"
             class="perpetrator-display"
           >
-            <span>{{ perpetrator.name }} ({{ perpetrator.age }} {{ perpetrator.sex }})</span>
+            <span>{{ perpetrator.name || 'Unnamed' }} ({{ perpetrator.age || 'Unknown age' }} {{ perpetrator.sex || 'Unknown gender' }})</span>
             <button @click="removePerpetrator(index)" class="remove-btn">
               Remove
             </button>
@@ -58,29 +58,40 @@
                 <div class="field-group">
                   <label>Perpetrator's Name *</label>
                   <input
-                    v-model="perpetratorForm.name"
+                    v-model="localPerpetratorForm.name"
                     type="text"
                     placeholder="Enter Perpetrator's Names"
+                    @input="updatePerpetratorForm"
                   />
                 </div>
 
                 <div class="field-group">
                   <label>Age</label>
-                  <input v-model="perpetratorForm.age" type="number" placeholder="Enter age" />
+                  <input 
+                    v-model="localPerpetratorForm.age" 
+                    type="number" 
+                    placeholder="Enter age"
+                    @input="updatePerpetratorForm" 
+                  />
                 </div>
 
                 <div class="field-group">
                   <label>DOB</label>
-                  <input v-model="perpetratorForm.dob" type="date" />
+                  <input 
+                    v-model="localPerpetratorForm.dob" 
+                    type="date"
+                    @change="handleDobChange" 
+                  />
                 </div>
 
                 <div class="field-group">
                   <BaseSelect
                     id="perpetrator-age-group"
                     label="Age Group"
-                    v-model="perpetratorForm.ageGroup"
+                    v-model="localPerpetratorForm.ageGroup"
                     placeholder="Select Age Group"
                     :category-id="101"
+                    @change="updatePerpetratorForm"
                   />
                 </div>
 
@@ -88,9 +99,10 @@
                   <BaseSelect
                     id="perpetrator-location"
                     label="Location"
-                    v-model="perpetratorForm.location"
+                    v-model="localPerpetratorForm.location"
                     placeholder="Select Location"
                     :category-id="88"
+                    @change="updatePerpetratorForm"
                   />
                 </div>
 
@@ -98,9 +110,10 @@
                   <BaseSelect
                     id="perpetrator-sex"
                     label="Sex"
-                    v-model="perpetratorForm.sex"
+                    v-model="localPerpetratorForm.sex"
                     placeholder="Select Gender"
                     :category-id="120"
+                    @change="updatePerpetratorForm"
                   />
                 </div>
               </div>
@@ -112,9 +125,10 @@
                 <div class="field-group">
                   <label>Nearest Landmark</label>
                   <input
-                    v-model="perpetratorForm.landmark"
+                    v-model="localPerpetratorForm.landmark"
                     type="text"
                     placeholder="Enter Nearest Landmark"
+                    @input="updatePerpetratorForm"
                   />
                 </div>
 
@@ -122,9 +136,10 @@
                   <BaseSelect
                     id="perpetrator-nationality"
                     label="Nationality"
-                    v-model="perpetratorForm.nationality"
+                    v-model="localPerpetratorForm.nationality"
                     placeholder="Select Nationality"
                     :category-id="126"
+                    @change="updatePerpetratorForm"
                   />
                 </div>
 
@@ -132,18 +147,20 @@
                   <BaseSelect
                     id="perpetrator-id-type"
                     label="ID Type"
-                    v-model="perpetratorForm.idType"
+                    v-model="localPerpetratorForm.idType"
                     placeholder="Select ID Type"
                     :category-id="362409"
+                    @change="updatePerpetratorForm"
                   />
                 </div>
 
                 <div class="field-group">
                   <label>ID Number</label>
                   <input
-                    v-model="perpetratorForm.idNumber"
+                    v-model="localPerpetratorForm.idNumber"
                     type="text"
-                    placeholder="Enter Reporter's ID Number"
+                    placeholder="Enter ID Number"
+                    @input="updatePerpetratorForm"
                   />
                 </div>
 
@@ -151,9 +168,10 @@
                   <BaseSelect
                     id="perpetrator-language"
                     label="Language"
-                    v-model="perpetratorForm.language"
+                    v-model="localPerpetratorForm.language"
                     placeholder="Select Language"
                     :category-id="123"
+                    @change="updatePerpetratorForm"
                   />
                 </div>
 
@@ -161,19 +179,33 @@
                   <label>Is the Perpetrator a Refugee?</label>
                   <div class="radio-group">
                     <label class="radio-option">
-                      <input type="radio" v-model="perpetratorForm.isRefugee" value="yes" />
+                      <input 
+                        type="radio" 
+                        v-model="localPerpetratorForm.isRefugee" 
+                        value="yes"
+                        @change="updatePerpetratorForm" 
+                      />
+                      <span class="radio-indicator"></span>
                       <span class="radio-label">Yes</span>
                     </label>
                     <label class="radio-option">
-                      <input type="radio" v-model="perpetratorForm.isRefugee" value="no" />
+                      <input 
+                        type="radio" 
+                        v-model="localPerpetratorForm.isRefugee" 
+                        value="no"
+                        @change="updatePerpetratorForm" 
+                      />
+                      <span class="radio-indicator"></span>
                       <span class="radio-label">No</span>
                     </label>
                     <label class="radio-option">
                       <input
                         type="radio"
-                        v-model="perpetratorForm.isRefugee"
+                        v-model="localPerpetratorForm.isRefugee"
                         value="unknown"
+                        @change="updatePerpetratorForm"
                       />
+                      <span class="radio-indicator"></span>
                       <span class="radio-label">Unknown</span>
                     </label>
                   </div>
@@ -188,36 +220,40 @@
                   <BaseSelect
                     id="perpetrator-tribe"
                     label="Tribe"
-                    v-model="perpetratorForm.tribe"
+                    v-model="localPerpetratorForm.tribe"
                     placeholder="Select Tribe"
                     :category-id="133"
+                    @change="updatePerpetratorForm"
                   />
                 </div>
 
                 <div class="field-group">
                   <label>Phone Number</label>
                   <input
-                    v-model="perpetratorForm.phone"
+                    v-model="localPerpetratorForm.phone"
                     type="tel"
-                    placeholder="Enter Reporter's Phone Number"
+                    placeholder="Enter Phone Number"
+                    @input="updatePerpetratorForm"
                   />
                 </div>
 
                 <div class="field-group">
                   <label>Alternative Phone</label>
                   <input
-                    v-model="perpetratorForm.alternativePhone"
+                    v-model="localPerpetratorForm.alternativePhone"
                     type="tel"
                     placeholder="Enter Alternate Phone Number"
+                    @input="updatePerpetratorForm"
                   />
                 </div>
 
                 <div class="field-group">
                   <label>Email</label>
                   <input
-                    v-model="perpetratorForm.email"
+                    v-model="localPerpetratorForm.email"
                     type="email"
-                    placeholder="Enter Reporter's Email Address"
+                    placeholder="Enter Email Address"
+                    @input="updatePerpetratorForm"
                   />
                 </div>
 
@@ -225,9 +261,10 @@
                   <BaseSelect
                     id="Relationship with Client"
                     label="Relationship with Client?"
-                    v-model="perpetratorForm.relationship"
-                    placeholder=""
+                    v-model="localPerpetratorForm.relationship"
+                    placeholder="Select relationship"
                     :category-id="236634"
+                    @change="updatePerpetratorForm"
                   />
                 </div>
 
@@ -235,9 +272,10 @@
                   <BaseSelect
                     id="Shares Home with Client"
                     label="Shares Home with Client?"
-                    v-model="perpetratorForm.sharesHome"
-                    placeholder=""
+                    v-model="localPerpetratorForm.sharesHome"
+                    placeholder="Select option"
                     :category-id="236631"
+                    @change="updatePerpetratorForm"
                   />
                 </div>
               </div>
@@ -250,9 +288,10 @@
                   <BaseSelect
                     id="Health Status"
                     label="Health Status"
-                    v-model="perpetratorForm.healthStatus"
-                    placeholder=""
+                    v-model="localPerpetratorForm.healthStatus"
+                    placeholder="Select health status"
                     :category-id="236660"
+                    @change="updatePerpetratorForm"
                   />
                 </div>
 
@@ -260,9 +299,10 @@
                   <BaseSelect
                     id="Perpetrator's Profession"
                     label="Perpetrator's Profession"
-                    v-model="perpetratorForm.profession"
-                    placeholder=""
+                    v-model="localPerpetratorForm.profession"
+                    placeholder="Select profession"
                     :category-id="236648"
+                    @change="updatePerpetratorForm"
                   />
                 </div>
 
@@ -270,9 +310,10 @@
                   <BaseSelect
                     id="Perpetrator's Marital Status"
                     label="Perpetrator's Marital Status"
-                    v-model="perpetratorForm.maritalStatus"
-                    placeholder=""
+                    v-model="localPerpetratorForm.maritalStatus"
+                    placeholder="Select marital status"
                     :category-id="236654"
+                    @change="handleMaritalStatusChange"
                   />
 
                   <!-- Conditional Fields: Spouse Details -->
@@ -281,9 +322,10 @@
                       <div class="field-group">
                         <label>Spouse Name</label>
                         <input
-                          v-model="perpetratorForm.spouseName"
+                          v-model="localPerpetratorForm.spouseName"
                           type="text"
                           placeholder="Enter spouse's name"
+                          @input="updatePerpetratorForm"
                         />
                       </div>
                       
@@ -291,9 +333,10 @@
                         <BaseSelect
                           id="spouse-profession"
                           label="Spouse Profession"
-                          v-model="perpetratorForm.spouseProfession"
+                          v-model="localPerpetratorForm.spouseProfession"
                           placeholder="Select spouse's profession"
                           :category-id="236648"
+                          @change="updatePerpetratorForm"
                         />
                       </div>
                     </div>
@@ -303,18 +346,20 @@
                 <div class="field-group">
                   <label>Perpetrator's Guardian's Name</label>
                   <input
-                    v-model="perpetratorForm.guardianName"
+                    v-model="localPerpetratorForm.guardianName"
                     type="text"
                     placeholder="Enter Perpetrator's Guardian Name"
+                    @input="updatePerpetratorForm"
                   />
                 </div>
 
                 <div class="field-group">
                   <label>Additional Details</label>
                   <textarea
-                    v-model="perpetratorForm.additionalDetails"
+                    v-model="localPerpetratorForm.additionalDetails"
                     placeholder="Enter Additional Details"
                     rows="4"
+                    @input="updatePerpetratorForm"
                   ></textarea>
                 </div>
               </div>
@@ -341,7 +386,7 @@
             </button>
             <button
               v-if="currentPerpetratorStep === perpetratorSteps.length - 1"
-              @click="addPerpetrator"
+              @click="handleAddPerpetrator"
               type="button"
               class="btn btn--primary"
             >
@@ -355,7 +400,7 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, reactive, watch } from "vue";
 import BaseSelect from "@/components/base/BaseSelect.vue";
 
 // Props from parent
@@ -373,7 +418,45 @@ const emit = defineEmits([
   "remove-perpetrator",
   "next-perpetrator-step",
   "prev-perpetrator-step",
+  "update-perpetrator-form"
 ]);
+
+// Create local reactive copy of the form
+const localPerpetratorForm = reactive({
+  ...props.perpetratorForm,
+  // Ensure all fields are initialized
+  name: props.perpetratorForm.name || '',
+  age: props.perpetratorForm.age || '',
+  dob: props.perpetratorForm.dob || '',
+  ageGroup: props.perpetratorForm.ageGroup || '',
+  location: props.perpetratorForm.location || '',
+  sex: props.perpetratorForm.sex || '',
+  landmark: props.perpetratorForm.landmark || '',
+  nationality: props.perpetratorForm.nationality || '',
+  idType: props.perpetratorForm.idType || '',
+  idNumber: props.perpetratorForm.idNumber || '',
+  language: props.perpetratorForm.language || '',
+  isRefugee: props.perpetratorForm.isRefugee || '',
+  tribe: props.perpetratorForm.tribe || '',
+  phone: props.perpetratorForm.phone || '',
+  alternativePhone: props.perpetratorForm.alternativePhone || '',
+  email: props.perpetratorForm.email || '',
+  relationship: props.perpetratorForm.relationship || '',
+  sharesHome: props.perpetratorForm.sharesHome || '',
+  healthStatus: props.perpetratorForm.healthStatus || '',
+  profession: props.perpetratorForm.profession || '',
+  maritalStatus: props.perpetratorForm.maritalStatus || '',
+  guardianName: props.perpetratorForm.guardianName || '',
+  additionalDetails: props.perpetratorForm.additionalDetails || '',
+  // Spouse fields
+  spouseName: props.perpetratorForm.spouseName || '',
+  spouseProfession: props.perpetratorForm.spouseProfession || ''
+});
+
+// Watch for changes from parent
+watch(() => props.perpetratorForm, (newForm) => {
+  Object.assign(localPerpetratorForm, newForm);
+}, { deep: true });
 
 // Steps list
 const perpetratorSteps = [
@@ -385,50 +468,106 @@ const perpetratorSteps = [
 
 // Array of marital status values that should NOT show spouse fields
 const singleStatusValues = [
-  'single',         // lowercase
-  'Single',         // capitalized
-  'SINGLE',         // uppercase
-  'unknown',        // lowercase
-  'Unknown',        // capitalized
-  'UNKNOWN',        // uppercase
-  'unmarried',      // alternative for single
-  'Unmarried',      // capitalized
-  'never married',  // full phrase
-  'Never Married',  // capitalized
-  // Add more variations as needed based on your actual data
-  // If your BaseSelect returns IDs instead of text, add those IDs here:
-  // '123456',      // example ID for single
-  // '123457',      // example ID for unknown
+  'single',
+  'Single',
+  'SINGLE',
+  'unknown',
+  'Unknown',
+  'UNKNOWN',
+  'unmarried',
+  'Unmarried',
+  'never married',
+  'Never Married',
 ];
 
 // Computed property for showing spouse fields
 const showSpouseFields = computed(() => {
-  const maritalStatus = props.perpetratorForm.maritalStatus;
+  const maritalStatus = localPerpetratorForm.maritalStatus;
   
-  // If no marital status selected, don't show spouse fields
   if (!maritalStatus) {
     return false;
   }
   
-  // Convert to string for comparison
   const statusValue = String(maritalStatus);
-  
-  // Check if the current status is in the list of single/unknown statuses
   const isSingleOrUnknown = singleStatusValues.some(singleStatus => {
-    // Case-insensitive comparison
     return statusValue.toLowerCase() === String(singleStatus).toLowerCase();
   });
   
-  // Show spouse fields only if NOT single or unknown
   return !isSingleOrUnknown;
 });
 
-// Emit helpers
+// Update parent when local form changes
+const updatePerpetratorForm = () => {
+  emit('update-perpetrator-form', { ...localPerpetratorForm });
+};
+
+// Handle marital status change
+const handleMaritalStatusChange = () => {
+  // Clear spouse fields if marital status is single/unknown
+  if (!showSpouseFields.value) {
+    localPerpetratorForm.spouseName = '';
+    localPerpetratorForm.spouseProfession = '';
+  }
+  updatePerpetratorForm();
+};
+
+// Handle DOB change and auto-calculate age
+const handleDobChange = (event) => {
+  const dob = event.target ? event.target.value : event;
+  
+  if (dob) {
+    const birthDate = new Date(dob);
+    const today = new Date();
+    
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    
+    if (age >= 0) {
+      localPerpetratorForm.age = age.toString();
+      
+      // Auto-set age group based on calculated age
+      if (age < 6) localPerpetratorForm.ageGroup = '0-5';
+      else if (age <= 12) localPerpetratorForm.ageGroup = '6-12';
+      else if (age <= 17) localPerpetratorForm.ageGroup = '13-17';
+      else if (age <= 25) localPerpetratorForm.ageGroup = '18-25';
+      else if (age <= 35) localPerpetratorForm.ageGroup = '26-35';
+      else if (age <= 50) localPerpetratorForm.ageGroup = '36-50';
+      else localPerpetratorForm.ageGroup = '51+';
+    }
+  }
+  
+  updatePerpetratorForm();
+};
+
+// Validate and add perpetrator
+const handleAddPerpetrator = () => {
+  // Basic validation
+  if (!localPerpetratorForm.name?.trim()) {
+    alert('Perpetrator name is required');
+    return;
+  }
+  
+  console.log('Adding perpetrator with data:', localPerpetratorForm);
+  emit("add-perpetrator");
+};
+
+// Navigation helpers
 const closeModal = () => emit("close-modal");
-const addPerpetrator = () => emit("add-perpetrator");
 const removePerpetrator = (index) => emit("remove-perpetrator", index);
-const nextStep = () => emit("next-perpetrator-step");
-const prevStep = () => emit("prev-perpetrator-step");
+const nextStep = () => {
+  // Save current data before moving to next step
+  updatePerpetratorForm();
+  emit("next-perpetrator-step");
+};
+const prevStep = () => {
+  // Save current data before moving to previous step
+  updatePerpetratorForm();
+  emit("prev-perpetrator-step");
+};
 </script>
 
 <style>

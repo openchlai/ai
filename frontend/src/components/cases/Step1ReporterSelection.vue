@@ -134,8 +134,8 @@
         <button type="button" class="btn btn-cancel" @click="cancelForm">Cancel</button>
         <div>
           <BaseButton type="button" variant="secondary" @click="handleSkipStep">Skip</BaseButton>
-          <BaseButton type="submit" :disabled="!selectedReporter">
-            {{ selectedReporter ? 'Continue with Selected Reporter' : 'Select a Reporter' }}
+          <BaseButton type="submit" :disabled="!selectedReporter && !isNewReporter">
+            {{ selectedReporter ? 'Continue with Selected Reporter' : (isNewReporter ? 'Create New Reporter' : 'Select a Reporter') }}
           </BaseButton>
         </div>
       </div>
@@ -171,6 +171,7 @@ const searchQuery = ref(props.searchQuery || "")
 const debouncedQuery = ref("")
 const selectedReporter = ref(props.selectedReporter)
 const isLoading = ref(false)
+const isNewReporter = ref(false)
 
 // Fetch reporters on mount
 onMounted(async () => {
@@ -317,18 +318,25 @@ const handleSearchInput = (event) => {
 const selectExistingReporter = (contact) => {
   console.log('Step1: Reporter selected:', contact)
   selectedReporter.value = contact
+  isNewReporter.value = false
   emit('select-reporter', contact)
 }
 
 const createNewReporter = () => {
   console.log('Step1: Creating new reporter')
-  const newReporter = null // Let parent handle new reporter creation
-  selectedReporter.value = newReporter
+  // Clear any selected reporter
+  selectedReporter.value = null
+  // Set flag that we're creating a new reporter
+  isNewReporter.value = true
+  // Emit to parent to clear form and navigate
   emit('create-new-reporter')
+  // Proceed to step 2 for new reporter creation
+  emit("validate-and-proceed", null)
 }
 
 const clearSelection = () => {
   selectedReporter.value = null
+  isNewReporter.value = false
   emit('select-reporter', null)
 }
 
@@ -340,7 +348,7 @@ const isSelected = (contact) => {
 // Form submission
 const handleFormSubmit = () => {
   console.log('Step1: Form submitted with reporter:', selectedReporter.value)
-  if (selectedReporter.value) {
+  if (selectedReporter.value || isNewReporter.value) {
     emit("validate-and-proceed", selectedReporter.value)
   }
 }
