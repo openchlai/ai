@@ -87,7 +87,7 @@ export default defineConfig({
                         items: [
                             { text: 'System Requirements', link: '/deployment-administration/installation/system-requirements' },
                             { text: 'On-Premise Installation Guide', link: '/deployment-administration/installation/on-premise-installation-guide' },
-                            { text: 'Cloud Deployment', link: '/deployment-administration/installation/cloud-deployment' },
+                            //{ text: 'Cloud Deployment', link: '/deployment-administration/installation/cloud-deployment' },
                             { text: 'Docker & Kubernetes Setup', link: '/deployment-administration/installation/docker-kubernetes-setup' }
                         ]
                     },
@@ -106,7 +106,7 @@ export default defineConfig({
                             { text: 'System Health Checks', link: '/deployment-administration/maintenance-monitoring/system-health-checks' },
                             { text: 'Performance Tuning', link: '/deployment-administration/maintenance-monitoring/performance-tuning' },
                             { text: 'Logging & Auditing', link: '/deployment-administration/maintenance-monitoring/logging-auditing' },
-                            { text: 'Upgrading OpenCHS', link: '/deployment-administration/maintenance-monitoring/upgrading-openchs' }
+                           // { text: 'Upgrading OpenCHS', link: '/deployment-administration/maintenance-monitoring/upgrading-openchs' }
                         ]
                     }
                 ]
