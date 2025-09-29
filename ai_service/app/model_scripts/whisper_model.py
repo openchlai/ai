@@ -14,6 +14,7 @@ class WhisperModel:
     def __init__(self, model_path: str = None, enable_translation: bool = True):
         from ..config.settings import settings
         
+        self.settings = settings
         self.model_path = model_path or settings.get_model_path("whisper")
         self.enable_translation = enable_translation
         
@@ -89,7 +90,7 @@ class WhisperModel:
         return True
         
     def load(self) -> bool:
-        """Load Whisper model with local-first approach"""
+        """Load Whisper model with HuggingFace Hub support"""
         try:
             logger.info(f"🎙️ Loading Whisper model...")
             
@@ -101,45 +102,82 @@ class WhisperModel:
             logger.info(f"🎙️ Using device: {self.device}, dtype: {self.torch_dtype}")
             logger.info(f"🎙️ Translation enabled: {self.enable_translation}, Target model: {self.model_version}")
             
-            # Try loading from local path first
-            if self._check_local_model_exists():
+            # Get HuggingFace model loading kwargs
+            hf_kwargs = self.settings.get_hf_model_kwargs()
+            
+            # Check if we should use HuggingFace Hub models
+            if self.settings.use_hf_models:
+                # Use HuggingFace Hub models
+                model_id = self.settings.get_active_whisper_path()  # This now returns HF model ID
+                logger.info(f"🌐 Loading Whisper model from HuggingFace Hub: {model_id}")
+                
                 try:
-                    logger.info(f"🎙️ Loading local Whisper model from {self.model_path}")
+                    self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
+                        model_id,
+                        torch_dtype=self.torch_dtype, 
+                        low_cpu_mem_usage=True, 
+                        use_safetensors=True,
+                        **hf_kwargs
+                    )
+                    
+                    self.processor = AutoProcessor.from_pretrained(model_id, **hf_kwargs)
+                    self.current_model_id = model_id
+                    logger.info(f"✅ HuggingFace Whisper model loaded successfully")
+                    
+                except Exception as e:
+                    logger.warning(f"⚠️ Failed to load HF model {model_id}: {e}")
+                    logger.info(f"🔄 Falling back to default HuggingFace model: {self.fallback_model_id}")
+                    
+                    # Fallback to default HF model
+                    self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
+                        self.fallback_model_id, 
+                        torch_dtype=self.torch_dtype, 
+                        low_cpu_mem_usage=True, 
+                        use_safetensors=True
+                    )
+                    self.processor = AutoProcessor.from_pretrained(self.fallback_model_id)
+                    self.current_model_id = self.fallback_model_id
+                    
+            else:
+                # Use local models with fallback to HuggingFace
+                if self._check_local_model_exists():
+                    try:
+                        logger.info(f"🎙️ Loading local Whisper model from {self.model_path}")
+                        
+                        self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
+                            self.model_path,
+                            local_files_only=True,  # Force local loading
+                            torch_dtype=self.torch_dtype, 
+                            low_cpu_mem_usage=True, 
+                            use_safetensors=True
+                        )
+                        
+                        self.processor = AutoProcessor.from_pretrained(
+                            self.model_path,
+                            local_files_only=True  # Force local loading
+                        )
+                        
+                        self.current_model_id = self.model_path
+                        logger.info(f"✅ Local Whisper model loaded successfully")
+                        
+                    except Exception as e:
+                        logger.warning(f"⚠️ Failed to load local model: {e}")
+                        logger.info(f"🌐 Falling back to HuggingFace Hub download")
+                        raise  # Re-raise to trigger fallback
+                        
+                else:
+                    # No local model, use fallback
+                    logger.info(f"🌐 Local model not found, downloading from HuggingFace Hub: {self.fallback_model_id}")
                     
                     self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
-                        self.model_path,
-                        local_files_only=True,  # Force local loading
+                        self.fallback_model_id, 
                         torch_dtype=self.torch_dtype, 
                         low_cpu_mem_usage=True, 
                         use_safetensors=True
                     )
                     
-                    self.processor = AutoProcessor.from_pretrained(
-                        self.model_path,
-                        local_files_only=True  # Force local loading
-                    )
-                    
-                    self.current_model_id = self.model_path
-                    logger.info(f"✅ Local Whisper model loaded successfully")
-                    
-                except Exception as e:
-                    logger.warning(f"⚠️ Failed to load local model: {e}")
-                    logger.info(f"🌐 Falling back to HuggingFace Hub download")
-                    raise  # Re-raise to trigger fallback
-                    
-            else:
-                # No local model, use fallback
-                logger.info(f"🌐 Local model not found, downloading from HuggingFace Hub: {self.fallback_model_id}")
-                
-                self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
-                    self.fallback_model_id, 
-                    torch_dtype=self.torch_dtype, 
-                    low_cpu_mem_usage=True, 
-                    use_safetensors=True
-                )
-                
-                self.processor = AutoProcessor.from_pretrained(self.fallback_model_id)
-                self.current_model_id = self.fallback_model_id
+                    self.processor = AutoProcessor.from_pretrained(self.fallback_model_id)
+                    self.current_model_id = self.fallback_model_id
             
             # Move model to device
             self.model.to(self.device)

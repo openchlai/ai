@@ -109,6 +109,20 @@ class Settings(BaseSettings):
     whisper_large_turbo_path: str = "./models/whisper_large_turbo"
     whisper_active_symlink: str = "./models/whisper"  # Symlink for backward compatibility
     
+    # HuggingFace Hub Configuration
+    use_hf_models: bool = True  # Use HuggingFace Hub models instead of local models
+    hf_organization: str = "openchs"  # OpenCHS organization on HuggingFace Hub
+    hf_token: str = ""  # HuggingFace API token for private models
+    
+    # HuggingFace Model IDs (organization/model-name)
+    hf_whisper_large_v3: str = "openai/whisper-large-v3"
+    hf_whisper_large_turbo: str = "openai/whisper-large-v3-turbo"
+    hf_classifier_model: str = "openchs/cls-gbv-distilbert-v1"
+    hf_ner_model: str = "openchs/ner_distillbert_v1"
+    hf_translator_model: str = "openchs/sw-en-opus-mt-mul-en-v1"
+    hf_summarizer_model: str = "openchs/sum-flan-t5-base-synthetic-v1"
+    hf_qa_model: str = "openchs/qa-helpline-distilbert-v1"
+    
     # Agent Notification Configuration
     enable_agent_notifications: bool = True
     notification_mode: str = "results_only"  # all, results_only, critical_only, disabled
@@ -124,13 +138,49 @@ class Settings(BaseSettings):
     
     def get_active_whisper_path(self) -> str:
         """Get path to the currently active whisper model"""
-        if self.whisper_model_variant == "large_v3":
-            return os.path.abspath(self.whisper_large_v3_path)
-        elif self.whisper_model_variant == "large_turbo":
-            return os.path.abspath(self.whisper_large_turbo_path)
+        if self.use_hf_models:
+            # Return HuggingFace model ID instead of local path
+            if self.whisper_model_variant == "large_v3":
+                return self._get_hf_model_id("whisper_large_v3")
+            elif self.whisper_model_variant == "large_turbo":
+                return self._get_hf_model_id("whisper_large_turbo")
+            else:
+                return self.hf_whisper_large_v3  # Default fallback
         else:
-            # Fallback to symlink path
-            return os.path.abspath(self.whisper_active_symlink)
+            # Use local paths
+            if self.whisper_model_variant == "large_v3":
+                return os.path.abspath(self.whisper_large_v3_path)
+            elif self.whisper_model_variant == "large_turbo":
+                return os.path.abspath(self.whisper_large_turbo_path)
+            else:
+                return os.path.abspath(self.whisper_active_symlink)
+    
+    def _get_hf_model_id(self, model_name: str) -> str:
+        """Get HuggingFace model ID, with organization prefix if specified"""
+        model_id_map = {
+            "whisper_large_v3": self.hf_whisper_large_v3,
+            "whisper_large_turbo": self.hf_whisper_large_turbo,
+            "classifier": self.hf_classifier_model,
+            "ner": self.hf_ner_model,
+            "translator": self.hf_translator_model,
+            "summarizer": self.hf_summarizer_model,
+            "qa": self.hf_qa_model
+        }
+        
+        model_id = model_id_map.get(model_name, "")
+        
+        # If no specific model ID and organization is set, construct it
+        if not model_id and self.hf_organization:
+            model_id = f"{self.hf_organization}/{model_name.replace('_', '-')}"
+        
+        return model_id or model_id_map.get("whisper_large_v3", "openai/whisper-large-v3")
+    
+    def get_hf_model_kwargs(self) -> Dict[str, Any]:
+        """Get common kwargs for HuggingFace model loading"""
+        kwargs = {}
+        if self.hf_token:
+            kwargs["token"] = self.hf_token
+        return kwargs
     
     def get_processing_mode_config(self) -> Dict[str, Any]:
         """Get complete processing mode configuration as dictionary"""
