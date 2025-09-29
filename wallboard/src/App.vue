@@ -143,7 +143,7 @@
 <script>
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 
-const WSHOST = 'wss://demo-openchs.bitz-itc.com:8384/ami/sync?c=-2&'
+const WSHOST = 'wss://helpline.sematanzania.org:8384/ami/sync?c=-2&'
 
 export default {
   name: 'App',
@@ -171,7 +171,7 @@ export default {
       apiError.value = null
       
       try {
-        const response = await fetch('https://demo-openchs.bitz-itc.com/helpline/api/wallonly/rpt?&type=bar&stacked=stacked&xaxis=hangup_status_txt&yaxis=-&vector=1&rpt=call_count&metrics=call_count&', {
+        const response = await fetch('https://192.168.10.3/wallboard/', {
           mode: 'cors',
           headers: {
             'Accept': 'application/json',
