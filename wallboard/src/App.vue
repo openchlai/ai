@@ -18,7 +18,7 @@
       </div>
     </div>
 
-    <!-- Cases Grid Row (Using mock data for now) -->
+    <!-- Cases Grid Row -->
     <div class="cases-grid">
       <div 
         v-for="item in casesTiles" 
@@ -32,7 +32,7 @@
       </div>
     </div>
 
-    <!-- Top Statistics Row - NOW WITH REAL QUEUE DATA -->
+    <!-- Top Statistics Row -->
     <div class="top-stats-row">
       <div 
         v-for="stat in stats" 
@@ -46,7 +46,7 @@
       </div>
     </div>
 
-    <!-- Counsellors Section - NOW WITH REAL QUEUE DATA -->
+    <!-- Counsellors Section -->
     <div class="counsellors-section">
       <div class="section-header">
         <h2 class="section-title">Counsellors Online: {{ onlineCounsellorsCount }}</h2>
@@ -88,6 +88,7 @@
         </div>
       </div>
     </div>
+
     <!-- Callers Section -->
     <div class="counsellors-section">
       <div class="section-header">
@@ -142,8 +143,9 @@
 
 <script>
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { fetchCasesData as fetchFromApi } from "@/utils/axios.js"
 
-const WSHOST = 'wss://helpline.sematanzania.org:8384/ami/sync?c=-2&'
+const WSHOST = 'wss://demo-openchs.bitz-itc.com:8384/ami/sync?c=-2'
 
 export default {
   name: 'App',
@@ -157,7 +159,6 @@ export default {
     const channels = ref([])
     const lastUpdate = ref(null)
     const reconnectAttempt = ref(0)
-    // API data state
     const reconnectTimer = ref(null)
     
     // API data state
@@ -165,49 +166,28 @@ export default {
     const apiError = ref(null)
     const apiLoading = ref(false)
 
-    // API call function with CORS error handling
+    // Fetch cases data using axios
     const fetchCasesData = async () => {
       apiLoading.value = true
       apiError.value = null
       
       try {
-        const response = await fetch('https://192.168.10.3/wallboard/', {
-          mode: 'cors',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          }
-        })
+        const data = await fetchFromApi()
         
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
+        if (data) {
+          console.log('✅ Cases API Response:', data)
+          apiData.value = data
+        } else {
+          throw new Error('No data returned from API')
         }
-        
-        const data = await response.json()
-        console.log('Cases API Response:', data)
-        apiData.value = data
       } catch (error) {
-        console.error('Error fetching cases data (likely CORS):', error)
+        console.error('❌ Error fetching cases data:', error)
         apiError.value = error.message
-        
-        // Use fallback mock data when CORS blocks the request
-        console.log('Using fallback mock data due to CORS error')
-        apiData.value = {
-          stats: {
-            cases_today: "1",
-            cases_closed_this_month: "5", 
-            cases_ongoing_total: "250",
-            cases_total: "255",
-            calls_today: "12",
-            calls_total: "465"
-          }
-        }
+        // Mock data removed - apiData remains null, tiles will show '--'
       } finally {
         apiLoading.value = false
       }
     }
-
-
 
     // Cases tiles with real data from API
     const casesTiles = computed(() => {
@@ -253,7 +233,7 @@ export default {
       ]
     })
 
-    // Filters with added 'online' filter
+    // Filters
     const filters = ref([
       { id: 'all', label: 'All' },
       { id: 'online', label: 'Online' },
@@ -265,33 +245,25 @@ export default {
 
     // WebSocket connection functions
     const handleMessage = (payload) => {
-      console.log('=== WebSocket Data Received ===')
-      console.log('Raw payload:', payload)
-      
       lastUpdate.value = new Date().toLocaleString()
       
       let obj = payload
       if (typeof payload === 'string') {
         try {
           obj = JSON.parse(payload)
-          console.log('Parsed JSON object:', obj)
         } catch (err) {
           console.error('[QueueMonitor] Failed to parse JSON payload', err)
           return
         }
       }
 
-      // Handle both array and object keyed by channel IDs
       let chArr = []
       if (Array.isArray(obj.channels)) {
-        console.log('Channels data is array format:', obj.channels)
         chArr = obj.channels
       } else if (obj.channels && typeof obj.channels === 'object') {
-        console.log('Channels data is object format:', obj.channels)
-        // Convert object to array with id + values
         chArr = Object.entries(obj.channels).map(([key, arr]) => {
           if (Array.isArray(arr)) {
-            const mappedChannel = {
+            return {
               _uid: key,
               CHAN_TS: arr[1] || Date.now(),
               CHAN_UNIQUEID: arr[2] || key,
@@ -335,19 +307,10 @@ export default {
               CHAN_STATUS_TS_TXT_: arr[84] || '',
               _raw: arr
             }
-            console.log(`Mapped channel ${key}:`, mappedChannel)
-            return mappedChannel
           }
-          console.log(`Channel ${key} (object format):`, arr)
           return { _uid: key, ...arr }
         })
-      } else {
-        console.warn('[QueueMonitor] payload does not contain channels array/object', obj)
       }
-
-      console.log('Final channels array:', chArr)
-      console.log(`Total channels: ${chArr.length}`)
-      console.log('=== End WebSocket Data ===')
       
       channels.value = chArr
     }
@@ -460,7 +423,6 @@ export default {
       return channels.value
         .filter(ch => {
           const context = (ch.CHAN_CONTEXT || '').toLowerCase()
-          console.log(`Channel ${ch.CHAN_UNIQUEID}: CONTEXT = "${ch.CHAN_CONTEXT}" (checking for agentlogin)`)
           return context === 'agentlogin'
         })
         .map((ch) => {
@@ -469,14 +431,13 @@ export default {
             extension: ch.CHAN_EXTEN || '--',
             name: ch.CHAN_CALLERID_NAME || 'Unknown',
             caller: ch.CHAN_CALLERID_NUM || '--',
-            answered: '--', // Not available in current channel data
-            missed: '--',   // Not available in current channel data
+            answered: '--',
+            missed: '--',
             talkTime: formatDuration(ch.CHAN_TS),
             queueStatus: getStatusText(ch),
             duration: Number(ch.CHAN_STATE_CONNECT) ? formatDuration(ch.CHAN_TS) : '--',
             isOnline: true,
             channelData: ch,
-            // Additional data from backend
             channel: ch.CHAN_CHAN || '--',
             vector: ch.CHAN_VECTOR || '--',
             campaign: ch.CHAN_CAMPAIGN_ID || '--'
@@ -489,7 +450,6 @@ export default {
       return channels.value
         .filter(ch => {
           const context = (ch.CHAN_CONTEXT || '').toLowerCase()
-          console.log(`Channel ${ch.CHAN_UNIQUEID}: CONTEXT = "${ch.CHAN_CONTEXT}" (checking for DLPN_callcenter)`)
           return context === 'dlpn_callcenter'
         })
         .map((ch) => {
@@ -498,7 +458,7 @@ export default {
             callerNumber: ch.CHAN_CALLERID_NUM || '--',
             callerName: ch.CHAN_CALLERID_NAME || 'Unknown',
             vector: ch.CHAN_VECTOR || '--',
-            waitTime: formatDuration(ch.CHAN_TS), // Time since call started
+            waitTime: formatDuration(ch.CHAN_TS),
             queueStatus: getStatusText(ch),
             bridgeId: ch.CHAN_BRIDGE_ID || '--',
             campaign: ch.CHAN_CAMPAIGN_ID || '--',
@@ -509,7 +469,7 @@ export default {
         })
     })
 
-    // TOP STATISTICS - NOW WITH REAL QUEUE DATA
+    // TOP STATISTICS
     const stats = computed(() => [
       { id: 1, title: 'Total', value: queueStats.value.total.toString(), variant: 'total' },
       { id: 2, title: 'Answered', value: queueStats.value.connected.toString(), variant: 'answered' },
@@ -622,13 +582,13 @@ export default {
       // Connect to WebSocket
       connect()
       
-      // Try to fetch cases data (will use fallback if CORS blocked)
+      // Fetch cases data
       fetchCasesData()
       
-      // Refresh cases data every 5 minutes instead of every minute to reduce CORS errors
+      // Refresh cases data every 5 minutes
       const casesInterval = setInterval(() => {
         fetchCasesData()
-      }, 300000) // 5 minutes
+      }, 300000)
       
       // Clean up on unmount
       onBeforeUnmount(() => {
