@@ -12,7 +12,8 @@ export default defineConfig({
         proxy: {
             '/api-proxy': {
                // target: 'https://demo-openchs.bitz-itc.com',
-                target: 'https://192.168.10.3',
+                target: 'https://192.168.10.120',
+               // target: 'https://192.168.10.3',
                 changeOrigin: true,
                 secure: false,
                 rewrite: (path) => path.replace(/^\/api-proxy/, '/helpline'),
