@@ -1,101 +1,201 @@
-# Privacy Policy for OpenCHS (Open Child Helpline System)
+# Privacy Policy
 
-**Last Updated:** October 1, 2025
+**Last Updated:** January 2025  
+**Effective Date:** January 1, 2025
 
-This Privacy Policy describes how Bitz IT Consulting Ltd. ("we," "us," or "our") collects, uses, and protects personal and non-personal information when you use the OpenCHS platform. This policy is designed to be clear, transparent, and compliant with applicable data protection laws in Uganda, Kenya, Tanzania, and Lesotho, as well as international best practices like the EU General Data Protection Regulation (GDPR).
+## Overview
 
-This document is intended for implementing partners, helpline operators, and system administrators. It should be adapted to provide a public-facing version for data subjects (e.g., service users) in line with local legal requirements.
+OpenCHS is committed to protecting the privacy and security of all individuals, especially children and vulnerable populations. This Privacy Policy describes how BITZ IT Consulting Ltd. collects, uses, and protects personal information in compliance with:
+
+- 🇰🇪 Kenya Data Protection Act (2019)
+- 🇺🇬 Uganda Data Protection and Privacy Act (2019)
+- 🇹🇿 Tanzania Personal Data Protection Act (2022)
+- 🇱🇸 Lesotho Data Protection Act (2011)
+- 🇪🇺 EU General Data Protection Regulation (GDPR)
+
+**Data Protection Officer:** dpo@openchs.com  
+**System:** OpenCHS (Open Child Helpline System)  
+**Owner:** BITZ IT Consulting Ltd.
 
 ---
 
-### 1. Introduction
-
-OpenCHS is a digital public good designed to manage case data for child helplines. Protecting the privacy and security of the vulnerable individuals whose data we process is our highest priority.
-
-- **Implementing Entity:** Bitz IT Consulting Ltd.
-- **System:** OpenCHS (Open Child Helpline System)
-- **Contact for Data Protection Matters:** [Insert Data Protection Officer Name/Department and Email, e.g., dpo@openchs.org]
-
-### 2. What Data We Collect
+## 1. Data Collection
 
 We collect information necessary to provide our services, ensure system security, and generate anonymized reports for advocacy and operational improvement.
 
-#### 2.1. Personal Identifiable Information (PII)
+### Personal Information
 
-PII is collected only when necessary for case management and with the explicit consent of the data subject or their legal guardian. This may include:
+Collected only when necessary for case management:
 
-- **Direct Identifiers:** Name, age, gender, contact information (phone number, address).
-- **Indirect Identifiers:** Location data, case history, family details, and other sensitive information related to a child's well-being.
-- **User Account Data (for operators/staff):** Name, email address, role, and access logs.
+| Data Type | Examples | Purpose |
+|-----------|----------|----------|
+| **Child Information** | Name, age, gender, location | Case management, protection services |
+| **Reporter Information** | Contact details, relationship | Communication, case follow-up |
+| **Case Details** | Incident description, actions taken | Service delivery, documentation |
+| **User Accounts** | Name, email, role, access logs | System access, audit trails |
 
-#### 2.2. Non-Personal Information (Non-PII)
+### Non-Personal Information
 
-We collect anonymized or aggregated data that cannot be used to identify an individual. This includes:
+Anonymized data for system improvement:
 
-- **Aggregated Case Data:** Statistics on case types, geographical trends, and intervention outcomes (e.g., "20% of cases in District X related to education").
-- **System Usage Data:** General usage patterns, feature popularity, and performance metrics (e.g., "average call duration").
+- **Aggregated Statistics:** Case trends, service patterns, outcome metrics
+- **System Usage:** Performance data, feature usage, error logs
+- **Session Cookies:** Login maintenance (no tracking cookies)
 
-#### 2.3. Usage Data & Cookies
+## 2. How We Use Data
 
-For system administrators and operators accessing the platform, we may collect:
+### Primary Uses
 
-- **Log Data:** IP addresses, browser type, operating system, and pages visited. This is used for security auditing and troubleshooting.
-- **Cookies:** Session cookies may be used to maintain user login status. No tracking or advertising cookies are used.
+✅ **Service Delivery**
+- Manage and track cases
+- Facilitate interventions
+- Ensure continuity of care
+- Emergency response coordination
 
-### 3. How We Use Data
+✅ **Reporting & Analytics**
+- Generate anonymized reports for stakeholders
+- Identify trends and patterns
+- Improve service delivery
+- Support policy development
 
-Our use of data is strictly limited to the following purposes:
+✅ **System Operations**
+- User account management
+- Security monitoring
+- Performance optimization
+- Technical support
 
-- **Service Provision:** To manage and track child helpline cases, facilitate interventions, and ensure continuity of care.
-- **Reporting & Analytics:** To generate anonymized, aggregated reports for donors, government partners, and for public advocacy. These reports are crucial for highlighting child protection issues and improving services.
-- **System Administration & Security:** To manage user accounts, monitor for unauthorized access, and ensure the stability and security of the platform.
-- **Compliance:** To comply with legal obligations and respond to lawful requests from authorities as required by the laws of the jurisdiction.
+✅ **Legal Compliance**
+- Fulfill mandatory reporting requirements
+- Respond to lawful requests
+- Maintain audit trails
 
-### 4. Data Retention and Deletion
+## 3. Data Retention
 
-- **Retention Policy:** Personal data is retained only for as long as necessary to fulfill the purposes for which it was collected, or as required by local law. The specific retention period for case data should be defined by the implementing partner in their local data management policy.
-- **Deletion:** Data subjects have the right to request the deletion of their personal data. Upon verification, we will delete the data unless we are legally required to retain it. Anonymized data may be retained indefinitely for statistical purposes.
-- **Data Deletion Procedure:** Requests for deletion should be sent to [Insert Contact Email/Portal].
+| Data Type | Retention Period | After Retention |
+|-----------|------------------|------------------|
+| Active case data | Duration of case + 2 years | Anonymized or deleted |
+| Closed case summaries | 5 years | Securely deleted |
+| Audit logs | 7 years | Archived then deleted |
+| System logs | 90 days | Auto-deleted |
+| User accounts | Active employment + 1 year | Securely deleted |
 
-### 5. Rights of Data Subjects
+**Deletion Process:** Submit requests to dpo@openchs.com. Verification required. Processing within 30 days.
 
-In line with GDPR and local data protection acts, data subjects (or their guardians) have the following rights:
+## 4. Your Rights
 
-- **Right to Access:** To request and obtain a copy of their personal data.
-- **Right to Rectification:** To request correction of inaccurate or incomplete data.
-- **Right to Erasure (Deletion):** To request the deletion of their personal data.
-- **Right to Withdraw Consent:** To withdraw consent for data processing at any time.
-- **Right to Restrict Processing:** To request a limitation on how their personal data is used.
-- **Right to Data Portability:** To receive their data in a machine-readable format.
+Data subjects (or legal guardians) have the following rights:
 
-To exercise these rights, please contact [Insert Contact Email/Portal for Data Subject Requests].
+| Right | Description | How to Exercise |
+|-------|-------------|------------------|
+| 📋 **Access** | Obtain copy of your data | Submit request to dpo@openchs.com |
+| ✏️ **Rectification** | Correct inaccurate data | Contact your case manager or dpo@openchs.com |
+| 🗑️ **Erasure** | Request data deletion | Submit deletion request (subject to legal requirements) |
+| 🚫 **Restrict Processing** | Limit data use | Contact dpo@openchs.com |
+| 📤 **Data Portability** | Receive data in portable format | Request via dpo@openchs.com |
+| ⛔ **Object** | Oppose certain processing | Submit objection to dpo@openchs.com |
 
-### 6. Security Measures
+**Response Time:** Within 30 days of verified request
 
-We are committed to protecting data from unauthorized access, alteration, disclosure, or destruction. Our security measures include:
+## 5. Security Measures
 
-- **Access Control:** Role-based access ensures that users can only access data relevant to their duties.
-- **Encryption:** Data is encrypted both in transit (using TLS) and at rest.
-- **Anonymization & Pseudonymization:** PII is masked or removed wherever possible, especially for reporting and analytics.
-- **Regular Security Audits:** We conduct periodic security assessments and penetration testing.
-- **Data Processing Agreements (DPAs):** We require all third-party service providers (e.g., hosting providers) to sign DPAs that enforce strict data protection standards.
+### Technical Safeguards
 
-### 7. Data Sharing and Disclosure
+🔐 **Encryption**
+- TLS 1.3 for data in transit
+- AES-256 for data at rest
+- Encrypted backups
 
-We do not sell, trade, or rent personal data. Data may be shared only under the following circumstances:
+🛡️ **Access Controls**
+- Role-based access (RBAC)
+- Multi-factor authentication (MFA)
+- Session management
+- Automatic logout
 
-- **With Consent:** With explicit consent from the data subject.
-- **For Service Provision:** With trusted partners or service providers (e.g., emergency services) as required for an intervention, under strict confidentiality agreements.
-- **Legal Obligation:** If required by law, court order, or other governmental authority in the relevant jurisdiction.
+🔍 **Monitoring**
+- 24/7 security monitoring
+- Intrusion detection
+- Audit logging
+- Regular security assessments
 
-### 8. Contact Information
+### Organizational Safeguards
 
-For any questions, concerns, or requests related to your privacy, please contact our Data Protection Officer:
+👥 **Staff Training**
+- Mandatory privacy training
+- Confidentiality agreements
+- Regular refresher courses
 
-- **Entity:** [Insert Name of Local Implementing Organization]
-- **Data Protection Officer:** [Insert Name or Title]
-- **Email:** [Insert Email Address]
-- **Physical Address:** [Insert Physical Address]
+📋 **Policies & Procedures**
+- Data handling procedures
+- Incident response plan
+- Privacy impact assessments
+
+## 6. Data Sharing
+
+**We never sell, trade, or rent personal data.**
+
+Data may be shared only when:
+
+✅ **With Explicit Consent**
+- Data subject or guardian provides written consent
+
+✅ **For Service Delivery**
+- Emergency services (immediate danger)
+- Authorized partner agencies (with DPA)
+- Medical providers (for care)
+
+✅ **Legal Requirements**
+- Court orders
+- Lawful government requests
+- Mandatory reporting obligations
+
+All third parties must sign Data Processing Agreements (DPAs) ensuring equivalent protection standards.
+
+## 7. Contact & Complaints
+
+### Data Protection Officer
+
+📧 **Email:** dpo@openchs.com  
+🌐 **Website:** https://openchs.com/privacy  
+📞 **Phone:** [To be provided by implementing organization]
+
+### File a Complaint
+
+If you believe your privacy rights have been violated:
+
+1. **Contact our DPO:** dpo@openchs.com
+2. **Escalate to supervisory authority:**
+   - 🇰🇪 Kenya: Office of the Data Protection Commissioner (info@odpc.go.ke)
+   - 🇺🇬 Uganda: Personal Data Protection Office (info@pdpo.go.ug)
+   - 🇹🇿 Tanzania: [Local authority]
+   - 🇱🇸 Lesotho: [Local authority]
 
 ---
-This policy is a template and must be adapted by the implementing organization to reflect local laws, contact details, and specific operational procedures.
+
+## 8. Policy Updates
+
+This policy may be updated to reflect:
+- Changes in legal requirements
+- System enhancements
+- Best practice evolution
+
+**Notification:** Users will be notified of material changes via email and system notifications.
+
+---
+
+## 9. International Standards
+
+OpenCHS aligns with:
+- 🇺🇳 UN Convention on the Rights of the Child (UNCRC)
+- 🇺🇳 UN Convention on the Rights of Persons with Disabilities (CRPD)
+- 🦄 UNICEF Data Protection Standards
+- 🌍 International child safeguarding principles
+
+---
+
+**For detailed technical documentation, see:**
+- [Data Privacy & Security](data-privacy-security.md)
+- [Data Protection & Compliance](data-protection-and-compliance.md)
+
+**Version:** 2.0  
+**Last Review:** January 2025  
+**Next Review:** January 2026

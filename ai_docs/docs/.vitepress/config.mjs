@@ -125,8 +125,6 @@ export default defineConfig({
                             { text: 'AI Service API Endpoints', link: '/developer-documentation/api-reference/ai-service-api-endpoints' },
                             { text: 'API Rate Limiting & Throttling', link: '/developer-documentation/api-reference/api-rate-limiting-throttling' },
                             { text: 'Overview', link: '/developer-documentation/api-reference/overview' },
-                            { text: 'AI Service', link: '/developer-documentation/api-reference/ai-service.md' },
-                            { text: 'Helpline Service', link: '/developer-documentation/api-reference/helpline-service.md' },
                             { text: 'Testing Strategy', link: '/developer-documentation/api-reference/testing-strategy.md' }
                         ]
                     },
@@ -242,6 +240,7 @@ export default defineConfig({
                     { text: 'Training Materials', link: '/resources/training-materials' },
                     { text: 'Community Forum', link: '/resources/community-forum' },
                     { text: 'Overview', link: '/resources/overview.md' }
+                    // Note: training-materials.md removed - content consolidated in user-guides
                 ]
             }
         ]

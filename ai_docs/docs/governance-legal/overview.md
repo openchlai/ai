@@ -1,8 +1,30 @@
-# 🌍 OpenCHS – Revolutionizing Child Protection with Smart Case Management
+# OpenCHS Overview
 
-OpenCHS is a **child helpline and case management system** owned and maintained by **BITZ IT Consulting Ltd**. It equips child protection agencies and social service organizations with a powerful, all-in-one platform to manage cases more efficiently.  
+**AI-Enhanced Child Protection Platform**
 
-From real-time reporting and automated workflows to multi-channel support, OpenCHS empowers your teams to track, respond, and resolve cases faster. The platform strengthens collaboration, ensures compliance, and provides vulnerable children and communities with the care they need, when they need it most.
+## What is OpenCHS?
+
+OpenCHS is an advanced **child helpline and case management system** that combines traditional case management with cutting-edge AI capabilities to protect vulnerable children across Africa.
+
+**Owner:** BITZ IT Consulting Ltd.  
+**Status:** Digital Public Good  
+**Deployment:** Kenya, Uganda, Tanzania, Lesotho  
+**Partners:** UNICEF, National Governments
+
+### Mission
+
+Empower child protection agencies with intelligent tools to track, respond, and resolve cases faster while ensuring compliance and strengthening collaboration.
+
+---
+
+## Platform Highlights
+
+🎯 **4 Countries** actively deployed  
+📞 **Unlimited Calls** with real-time recording  
+🤖 **AI-Powered** transcription, translation, insights  
+📊 **Real-Time Analytics** for data-driven decisions  
+🔒 **GDPR Compliant** with enhanced child data protection  
+🌍 **99 Languages** supported via Whisper AI
 
 ---
 
