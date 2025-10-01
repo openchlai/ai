@@ -1,0 +1,7 @@
+record_id,record_idx,text_length,word_count,approx_token_count,exceeds_token_limit,has_pii,has_text_errors,has_structure_errors,has_label_structure_errors,has_label_value_errors,has_distribution_warnings,resolution_count,resolution_sum,resolution_avg,proactiveness_count,proactiveness_sum,proactiveness_avg,opening_count,opening_sum,opening_avg,closing_count,closing_sum,closing_avg,listening_count,listening_sum,listening_avg,hold_count,hold_sum,hold_avg,total_label_count,overall_avg_score
+record_4,4,40,7,9,False,False,True,False,False,False,True,5,0,0.0,3,0,0.0,1,0,0.0,1,0,0.0,5,0,0.0,2,0,0.0,17,0.0
+record_11,11,2780,542,704,True,True,False,False,False,False,True,5,4,0.8,3,2,0.667,1,1,1.0,1,1,1.0,5,5,1.0,2,1,0.5,17,0.824
+record_20,20,40,7,9,False,False,True,False,False,False,True,5,0,0.0,3,0,0.0,1,0,0.0,1,0,0.0,5,0,0.0,2,0,0.0,17,0.0
+record_39,39,2780,542,704,True,True,False,False,False,False,True,5,4,0.8,3,2,0.667,1,1,1.0,1,1,1.0,5,5,1.0,2,1,0.5,17,0.824
+record_63,63,40,7,9,False,False,True,False,False,False,True,5,0,0.0,3,0,0.0,1,0,0.0,1,0,0.0,5,0,0.0,2,0,0.0,17,0.0
+record_70,70,2780,542,704,True,True,False,False,False,False,True,5,4,0.8,3,2,0.667,1,1,1.0,1,1,1.0,5,5,1.0,2,1,0.5,17,0.824
