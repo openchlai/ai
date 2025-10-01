@@ -1,0 +1,90 @@
+{
+    "original_file": "/home/rogendo/Desktop/openchs_rnd/experiments/rodgendo_experiments/data_preprocessing/data/raw/luganda_parallel.jsonl",
+    "file_size_bytes": 6994028,
+    "fixes_applied": [
+        "Detected JSONL format"
+    ],
+    "total_records": 50012,
+    "processed_records": 50012,
+    "failed_records": 2,
+    "language_pair": "en → lg",
+    "empty_text_errors_count": 0,
+    "length_ratio_errors_count": 0,
+    "untranslated_errors_count": 2,
+    "encoding_errors_count": 0,
+    "duplicate_sources_count": 48,
+    "language_warnings_count": 0,
+    "empty_text_errors": [],
+    "length_ratio_errors": [],
+    "untranslated_errors": [
+        {
+            "record_id": "record_11739",
+            "similarity": 1.0,
+            "source_preview": "The overall performance in the final exams was not good across the country.",
+            "target_preview": "The overall performance in the final exams was not good across the country."
+        },
+        {
+            "record_id": "record_36745",
+            "similarity": 1.0,
+            "source_preview": "The overall performance in the final exams was not good across the country.",
+            "target_preview": "The overall performance in the final exams was not good across the country."
+        }
+    ],
+    "encoding_errors": [],
+    "duplicate_sources": [
+        {
+            "record_id": "record_5360",
+            "source": "Owaddeyo omulimu gwo?",
+            "target1": "Have you submitted your assignment?",
+            "target2": "Have you submitted the course work?"
+        },
+        {
+            "record_id": "record_9428",
+            "source": "Eddwaliro liri mu kuddaabirizibwa.",
+            "target1": "The hospital is under renovation.",
+            "target2": "The health centre is being renovated."
+        },
+        {
+            "record_id": "record_9503",
+            "source": "Okola mulimu ki?",
+            "target1": "What is the nature of your work?",
+            "target2": "What is your occupation?"
+        },
+        {
+            "record_id": "record_11737",
+            "source": "Yavunaanibwa n'emisango emirala.",
+            "target1": "He was accused of other crimes.",
+            "target2": "He was accused of other illegal actions."
+        },
+        {
+            "record_id": "record_11750",
+            "source": "Buli omu alina okusasula omusolo.",
+            "target1": "Everyone is supposed to pay taxes.",
+            "target2": "Everyone should pay taxes."
+        }
+    ],
+    "language_warnings": [],
+    "length_statistics": {
+        "source_length": {
+            "mean": 57.087738942653765,
+            "median": 55.0,
+            "min": 7,
+            "max": 163
+        },
+        "target_length": {
+            "mean": 53.73770295129169,
+            "median": 52.0,
+            "min": 13,
+            "max": 137
+        },
+        "length_ratio": {
+            "mean": 1.1974163916806924,
+            "median": 1.15,
+            "min": 1.0,
+            "max": 3.7142857142857144
+        }
+    },
+    "profile_html": "translation_profile_luganda_parallel.html",
+    "failed_records_csv": "translation_failed_luganda_parallel.csv",
+    "qc_score": 75
+}
