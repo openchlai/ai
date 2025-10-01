@@ -1,0 +1,6 @@
+outs:
+- md5: 1a520c7d27c392a03c06ff1c86a0d6f0.dir
+  size: 92710640
+  nfiles: 247
+  hash: md5
+  path: asr-dataset-v1-2025-07-14

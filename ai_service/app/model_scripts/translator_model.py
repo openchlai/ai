@@ -14,6 +14,7 @@ class TranslationModel:
     def __init__(self, model_path: str = None):
         from ..config.settings import settings
         
+        self.settings = settings
         self.model_path = model_path or settings.get_model_path("translation")
         self.tokenizer = None
         self.model = None
@@ -25,29 +26,49 @@ class TranslationModel:
 
     def load(self) -> bool:
         try:
-            logger.info(f"Loading translation model from {self.model_path}")
+            logger.info(f"Loading translation model...")
             start_time = datetime.now()
             
-            # Check if model path exists
-            if not os.path.exists(self.model_path):
-                raise FileNotFoundError(f"Translation model path not found: {self.model_path}")
+            # Get HuggingFace model loading kwargs
+            hf_kwargs = self.settings.get_hf_model_kwargs()
             
-            # Check for required model files
-            required_files = ["config.json"]
-            for file in required_files:
-                file_path = os.path.join(self.model_path, file)
-                if not os.path.exists(file_path):
-                    raise FileNotFoundError(f"Required model file not found: {file_path}")
-            
-            # Load tokenizer and model with local_files_only
-            self.tokenizer = AutoTokenizer.from_pretrained(
-                self.model_path,
-                local_files_only=True  # Force local loading
-            )
-            
-            self.model = AutoModelForSeq2SeqLM.from_pretrained(
-                self.model_path,
-                local_files_only=True  # Force local loading
+            # Check if we should use HuggingFace Hub models
+            if self.settings.use_hf_models and self.settings.hf_translator_model:
+                # Use HuggingFace Hub model
+                model_id = self.settings._get_hf_model_id("translator")
+                logger.info(f"🌐 Loading translation model from HuggingFace Hub: {model_id}")
+                
+                try:
+                    self.tokenizer = AutoTokenizer.from_pretrained(model_id, **hf_kwargs)
+                    self.model = AutoModelForSeq2SeqLM.from_pretrained(model_id, **hf_kwargs)
+                    logger.info(f"✅ HuggingFace translation model loaded successfully")
+                    
+                except Exception as e:
+                    logger.warning(f"⚠️ Failed to load HF translation model {model_id}: {e}")
+                    logger.info("🔄 Falling back to local model loading")
+                    # Fall through to local loading
+                    
+            if not self.model:  # Either use_hf_models=False or HF loading failed
+                # Check if model path exists
+                if not os.path.exists(self.model_path):
+                    raise FileNotFoundError(f"Translation model path not found: {self.model_path}")
+                
+                # Check for required model files
+                required_files = ["config.json"]
+                for file in required_files:
+                    file_path = os.path.join(self.model_path, file)
+                    if not os.path.exists(file_path):
+                        raise FileNotFoundError(f"Required model file not found: {file_path}")
+                
+                # Load tokenizer and model with local_files_only
+                self.tokenizer = AutoTokenizer.from_pretrained(
+                    self.model_path,
+                    local_files_only=True  # Force local loading
+                )
+                
+                self.model = AutoModelForSeq2SeqLM.from_pretrained(
+                    self.model_path,
+                    local_files_only=True  # Force local loading
             )
             
             self.model.to(self.device)
