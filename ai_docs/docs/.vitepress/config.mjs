@@ -207,13 +207,17 @@ export default defineConfig({
                 text: 'Governance & Legal',
                 items: [
                     { text: 'Project Ownership & Governance Model', link: '/governance-legal/project-ownership-governance-model' },
-                    { text: 'Open Source License', link: '/governance-legal/open-source-license' },
-                    { text: 'Data Privacy & Security', link: '/governance-legal/data-privacy-security' },
-                    { text: 'Mapping to SDGs', link: '/governance-legal/mapping-to-sdgs' },
-                    { text: 'Overview', link: '/governance-legal/overview.md' },
-                    { text: 'Privacy', link: '/governance-legal/privacy.md' },
+                    { text: 'Project Governance', link: '/governance-legal/project-governance.md' },
                     { text: 'Project Charter', link: '/governance-legal/project-charter.md' },
-                    { text: 'Project Governance', link: '/governance-legal/project-governance.md' }
+                    { text: 'Open Source License', link: '/governance-legal/open-source-license' },
+                    { text: 'Overview', link: '/governance-legal/overview.md' },
+                    { text: 'Mapping to SDGs', link: '/governance-legal/mapping-to-sdgs' },
+                    { text: 'Data Privacy & Security', link: '/governance-legal/data-privacy-security' },
+                    { text: 'Privacy Policy', link: '/governance-legal/privacy-policy' },
+                    { text: 'Terms of Service', link: '/governance-legal/terms-of-service' },
+                    { text: 'Data Protection & Compliance', link: '/governance-legal/data-protection-and-compliance' },
+                    { text: 'Accessibility & CRPD Alignment', link: '/governance-legal/accessibility-and-crpd-alignment' },
+                    { text: 'Privacy', link: '/governance-legal/privacy.md' }
                 ]
             }
         ],
