@@ -130,8 +130,8 @@ class NotificationManager:
     def _is_critical_notification(self, notification_type: NotificationType) -> bool:
         """Check if notification type is considered critical"""
         critical_types = {
-            NotificationType.CALL_START,
-            NotificationType.CALL_END,
+            # NotificationType.CALL_START,  # Disabled - no call start notifications
+            # NotificationType.CALL_END,    # Disabled - no call end notifications  
             NotificationType.PROCESSING_ERROR,
             NotificationType.UNIFIED_INSIGHT
         }
