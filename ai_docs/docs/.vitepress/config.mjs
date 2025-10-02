@@ -12,7 +12,7 @@ export default defineConfig({
     nav: [
         { text: 'Home', link: '/' },
         { text: 'Getting Started', link: '/getting-started/introduction' },
-        { text: 'User Guides', link: '/user-guides/for-helpline-operators/call-case-management' },
+        { text: 'User Guides', link: '/user-guides/for-helpline-operators/daily-workflow-guide' },
         { text: 'Deployment & Administration', link: '/deployment-administration/installation/system-requirements' },
         { text: 'Developer Documentation', link: '/developer-documentation/api-reference/authentication' },
         { text: 'AI Services', link: '/ai-services/overview' },
@@ -35,48 +35,37 @@ export default defineConfig({
         ],
 
         '/user-guides/': [
+    {
+        text: 'User Guides',
+        items: [
             {
-                text: 'User Guides',
+                text: 'For Helpline Operators',
                 items: [
-                    {
-                        text: 'For Helpline Operators',
-                        items: [
-                            { text: 'Call & Case Management', link: '/user-guides/for-helpline-operators/call-case-management' },
-                            { text: 'Compliance', link: '/user-guides/for-helpline-operators/compliance' },
-                            { text: 'Overview', link: '/user-guides/for-helpline-operators/overview' },
-                            {
-                                text: 'Operations',
-                                items: [
-                                    { text: 'Call Flow', link: '/user-guides/for-helpline-operators/operations/call-flow' }
-                                ]
-                            },
-                            {
-                                text: 'Training',
-                                items: [
-                                    { text: 'Training Materials', link: '/user-guides/for-helpline-operators/training/training-materials' }
-                                ]
-                            }
-                        ]
-                    },
-                    {
-                        text: 'For Supervisors & Managers',
-                        items: [
-                            { text: 'Team & Workflow Management', link: '/user-guides/for-supervisors-managers/team-workflow-management' },
-                            { text: 'Quality Assurance & Monitoring', link: '/user-guides/for-supervisors-managers/quality-assurance-monitoring' },
-                            { text: 'Reporting & Dashboards', link: '/user-guides/for-supervisors-managers/reporting-dashboards' }
-                        ]
-                    },
-                    {
-                        text: 'For Reporting Users',
-                        items: [
-                            { text: 'Accessing & Interpreting Reports', link: '/user-guides/for-reporting-users/accessing-interpreting-reports' },
-                            { text: 'Custom Report Generation', link: '/user-guides/for-reporting-users/custom-report-generation' },
-                            { text: 'Data Export', link: '/user-guides/for-reporting-users/data-export' }
-                        ]
+                    { text: 'Daily Workflow Guide', link: '/user-guides/for-helpline-operators/daily-workflow-guide' },
+                    { text: 'Case Management Guide', link: '/user-guides/for-helpline-operators/case-management-guide' },
+                    { text: 'Using AI Features', link: '/user-guides/for-helpline-operators/using-ai-features' }
+                ]
+            },
+            {
+                text: 'For Supervisors & Managers',
+                items: [
+                    { text: 'Quality Assurance Monitoring', link: '/user-guides/for-supervisors-managers/quality-assurance-monitoring' },
+                    { text: 'Team Workflow Management', link: '/user-guides/for-supervisors-managers/team-workflow-management' },
+                    { text: 'Reporting Dashboards', link: '/user-guides/for-supervisors-managers/reporting-dashboards' }
+                ]
+            },
+            {
+                text: 'For Reporting Users',
+                items: [
+                    { text: 'Accessing & Interpreting Reports', link: '/user-guides/for-reporting-users/accessing-interpreting-reports' },
+                    { text: 'Custom Report Generation', link: '/user-guides/for-reporting-users/custom-report-generation' },
+                    { text: 'Data Export', link: '/user-guides/for-reporting-users/data-export' }
+                            ]
                     }
                 ]
             }
         ],
+
 
         '/deployment-administration/': [
             {
