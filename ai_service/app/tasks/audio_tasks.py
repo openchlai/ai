@@ -313,7 +313,7 @@ def _process_audio_sync_worker(
     try:
         # Validate audio_bytes first
         if audio_bytes is None:
-            raise ValueError("Audio bytes cannot be None")
+            raise ValueError("Audio bytes cannot be None - check if audio data is being passed correctly to the task")
         
         # Try to decode as JSON to check for pre-transcribed flag
         data_str = audio_bytes.decode('utf-8')

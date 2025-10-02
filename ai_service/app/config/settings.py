@@ -59,8 +59,8 @@ class Settings(BaseSettings):
     docker_container: bool = False
     
     # Processing Mode Configuration
-    default_processing_mode: str = "hybrid"  # realtime_only, postcall_only, hybrid, adaptive
-    enable_realtime_processing: bool = True
+    default_processing_mode: str = "postcall_only"  # realtime_only, postcall_only, hybrid, adaptive
+    enable_realtime_processing: bool = False
     enable_postcall_processing: bool = True
     enable_scp_audio_download: bool = True
     

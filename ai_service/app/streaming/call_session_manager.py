@@ -131,12 +131,8 @@ class CallSessionManager:
             logger.info(f"📞 [session] Active sessions: {len(self.active_sessions)}")
             logger.info(f"📞 [session] Redis storage: {'✅ success' if redis_success else '❌ failed'}")
             
-            # Send call start notification to agent (using notification manager)
-            await notification_manager.send_notification_if_allowed(
-                NotificationType.CALL_START,
-                call_id,
-                {"connection_info": connection_info}
-            )
+            # Skip call start notification - disabled to reduce noise
+            logger.debug(f"📞 [session] Call start notification skipped for {call_id}")
             
             # Start cleanup task if not running
             if self._cleanup_task is None:
@@ -320,10 +316,26 @@ class CallSessionManager:
                 except Exception as e:
                     logger.error(f"❌ Failed to download/process audio for {call_id}: {e}")
 
-                # Trigger AI pipeline processing if transcript is substantial
+                # Trigger AI pipeline processing
                 ai_task = None
-                if len(session.cumulative_transcript.strip()) > 50:  # Minimum threshold
-                    ai_task = await self._trigger_ai_pipeline_with_mode(session)
+                
+                # For post-call only mode, trigger if audio was downloaded (regardless of transcript)
+                # For other modes, trigger if transcript is substantial
+                should_trigger = False
+                if session.processing_mode == "postcall_only":
+                    if audio_download_task:
+                        should_trigger = True
+                        logger.info(f"🧠 [session] Triggering AI pipeline for post-call only mode with downloaded audio")
+                    else:
+                        logger.warning(f"⚠️ [session] No audio downloaded for post-call only mode call {call_id}")
+                else:
+                    # For other modes, use transcript length threshold
+                    if len(session.cumulative_transcript.strip()) > 50:
+                        should_trigger = True
+                        logger.info(f"🧠 [session] Triggering AI pipeline with transcript ({len(session.cumulative_transcript)} chars)")
+                
+                if should_trigger:
+                    ai_task = await self._trigger_ai_pipeline_with_mode(session, audio_download_task)
                     
                 # Wait for AI pipeline completion and send summary/insights
                 if ai_task and AGENT_NOTIFICATIONS_ENABLED:
@@ -353,7 +365,7 @@ class CallSessionManager:
             logger.error(f"❌ Failed to end session {call_id}: {e}")
             return None
     
-    async def _trigger_ai_pipeline_with_mode(self, session: CallSession):
+    async def _trigger_ai_pipeline_with_mode(self, session: CallSession, audio_download_task=None):
         """Trigger AI pipeline processing with mode-aware configuration"""
         try:
             call_id = session.call_id
@@ -367,31 +379,45 @@ class CallSessionManager:
             # Create filename for the complete call
             filename = f"call_{call_id}_{session.start_time.strftime('%Y%m%d_%H%M%S')}.transcript"
             
-            # Check if we have downloaded audio or should use transcript
+            # Choose between downloaded audio or existing transcript based on processing mode
             audio_bytes = None
-            is_pretranscribed = True
+            is_pretranscribed = True  # Default assumption
             
-            # Try to get downloaded audio if available
-            if hasattr(session, 'audio_download_info') and session.audio_download_info:
-                # Use the downloaded audio for enhanced transcription
-                download_info = session.audio_download_info
-                if download_info.get('success', False):
-                    # Audio was successfully downloaded - we should re-transcribe with higher quality model
-                    is_pretranscribed = False
-                    logger.info(f"🎙️ [pipeline] Using downloaded audio for enhanced transcription with {whisper_model}")
-                    # Note: The actual audio bytes would need to be stored separately or re-downloaded
+            # For post-call only mode, use downloaded audio file for fresh transcription
+            if session.processing_mode == "postcall_only" and audio_download_task:
+                # Try to get the downloaded audio bytes
+                try:
+                    if hasattr(audio_download_task, '__len__') and len(audio_download_task) == 2:
+                        # audio_download_task returned (audio_bytes, download_info) tuple
+                        downloaded_audio_bytes, download_info = audio_download_task
+                        if downloaded_audio_bytes:
+                            audio_bytes = downloaded_audio_bytes
+                            is_pretranscribed = False  # Will need fresh Whisper transcription
+                            logger.info(f"🎵 [pipeline] Using downloaded audio file ({len(audio_bytes)} bytes) for post-call processing")
+                        else:
+                            logger.warning(f"⚠️ [pipeline] Downloaded audio bytes are None")
+                    else:
+                        logger.warning(f"⚠️ [pipeline] Unexpected audio_download_task format: {type(audio_download_task)}")
+                except Exception as e:
+                    logger.error(f"❌ [pipeline] Failed to extract downloaded audio: {e}")
             
-            if is_pretranscribed:
-                # Fall back to using existing transcript
+            # Fallback to existing transcript if no audio available or for other modes
+            if audio_bytes is None:
                 transcript_data = {
                     'transcript': session.cumulative_transcript,
                     'is_pretranscribed': True,
                     'language': 'sw',
                     'processing_mode': session.processing_mode,
-                    'realtime_source': True
+                    'realtime_source': session.processing_mode != "postcall_only"
                 }
                 audio_bytes = json.dumps(transcript_data).encode('utf-8')
-                logger.info(f"🎙️ [pipeline] Using real-time transcript for AI pipeline (mode: {session.processing_mode})")
+                is_pretranscribed = True  # Using existing transcript
+                logger.info(f"📝 [pipeline] Using existing transcript ({len(session.cumulative_transcript)} chars) for AI pipeline")
+            
+            # Ensure audio_bytes is never None
+            if audio_bytes is None:
+                logger.error(f"❌ [pipeline] audio_bytes is None for {call_id}, cannot process")
+                return None
             
             # Configure pipeline based on post-call settings
             include_translation = postcall_config.get("enable_full_pipeline", True)
@@ -1190,35 +1216,14 @@ class CallSessionManager:
             logger.error(f"❌ Failed to send enhanced insights notification for {call_id}: {e}")
             return False
     
-    async def _send_simple_post_call_notification(self, session: CallSession, reason: str):
+    async def _send_simple_post_call_notification(self, session: CallSession, reason: str = "completed"):
         """Send simple post-call notification with complete transcript and basic insights"""
         try:
             call_id = session.call_id
             logger.info(f"📤 [session] Sending post-call notification for {call_id}")
             
-            # Prepare final call data
-            final_data = {
-                "call_id": call_id,
-                "complete_transcript": session.cumulative_transcript,
-                "call_duration": session.total_audio_duration,
-                "segments_processed": session.segment_count,
-                "processing_mode": session.processing_mode,
-                "start_time": session.start_time.isoformat(),
-                "end_time": session.last_activity.isoformat(),
-                "end_reason": reason,
-                "transcript_length": len(session.cumulative_transcript)
-            }
-            
-            # Send call summary notification
-            await notification_manager.send_notification_if_allowed(
-                NotificationType.CALL_END,
-                call_id,
-                {
-                    "call_summary": final_data,
-                    "processing_complete": True
-                },
-                has_results=True
-            )
+            # Skip call end notification - disabled to reduce noise
+            logger.debug(f"📞 [session] Call end notification skipped for {call_id}")
             
             # Generate basic Mistral insights if transcript is substantial
             if len(session.cumulative_transcript.strip()) > 100:  # Minimum threshold
