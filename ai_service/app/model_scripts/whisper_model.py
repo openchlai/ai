@@ -15,6 +15,7 @@ class WhisperModel:
         from ..config.settings import settings
         
         self.model_path = model_path or settings.get_model_path("whisper")
+        # Use the stable default Whisper repo from Hugging Face Hub
         self.fallback_model_id = "openai/whisper-large-v3-turbo"
         self.model = None
         self.processor = None
@@ -91,6 +92,7 @@ class WhisperModel:
             self.torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
             
             logger.info(f"🎙️ Using device: {self.device}, dtype: {self.torch_dtype}")
+            loaded_from = "local"
             
             # Try loading from local path first
             if self._check_local_model_exists():
@@ -129,6 +131,7 @@ class WhisperModel:
                 )
                 
                 self.processor = AutoProcessor.from_pretrained(self.fallback_model_id)
+                loaded_from = "huggingface_hub"
             
             # Move model to device
             self.model.to(self.device)
@@ -145,7 +148,10 @@ class WhisperModel:
             
             self.is_loaded = True
             self.error = None
-            logger.info(f"✅ Whisper model loaded successfully on {self.device}")
+            if loaded_from == "huggingface_hub":
+                logger.info(f"✅ Whisper model loaded from Hugging Face Hub ({self.fallback_model_id}) on {self.device}")
+            else:
+                logger.info(f"✅ Whisper model loaded successfully on {self.device}")
             return True
             
         except Exception as e:
@@ -177,7 +183,7 @@ class WhisperModel:
                     
                     self.is_loaded = True
                     self.error = None
-                    logger.info(f"✅ Whisper model loaded successfully via fallback on {self.device}")
+                    logger.info(f"✅ Whisper model loaded from Hugging Face Hub ({self.fallback_model_id}) via fallback on {self.device}")
                     return True
                     
                 except Exception as fallback_error:

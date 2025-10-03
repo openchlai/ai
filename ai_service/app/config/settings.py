@@ -36,6 +36,15 @@ class Settings(BaseSettings):
     logs_path: str = "./logs"
     temp_path: str = "./temp"
     
+    # Hugging Face configuration (optional)
+    hf_token: Optional[str] = None  # Reads from env if provided
+    classifier_hf_repo_id: Optional[str] = None
+    summarization_hf_repo_id: Optional[str] = None
+    translation_hf_repo_id: Optional[str] = None
+    qa_hf_repo_id: Optional[str] = None
+    ner_hf_repo_id: Optional[str] = None
+    whisper_hf_repo_id: Optional[str] = None
+    
     # Redis Configuration
     redis_url: str = "redis://localhost:6379/0"
     redis_task_db: int = 1

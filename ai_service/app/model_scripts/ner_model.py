@@ -3,6 +3,7 @@ import logging
 import os
 from typing import Dict, List, Union, Optional
 from datetime import datetime
+from transformers import AutoTokenizer, AutoModelForTokenClassification, pipeline
 
 logger = logging.getLogger(__name__)
 
@@ -18,10 +19,36 @@ class NERModel:
         self.loaded = False
         self.load_time = None
         self.error = None
+        # Hugging Face support
+        self.hf_repo_id = getattr(settings, "ner_hf_repo_id", None)
+        self.hf_token = (os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACE_HUB_TOKEN") or getattr(settings, "hf_token", None))
+        self.use_hf = False
+        self.hf_pipeline = None
         
     def load(self) -> bool:
         """Load the spaCy NER model"""
         try:
+            start_time = datetime.now()
+            # Prefer HF hub if configured
+            if self.hf_repo_id:
+                logger.info(f"📦 Loading NER model from Hugging Face Hub: {self.hf_repo_id} (ignoring local path {self.model_path})")
+                if self.hf_token:
+                    logger.info("🔐 Using HF token for authenticated access")
+                token_kwargs = {"use_auth_token": self.hf_token} if self.hf_token else {}
+                self.hf_pipeline = pipeline(
+                    "token-classification",
+                    model=AutoModelForTokenClassification.from_pretrained(self.hf_repo_id, local_files_only=False, **token_kwargs),
+                    tokenizer=AutoTokenizer.from_pretrained(self.hf_repo_id, local_files_only=False, **token_kwargs),
+                    aggregation_strategy="simple"
+                )
+                self.use_hf = True
+                self.loaded = True
+                self.error = None
+                self.load_time = datetime.now()
+                load_duration = (self.load_time - start_time).total_seconds()
+                logger.info(f"✅ NER model loaded from Hugging Face Hub ({self.hf_repo_id}) in {load_duration:.2f}s")
+                return True
+
             logger.info(f"Loading spaCy model from path: {self.model_path}")
             start_time = datetime.now()
             
@@ -73,18 +100,37 @@ class NERModel:
         Returns:
             Union[Dict, List]: Entities in requested format
         """
-        if not self.loaded or self.nlp is None:
+        if not self.loaded:
             raise RuntimeError("NER model not loaded. Call load() first.")
         
         if not text or not text.strip():
             return [] if flat else {}
         
         try:
-            # Process text with spaCy
+            if self.use_hf and self.hf_pipeline is not None:
+                results = self.hf_pipeline(text.strip()) if text else []
+                if flat:
+                    entities = []
+                    for r in results:
+                        entities.append({
+                            "text": r.get("word", ""),
+                            "label": r.get("entity_group", r.get("entity", "")),
+                            "start": int(r.get("start", 0)),
+                            "end": int(r.get("end", 0)),
+                            "confidence": float(r.get("score", 1.0))
+                        })
+                    return entities
+                else:
+                    grouped: Dict[str, List[str]] = {}
+                    for r in results:
+                        label = r.get("entity_group", r.get("entity", ""))
+                        grouped.setdefault(label, []).append(r.get("word", ""))
+                    return grouped
+            # spaCy path
+            if self.nlp is None:
+                raise RuntimeError("spaCy model not initialized")
             doc = self.nlp(text.strip())
-            
             if flat:
-                # Return flat list of entities
                 entities = []
                 for ent in doc.ents:
                     entities.append({
@@ -92,11 +138,10 @@ class NERModel:
                         "label": ent.label_,
                         "start": ent.start_char,
                         "end": ent.end_char,
-                        "confidence": getattr(ent, 'confidence', 1.0)  # spaCy doesn't always have confidence
+                        "confidence": getattr(ent, 'confidence', 1.0)
                     })
                 return entities
             else:
-                # Return entities grouped by type
                 entity_dict = {}
                 for ent in doc.ents:
                     if ent.label_ not in entity_dict:

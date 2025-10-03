@@ -25,33 +25,24 @@ class SummarizationModel:
         self.load_time = None
         self.error = None
         self.max_length = 512  # Model's maximum input token limit
+        
+        # Hugging Face repo support (hub-first)
+        self.hf_repo_id = os.getenv("SUMMARIZATION_HF_REPO_ID") or getattr(settings, "summarization_hf_repo_id", None)
+        self.hf_token = os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACE_HUB_TOKEN") or getattr(settings, "hf_token", None)
 
     def load(self) -> bool:
         try:
-            logger.info(f"📦 Loading summarization model from {self.model_path}")
+            logger.info(f"📦 Initializing summarization model loader")
             start_time = datetime.now()
             
-            # Check if model path exists
-            if not os.path.exists(self.model_path):
-                raise FileNotFoundError(f"Summarization model path not found: {self.model_path}")
-            
-            # Check for required model files
-            required_files = ["config.json"]
-            for file in required_files:
-                file_path = os.path.join(self.model_path, file)
-                if not os.path.exists(file_path):
-                    raise FileNotFoundError(f"Required model file not found: {file_path}")
-            
-            # Load tokenizer and model with local_files_only
-            self.tokenizer = AutoTokenizer.from_pretrained(
-                self.model_path, 
-                local_files_only=True  # Force local loading
-            )
-            
-            self.model = AutoModelForSeq2SeqLM.from_pretrained(
-                self.model_path, 
-                local_files_only=True  # Force local loading
-            )
+            if not self.hf_repo_id:
+                raise RuntimeError("SUMMARIZATION_HF_REPO_ID or settings.summarization_hf_repo_id must be set for hub loading")
+            token_kwargs = {"use_auth_token": self.hf_token} if self.hf_token else {}
+            logger.info(f"📦 Loading summarization model from Hugging Face Hub: {self.hf_repo_id} (ignoring local path {self.model_path})")
+            if self.hf_token:
+                logger.info("🔐 Using HF token for authenticated access")
+            self.tokenizer = AutoTokenizer.from_pretrained(self.hf_repo_id, local_files_only=False, **token_kwargs)
+            self.model = AutoModelForSeq2SeqLM.from_pretrained(self.hf_repo_id, local_files_only=False, **token_kwargs)
             
             self.model.to(self.device)
             
@@ -67,7 +58,7 @@ class SummarizationModel:
             self.load_time = datetime.now()
             load_duration = (self.load_time - start_time).total_seconds()
             
-            logger.info(f"✅ Summarization model loaded successfully in {load_duration:.2f}s")
+            logger.info(f"✅ Summarization model loaded from Hugging Face Hub ({self.hf_repo_id}) in {load_duration:.2f}s on {self.device}")
             return True
             
         except Exception as e:
