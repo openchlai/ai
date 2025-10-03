@@ -390,11 +390,11 @@ export default {
   margin-bottom: 8px;
 }
 
-/* Main content - TV optimized layout */
+/* Main content - TV optimized layout with wider cases column */
 .main-content {
   display: grid;
-  grid-template-columns: 1fr 220px;
-  gap: 8px;
+  grid-template-columns: 1fr 320px;
+  gap: 12px;
   flex: 1;
   min-height: 0;
   overflow: hidden;
@@ -424,8 +424,8 @@ export default {
   }
   
   .main-content {
-    grid-template-columns: 1fr 240px;
-    gap: 10px;
+    grid-template-columns: 1fr 400px;
+    gap: 15px;
   }
 }
 
@@ -435,8 +435,8 @@ export default {
   }
   
   .main-content {
-    grid-template-columns: 1fr 200px;
-    gap: 6px;
+    grid-template-columns: 1fr 300px;
+    gap: 10px;
   }
 }
 
@@ -447,8 +447,8 @@ export default {
   }
   
   .main-content {
-    grid-template-columns: 1fr 320px;
-    gap: 15px;
+    grid-template-columns: 1fr 500px;
+    gap: 20px;
   }
 }
 

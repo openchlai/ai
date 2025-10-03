@@ -1,22 +1,9 @@
 <template>
-  <div class="cases-container" ref="casesContainer">
+  <div class="cases-container">
     <div class="cases-grid">
       <div
         v-for="tile in tiles"
         :key="tile.id"
-        :class="['case-card', tile.variant]"
-      >
-        <div class="case-inner">
-          <div v-if="tile.value" class="case-value">{{ tile.value }}</div>
-          <div class="case-label">{{ tile.label }}</div>
-        </div>
-      </div>
-      
-      <!-- Add duplicate tiles for smooth scrolling if needed -->
-      <div
-        v-if="shouldDuplicate"
-        v-for="tile in tiles"
-        :key="`dup-${tile.id}`"
         :class="['case-card', tile.variant]"
       >
         <div class="case-inner">
@@ -29,8 +16,6 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
-
 export default {
   name: 'CasesTiles',
   props: {
@@ -39,83 +24,6 @@ export default {
       required: true,
       default: () => []
     }
-  },
-  setup(props) {
-    const casesContainer = ref(null)
-    let scrollInterval = null
-
-    // Check if we need to duplicate tiles for smooth scrolling
-    const shouldDuplicate = computed(() => {
-      return props.tiles.length <= 8 // Always duplicate to ensure scrollable content
-    })
-
-    // Auto-scroll functionality for vertical scrolling
-    const setupAutoScroll = (container, scrollSpeed = 1.5, pauseDuration = 2500) => {
-      if (!container) return null
-      
-      let direction = 1 // 1 for down, -1 for up
-      let isPaused = false
-      
-      return setInterval(() => {
-        if (isPaused || !container) return
-        
-        const { scrollTop, scrollHeight, clientHeight } = container
-        const maxScroll = scrollHeight - clientHeight
-        
-        // Force scrolling even with minimal content
-        if (maxScroll <= 2) return
-        
-        // Check if we've reached the bottom or top
-        if (scrollTop >= maxScroll - 2) {
-          direction = -1
-          isPaused = true
-          setTimeout(() => { isPaused = false }, pauseDuration)
-        } else if (scrollTop <= 2) {
-          direction = 1
-          isPaused = true
-          setTimeout(() => { isPaused = false }, pauseDuration)
-        }
-        
-        container.scrollBy(0, direction * scrollSpeed)
-      }, 25)
-    }
-
-    // Start auto-scroll
-    const startAutoScroll = () => {
-      nextTick(() => {
-        if (casesContainer.value) {
-          scrollInterval = setupAutoScroll(casesContainer.value, 1.5, 2500)
-        }
-      })
-    }
-
-    // Stop auto-scroll
-    const stopAutoScroll = () => {
-      if (scrollInterval) {
-        clearInterval(scrollInterval)
-        scrollInterval = null
-      }
-    }
-
-    // Watch for data changes to restart auto-scroll
-    watch(() => props.tiles, () => {
-      stopAutoScroll()
-      setTimeout(startAutoScroll, 1000)
-    }, { deep: true })
-
-    // Lifecycle
-    onMounted(() => {
-      setTimeout(startAutoScroll, 1200)
-    })
-
-    onBeforeUnmount(() => {
-      stopAutoScroll()
-    })
-
-    return {
-      casesContainer,
-      shouldDuplicate
-    }
   }
 }
 </script>
@@ -123,46 +31,35 @@ export default {
 <style scoped>
 .cases-container {
   height: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
-  scroll-behavior: smooth;
-  pointer-events: none;
-}
-
-/* Ultra-slim scrollbar for TV */
-.cases-container::-webkit-scrollbar {
-  width: 1px;
-}
-
-.cases-container::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.cases-container::-webkit-scrollbar-thumb {
-  background: rgba(203, 213, 225, 0.2);
-  border-radius: 1px;
-}
-
-.dark-mode .cases-container::-webkit-scrollbar-thumb {
-  background: rgba(107, 114, 128, 0.2);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
 }
 
 .cases-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
-  padding: 0 4px;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 12px;
+  height: 100%;
+  width: 100%;
+  max-width: 100%;
 }
 
 .case-card {
   background: #ffffff;
-  border-radius: 6px;
-  padding: 12px 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  padding: 16px 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
   position: relative;
   overflow: hidden;
-  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
 }
 
 .dark-mode .case-card {
@@ -173,25 +70,34 @@ export default {
 .case-inner {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
   text-align: center;
-  height: 100%;
+  align-items: center;
   justify-content: center;
+  width: 100%;
+  height: 100%;
 }
 
 .case-value {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   font-weight: 700;
   line-height: 1;
+  margin-bottom: 4px;
+  color: #ffffff !important;
 }
 
 .case-label {
-  font-size: 0.6rem;
+  font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
-  opacity: 0.8;
-  line-height: 1.1;
+  letter-spacing: 0.4px;
+  opacity: 0.9;
+  line-height: 1.2;
+  text-align: center;
+  word-wrap: break-word;
+  hyphens: auto;
+  max-width: 100%;
+  color: #ffffff !important;
 }
 
 /* Variant colors */
@@ -219,7 +125,7 @@ export default {
   color: #f9fafb;
 }
 
-/* Variant background accents - thinner for TV */
+/* Variant background accents */
 .case-card.c-blue::before {
   background: linear-gradient(45deg, #3b82f6, #60a5fa);
 }
@@ -252,36 +158,41 @@ export default {
 
 /* TV Screen optimizations */
 @media screen and (min-width: 1920px) {
+  .cases-container {
+    padding: 15px;
+  }
+  
   .cases-grid {
-    gap: 10px;
-    padding: 0 6px;
+    gap: 15px;
   }
   
   .case-card {
-    height: 80px;
-    padding: 14px 10px;
+    padding: 20px 16px;
+    border-radius: 10px;
   }
   
   .case-value {
-    font-size: 1.75rem;
+    font-size: 2.25rem;
   }
   
   .case-label {
-    font-size: 0.65rem;
+    font-size: 0.8rem;
   }
 }
 
 /* 4K TV optimization */
 @media screen and (min-width: 3840px) {
+  .cases-container {
+    padding: 20px;
+  }
+  
   .cases-grid {
-    gap: 15px;
-    padding: 0 10px;
+    gap: 20px;
   }
   
   .case-card {
-    height: 120px;
-    padding: 20px 15px;
-    border-radius: 10px;
+    padding: 25px 20px;
+    border-radius: 12px;
   }
   
   .case-inner {
@@ -289,11 +200,12 @@ export default {
   }
   
   .case-value {
-    font-size: 2.5rem;
+    font-size: 3rem;
+    margin-bottom: 6px;
   }
   
   .case-label {
-    font-size: 0.8rem;
+    font-size: 1rem;
     letter-spacing: 0.5px;
   }
   
@@ -304,52 +216,60 @@ export default {
 
 /* Smaller TV screens */
 @media screen and (max-width: 1600px) {
+  .cases-container {
+    padding: 10px;
+  }
+  
   .cases-grid {
-    gap: 6px;
-    padding: 0 2px;
+    gap: 10px;
   }
   
   .case-card {
-    height: 60px;
-    padding: 8px 6px;
+    padding: 14px 10px;
   }
   
   .case-value {
-    font-size: 1.25rem;
+    font-size: 1.5rem;
   }
   
   .case-label {
-    font-size: 0.55rem;
+    font-size: 0.65rem;
   }
 }
 
 /* Very small screens */
 @media screen and (max-width: 1200px) {
   .case-card {
-    height: 55px;
-    padding: 6px 4px;
+    padding: 12px 8px;
   }
   
   .case-value {
-    font-size: 1.1rem;
+    font-size: 1.3rem;
   }
   
   .case-label {
-    font-size: 0.5rem;
+    font-size: 0.6rem;
   }
 }
 
-/* Mobile fallback */
+/* Mobile fallback - stack vertically */
 @media screen and (max-width: 768px) {
   .cases-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(6, 1fr);
     gap: 8px;
-    padding: 0 4px;
   }
   
   .case-card {
-    height: 65px;
-    padding: 8px 6px;
+    padding: 12px 8px;
+  }
+  
+  .case-value {
+    font-size: 1.4rem;
+  }
+  
+  .case-label {
+    font-size: 0.65rem;
   }
 }
 
