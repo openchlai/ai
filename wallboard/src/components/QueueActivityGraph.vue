@@ -138,8 +138,6 @@ export default {
       error.value = null
       
       try {
-        console.log('📊 Fetching hardcoded SVG graph data...')
-        
         const response = await props.axiosInstance.get('api/wallonly/rpt', {
           params: {
             dash_period: 'today',
@@ -153,28 +151,15 @@ export default {
           }
         })
         
-        console.log('📊 SVG Graph API Response:', response.data)
-        
-        // LOG THE CALLS ARRAY SPECIFICALLY
-        console.log('='.repeat(60))
-        console.log('📊 CALLS ARRAY DATA:')
-        console.log('='.repeat(60))
-        console.log('Calls array length:', response.data?.calls?.length || 0)
-        console.log('Raw calls array:')
-        console.log(JSON.stringify(response.data?.calls || [], null, 2))
-        console.log('='.repeat(60))
-        
-        // Also log calls_y for hours reference
-        console.log('📊 HOURS ARRAY (calls_y):')
-        console.log('calls_y:', response.data?.calls_y)
-        console.log('Hours array length:', response.data?.calls_y?.[0]?.length || 0)
-        console.log('Raw hours:', response.data?.calls_y?.[0] || [])
-        console.log('='.repeat(60))
+        // Display received data
+        console.log('SVG Graph API Response:', response.data)
+        console.log('Calls array:', response.data?.calls || [])
+        console.log('Hours array (calls_y):', response.data?.calls_y?.[0] || [])
         
         rawData.value = response.data
         
       } catch (err) {
-        console.error('❌ Error fetching SVG graph data:', err)
+        console.error('Error fetching SVG graph data:', err)
         error.value = err.message
       } finally {
         loading.value = false
@@ -190,58 +175,66 @@ export default {
       const calls = rawData.value.calls
       const hours = rawData.value.calls_y[0]
       
-      console.log('📊 Processing SVG chart data...')
-      console.log('Calls:', calls.length)
-      console.log('Hours:', hours.length)
-      
       // Create hour labels and data structure
       const hourData = {}
       
-      // Initialize hours
+      // Initialize hours with proper formatting
       hours.forEach(hourSeconds => {
-        const hour = Math.floor(hourSeconds / 3600)
-        const hourLabel = `${hour}:00`
-        hourData[hourSeconds] = {
+        const hourSecondsNum = parseInt(hourSeconds)
+        const hour = Math.floor(hourSecondsNum / 3600)
+        const hourLabel = `${hour.toString().padStart(2, '0')}:00`
+        
+        hourData[hourSecondsNum] = {
           label: hourLabel,
-          hourSeconds: hourSeconds,
+          hourSeconds: hourSecondsNum,
           statusCounts: {},
           total: 0
         }
         
         // Initialize all status counts to 0
         statusTypes.value.forEach(status => {
-          hourData[hourSeconds].statusCounts[status.name] = 0
+          hourData[hourSecondsNum].statusCounts[status.name] = 0
         })
       })
       
-      // Fill in actual data
+      // Fill in actual data - accumulate counts for same status/hour
       calls.forEach(([status, hourSeconds, count]) => {
         const hourSecondsNum = parseInt(hourSeconds)
+        const countNum = parseInt(count) || 0
+        
         if (hourData[hourSecondsNum] && statusTypes.value.find(s => s.name === status)) {
-          hourData[hourSecondsNum].statusCounts[status] = parseInt(count) || 0
-          hourData[hourSecondsNum].total += parseInt(count) || 0
+          // Add to existing count (in case there are multiple entries)
+          hourData[hourSecondsNum].statusCounts[status] += countNum
+          hourData[hourSecondsNum].total += countNum
         }
       })
       
-      // Sort by hour and create bar segments
-      const sortedHours = Object.values(hourData).sort((a, b) => b.hourSeconds - a.hourSeconds)
+      // Sort by hour chronologically (0:00 to 23:00)
+      const sortedHours = Object.values(hourData).sort((a, b) => a.hourSeconds - b.hourSeconds)
       
-      // Log the processed data for verification
-      console.log('📊 Processed hour data:')
-      sortedHours.forEach(hourInfo => {
-        console.log(`${hourInfo.label}: Total=${hourInfo.total}`, hourInfo.statusCounts)
-      })
+      // Display processed data
+      console.log('Processed hour data:', sortedHours.map(h => ({ 
+        label: h.label, 
+        total: h.total, 
+        counts: h.statusCounts 
+      })))
       
       return sortedHours.map(hourInfo => {
         const segments = []
         let currentY = svgHeight - margin.bottom
         const availableHeight = svgHeight - margin.top - margin.bottom
         
-        // Calculate segments from bottom to top
+        // Debug: Log the data for one specific hour to see what's happening
+        if (hourInfo.label === '10:00') {
+          console.log(`DEBUG 10:00 hour data:`, hourInfo.statusCounts)
+          console.log(`DEBUG 10:00 total:`, hourInfo.total)
+          console.log(`DEBUG maxValue:`, maxValue.value)
+        }
+        
+        // Calculate segments from bottom to top in consistent order
         statusTypes.value.forEach(status => {
           const count = hourInfo.statusCounts[status.name] || 0
           if (count > 0) {
-            // FIXED: Calculate segment height as proportion of max total
             const segmentHeight = (count / maxValue.value) * availableHeight
             segments.push({
               color: status.color,
@@ -250,9 +243,20 @@ export default {
               value: count,
               status: status.label
             })
+            
+            // Debug: Log segment details for 10:00 hour
+            if (hourInfo.label === '10:00') {
+              console.log(`DEBUG 10:00 ${status.name}: count=${count}, height=${segmentHeight}, y=${currentY - segmentHeight}, color=${status.color}`)
+            }
+            
             currentY -= segmentHeight
           }
         })
+        
+        // Debug: Log final segments for 10:00 hour
+        if (hourInfo.label === '10:00') {
+          console.log(`DEBUG 10:00 final segments:`, segments)
+        }
         
         return {
           label: hourInfo.label,
@@ -269,8 +273,16 @@ export default {
     
     // Calculate max value for scaling
     const maxValue = computed(() => {
-      const maxTotal = Math.max(...chartBars.value.map(d => d.total), 1)
-      console.log('📊 Max value for scaling:', maxTotal)
+      if (chartBars.value.length === 0) {
+        console.log('DEBUG maxValue: chartBars is empty')
+        return 1
+      }
+      
+      const totals = chartBars.value.map(d => d.total)
+      console.log('DEBUG maxValue: All totals:', totals)
+      
+      const maxTotal = Math.max(...totals, 1)
+      console.log('Chart max value:', maxTotal)
       return maxTotal
     })
     
@@ -287,7 +299,6 @@ export default {
 
     // Lifecycle
     onMounted(() => {
-      console.log('📊 Hardcoded SVG Graph mounted')
       fetchGraphData()
       
       // Auto-refresh every 5 minutes
