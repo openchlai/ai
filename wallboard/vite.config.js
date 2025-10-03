@@ -15,9 +15,7 @@ export default defineConfig({
                 target: 'https://192.168.10.120',
                // target: 'https://192.168.10.3',
                 changeOrigin: true,
-                secure: false,
-                timeout: 60000,        // Add this
-                proxyTimeout: 60000,
+                secure: false,                
                 rewrite: (path) => path.replace(/^\/api-proxy/, '/helpline'),
                 configure: (proxy, options) => {
                     proxy.on('proxyReq', (_proxyReq, req) => {

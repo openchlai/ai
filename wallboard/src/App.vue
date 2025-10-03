@@ -9,33 +9,35 @@
       @toggle-theme="toggleDarkMode"
     />
 
-    <!-- Cases Grid Component -->
-    <CasesTiles :tiles="casesTiles" />
-
-    <!-- Calls Status Cards Component -->
+    <!-- Top Row: Call Status Cards -->
     <CallsStatusCards 
       :loading="callsReportLoading"
       :error="callsReportError"
       :cards="callsCards"
     />
 
-    <!-- Queue Activity Graph -->
-    <QueueActivityGraph :axiosInstance="axiosInstance" />
+    <!-- Main Content: Two Column Layout -->
+    <div class="main-content">
+      <!-- Left Column: Tables -->
+      <div class="tables-column">
+        <!-- Counsellors Table Component -->
+        <CounsellorsTable 
+          :counsellors="counsellorsWithQueueData"
+          :online-count="onlineCounsellorsCount"
+        />
 
-    <!-- Top Statistics Component -->
-    <TopStatsRow :stats="stats" />
+        <!-- Callers Table Component -->
+        <CallersTable 
+          :callers="callersData"
+          :online-count="onlineCallersCount"
+        />
+      </div>
 
-    <!-- Counsellors Table Component -->
-    <CounsellorsTable 
-      :counsellors="counsellorsWithQueueData"
-      :online-count="onlineCounsellorsCount"
-    />
-
-    <!-- Callers Table Component -->
-    <CallersTable 
-      :callers="callersData"
-      :online-count="onlineCallersCount"
-    />
+      <!-- Right Column: Cases Tiles -->
+      <div class="cases-column">
+        <CasesTiles :tiles="casesTiles" />
+      </div>
+    </div>
   </div>
 </template>
 
@@ -143,9 +145,6 @@ export default {
           variant: 'c-black' 
         }
       ]
-
-      // TEMPORARY DEBUG - ADD THIS LINE  
-  console.log('DEBUG - computed tiles:', tiles)
       
       return tiles
     })
@@ -204,43 +203,46 @@ export default {
     })
 
     // Separate counsellors and callers based on CHAN_CONTEXT
-const counsellorsWithQueueData = computed(() => {
-  const counsellorChannels = channels.value.filter(ch => {
-    const context = (ch.CHAN_CONTEXT || '').toLowerCase()
-    return context === 'agentlogin'
-  })
+    const counsellorsWithQueueData = computed(() => {
+      const counsellorChannels = channels.value.filter(ch => {
+        const context = (ch.CHAN_CONTEXT || '').toLowerCase()
+        return context === 'agentlogin'
+      })
 
-  return counsellorChannels.map((ch) => {
-    const extension = ch.CHAN_EXTEN || '--'
-    const name = counsellorNames.value[extension] || 'Unknown'
-    const stats = counsellorStats.value[extension] || { answered: '--', missed: '--', talkTime: '--' }
+      return counsellorChannels.map((ch) => {
+        const extension = ch.CHAN_EXTEN || '--'
+        const name = counsellorNames.value[extension] || 'Unknown'
+        const stats = counsellorStats.value[extension] || { answered: '--', missed: '--', talkTime: '--' }
 
-    // Get connected caller from CHAN_CID_NUM_2 (index 47) when agent is connected
-    let connectedCallerNumber = '--'
-    if (Number(ch.CHAN_STATE_CONNECT)) {
-      // CHAN_CID_NUM_2 is at index 47 in the raw array
-      const callerFromIndex47 = ch._raw?.[47] || ch.CHAN_CID_NUM_2
-      connectedCallerNumber = callerFromIndex47 || '--'
-    }
+        // Find connected caller by matching bridge IDs
+        let connectedCallerNumber = '--'
+        if (Number(ch.CHAN_STATE_CONNECT) && ch.CHAN_BRIDGE_ID) {
+          const connectedCaller = callersData.value.find(caller => 
+            caller.channelData.CHAN_BRIDGE_ID === ch.CHAN_BRIDGE_ID
+          )
+          if (connectedCaller) {
+            connectedCallerNumber = connectedCaller.callerNumber
+          }
+        }
 
-    return {
-      id: ch.CHAN_UNIQUEID || ch._uid,
-      extension: extension,
-      name: name,
-      caller: connectedCallerNumber, // Now using CHAN_CID_NUM_2
-      answered: stats.answered,
-      missed: stats.missed,
-      talkTime: '--',
-      queueStatus: getStatusText(ch),
-      duration: Number(ch.CHAN_STATE_CONNECT) ? formatDuration(ch.CHAN_TS) : '--',
-      isOnline: true,
-      channelData: ch,
-      channel: ch.CHAN_CHAN || '--',
-      vector: ch.CHAN_VECTOR || '--',
-      campaign: ch.CHAN_CAMPAIGN_ID || '--'
-    }
-  })
-})
+        return {
+          id: ch.CHAN_UNIQUEID || ch._uid,
+          extension: extension,
+          name: name,
+          caller: connectedCallerNumber,
+          answered: stats.answered,
+          missed: stats.missed,
+          talkTime: '--',
+          queueStatus: getStatusText(ch),
+          duration: Number(ch.CHAN_STATE_CONNECT) ? formatDuration(ch.CHAN_TS) : '--',
+          isOnline: true,
+          channelData: ch,
+          channel: ch.CHAN_CHAN || '--',
+          vector: ch.CHAN_VECTOR || '--',
+          campaign: ch.CHAN_CAMPAIGN_ID || '--'
+        }
+      })
+    })
 
     // Callers data - filtered by DLPN_callcenter context
     const callersData = computed(() => {
@@ -264,17 +266,6 @@ const counsellorsWithQueueData = computed(() => {
           }
         })
     })
-
-    // TOP STATISTICS
-    const stats = computed(() => [
-      { id: 1, title: 'Total', value: queueStats.value.total.toString(), variant: 'total' },
-      { id: 2, title: 'Answered', value: queueStats.value.connected.toString(), variant: 'answered' },
-      { id: 3, title: 'In Queue', value: queueStats.value.inQueue.toString(), variant: 'abandoned' },
-      { id: 4, title: 'On Hold', value: queueStats.value.onHold.toString(), variant: 'discarded' },
-      { id: 5, title: 'Hangup', value: queueStats.value.hangup.toString(), variant: 'missed' },
-      { id: 6, title: 'Online', value: counsellorsWithQueueData.value.filter(c => c.isOnline).length.toString(), variant: 'ivr' },
-      { id: 7, title: 'Connected', value: queueStats.value.connected.toString(), variant: 'beep' }
-    ])
 
     // Count of online counsellors and callers
     const onlineCounsellorsCount = computed(() => 
@@ -344,7 +335,6 @@ const counsellorsWithQueueData = computed(() => {
       
       // Data
       casesTiles,
-      stats,
       counsellorsWithQueueData,
       onlineCounsellorsCount,
       callsReportError,
@@ -369,14 +359,18 @@ const counsellorsWithQueueData = computed(() => {
 </script>
 
 <style>
-/* Global styles for the application */
+/* TV-Optimized Global Styles */
 .container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 20px;
-  min-height: 100vh;
+  max-width: 100vw;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 5px 8px;
   background-color: #f8fafc;
   transition: background-color 0.3s ease;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .dark-mode .container {
@@ -384,42 +378,120 @@ const counsellorsWithQueueData = computed(() => {
   color: #e2e8f0;
 }
 
-/* Global dark mode styles */
-.dark-mode {
-  background-color: #1a202c;
-  color: #e2e8f0;
+/* Header - TV optimized */
+.container > :first-child {
+  flex-shrink: 0;
+  margin-bottom: 6px;
 }
 
-/* Responsive container */
-@media (max-width: 1200px) {
+/* Call status cards - TV optimized */
+.container > :nth-child(2) {
+  flex-shrink: 0;
+  margin-bottom: 8px;
+}
+
+/* Main content - TV optimized layout */
+.main-content {
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Left column for tables - TV optimized */
+.tables-column {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Right column for cases tiles - TV optimized */
+.cases-column {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* TV Screen specific optimizations */
+@media screen and (min-width: 1920px) {
   .container {
-    max-width: 100%;
-    padding: 0 15px;
+    padding: 6px 10px;
+  }
+  
+  .main-content {
+    grid-template-columns: 1fr 240px;
+    gap: 10px;
   }
 }
 
-@media (max-width: 768px) {
+@media screen and (max-width: 1600px) {
   .container {
-    padding: 0 10px;
+    padding: 4px 6px;
+  }
+  
+  .main-content {
+    grid-template-columns: 1fr 200px;
+    gap: 6px;
   }
 }
 
-/* Scrollbar styling for dark mode */
-.dark-mode ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+/* 4K TV optimization */
+@media screen and (min-width: 3840px) {
+  .container {
+    padding: 12px 20px;
+  }
+  
+  .main-content {
+    grid-template-columns: 1fr 320px;
+    gap: 15px;
+  }
 }
 
-.dark-mode ::-webkit-scrollbar-track {
-  background: #2d3748;
+/* Disable text selection for wallboard display */
+.container {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Optimize font rendering for TV displays */
+.container {
+  font-smooth: antialiased;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-display: swap;
+}
+
+/* Global scrollbar styling for TV */
+::-webkit-scrollbar {
+  width: 2px;
+  height: 2px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(203, 213, 225, 0.3);
+  border-radius: 1px;
 }
 
 .dark-mode ::-webkit-scrollbar-thumb {
-  background: #4a5568;
-  border-radius: 4px;
+  background: rgba(107, 114, 128, 0.3);
 }
 
-.dark-mode ::-webkit-scrollbar-thumb:hover {
-  background: #718096;
+/* Remove all animations for better TV performance if needed */
+@media (prefers-reduced-motion: reduce) {
+  .container * {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 </style>

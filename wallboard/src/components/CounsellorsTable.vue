@@ -2,9 +2,6 @@
   <div class="counsellors-section">
     <div class="section-header">
       <h2 class="section-title">Counsellors Online: {{ onlineCount }}</h2>
-      <div class="filter-buttons">
-        <!-- Filter buttons can be added here if needed -->
-      </div>
     </div>
     <div class="counsellors-table">
       <div class="table-header">
@@ -17,7 +14,7 @@
         <div class="col-queue-status">Queue Status</div>
         <div class="col-duration">Duration</div>
       </div>
-      <div class="table-body">
+      <div class="table-body" ref="tableContainer">
         <div v-if="counsellors.length === 0" class="no-counsellors-row">
           <div class="no-counsellors-text">No counsellors currently online</div>
         </div>
@@ -52,6 +49,8 @@
 </template>
 
 <script>
+import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+
 export default {
   name: 'CounsellorsTable',
   props: {
@@ -64,6 +63,76 @@ export default {
       type: Number,
       required: true,
       default: 0
+    }
+  },
+  setup(props) {
+    const tableContainer = ref(null)
+    let scrollInterval = null
+
+    // Auto-scroll functionality
+    const setupAutoScroll = (container, scrollSpeed = 0.8, pauseDuration = 2500) => {
+      if (!container) return null
+      
+      let direction = 1 // 1 for down, -1 for up
+      let isPaused = false
+      
+      return setInterval(() => {
+        if (isPaused || !container) return
+        
+        const { scrollTop, scrollHeight, clientHeight } = container
+        const maxScroll = scrollHeight - clientHeight
+        
+        if (maxScroll <= 0) return // No need to scroll if content fits
+        
+        // Check if we've reached the bottom or top
+        if (scrollTop >= maxScroll - 3) {
+          direction = -1
+          isPaused = true
+          setTimeout(() => { isPaused = false }, pauseDuration)
+        } else if (scrollTop <= 3) {
+          direction = 1
+          isPaused = true
+          setTimeout(() => { isPaused = false }, pauseDuration)
+        }
+        
+        container.scrollBy(0, direction * scrollSpeed)
+      }, 40)
+    }
+
+    // Start auto-scroll
+    const startAutoScroll = () => {
+      nextTick(() => {
+        if (tableContainer.value) {
+          scrollInterval = setupAutoScroll(tableContainer.value)
+        }
+      })
+    }
+
+    // Stop auto-scroll
+    const stopAutoScroll = () => {
+      if (scrollInterval) {
+        clearInterval(scrollInterval)
+        scrollInterval = null
+      }
+    }
+
+    // Watch for data changes to restart auto-scroll
+    watch(() => props.counsellors, () => {
+      stopAutoScroll()
+      setTimeout(startAutoScroll, 800)
+    })
+
+    // Lifecycle
+    onMounted(() => {
+      setTimeout(startAutoScroll, 1500)
+    })
+
+    onBeforeUnmount(() => {
+      stopAutoScroll()
+    })
+
+    return {
+      tableContainer
     }
   },
   methods: {
@@ -81,19 +150,22 @@ export default {
 </script>
 
 <style scoped>
+/* TV-Optimized Component styling */
 .counsellors-section {
-  margin: 30px 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
 }
 
 .section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
+  flex-shrink: 0;
+  margin-bottom: 8px;
 }
 
 .section-title {
-  font-size: 1.25rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: #1f2937;
   margin: 0;
@@ -105,9 +177,13 @@ export default {
 
 .counsellors-table {
   background: #ffffff;
-  border-radius: 12px;
+  border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 .dark-mode .counsellors-table {
@@ -116,15 +192,16 @@ export default {
 
 .table-header {
   display: grid;
-  grid-template-columns: 80px 150px 120px 100px 100px 120px 150px 1fr;
-  gap: 15px;
-  padding: 16px 20px;
+  grid-template-columns: 50px 120px 80px 70px 60px 80px 100px 1fr;
+  gap: 8px;
+  padding: 8px 10px;
   background: #f8fafc;
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   color: #374151;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
 }
 
 .dark-mode .table-header {
@@ -132,26 +209,45 @@ export default {
   color: #d1d5db;
 }
 
+/* Table body with auto-scroll - TV optimized height */
 .table-body {
-  max-height: 400px;
+  flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  pointer-events: none;
+  max-height: 160px; /* Height for exactly 4 rows at 40px per row */
+  min-height: 160px;
+}
+
+/* Ultra-slim scrollbar for TV */
+.table-body::-webkit-scrollbar {
+  width: 1px;
+}
+
+.table-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.table-body::-webkit-scrollbar-thumb {
+  background: rgba(203, 213, 225, 0.2);
+  border-radius: 1px;
+}
+
+.dark-mode .table-body::-webkit-scrollbar-thumb {
+  background: rgba(107, 114, 128, 0.2);
 }
 
 .table-row {
   display: grid;
-  grid-template-columns: 80px 150px 120px 100px 100px 120px 150px 1fr;
-  gap: 15px;
-  padding: 12px 20px;
-  border-bottom: 1px solid #e5e7eb;
-  transition: background-color 0.2s ease;
-}
-
-.table-row:hover {
-  background: #f8fafc;
-}
-
-.table-row:last-child {
-  border-bottom: none;
+  grid-template-columns: 50px 120px 80px 70px 60px 80px 100px 1fr;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 0.85rem;
+  height: 40px;
+  align-items: center;
+  font-weight: 500;
 }
 
 .dark-mode .table-row {
@@ -159,25 +255,32 @@ export default {
   color: #e2e8f0;
 }
 
-.dark-mode .table-row:hover {
-  background: #374151;
+.table-row:last-child {
+  border-bottom: none;
 }
 
 .table-header > div,
 .table-row > div {
   display: flex;
   align-items: center;
-  font-size: 0.875rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .no-counsellors-row {
-  padding: 40px 20px;
+  padding: 20px 8px;
   text-align: center;
+  height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .no-counsellors-text {
   color: #6b7280;
   font-style: italic;
+  font-size: 0.75rem;
 }
 
 .dark-mode .no-counsellors-text {
@@ -187,6 +290,7 @@ export default {
 .name-loading {
   color: #888;
   font-style: italic;
+  font-size: 0.65rem;
 }
 
 .dark-mode .name-loading {
@@ -233,52 +337,117 @@ export default {
   }
 }
 
-/* Responsive design */
-@media (max-width: 1200px) {
-  .table-header,
-  .table-row {
-    grid-template-columns: 70px 130px 110px 90px 90px 110px 130px 1fr;
-    gap: 12px;
-  }
-}
-
-@media (max-width: 768px) {
-  .counsellors-table {
-    overflow-x: auto;
+/* TV Screen optimizations */
+@media screen and (min-width: 1920px) {
+  .section-title {
+    font-size: 1rem;
   }
   
-  .table-header,
-  .table-row {
-    display: flex;
-    min-width: 800px;
+  .table-header {
+    grid-template-columns: 60px 140px 100px 80px 70px 90px 120px 1fr;
     gap: 10px;
+    padding: 8px 10px;
+    font-size: 0.75rem;
   }
   
-  .table-header > div,
-  .table-row > div {
-    flex: 1;
-    min-width: 80px;
+  .table-body {
+    max-height: 160px;
+    min-height: 160px;
   }
   
-  .col-name {
-    min-width: 120px;
-  }
-  
-  .col-queue-status {
-    min-width: 130px;
+  .table-row {
+    grid-template-columns: 60px 140px 100px 80px 70px 90px 120px 1fr;
+    gap: 10px;
+    padding: 8px 10px;
+    font-size: 0.8rem;
+    height: 40px;
   }
 }
 
-@media (max-width: 480px) {
-  .section-header {
-    flex-direction: column;
-    gap: 15px;
-    align-items: flex-start;
+/* 4K TV optimization */
+@media screen and (min-width: 3840px) {
+  .section-title {
+    font-size: 1.25rem;
   }
   
-  .counsellors-table {
-    margin: 0 -10px;
-    border-radius: 8px;
+  .table-header {
+    grid-template-columns: 80px 180px 120px 100px 90px 110px 150px 1fr;
+    gap: 15px;
+    padding: 12px 15px;
+    font-size: 0.9rem;
+  }
+  
+  .table-body {
+    max-height: 240px;
+    min-height: 240px;
+  }
+  
+  .table-row {
+    grid-template-columns: 80px 180px 120px 100px 90px 110px 150px 1fr;
+    gap: 15px;
+    padding: 12px 15px;
+    font-size: 1rem;
+    height: 60px;
+  }
+  
+  .no-counsellors-row {
+    height: 240px;
+    padding: 30px 15px;
+  }
+  
+  .no-counsellors-text {
+    font-size: 1rem;
+  }
+}
+
+/* Smaller TV screens */
+@media screen and (max-width: 1600px) {
+  .section-title {
+    font-size: 0.8rem;
+  }
+  
+  .table-header {
+    grid-template-columns: 45px 100px 70px 60px 50px 70px 90px 1fr;
+    gap: 6px;
+    padding: 5px 6px;
+    font-size: 0.6rem;
+  }
+  
+  .table-body {
+    max-height: 120px;
+    min-height: 120px;
+  }
+  
+  .table-row {
+    grid-template-columns: 45px 100px 70px 60px 50px 70px 90px 1fr;
+    gap: 6px;
+    padding: 5px 6px;
+    font-size: 0.65rem;
+    height: 30px;
+  }
+  
+  .no-counsellors-row {
+    height: 120px;
+    padding: 15px 6px;
+  }
+  
+  .no-counsellors-text {
+    font-size: 0.7rem;
+  }
+}
+
+/* Very small screens */
+@media screen and (max-width: 1200px) {
+  .table-header,
+  .table-row {
+    grid-template-columns: 40px 90px 60px 50px 45px 60px 80px 1fr;
+    font-size: 0.6rem;
+    height: 28px;
+  }
+  
+  .table-body {
+    max-height: 112px;
+    min-height: 112px;
   }
 }
 </style>
