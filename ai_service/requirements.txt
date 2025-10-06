@@ -29,7 +29,7 @@ ctranslate2==4.4.0
 cymem==2.0.11
 debugpy==1.8.15
 decorator==5.2.1
-en_core_web_md @ https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.8.0/en_core_web_md-3.8.0-py3-none-any.whl#sha256=5e6329fe3fecedb1d1a02c3ea2172ee0fede6cea6e4aefb6a02d832dba78a310
+en_core_web_lg @ https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.8.0/en_core_web_lg-3.8.0-py3-none-any.whl
 executing==2.2.0
 fastapi==0.116.1
 faster-whisper==1.2.0
