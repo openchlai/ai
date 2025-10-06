@@ -74,6 +74,9 @@ class QAModel:
     def __init__(self, model_path: str = None):
         from ..config.settings import settings
         self.model_path = model_path or settings.get_model_path("all_qa_distilbert_v1")
+        # Hub configuration
+        self.hf_repo_id = getattr(settings, "qa_hf_repo_id", None)
+        self.hf_token = (os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACE_HUB_TOKEN") or getattr(settings, "hf_token", None))
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.tokenizer = None
@@ -86,35 +89,28 @@ class QAModel:
     def load(self) -> bool:
         """Load the QA model and tokenizer from the specified path."""
         try:
-            # logger.info(f"Loading QA model from: {self.model_path}")
+            # Hub-first loading
             start_time = datetime.now()
+            if not self.hf_repo_id:
+                raise RuntimeError("qa_hf_repo_id must be set in settings or env for Hub loading")
 
-            if not os.path.exists(self.model_path):
-                # logger.info(f" QA model from: {self.model_path}")
+            token_kwargs = {"use_auth_token": self.hf_token} if self.hf_token else {}
+            logger.info(f"📦 Loading QA model from Hugging Face Hub: {self.hf_repo_id} (ignoring local path {self.model_path})")
+            if self.hf_token:
+                logger.info("🔐 Using HF token for authenticated access")
 
-                raise FileNotFoundError(f"QA model directory not found at: {self.model_path}")
+            # Load tokenizer from Hub
+            self.tokenizer = DistilBertTokenizer.from_pretrained(self.hf_repo_id, local_files_only=False, **token_kwargs)
 
-            # Load tokenizer
-            self.tokenizer = DistilBertTokenizer.from_pretrained(self.model_path)
-
-            # Load model
-            self.model = MultiHeadQAClassifier(model_name=self.model_path)
-            model_state_path = os.path.join(self.model_path, "pytorch_model.bin")
-            if not os.path.exists(model_state_path):
-                 # Fallback for models saved with a different name
-                 model_state_path = os.path.join(self.model_path, "all_qa_distilbert_v1.bin")
-                 if not os.path.exists(model_state_path):
-                    raise FileNotFoundError(f"Model state file not found in {self.model_path}")
-            # logger.info(f"Model state found at {model_state_path}")
-            state_dict = torch.load(model_state_path, map_location=self.device)
-            self.model.load_state_dict(state_dict)
+            # Initialize model with backbone from Hub
+            self.model = MultiHeadQAClassifier(model_name=self.hf_repo_id)
             self.model.to(self.device)
             self.model.eval()
 
             self.loaded = True
             self.load_time = datetime.now()
             duration = (self.load_time - start_time).total_seconds()
-            logger.info(f"✅ QA model loaded successfully in {duration:.2f}s")
+            logger.info(f"✅ QA model loaded from Hugging Face Hub ({self.hf_repo_id}) in {duration:.2f}s on {self.device}")
             return True
 
         except Exception as e:

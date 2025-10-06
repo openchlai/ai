@@ -23,60 +23,61 @@ class TranslationModel:
         self.load_time = None
         self.error = None
         self.max_length = 512  # Model's maximum token limit
+        
+        # Hugging Face repo support (hub-first)
+        self.hf_repo_id = os.getenv("TRANSLATION_HF_REPO_ID") or getattr(settings, "translation_hf_repo_id", None)
+        self.hf_token = os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACE_HUB_TOKEN") or getattr(settings, "hf_token", None)
+        # Target language configuration (default to English)
+        self.target_language = os.getenv("TRANSLATION_TARGET_LANGUAGE", "en").lower()
+        # Optional explicit target token override (e.g., ">>eng<<")
+        self.target_token_override = os.getenv("TRANSLATION_TARGET_TOKEN")
 
     def load(self) -> bool:
         try:
-            logger.info(f"Loading translation model...")
+            logger.info(f"📦 Initializing translation model loader")
             start_time = datetime.now()
             
-            # Get HuggingFace model loading kwargs
-            hf_kwargs = self.settings.get_hf_model_kwargs()
-            
-            # Check if we should use HuggingFace Hub models
-            if self.settings.use_hf_models and self.settings.hf_translator_model:
-                # Use HuggingFace Hub model
-                model_id = self.settings._get_hf_model_id("translator")
-                logger.info(f"🌐 Loading translation model from HuggingFace Hub: {model_id}")
-                
-                try:
-                    self.tokenizer = AutoTokenizer.from_pretrained(model_id, **hf_kwargs)
-                    self.model = AutoModelForSeq2SeqLM.from_pretrained(model_id, **hf_kwargs)
-                    logger.info(f"✅ HuggingFace translation model loaded successfully")
-                    
-                except Exception as e:
-                    logger.warning(f"⚠️ Failed to load HF translation model {model_id}: {e}")
-                    logger.info("🔄 Falling back to local model loading")
-                    # Fall through to local loading
-                    
-            if not self.model:  # Either use_hf_models=False or HF loading failed
-                # Check if model path exists
-                if not os.path.exists(self.model_path):
-                    raise FileNotFoundError(f"Translation model path not found: {self.model_path}")
-                
-                # Check for required model files
-                required_files = ["config.json"]
-                for file in required_files:
-                    file_path = os.path.join(self.model_path, file)
-                    if not os.path.exists(file_path):
-                        raise FileNotFoundError(f"Required model file not found: {file_path}")
-                
-                # Load tokenizer and model with local_files_only
-                self.tokenizer = AutoTokenizer.from_pretrained(
-                    self.model_path,
-                    local_files_only=True  # Force local loading
-                )
-                
-                self.model = AutoModelForSeq2SeqLM.from_pretrained(
-                    self.model_path,
-                    local_files_only=True  # Force local loading
-            )
+            if not self.hf_repo_id:
+                raise RuntimeError("TRANSLATION_HF_REPO_ID or settings.translation_hf_repo_id must be set for hub loading")
+            token_kwargs = {"use_auth_token": self.hf_token} if self.hf_token else {}
+            logger.info(f"📦 Loading translation model from Hugging Face Hub: {self.hf_repo_id} (ignoring local path {self.model_path})")
+            if self.hf_token:
+                logger.info("🔐 Using HF token for authenticated access")
+            self.tokenizer = AutoTokenizer.from_pretrained(self.hf_repo_id, local_files_only=False, **token_kwargs)
+            self.model = AutoModelForSeq2SeqLM.from_pretrained(self.hf_repo_id, local_files_only=False, **token_kwargs)
+            # Configure target language for Marian/OPUS MT models if supported
+            try:
+                # Highest priority: explicit override via env
+                if self.target_token_override:
+                    tid = self.tokenizer.convert_tokens_to_ids(self.target_token_override)
+                    if tid is not None and tid != self.tokenizer.unk_token_id:
+                        self._target_prefix_token = self.target_token_override
+                    else:
+                        self._target_prefix_token = None
+                # If tokenizer exposes language codes (e.g., mBART-like)
+                elif hasattr(self.tokenizer, "lang_code_to_id") and self.target_language in self.tokenizer.lang_code_to_id:
+                    self.model.config.forced_bos_token_id = self.tokenizer.lang_code_to_id[self.target_language]
+                    self._target_prefix_token = None
+                else:
+                    # OPUS-MT style: search vocab for suitable English token
+                    candidates = [">>en<<", ">>eng<<", ">>eng_Latn<<", ">>english<<"]
+                    found = None
+                    if hasattr(self.tokenizer, "convert_tokens_to_ids"):
+                        for cand in candidates:
+                            tid = self.tokenizer.convert_tokens_to_ids(cand)
+                            if tid is not None and tid != self.tokenizer.unk_token_id:
+                                found = cand
+                                break
+                    self._target_prefix_token = found
+            except Exception:
+                self._target_prefix_token = None
             
             self.model.to(self.device)
             self.loaded = True
             self.load_time = datetime.now()
             load_duration = (self.load_time - start_time).total_seconds()
             
-            logger.info(f"✅ Translation model loaded successfully in {load_duration:.2f}s")
+            logger.info(f"✅ Translation model loaded from Hugging Face Hub ({self.hf_repo_id}) in {load_duration:.2f}s on {self.device}")
             return True
             
         except Exception as e:
@@ -125,8 +126,14 @@ class TranslationModel:
     def _translate_single(self, text: str) -> str:
         """Translate a single text chunk"""
         try:
+            # Prepend target language token if model expects it
+            if hasattr(self, "_target_prefix_token") and self._target_prefix_token:
+                text_to_translate = f"{self._target_prefix_token} {text}"
+            else:
+                text_to_translate = text
+            
             inputs = self.tokenizer(
-                text, 
+                text_to_translate, 
                 return_tensors="pt", 
                 truncation=True, 
                 max_length=self.max_length,
@@ -137,8 +144,9 @@ class TranslationModel:
                 outputs = self.model.generate(
                     **inputs,
                     max_length=self.max_length,
-                    num_beams=4,
-                    length_penalty=0.6,
+                    num_beams=5,
+                    length_penalty=1.0,
+                    no_repeat_ngram_size=2,
                     early_stopping=True,
                     do_sample=False
                 )
@@ -301,6 +309,7 @@ class TranslationModel:
     def get_model_info(self) -> Dict:
         return {
             "model_path": self.model_path,
+            "hf_repo_id": self.hf_repo_id,
             "device": str(self.device),
             "loaded": self.loaded,
             "load_time": self.load_time.isoformat() if self.load_time else None,

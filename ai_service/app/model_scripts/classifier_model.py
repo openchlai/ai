@@ -63,6 +63,13 @@ class ClassifierModel:
         self.error = None
         self.max_length = 256  # Model's maximum token limit
         
+        # Hugging Face repo configuration (hub-first, no local model loading)
+        from ..config.settings import settings as _settings
+        self.hf_repo_id = os.getenv("CLASSIFIER_HF_REPO_ID") or getattr(_settings, "classifier_hf_repo_id", None)
+        # Token can be provided via env or settings.hf_token
+        self.hf_token = (os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACE_HUB_TOKEN") or 
+                         getattr(_settings, "hf_token", None))
+        
         # Category configs - will be loaded in load() method
         self.category_info = {}
         self.main_categories = []
@@ -83,11 +90,24 @@ class ClassifierModel:
             configs = {}
             for config_name, filename in config_files.items():
                 config_file_path = os.path.join(self.model_path, filename)
-                if not os.path.exists(config_file_path):
-                    raise FileNotFoundError(f"Config file not found: {config_file_path}")
-                
-                with open(config_file_path) as f:
-                    configs[config_name] = json.load(f)
+                if os.path.exists(config_file_path):
+                    with open(config_file_path) as f:
+                        configs[config_name] = json.load(f)
+                else:
+                    # Attempt to fetch from Hugging Face repo if configured
+                    if not self.hf_repo_id:
+                        raise FileNotFoundError(f"Config file not found: {config_file_path}")
+                    try:
+                        from huggingface_hub import hf_hub_download
+                        download_path = hf_hub_download(
+                            repo_id=self.hf_repo_id,
+                            filename=filename,
+                            token=self.hf_token,
+                        )
+                        with open(download_path) as f:
+                            configs[config_name] = json.load(f)
+                    except Exception as hf_err:
+                        raise FileNotFoundError(f"Failed to fetch {filename} from HF repo {self.hf_repo_id}: {hf_err}")
             
             # Set the category lists
             self.main_categories = configs["main_categories"]
@@ -113,7 +133,10 @@ class ClassifierModel:
     def _load_category_configs_from_hf(self, model_id: str, hf_kwargs: dict) -> bool:
         """Load category configs from HuggingFace model repository"""
         try:
-            from huggingface_hub import hf_hub_download
+
+            logger.info(f"📦 Initializing classifier model loader")
+            start_time = datetime.now()
+
             
             config_files = {
                 "main_categories": "main_categories.json",
@@ -122,146 +145,39 @@ class ClassifierModel:
                 "priorities": "priorities.json"
             }
             
-            configs = {}
-            for config_name, filename in config_files.items():
-                try:
-                    config_path = hf_hub_download(
-                        repo_id=model_id,
-                        filename=filename,
-                        **hf_kwargs
-                    )
-                    with open(config_path) as f:
-                        configs[config_name] = json.load(f)
-                except Exception as e:
-                    logger.warning(f"Could not load {filename} from HF model: {e}")
-                    return False
+            # Hub-first: require HF repo id and download using auth token
+            if not self.hf_repo_id:
+                raise RuntimeError("CLASSIFIER_HF_REPO_ID or settings.classifier_hf_repo_id must be set for hub loading")
+            logger.info(f"📦 Loading classifier model from Hugging Face Hub: {self.hf_repo_id} (ignoring local path {self.model_path})")
+            if self.hf_token:
+                logger.info("🔐 Using HF token for authenticated access")
+            token_kwargs = {}
+            if self.hf_token:
+                token_kwargs = {"use_auth_token": self.hf_token}
             
-            # Set the category lists
-            self.main_categories = configs["main_categories"]
-            self.sub_categories = configs["sub_categories"]
-            self.interventions = configs["interventions"]
-            self.priorities = configs["priorities"]
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                self.hf_repo_id,
+                local_files_only=False,
+                **token_kwargs
+            )
             
-            self.category_info = {
-                "main_categories": self.main_categories,
-                "sub_categories": self.sub_categories,
-                "interventions": self.interventions,
-                "priorities": self.priorities
-            }
-            
-            logger.info(f"✅ Loaded classifier configs from HF: {len(self.main_categories)} main categories")
-            return True
-            
-        except Exception as e:
-            logger.warning(f"Failed to load category configs from HuggingFace: {e}")
-            return False
+            self.model = MultiTaskDistilBert.from_pretrained(
+                self.hf_repo_id,
+                num_main=len(self.main_categories),
+                num_sub=len(self.sub_categories),
+                num_interv=len(self.interventions),
+                num_priority=len(self.priorities),
+                local_files_only=False,
+                **token_kwargs
+            )
+            self.model = self.model.to(self.device)
+            self.model.eval()
 
-    def _load_default_categories(self) -> bool:
-        """Load default/fallback categories"""
-        try:
-            # Default categories as fallback
-            self.main_categories = [
-                "general_inquiry", "crisis", "medical", "mental_health", "social_services",
-                "legal", "education", "housing", "employment", "financial"
-            ]
-            self.sub_categories = [
-                "assessment_needed", "immediate_risk", "follow_up_required", 
-                "referral_needed", "information_provided", "resolved"
-            ]
-            self.interventions = [
-                "initial_assessment", "crisis_intervention", "referral", 
-                "information_provision", "follow_up", "emergency_response"
-            ]
-            self.priorities = ["low", "medium", "high", "urgent"]
-            
-            self.category_info = {
-                "main_categories": self.main_categories,
-                "sub_categories": self.sub_categories,
-                "interventions": self.interventions,
-                "priorities": self.priorities
-            }
-            
-            logger.info("✅ Using default classifier categories")
-            return True
-            
-        except Exception as e:
-            logger.error(f"❌ Failed to load default categories: {e}")
-            return False
-
-    def load(self) -> bool:
-        """Load model and tokenizer with HuggingFace Hub support"""
-        try:
-            logger.info(f"Loading classifier model...")
-            start_time = datetime.now()
-            
-            # Get HuggingFace model loading kwargs
-            hf_kwargs = self.settings.get_hf_model_kwargs()
-            
-            # Check if we should use HuggingFace Hub models
-            if self.settings.use_hf_models and self.settings.hf_classifier_model:
-                # Use HuggingFace Hub model
-                model_id = self.settings._get_hf_model_id("classifier")
-                logger.info(f"🌐 Loading classifier model from HuggingFace Hub: {model_id}")
-                
-                try:
-                    # Load tokenizer
-                    self.tokenizer = AutoTokenizer.from_pretrained(model_id, **hf_kwargs)
-                    
-                    # Load model - assuming the HF model has the category configs embedded
-                    # or we need to load them separately
-                    self.model = MultiTaskDistilBert.from_pretrained(
-                        model_id,
-                        **hf_kwargs
-                    )
-                    
-                    # Load category configs from HuggingFace model repo if available
-                    # Otherwise use default categories
-                    if not self._load_category_configs_from_hf(model_id, hf_kwargs):
-                        if not self._load_default_categories():
-                            return False
-                    
-                    self.model = self.model.to(self.device)
-                    self.model.eval()
-                    
-                    logger.info(f"✅ HuggingFace classifier model loaded successfully")
-                    
-                except Exception as e:
-                    logger.warning(f"⚠️ Failed to load HF classifier model {model_id}: {e}")
-                    logger.info("🔄 Falling back to local model loading")
-                    # Fall through to local loading
-                    
-            if not self.model:  # Either use_hf_models=False or HF loading failed
-                # First load the category configs from local path
-                if not self._load_category_configs():
-                    return False
-                
-                # Load tokenizer and model from local path
-                model_files_path = os.path.join(self.model_path, "multitask_distilbert")
-                if not os.path.exists(model_files_path):
-                    raise FileNotFoundError(f"Model files not found at: {model_files_path}")
-                
-                self.tokenizer = AutoTokenizer.from_pretrained(
-                    model_files_path,
-                    local_files_only=True  # Force local loading
-                )
-                
-                self.model = MultiTaskDistilBert.from_pretrained(
-                    model_files_path,
-                    local_files_only=True,  # Force local loading
-                    num_main=len(self.main_categories),
-                    num_sub=len(self.sub_categories),
-                    num_interv=len(self.interventions),
-                    num_priority=len(self.priorities)
-                )
-                self.model = self.model.to(self.device)
-                self.model.eval()
-                
-                logger.info(f"✅ Local classifier model loaded successfully")
             
             self.loaded = True
             self.load_time = datetime.now()
             load_duration = (self.load_time - start_time).total_seconds()
-            logger.info(f"✅ Classifier model loaded in {load_duration:.2f}s")
+            logger.info(f"✅ Classifier model loaded from Hugging Face Hub ({self.hf_repo_id}) in {load_duration:.2f}s on {self.device}")
             return True
             
         except Exception as e:

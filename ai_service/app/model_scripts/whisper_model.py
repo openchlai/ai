@@ -187,7 +187,10 @@ class WhisperModel:
             
             self.is_loaded = True
             self.error = None
-            logger.info(f"✅ Whisper model loaded successfully on {self.device}")
+            if loaded_from == "huggingface_hub":
+                logger.info(f"✅ Whisper model loaded from Hugging Face Hub ({self.fallback_model_id}) on {self.device}")
+            else:
+                logger.info(f"✅ Whisper model loaded successfully on {self.device}")
             return True
             
         except Exception as e:
@@ -213,7 +216,7 @@ class WhisperModel:
                     
                     self.is_loaded = True
                     self.error = None
-                    logger.info(f"✅ Whisper model loaded successfully via fallback on {self.device}")
+                    logger.info(f"✅ Whisper model loaded from Hugging Face Hub ({self.fallback_model_id}) via fallback on {self.device}")
                     return True
                     
                 except Exception as fallback_error:
