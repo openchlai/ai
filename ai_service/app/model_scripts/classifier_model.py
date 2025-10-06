@@ -53,6 +53,7 @@ class ClassifierModel:
     def __init__(self, model_path: str = None):
         from ..config.settings import settings
         
+        self.settings = settings
         self.model_path = model_path or settings.get_model_path("classifier")
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.tokenizer = None
@@ -129,15 +130,20 @@ class ClassifierModel:
             self.error = f"Config loading failed: {str(e)}"
             return False
 
-    def load(self) -> bool:
-        """Load model and tokenizer"""
+    def _load_category_configs_from_hf(self, model_id: str, hf_kwargs: dict) -> bool:
+        """Load category configs from HuggingFace model repository"""
         try:
+
             logger.info(f"📦 Initializing classifier model loader")
             start_time = datetime.now()
+
             
-            # First load the category configs
-            if not self._load_category_configs():
-                return False
+            config_files = {
+                "main_categories": "main_categories.json",
+                "sub_categories": "sub_categories.json", 
+                "interventions": "interventions.json",
+                "priorities": "priorities.json"
+            }
             
             # Hub-first: require HF repo id and download using auth token
             if not self.hf_repo_id:
@@ -166,6 +172,7 @@ class ClassifierModel:
             )
             self.model = self.model.to(self.device)
             self.model.eval()
+
             
             self.loaded = True
             self.load_time = datetime.now()

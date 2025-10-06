@@ -124,6 +124,17 @@ class AsteriskTCPServer:
     async def _submit_transcription(self, audio_array: np.ndarray, call_id: str):
         """Submit transcription to Celery worker with call session tracking"""
         try:
+            # Check if real-time processing is enabled for this session
+            session = await call_session_manager.get_session(call_id)
+            if not session:
+                logger.debug(f"⚠️ [tcp] No session found for call {call_id}, skipping transcription")
+                return
+            
+            realtime_enabled = session.processing_plan.get("realtime_processing", {}).get("enabled", False)
+            if not realtime_enabled:
+                logger.debug(f"⏭️ [tcp] Real-time processing disabled for call {call_id} (mode: {session.processing_mode}), skipping chunk transcription")
+                return
+            
             # Convert numpy array to bytes for Celery
             audio_bytes = (audio_array * 32768.0).astype(np.int16).tobytes()
             

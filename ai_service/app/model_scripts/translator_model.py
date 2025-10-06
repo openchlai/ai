@@ -14,6 +14,7 @@ class TranslationModel:
     def __init__(self, model_path: str = None):
         from ..config.settings import settings
         
+        self.settings = settings
         self.model_path = model_path or settings.get_model_path("translation")
         self.tokenizer = None
         self.model = None
