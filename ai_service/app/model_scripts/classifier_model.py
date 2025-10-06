@@ -66,9 +66,7 @@ class ClassifierModel:
         # Hugging Face repo configuration (hub-first, no local model loading)
         from ..config.settings import settings as _settings
         self.hf_repo_id = os.getenv("CLASSIFIER_HF_REPO_ID") or getattr(_settings, "classifier_hf_repo_id", None)
-        # Token can be provided via env or settings.hf_token
-        self.hf_token = (os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACE_HUB_TOKEN") or 
-                         getattr(_settings, "hf_token", None))
+        # Public models only — no auth token usage
         
         # Category configs - will be loaded in load() method
         self.category_info = {}
@@ -101,8 +99,7 @@ class ClassifierModel:
                         from huggingface_hub import hf_hub_download
                         download_path = hf_hub_download(
                             repo_id=self.hf_repo_id,
-                            filename=filename,
-                            token=self.hf_token,
+                            filename=filename
                         )
                         with open(download_path) as f:
                             configs[config_name] = json.load(f)
@@ -130,7 +127,7 @@ class ClassifierModel:
             self.error = f"Config loading failed: {str(e)}"
             return False
 
-    def _load_category_configs_from_hf(self, model_id: str, hf_kwargs: dict) -> bool:
+    def _load_category_configs_from_hf(self, model_id: str) -> bool:
         """Load category configs from HuggingFace model repository"""
         try:
 
@@ -145,20 +142,13 @@ class ClassifierModel:
                 "priorities": "priorities.json"
             }
             
-            # Hub-first: require HF repo id and download using auth token
+            # Hub-first: require HF repo id (public access)
             if not self.hf_repo_id:
                 raise RuntimeError("CLASSIFIER_HF_REPO_ID or settings.classifier_hf_repo_id must be set for hub loading")
             logger.info(f"📦 Loading classifier model from Hugging Face Hub: {self.hf_repo_id} (ignoring local path {self.model_path})")
-            if self.hf_token:
-                logger.info("🔐 Using HF token for authenticated access")
-            token_kwargs = {}
-            if self.hf_token:
-                token_kwargs = {"use_auth_token": self.hf_token}
-            
             self.tokenizer = AutoTokenizer.from_pretrained(
                 self.hf_repo_id,
-                local_files_only=False,
-                **token_kwargs
+                local_files_only=False
             )
             
             self.model = MultiTaskDistilBert.from_pretrained(
@@ -167,8 +157,7 @@ class ClassifierModel:
                 num_sub=len(self.sub_categories),
                 num_interv=len(self.interventions),
                 num_priority=len(self.priorities),
-                local_files_only=False,
-                **token_kwargs
+                local_files_only=False
             )
             self.model = self.model.to(self.device)
             self.model.eval()
@@ -190,6 +179,27 @@ class ClassifierModel:
         """Clean and normalize input text"""
         text = text.lower().strip()
         return re.sub(r'[^a-z0-9\s]', '', text)
+
+    def load(self) -> bool:
+        """Load tokenizer, model weights, and category configs from HF Hub or local files"""
+        try:
+            # Load category configs first (local or fetch from HF)
+            if not self._load_category_configs():
+                return False
+            # Require HF repo id for weights
+            if not self.hf_repo_id:
+                raise RuntimeError("HF repo id not configured for classifier (CLASSIFIER_HF_REPO_ID or settings.classifier_hf_repo_id)")
+            # Load from hub
+            ok = self._load_category_configs_from_hf(self.hf_repo_id)
+            if not ok:
+                return False
+            self.loaded = True
+            return True
+        except Exception as e:
+            logger.error(f"❌ Failed to load classifier: {e}")
+            self.error = str(e)
+            self.loaded = False
+            return False
     
     def classify(self, narrative: str) -> Dict[str, str]:
         """

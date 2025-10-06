@@ -74,9 +74,8 @@ class QAModel:
     def __init__(self, model_path: str = None):
         from ..config.settings import settings
         self.model_path = model_path or settings.get_model_path("all_qa_distilbert_v1")
-        # Hub configuration
+        # Hub configuration (public models only)
         self.hf_repo_id = getattr(settings, "qa_hf_repo_id", None)
-        self.hf_token = (os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACE_HUB_TOKEN") or getattr(settings, "hf_token", None))
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.tokenizer = None
@@ -94,13 +93,9 @@ class QAModel:
             if not self.hf_repo_id:
                 raise RuntimeError("qa_hf_repo_id must be set in settings or env for Hub loading")
 
-            token_kwargs = {"use_auth_token": self.hf_token} if self.hf_token else {}
             logger.info(f"📦 Loading QA model from Hugging Face Hub: {self.hf_repo_id} (ignoring local path {self.model_path})")
-            if self.hf_token:
-                logger.info("🔐 Using HF token for authenticated access")
-
-            # Load tokenizer from Hub
-            self.tokenizer = DistilBertTokenizer.from_pretrained(self.hf_repo_id, local_files_only=False, **token_kwargs)
+            # Load tokenizer from Hub (no auth)
+            self.tokenizer = DistilBertTokenizer.from_pretrained(self.hf_repo_id, local_files_only=False)
 
             # Initialize model with backbone from Hub
             self.model = MultiHeadQAClassifier(model_name=self.hf_repo_id)

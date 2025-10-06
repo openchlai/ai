@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     logs_path: str = "./logs"
     temp_path: str = "./temp"
     
-    # Hugging Face configuration: hf_token from .env; repo IDs have defaults but remain overridable by .env
+    # Hugging Face configuration - NO TOKEN for public models
     hf_token: Optional[str] = None
     classifier_hf_repo_id: Optional[str] = "openchs/cls-gbv-distilbert-v1"
     summarization_hf_repo_id: Optional[str] = "openchs/sum-flan-t5-base-synthetic-v1"
@@ -68,7 +68,7 @@ class Settings(BaseSettings):
     docker_container: bool = False
     
     # Processing Mode Configuration
-    default_processing_mode: str = "postcall_only"  # realtime_only, postcall_only, hybrid, adaptive
+    default_processing_mode: str = "postcall_only"
     enable_realtime_processing: bool = False
     enable_postcall_processing: bool = True
     enable_scp_audio_download: bool = True
@@ -84,7 +84,7 @@ class Settings(BaseSettings):
     realtime_enable_agent_notifications: bool = True
     
     # Post-call Processing Configuration
-    postcall_audio_download_method: str = "scp"  # scp, http, local, disabled
+    postcall_audio_download_method: str = "scp"
     postcall_enable_full_pipeline: bool = True
     postcall_enable_enhanced_transcription: bool = True
     postcall_enable_audio_quality_improvement: bool = True
@@ -108,17 +108,17 @@ class Settings(BaseSettings):
     enable_feedback_preprocessing: bool = True
     feedback_workspace_dir: str = "feedback_audio_workspace"
     
-    # Audio Quality Thresholds (based on tested values)
-    stage1_speech_ratio_threshold: float = 0.7  # 70% speech ratio for original files
-    stage1_vad_snr_threshold: float = 10.0     # 10dB VAD SNR for original files  
-    stage2_speech_ratio_threshold: float = 0.9  # 90% speech ratio for chunks
-    stage2_vad_snr_threshold: float = 25.0     # 25dB VAD SNR for chunks
+    # Audio Quality Thresholds
+    stage1_speech_ratio_threshold: float = 0.7
+    stage1_vad_snr_threshold: float = 10.0
+    stage2_speech_ratio_threshold: float = 0.9
+    stage2_vad_snr_threshold: float = 25.0
     
     # Chunking parameters
-    min_chunk_duration: float = 3.0      # Minimum chunk length in seconds
-    max_chunk_duration: float = 30.0     # Maximum chunk length in seconds
-    target_chunk_duration: float = 12.0  # Target chunk length in seconds
-    chunk_tolerance: float = 2.0         # Tolerance for chunk splitting
+    min_chunk_duration: float = 3.0
+    max_chunk_duration: float = 30.0
+    target_chunk_duration: float = 12.0
+    chunk_tolerance: float = 2.0
     
     # AWS S3 Configuration for Audio Chunk Storage
     aws_access_key_id: str = ""
@@ -126,7 +126,7 @@ class Settings(BaseSettings):
     aws_region: str = "us-east-1"
     s3_bucket_name: str = "ai-service-audio-chunks"
     s3_audio_prefix: str = "feedback-chunks"
-    s3_presigned_url_expiry: int = 3600  # 1 hour for Label Studio access
+    s3_presigned_url_expiry: int = 3600
     
     # Label Studio Integration
     label_studio_url: str = ""
@@ -141,18 +141,17 @@ class Settings(BaseSettings):
     scp_timeout_seconds: int = 30
     
     # Whisper Model Configuration
-    whisper_model_variant: str = "large_v3"  # large_v3, large_turbo
-    translation_strategy: str = "whisper_builtin"  # whisper_builtin, custom_model
+    whisper_model_variant: str = "large_v3"
+    translation_strategy: str = "whisper_builtin"
     whisper_large_v3_path: str = "./models/whisper_large_v3"
     whisper_large_turbo_path: str = "./models/whisper_large_turbo"
-    whisper_active_symlink: str = "./models/whisper"  # Symlink for backward compatibility
+    whisper_active_symlink: str = "./models/whisper"
     
     # HuggingFace Hub Configuration
-    use_hf_models: bool = True  # Use HuggingFace Hub models instead of local models
-    hf_organization: str = "openchs"  # OpenCHS organization on HuggingFace Hub
-    hf_token: str = ""  # HuggingFace API token for private models
+    use_hf_models: bool = True
+    hf_organization: str = "openchs"
     
-    # HuggingFace Model IDs (organization/model-name)
+    # HuggingFace Model IDs
     hf_whisper_large_v3: str = "openai/whisper-large-v3"
     hf_whisper_large_turbo: str = "openai/whisper-large-v3-turbo"
     hf_classifier_model: str = "openchs/cls-gbv-distilbert-v1"
@@ -163,10 +162,10 @@ class Settings(BaseSettings):
     
     # Agent Notification Configuration
     enable_agent_notifications: bool = True
-    notification_mode: str = "results_only"  # all, results_only, critical_only, disabled
+    notification_mode: str = "results_only"
     notification_endpoint_url: str = "https://192.168.10.3/hh5aug2025/api/msg/"
     notification_auth_endpoint_url: str = "https://192.168.10.3/hh5aug2025/api/"
-    notification_basic_auth: str = "dGVzdDpwQHNzdzByZA=="  # Base64 encoded
+    notification_basic_auth: str = "dGVzdDpwQHNzdzByZA=="
     notification_request_timeout: int = 10
     notification_max_retries: int = 3
     
@@ -177,15 +176,13 @@ class Settings(BaseSettings):
     def get_active_whisper_path(self) -> str:
         """Get path to the currently active whisper model"""
         if self.use_hf_models:
-            # Return HuggingFace model ID instead of local path
             if self.whisper_model_variant == "large_v3":
                 return self._get_hf_model_id("whisper_large_v3")
             elif self.whisper_model_variant == "large_turbo":
                 return self._get_hf_model_id("whisper_large_turbo")
             else:
-                return self.hf_whisper_large_v3  # Default fallback
+                return self.hf_whisper_large_v3
         else:
-            # Use local paths
             if self.whisper_model_variant == "large_v3":
                 return os.path.abspath(self.whisper_large_v3_path)
             elif self.whisper_model_variant == "large_turbo":
@@ -194,7 +191,7 @@ class Settings(BaseSettings):
                 return os.path.abspath(self.whisper_active_symlink)
     
     def _get_hf_model_id(self, model_name: str) -> str:
-        """Get HuggingFace model ID, with organization prefix if specified"""
+        """Get HuggingFace model ID"""
         model_id_map = {
             "whisper_large_v3": self.hf_whisper_large_v3,
             "whisper_large_turbo": self.hf_whisper_large_turbo,
@@ -207,18 +204,15 @@ class Settings(BaseSettings):
         
         model_id = model_id_map.get(model_name, "")
         
-        # If no specific model ID and organization is set, construct it
         if not model_id and self.hf_organization:
             model_id = f"{self.hf_organization}/{model_name.replace('_', '-')}"
         
         return model_id or model_id_map.get("whisper_large_v3", "openai/whisper-large-v3")
     
     def get_hf_model_kwargs(self) -> Dict[str, Any]:
-        """Get common kwargs for HuggingFace model loading"""
-        kwargs = {}
-        if self.hf_token:
-            kwargs["token"] = self.hf_token
-        return kwargs
+        """Get common kwargs for HuggingFace model loading - NO TOKEN for public models"""
+        # Return empty dict - no authentication needed for public models
+        return {}
     
     def get_processing_mode_config(self) -> Dict[str, Any]:
         """Get complete processing mode configuration as dictionary"""
@@ -262,37 +256,30 @@ class Settings(BaseSettings):
     
     def initialize_paths(self):
         """Initialize paths - called explicitly, not at import time"""
-        # Auto-detect Docker environment
         self.docker_container = os.getenv("DOCKER_CONTAINER") is not None or os.path.exists("/.dockerenv")
         
-        # Auto-detect paths based on environment
         if self.docker_container:
-            # Docker environment: use /app paths
             if self.models_path == "./models":
                 self.models_path = "/app/models"
             if self.logs_path == "./logs":
                 self.logs_path = "/app/logs"
             if self.temp_path == "./temp":
                 self.temp_path = "/app/temp"
-            print("🐳 Docker environment detected - using /app paths")
+            print("Docker environment detected - using /app paths")
         else:
-            # Local development: use relative paths
-            print("💻 Local development environment detected - using relative paths")
+            print("Local development environment detected - using relative paths")
         
-        # Convert to absolute paths
         self.models_path = os.path.abspath(self.models_path)
         self.logs_path = os.path.abspath(self.logs_path)
         self.temp_path = os.path.abspath(self.temp_path)
         
-        # Create directories if they don't exist
         os.makedirs(self.models_path, exist_ok=True)
         os.makedirs(self.logs_path, exist_ok=True)
         os.makedirs(self.temp_path, exist_ok=True)
         
-        # Debug output
-        print(f"📁 Models path: {self.models_path}")
-        print(f"📁 Models exists: {os.path.exists(self.models_path)}")
-        print(f"🔧 Environment: {'Docker' if self.docker_container else 'Local'}")
+        print(f"Models path: {self.models_path}")
+        print(f"Models exists: {os.path.exists(self.models_path)}")
+        print(f"Environment: {'Docker' if self.docker_container else 'Local'}")
         
         return self.models_path
     
@@ -300,10 +287,8 @@ class Settings(BaseSettings):
         env_file = ".env"
         case_sensitive = False
 
-# Initialize settings (but don't call path initialization at import time)
 settings = Settings()
 
-# Redis clients with error handling - but don't connect at import time
 redis_client = None
 redis_task_client = None
 
@@ -323,13 +308,12 @@ def initialize_redis():
         redis_client = redis.from_url(redis_url)
         redis_task_client = redis.from_url(f"{redis_url.rsplit('/', 1)[0]}/{settings.redis_task_db}")
         
-        # Test connection
         redis_client.ping()
-        print(f"✅ Redis connected: {redis_url}")
+        print(f"Redis connected: {redis_url}")
         return True
         
     except Exception as e:
-        print(f"⚠️ Redis connection failed: {e}")
+        print(f"Redis connection failed: {e}")
         redis_client = None
         redis_task_client = None
         return False
