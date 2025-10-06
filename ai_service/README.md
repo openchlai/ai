@@ -441,7 +441,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 
 # Install spaCy model
-python -m spacy download en_core_web_md
+python -m spacy download en_core_web_lg
 
 # Start development server
 python -m app.main
