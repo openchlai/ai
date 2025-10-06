@@ -26,7 +26,6 @@ class TranslationModel:
         
         # Hugging Face repo support (hub-first)
         self.hf_repo_id = os.getenv("TRANSLATION_HF_REPO_ID") or getattr(settings, "translation_hf_repo_id", None)
-        self.hf_token = os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACE_HUB_TOKEN") or getattr(settings, "hf_token", None)
         # Target language configuration (default to English)
         self.target_language = os.getenv("TRANSLATION_TARGET_LANGUAGE", "en").lower()
         # Optional explicit target token override (e.g., ">>eng<<")
@@ -39,12 +38,9 @@ class TranslationModel:
             
             if not self.hf_repo_id:
                 raise RuntimeError("TRANSLATION_HF_REPO_ID or settings.translation_hf_repo_id must be set for hub loading")
-            token_kwargs = {"use_auth_token": self.hf_token} if self.hf_token else {}
             logger.info(f"📦 Loading translation model from Hugging Face Hub: {self.hf_repo_id} (ignoring local path {self.model_path})")
-            if self.hf_token:
-                logger.info("🔐 Using HF token for authenticated access")
-            self.tokenizer = AutoTokenizer.from_pretrained(self.hf_repo_id, local_files_only=False, **token_kwargs)
-            self.model = AutoModelForSeq2SeqLM.from_pretrained(self.hf_repo_id, local_files_only=False, **token_kwargs)
+            self.tokenizer = AutoTokenizer.from_pretrained(self.hf_repo_id, local_files_only=False)
+            self.model = AutoModelForSeq2SeqLM.from_pretrained(self.hf_repo_id, local_files_only=False)
             # Configure target language for Marian/OPUS MT models if supported
             try:
                 # Highest priority: explicit override via env
