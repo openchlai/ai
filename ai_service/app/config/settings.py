@@ -36,14 +36,14 @@ class Settings(BaseSettings):
     logs_path: str = "./logs"
     temp_path: str = "./temp"
     
-    # Hugging Face configuration (optional)
-    hf_token: Optional[str] = None  # Reads from env if provided
-    classifier_hf_repo_id: Optional[str] = None
-    summarization_hf_repo_id: Optional[str] = None
-    translation_hf_repo_id: Optional[str] = None
-    qa_hf_repo_id: Optional[str] = None
-    ner_hf_repo_id: Optional[str] = None
-    whisper_hf_repo_id: Optional[str] = None
+    # Hugging Face configuration: hf_token from .env; repo IDs have defaults but remain overridable by .env
+    hf_token: Optional[str] = None
+    classifier_hf_repo_id: Optional[str] = "openchs/cls-gbv-distilbert-v1"
+    summarization_hf_repo_id: Optional[str] = "openchs/sum-flan-t5-base-synthetic-v1"
+    translation_hf_repo_id: Optional[str] = "openchs/sw-en-opus-mt-mul-en-v1"
+    qa_hf_repo_id: Optional[str] = "openchs/qa-helpline-distilbert-v1"
+    ner_hf_repo_id: Optional[str] = "openchs/ner_distillbert_v1"
+    whisper_hf_repo_id: Optional[str] = "openai/whisper-large-v3-turbo"
     
     # Redis Configuration
     redis_url: str = "redis://localhost:6379/0"
