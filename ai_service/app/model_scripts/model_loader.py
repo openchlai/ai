@@ -110,6 +110,10 @@ class ModelLoader:
             "summarizer": {
                 "required": ["torch", "transformers", "numpy"],
                 "description": "Text summarization"
+            },
+            "qa": {
+                "required": ["torch", "transformers", "numpy"],
+                "description": "QA scoring"
             }
         }
         
@@ -262,6 +266,21 @@ class ModelLoader:
                     model_status.error = summarization_model.error or "Failed to load summarization model"
                     logger.error(f"❌ Summarization model failed to load: {model_status.error}")
 
+                model_status.load_time = datetime.now()
+                return
+            
+            if model_name == "qa":
+                from .qa_model import qa_model
+                success = qa_model.load()
+                if success:
+                    model_status.loaded = True
+                    model_status.error = None
+                    model_status.model_info = qa_model.get_model_info()
+                    self.models[model_name] = qa_model
+                    logger.info("✅ QA model loaded successfully")
+                else:
+                    model_status.error = qa_model.error or "Failed to load QA model"
+                    logger.error(f"❌ QA model failed to load: {model_status.error}")
                 model_status.load_time = datetime.now()
                 return
             
