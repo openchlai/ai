@@ -5,6 +5,7 @@ from datetime import datetime
 import logging
 
 from ..model_scripts.model_loader import model_loader
+from ..utils.text_utils import TranslationChunker
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/translate", tags=["translation"])
@@ -20,6 +21,8 @@ class TranslationResponse(BaseModel):
 
 @router.post("/", response_model=TranslationResponse)
 async def translate_text(request: TranslationRequest):
+    """Translate text with automatic chunking for long inputs"""
+
     if not model_loader.is_model_ready("translator"):
         raise HTTPException(
             status_code=503,
@@ -41,8 +44,45 @@ async def translate_text(request: TranslationRequest):
                 status_code=503,
                 detail="Translator model not available"
             )
+        # Define translation tokenizer name for chunking
+        tokenizer_name = "openchs/sw-en-opus-mt-mul-en-v1"
+        
+        # Initialize chunker with configuration
+        chunker = TranslationChunker(
+            tokenizer_name=tokenizer_name,
+            max_tokens=512
+        )
+        
+        # Count tokens
+        token_count = chunker.count_tokens(request.text)
+        MAX_SOURCE_LENGTH = 512
+        
+        if token_count <= MAX_SOURCE_LENGTH:
+            # Direct translation for short text
+            translated = translator_model.translate(request.text)
+            logger.info(f" Translated {len(request.text)} chars (no chunking needed)")
+        else:
+            # Chunking needed for long text
+            logger.info(f" Applying chunking: {token_count} tokens > {MAX_SOURCE_LENGTH}")
+            
+            # Create chunks
+            chunks = chunker.chunk_transcript(request.text)
+            
+            # Translate each chunk
+            translated_chunks = []
+            for i, chunk_info in enumerate(chunks):
+                chunk_translated = translator_model.translate(chunk_info['text'])
+                translated_chunks.append(chunk_translated)
+                logger.debug(f"  Chunk {i+1}/{len(chunks)} translated")
+            
+            # Reconstruct final translation (joins with spaces)
+            translated = chunker.reconstruct_translation(translated_chunks)
+            
+            logger.info(f" Processed {len(chunks)} chunks")
+        
 
-        translated = translator_model.translate(request.text)
+
+        # translated = translator_model.translate(request.text)
         processing_time = (datetime.now() - start_time).total_seconds()
         model_info = translator_model.get_model_info()
 

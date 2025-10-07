@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from typing import List, Dict, Union, Optional
 import logging
 from datetime import datetime
-
+from ..utils.text_utils import NERChunker
 from ..model_scripts.model_loader import model_loader
 
 logger = logging.getLogger(__name__)
@@ -53,6 +53,53 @@ async def extract_entities(request: NERRequest):
                 status_code=503,
                 detail="NER model not available"
             )
+        # Initialize chunker with configuration
+        tokenizer_name = "distilbert-base-uncased"
+        
+        # Initialize chunker with configuration
+        chunker = NERChunker(
+            tokenizer_name=tokenizer_name,
+            max_tokens=512
+        )
+        
+        # Count tokens
+        token_count = chunker.count_tokens(request.text)
+        MAX_SOURCE_LENGTH = 512
+        
+        if token_count <= MAX_SOURCE_LENGTH:
+            # Direct entity extraction for short text
+            entities = ner_model.extract_entities(request.text, flat=request.flat)
+            logger.info(f"✅ NER processed {len(request.text)} chars (no chunking needed)")
+        else:
+            # Chunking needed for long text
+            logger.info(f"📦 Applying chunking: {token_count} tokens > {MAX_SOURCE_LENGTH}")
+            
+            # Create chunks with character position tracking
+            chunks = chunker.chunk_transcript(request.text)
+            
+            # Extract entities from each chunk
+            chunk_entities = []
+            for i, chunk_info in enumerate(chunks):
+                chunk_ent = ner_model.extract_entities(
+                    chunk_info['text'], 
+                    flat=True  # Always get flat format internally for reconstruction
+                )
+                chunk_entities.append(chunk_ent)
+                logger.debug(f"  Chunk {i+1}/{len(chunks)}: {len(chunk_ent)} entities extracted")
+            
+            # Reconstruct entities with adjusted character positions
+           
+            entities = chunker.reconstruct_entities(
+                chunk_entities, 
+                chunks, 
+                flat=request.flat
+                )
+
+            
+            logger.info(f"✅ Processed {len(chunks)} chunks, extracted {len(entities)} entities")
+        
+        processing_time = (datetime.now() - start_time).total_seconds()
+        
         
         # Extract entities
         entities = ner_model.extract_entities(request.text, flat=request.flat)

@@ -6,6 +6,10 @@ import logging
 
 from ..model_scripts.model_loader import model_loader
 
+import sys
+import os
+from ..utils.text_utils import SummarizationChunker
+
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/summarizer", tags=["summarizer"])
 
@@ -43,9 +47,50 @@ async def summarize_text_endpoint(request: SummarizationRequest):
 
     try:
         start_time = datetime.now()
+        tokenizer_name = "openchs/sum-flan-t5-base-synthetic-v1"
+    
+        # Initialize chunker with configuration from test file
+        chunker = SummarizationChunker(
+            # tokenizer_name=summarizer_model.model_path,
+            tokenizer_name=tokenizer_name,
+            max_tokens=512,      # From test file: Leave room for prompt
+            overlap_tokens=0     # From test file: No overlap for summarization
+        )
+        
+        # Count tokens including prompt prefix
+        prompt_prefix = "Summarize the following child helpline case call transcript: "
+        full_input = prompt_prefix + request.text
+        token_count = chunker.count_tokens(full_input)
+        
+        # Model max source length from test file
+        MAX_SOURCE_LENGTH = 512 # was fine-tuned with 512 token limit in mind, should be 1024
 
+        if token_count <= MAX_SOURCE_LENGTH:
+            # Original logic: Direct summarization
+            summary = summarizer_model.summarize(request.text, max_length=request.max_length)
+        else:
+            # Chunking needed for long text
+            logger.info(f"📦 Applying chunking: {token_count} tokens > {MAX_SOURCE_LENGTH}")
+            
+            # Create chunks
+            chunks = chunker.chunk_transcript(request.text)
+            
+            # Summarize each chunk
+            chunk_summaries = []
+            for i, chunk_info in enumerate(chunks):
+                chunk_summary = summarizer_model.summarize(
+                    chunk_info['text'], 
+                    max_length=request.max_length
+                )
+                chunk_summaries.append(chunk_summary)
+            
+            # Reconstruct final summary (joins with \n\n from text_utils.py)
+            summary = chunker.reconstruct_summary(chunk_summaries)
+            
+            logger.info(f"✅ Processed {len(chunks)} chunks")
+ 
         # Generate summary
-        summary = summarizer_model.summarize(request.text, max_length=request.max_length)
+        # summary = summarizer_model.summarize(request.text, max_length=request.max_length)
 
         processing_time = (datetime.now() - start_time).total_seconds()
         model_info = summarizer_model.get_model_info()
