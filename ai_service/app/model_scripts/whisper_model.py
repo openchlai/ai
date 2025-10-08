@@ -19,10 +19,20 @@ class WhisperModel:
         self.enable_translation = enable_translation
         
         if enable_translation:
-            self.fallback_model_id = "openai/whisper-large-v3"
+            # Use configured HF whisper large v3 as fallback (do not reference OpenAI)
+            self.fallback_model_id = (
+                self.settings.hf_whisper_large_v3
+                if getattr(self.settings, "hf_whisper_large_v3", None)
+                else self.settings.get_active_whisper_path()
+            )
             self.model_version = "large-v3"
         else:
-            self.fallback_model_id = "openai/whisper-large-v3-turbo"
+            # Use configured HF whisper large turbo as fallback (do not reference OpenAI)
+            self.fallback_model_id = (
+                self.settings.hf_whisper_large_turbo
+                if getattr(self.settings, "hf_whisper_large_turbo", None)
+                else self.settings.get_active_whisper_path()
+            )
             self.model_version = "large-v3-turbo"
         
         self.model = None
@@ -502,6 +512,185 @@ class WhisperModel:
             task_desc = "Transcription" if task == "transcribe" else "Translation"
             logger.error(f"PCM {task_desc} failed: {e}")
             raise RuntimeError(f"PCM {task_desc} failed: {str(e)}")
+    
+    # ============================================================================
+    # NEW METHODS: Ensure both transcript and translation are returned
+    # ============================================================================
+    
+    def transcribe_and_translate(
+        self,
+        audio_file_path: str,
+        language: Optional[str] = None
+    ) -> Dict[str, str]:
+        """
+        Get both transcript (original language) AND translation (English) from audio file
+        
+        This method ensures you always get both outputs instead of just one.
+        
+        Args:
+            audio_file_path: Path to audio file
+            language: Source language code (e.g., "sw" for Swahili)
+        
+        Returns:
+            Dict with keys:
+                - 'transcript': Original language text
+                - 'translation': English translation (or None if translation not enabled)
+        
+        Example:
+            result = whisper_model.transcribe_and_translate("audio.wav", language="sw")
+            print(result['transcript'])   # "Mimi nina tatizo..."
+            print(result['translation'])  # "I have a problem..."
+        """
+        if not self.is_loaded:
+            raise RuntimeError("Whisper model not loaded")
+        
+        logger.info(f"📝 Processing audio for both transcription and translation")
+        
+        result = {
+            "transcript": None,
+            "translation": None
+        }
+        
+        try:
+            # STEP 1: Always get original language transcript first
+            logger.info(f"  Step 1: Transcribing in {language or 'auto-detected language'}...")
+            result["transcript"] = self.transcribe_audio_file(
+                audio_file_path=audio_file_path,
+                language=language,
+                task="transcribe"  # ALWAYS transcribe first
+            )
+            logger.info(f"✅ Transcript complete: {len(result['transcript'])} characters")
+            
+            # STEP 2: Get English translation
+            if self.enable_translation:
+                logger.info(f"  Step 2: Translating to English...")
+                result["translation"] = self.transcribe_audio_file(
+                    audio_file_path=audio_file_path,
+                    language=language,
+                    task="translate"  # Now get English translation
+                )
+                logger.info(f"✅ Translation complete: {len(result['translation'])} characters")
+            else:
+                logger.warning("⚠️ Translation skipped (model loaded without enable_translation=True)")
+                result["translation"] = None
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"❌ Transcription and translation failed: {e}")
+            raise RuntimeError(f"Transcription and translation failed: {str(e)}")
+    
+    def transcribe_and_translate_bytes(
+        self,
+        audio_bytes: bytes,
+        language: Optional[str] = None
+    ) -> Dict[str, str]:
+        """
+        Get both transcript and translation from audio bytes
+        
+        Args:
+            audio_bytes: Audio data as bytes
+            language: Source language code (e.g., "sw")
+        
+        Returns:
+            Dict with 'transcript' and 'translation' keys
+        """
+        if not self.is_loaded:
+            raise RuntimeError("Whisper model not loaded")
+        
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_file:
+            try:
+                temp_file.write(audio_bytes)
+                temp_file.flush()
+                
+                result = self.transcribe_and_translate(temp_file.name, language)
+                return result
+                
+            finally:
+                try:
+                    os.unlink(temp_file.name)
+                except:
+                    pass
+    
+    def process_audio_with_options(
+        self,
+        audio_file_path: str,
+        language: Optional[str] = None,
+        include_translation: bool = False
+    ) -> Dict[str, Any]:
+        """
+        Flexible audio processing method that returns transcript and optional translation
+        
+        This is the main method you should use in your endpoints.
+        
+        Args:
+            audio_file_path: Path to audio file
+            language: Source language code (e.g., "sw")
+            include_translation: Whether to include English translation
+        
+        Returns:
+            Dict with keys:
+                - 'transcript': Original language text (ALWAYS present)
+                - 'translation': English translation (only if include_translation=True)
+                - 'language': Language code used
+                - 'has_translation': Boolean indicating if translation was performed
+        
+        Example:
+            # Just transcription
+            result = whisper_model.process_audio_with_options("audio.wav", "sw", False)
+            # Returns: {'transcript': '...', 'translation': None, ...}
+            
+            # Transcription + translation
+            result = whisper_model.process_audio_with_options("audio.wav", "sw", True)
+            # Returns: {'transcript': '...', 'translation': '...', ...}
+        """
+        if not self.is_loaded:
+            raise RuntimeError("Whisper model not loaded")
+        
+        logger.info(f"🎤 Processing audio: {Path(audio_file_path).name}")
+        logger.info(f"   Language: {language or 'auto-detect'}")
+        logger.info(f"   Include translation: {include_translation}")
+        
+        result = {
+            "transcript": None,
+            "translation": None,
+            "language": language,
+            "has_translation": False
+        }
+        
+        try:
+            # ALWAYS get transcript first
+            result["transcript"] = self.transcribe_audio_file(
+                audio_file_path=audio_file_path,
+                language=language,
+                task="transcribe"
+            )
+            logger.info(f"✅ Transcript: {len(result['transcript'])} chars")
+            
+            # Optionally get translation
+            if include_translation:
+                if self.enable_translation:
+                    result["translation"] = self.transcribe_audio_file(
+                        audio_file_path=audio_file_path,
+                        language=language,
+                        task="translate"
+                    )
+                    result["has_translation"] = True
+                    logger.info(f"✅ Translation: {len(result['translation'])} chars")
+                else:
+                    logger.warning("⚠️ Translation requested but model doesn't support it")
+                    result["translation"] = None
+                    result["has_translation"] = False
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"❌ Audio processing failed: {e}")
+            raise RuntimeError(f"Audio processing failed: {str(e)}")
+    
+    # ============================================================================
+    # End of new methods
+    # ============================================================================
     
     def get_supported_languages(self) -> Dict[str, str]:
         """Get dictionary of supported language codes and names"""

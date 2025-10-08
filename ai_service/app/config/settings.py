@@ -209,7 +209,50 @@ class Settings(BaseSettings):
         """Get common kwargs for HuggingFace model loading - NO TOKEN for public models"""
         # Return empty dict - no authentication needed for public models
         return {}
-    
+
+    # --- Translation helpers -------------------------------------------------
+    def get_translator_model_id(self) -> str:
+        """
+        Return the HuggingFace translator model id from configuration.
+        Falls back to a sensible id built from hf_organization if not set.
+        """
+        if self.hf_translator_model:
+            return self.hf_translator_model
+        return self._get_hf_model_id("translator")
+
+    def translation_backend(self, include_translation: bool) -> str:
+        """
+        Decide which backend should perform translation.
+        - If include_translation is False -> 'none'
+        - If include_translation is True and use_hf_models -> 'hf'
+        - Otherwise -> 'whisper' (use Whisper built-in translation)
+        Callers (audio endpoint / model manager) should use this to avoid
+        defaulting to Whisper when the HF translator is the desired target.
+        """
+        if not include_translation:
+            return "none"
+        if self.use_hf_models and self.hf_translator_model:
+            return "hf"
+        # fallback to whisper built-in translation
+        return "whisper"
+
+    def resolve_translation_target(self, include_translation: bool) -> Dict[str, str]:
+        """
+        Resolve and return the translation target information for callers.
+        Returns a dict with keys:
+          - backend: 'hf' | 'whisper' | 'none'
+          - model: model identifier or whisper variant
+        Example:
+          settings.resolve_translation_target(True) -> {"backend":"hf", "model":"openchs/..."}
+        """
+        backend = self.translation_backend(include_translation)
+        if backend == "hf":
+            return {"backend": "hf", "model": self.get_translator_model_id()}
+        if backend == "whisper":
+            # Return the whisper variant name so whisper manager can pick the right weights
+            return {"backend": "whisper", "model": self.whisper_model_variant}
+        return {"backend": "none", "model": ""}
+
     def get_processing_mode_config(self) -> Dict[str, Any]:
         """Get complete processing mode configuration as dictionary"""
         return {
