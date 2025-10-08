@@ -43,7 +43,7 @@ class Settings(BaseSettings):
     translation_hf_repo_id: Optional[str] = "openchs/sw-en-opus-mt-mul-en-v1"
     qa_hf_repo_id: Optional[str] = "openchs/qa-helpline-distilbert-v1"
     ner_hf_repo_id: Optional[str] = "openchs/ner_distillbert_v1"
-    whisper_hf_repo_id: Optional[str] = "openai/whisper-large-v3-turbo"
+    whisper_hf_repo_id: Optional[str] = "openchs/asr-whisper-helpline-sw-v1"
     
     # Redis Configuration
     redis_url: str = "redis://localhost:6379/0"
@@ -152,8 +152,8 @@ class Settings(BaseSettings):
     hf_organization: str = "openchs"
     
     # HuggingFace Model IDs
-    hf_whisper_large_v3: str = "openai/whisper-large-v3"
-    hf_whisper_large_turbo: str = "openai/whisper-large-v3-turbo"
+    hf_whisper_large_v3: str = "openchs/asr-whisper-helpline-sw-v1"
+    hf_whisper_large_turbo: str = "openchs/asr-whisper-helpline-sw-v1"
     hf_classifier_model: str = "openchs/cls-gbv-distilbert-v1"
     hf_ner_model: str = "openchs/ner_distillbert_v1"
     hf_translator_model: str = "openchs/sw-en-opus-mt-mul-en-v1"
@@ -176,12 +176,8 @@ class Settings(BaseSettings):
     def get_active_whisper_path(self) -> str:
         """Get path to the currently active whisper model"""
         if self.use_hf_models:
-            if self.whisper_model_variant == "large_v3":
-                return self._get_hf_model_id("whisper_large_v3")
-            elif self.whisper_model_variant == "large_turbo":
-                return self._get_hf_model_id("whisper_large_turbo")
-            else:
-                return self.hf_whisper_large_v3
+            # Always use the custom Swahili helpline model
+            return "openchs/asr-whisper-helpline-sw-v1"
         else:
             if self.whisper_model_variant == "large_v3":
                 return os.path.abspath(self.whisper_large_v3_path)
@@ -207,7 +203,7 @@ class Settings(BaseSettings):
         if not model_id and self.hf_organization:
             model_id = f"{self.hf_organization}/{model_name.replace('_', '-')}"
         
-        return model_id or model_id_map.get("whisper_large_v3", "openai/whisper-large-v3")
+        return model_id or "openchs/asr-whisper-helpline-sw-v1"
     
     def get_hf_model_kwargs(self) -> Dict[str, Any]:
         """Get common kwargs for HuggingFace model loading - NO TOKEN for public models"""
