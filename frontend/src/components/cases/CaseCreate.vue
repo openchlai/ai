@@ -1,12 +1,10 @@
 <template>
   <div class="case-creation-container">
-    <!-- Header Component -->
     <CaseHeader 
       :isAIEnabled="isAIEnabled" 
       @toggle-ai="handleAIToggle"
     />
     
-    <!-- Progress Tracker Component -->
     <ProgressTracker 
       :currentStep="currentStep"
       :totalSteps="totalSteps"
@@ -15,46 +13,48 @@
       @step-change="navigateToStep"
     />
     
-    <!-- Step Content Components -->
     <Step1ReporterSelection
-  v-if="currentStep === 1"
-  :currentStep="currentStep"
-  :searchQuery="formData.step1.searchQuery"
-  :filteredContacts="formData.step1.filteredContacts"
-  :selectedReporter="formData.step1.selectedReporter"
-  @search-change="handleSearchChange"
-  @select-reporter="selectExistingReporter"
-  @create-new-reporter="createNewReporter"
-  @validate-and-proceed="validateAndProceed(1)"
-  @skip-step="skipStep(1)"
-  @cancel-form="cancelForm"
-/>
-
+      v-if="currentStep === 1"
+      :currentStep="currentStep"
+      :searchQuery="formData.step1.searchQuery"
+      :filteredContacts="formData.step1.filteredContacts"
+      :selectedReporter="formData.step1.selectedReporter"
+      @search-change="handleSearchChange"
+      @select-reporter="selectExistingReporter"
+      @create-new-reporter="createNewReporter"
+      @validate-and-proceed="validateAndProceed(1)"
+      @skip-step="skipStep(1)"
+      @cancel-form="cancelForm"
+    />
     
-   <Step2ReporterDetails
-  v-if="currentStep === 2"
-  :formData="formData.step2"
-  :currentStep="currentStep"
-  @update:formData="(val) => (formData.step2 = val)"
-  @step-change="goToStep"
-  @skip-step="skipStep"
-  @save-step="saveStep"
-  @open-client-modal="openClientModal"
-  @open-perpetrator-modal="openPerpetratorModal"
-/>
- 
+    <Step2ReporterDetails
+      v-if="currentStep === 2"
+      :formData="formData.step2"
+      :currentStep="currentStep"
+      :selectedReporter="formData.step1.selectedReporter"
+      @update:formData="(val) => (formData.step2 = val)"
+      @step-change="goToStep"
+      @skip-step="skipStep"
+      @save-step="saveStep"
+      @open-client-modal="openClientModal"
+      @open-perpetrator-modal="openPerpetratorModal"
+      @remove-client="removeClient"
+      @remove-perpetrator="removePerpetrator"
+    />
+    
     <Step3CaseDetails
       v-if="currentStep === 3"
-       :currentStep="currentStep"
+      :currentStep="currentStep"
       :formData="formData.step3"
       @form-update="updateFormData('step3', $event)"
       @save-and-proceed="saveAndProceed(3)"
-      @go-to-step="goToStep(3)"
+      @step-change="goToStep"            
       @skip-step="skipStep(3)"
     />
     
     <Step4CaseClassification
       v-if="currentStep === 4"
+      :currentStep="currentStep"              
       :formData="formData.step4"
       :clientSearchResults="clientSearchResults"
       :hasSearched="hasSearched"
@@ -63,19 +63,18 @@
       @select-client="selectClient"
       @create-new-client="createNewClient"
       @save-and-proceed="saveAndProceed(4)"
-      @go-to-step="goToStep(4)"
+      @step-change="goToStep"                 
       @skip-step="skipStep(4)"
     />
     
     <Step5Review
-  v-if="currentStep === 5"
-  :currentStep="currentStep"
-  :formData="formData"
-  @go-to-step="goToStep"
-  @submit-case="submitCase"
-/>
+      v-if="currentStep === 5"
+      :currentStep="currentStep"
+      :formData="formData"
+      @go-to-step="goToStep"
+      @submit-case="submitCase"
+    />
     
-    <!-- Modals -->
     <ClientModal
       v-if="clientModalOpen"
       :clients="formData.step2.clients"
@@ -93,20 +92,19 @@
       @add-client="addClient"
     />
     
-   <PerpetratorModal
-  v-if="perpetratorModalOpen"
-  :perpetrators="formData.step2.perpetrators"
-  :perpetratorForm="perpetratorForm"
-  :currentPerpetratorStep="currentPerpetratorStep"
-  :perpetratorModalOpen="perpetratorModalOpen"
-  @close-modal="closePerpetratorModal"
-  @remove-perpetrator="removePerpetrator"
-  @update-perpetrator-form="updatePerpetratorForm"
-  @prev-perpetrator-step="prevPerpetratorStep"
-  @next-perpetrator-step="nextPerpetratorStep"
-  @add-perpetrator="addPerpetrator"
-/>
-
+    <PerpetratorModal
+      v-if="perpetratorModalOpen"
+      :perpetrators="formData.step2.perpetrators"
+      :perpetratorForm="perpetratorForm"
+      :currentPerpetratorStep="currentPerpetratorStep"
+      :perpetratorModalOpen="perpetratorModalOpen"
+      @close-modal="closePerpetratorModal"
+      @remove-perpetrator="removePerpetrator"
+      @update-perpetrator-form="updatePerpetratorForm"
+      @prev-perpetrator-step="prevPerpetratorStep"
+      @next-perpetrator-step="nextPerpetratorStep"
+      @add-perpetrator="addPerpetrator"
+    />
   </div>
 </template>
 
@@ -114,8 +112,9 @@
 import { ref, reactive, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCaseStore } from '@/stores/cases';
+import { useReporterStore } from '@/stores/reporters';
+import { useCategoryStore } from '@/stores/categories';
 
-// Import components
 import CaseHeader from '@/components/cases/CaseHeader.vue';
 import ProgressTracker from '@/components/cases/ProgressTracker.vue';
 import Step1ReporterSelection from '@/components/cases/Step1ReporterSelection.vue';
@@ -142,19 +141,32 @@ export default {
   setup() {
     const router = useRouter();
     const casesStore = useCaseStore();
+    const reporterStore = useReporterStore();
+    const categoryStore = useCategoryStore();
     
-    // UI State
+    const getValue = (contact, fieldName) => {
+      if (!contact || !Array.isArray(contact)) return '';
+      
+      const mapping = reporterStore.reporters_k?.[`contact_${fieldName}`] || reporterStore.reporters_k?.[fieldName];
+      if (mapping && Array.isArray(mapping) && mapping.length > 0) {
+        const idx = mapping[0];
+        return contact[idx] || '';
+      }
+      return '';
+    };
+    
     const currentStep = ref(1);
     const totalSteps = 5;
     const isAIEnabled = ref(false);
-    // Track each step status: "pending" | "active" | "completed" | "skipped"
-const stepStatus = reactive({
-  1: "active",
-  2: "pending",
-  3: "pending",
-  4: "pending",
-  5: "pending"
-});
+    
+    const stepStatus = reactive({
+      1: "active",
+      2: "pending",
+      3: "pending",
+      4: "pending",
+      5: "pending"
+    });
+    
     const stepLabels = [
       'Reporter Selection',
       'Reporter Details',
@@ -162,6 +174,7 @@ const stepStatus = reactive({
       'Classification',
       'Review'
     ];
+    
     const stepDescriptions = [
       'Choose an existing contact or create a new reporter for this case.',
       'Enter the reporter\'s contact information and details.',
@@ -170,7 +183,6 @@ const stepStatus = reactive({
       'Review all information before creating the case.'
     ];
     
-    // Form Data
     const formData = reactive({
       step1: {
         searchQuery: '',
@@ -214,23 +226,25 @@ const stepStatus = reactive({
         escalatedTo: '',
         justiceSystemState: '',
         generalAssessment: '',
-        servicesOffered: '',
-        referralSource: ''
+        servicesOffered: [],
+        servicesOfferedText: [],
+        referralSource: '',
+        referralsType: [],
+        policeDetails: '',
+        otherServicesDetails: '',
+        attachments: []
       }
     });
     
-    // Search & Filtering
     const searchQuery = ref('');
     const debouncedQuery = ref('');
     const filteredContacts = ref([]);
     const clientSearchResults = ref([]);
     const hasSearched = ref(false);
     
-    // Modal State
     const clientModalOpen = ref(false);
     const perpetratorModalOpen = ref(false);
     
-    // Client Modal State
     const currentClientStep = ref(0);
     const clientForm = reactive({
       name: '',
@@ -276,7 +290,6 @@ const stepStatus = reactive({
     const specialServicesSearch = ref('');
     const filteredSpecialServices = ref([]);
     
-    // Perpetrator Modal State
     const currentPerpetratorStep = ref(0);
     const perpetratorForm = reactive({
       name: '',
@@ -304,50 +317,52 @@ const stepStatus = reactive({
       additionalDetails: ''
     });
     
-    // Helper function to update form data
     const updateFormData = (step, data) => {
-      formData[step] = { ...formData[step], ...data };
+      if (step === 'step4') {
+        if (data.servicesOfferedSelection) {
+          formData.step4.servicesOffered = data.servicesOfferedSelection.values || [];
+          formData.step4.servicesOfferedText = data.servicesOfferedSelection.texts || [];
+        }
+        Object.keys(data).forEach(key => {
+          if (key !== 'servicesOfferedSelection') {
+            formData.step4[key] = data[key];
+          }
+        });
+      } else {
+        formData[step] = { ...formData[step], ...data };
+      }
     };
     
-    // Navigation methods
-  // Update statuses when navigating
-const navigateToStep = (step) => {
-  if (step >= 1 && step <= totalSteps) {
-    // Mark all previous steps as completed if not already
-    for (let i = 1; i < step; i++) {
-      if (stepStatus[i] !== "completed") {
-        stepStatus[i] = "completed";
+    const navigateToStep = (step) => {
+      if (step >= 1 && step <= totalSteps) {
+        for (let i = 1; i < step; i++) {
+          if (stepStatus[i] !== "completed") {
+            stepStatus[i] = "completed";
+          }
+        }
+        stepStatus[step] = "active";
+        for (let i = step + 1; i <= totalSteps; i++) {
+          if (stepStatus[i] !== "completed") {
+            stepStatus[i] = "pending";
+          }
+        }
+        currentStep.value = step;
       }
-    }
-    // Mark the current step as active
-    stepStatus[step] = "active";
-    // Mark all later steps as pending
-    for (let i = step + 1; i <= totalSteps; i++) {
-      if (stepStatus[i] !== "completed") {
-        stepStatus[i] = "pending";
-      }
-    }
-
-    currentStep.value = step;
-  }
-};
+    };
     
     const goToStep = (step) => {
       navigateToStep(step);
     };
     
-
-const validateAndProceed = (step) => {
-  // Add validation logic here
-  stepStatus[step] = "completed";
-  navigateToStep(step + 1);
-};
+    const validateAndProceed = (step) => {
+      stepStatus[step] = "completed";
+      navigateToStep(step + 1);
+    };
     
-   const saveAndProceed = (step) => {
-  // Add save logic here
-  stepStatus[step] = "completed";
-  navigateToStep(step + 1);
-};
+    const saveAndProceed = (step) => {
+      stepStatus[step] = "completed";
+      navigateToStep(step + 1);
+    };
     
     const skipStep = (step) => {
       navigateToStep(step + 1);
@@ -357,7 +372,6 @@ const validateAndProceed = (step) => {
       router.push('/cases');
     };
     
-    // Modal methods
     const openClientModal = () => {
       clientModalOpen.value = true;
     };
@@ -365,7 +379,6 @@ const validateAndProceed = (step) => {
     const closeClientModal = () => {
       clientModalOpen.value = false;
       currentClientStep.value = 0;
-      // Reset client form
       Object.keys(clientForm).forEach(key => {
         clientForm[key] = '';
       });
@@ -379,13 +392,11 @@ const validateAndProceed = (step) => {
     const closePerpetratorModal = () => {
       perpetratorModalOpen.value = false;
       currentPerpetratorStep.value = 0;
-      // Reset perpetrator form
       Object.keys(perpetratorForm).forEach(key => {
         perpetratorForm[key] = '';
       });
     };
     
-    // Client modal methods
     const updateClientForm = (data) => {
       Object.assign(clientForm, data);
     };
@@ -401,7 +412,7 @@ const validateAndProceed = (step) => {
     };
     
     const nextClientStep = () => {
-      if (currentClientStep.value < 4) { // Assuming 5 steps (0-4)
+      if (currentClientStep.value < 4) {
         currentClientStep.value++;
       }
     };
@@ -415,7 +426,6 @@ const validateAndProceed = (step) => {
       formData.step2.clients.splice(index, 1);
     };
     
-    // Perpetrator modal methods
     const updatePerpetratorForm = (data) => {
       Object.assign(perpetratorForm, data);
     };
@@ -427,7 +437,7 @@ const validateAndProceed = (step) => {
     };
     
     const nextPerpetratorStep = () => {
-      if (currentPerpetratorStep.value < 3) { // Assuming 4 steps (0-3)
+      if (currentPerpetratorStep.value < 3) {
         currentPerpetratorStep.value++;
       }
     };
@@ -441,28 +451,38 @@ const validateAndProceed = (step) => {
       formData.step2.perpetrators.splice(index, 1);
     };
     
-    // Search methods
     const handleSearchChange = (query) => {
       searchQuery.value = query;
-      // Implement debounced search logic
     };
     
     const selectExistingReporter = (reporter) => {
       formData.step1.selectedReporter = reporter;
-      // Populate formData.step2 with reporter data
-      if (reporter) {
-        const rep = reporter;
-        formData.step2.name = rep[casesStore.cases_k.reporter_fullname[0]] || '';
-        formData.step2.age = rep[casesStore.cases_k.reporter_age[0]] || '';
-        formData.step2.gender = rep[casesStore.cases_k.reporter_sex[0]] || '';
-        formData.step2.location = rep[casesStore.cases_k.reporter_location[0]] || '';
-        formData.step2.phone = rep[casesStore.cases_k.reporter_phone[0]] || '';
+      
+      if (reporter && Array.isArray(reporter)) {
+        formData.step2.name = getValue(reporter, 'fullname');
+        formData.step2.age = getValue(reporter, 'age');
+        formData.step2.dob = getValue(reporter, 'dob');
+        formData.step2.ageGroup = getValue(reporter, 'age_group');
+        formData.step2.gender = getValue(reporter, 'sex');
+        formData.step2.location = getValue(reporter, 'location');
+        formData.step2.nearestLandmark = getValue(reporter, 'landmark');
+        formData.step2.nationality = getValue(reporter, 'nationality');
+        formData.step2.language = getValue(reporter, 'language');
+        formData.step2.tribe = getValue(reporter, 'tribe');
+        formData.step2.phone = getValue(reporter, 'phone');
+        formData.step2.altPhone = getValue(reporter, 'alternative_phone');
+        formData.step2.email = getValue(reporter, 'email');
+        formData.step2.idType = getValue(reporter, 'id_type');
+        formData.step2.idNumber = getValue(reporter, 'id_number');
+        
+        formData.step2.isClient = null;
+        formData.step2.clients = [];
+        formData.step2.perpetrators = [];
       }
     };
     
     const createNewReporter = () => {
       formData.step1.selectedReporter = null;
-      // Clear any previously populated data
       Object.keys(formData.step2).forEach(key => {
         if (typeof formData.step2[key] === 'string') {
           formData.step2[key] = '';
@@ -470,293 +490,177 @@ const validateAndProceed = (step) => {
       });
       formData.step2.perpetrators = [];
       formData.step2.clients = [];
+      formData.step2.isClient = null;
     };
     
     const searchClientByPassport = () => {
-      // Implement passport search logic
       hasSearched.value = true;
     };
     
     const selectClient = (client) => {
-      // Handle client selection from search results
+      // Handle client selection
     };
     
     const createNewClient = () => {
-      // Open client modal or navigate to client creation
       openClientModal();
     };
     
-    // AI Toggle
     const handleAIToggle = (value) => {
       isAIEnabled.value = value;
     };
     
-    // Submit case to backend
     const submitCase = async () => {
-      // Map form data to backend payload structure
+      const timestamp = Date.now();
+      const timestampSeconds = (timestamp / 1000).toFixed(3);
+      const userId = "100";
+      const srcUid = `walkin-${userId}-${timestamp}`;
+      const srcUid2 = `${srcUid}-1`;
+      const srcCallId = srcUid2;
+      
+      const getValueOrDefault = (value, defaultValue = "") => {
+        return value !== null && value !== undefined && value !== "" ? value : defaultValue;
+      };
+      
+      const baseSourceFields = {
+        src: "walkin",
+        src_ts: timestampSeconds,
+        src_uid: srcUid,
+        src_uid2: srcUid2,
+        src_callid: srcCallId,
+        src_usr: userId,
+        src_vector: "2"
+      };
+      
+      const clientsPayload = formData.step2.clients.map(client => ({
+        client_id: client.id || ""
+      }));
+      
+      const perpetratorsPayload = formData.step2.perpetrators.map(perpetrator => ({
+        perpetrator_id: perpetrator.id || ""
+      }));
+      
+      const servicesPayload = (formData.step4.servicesOffered || []).map(serviceId => ({
+        category_id: String(serviceId)
+      }));
+      
+      const referralsPayload = (formData.step4.referralsType || []).map(referralId => ({
+        category_id: String(referralId)
+      }));
+      
+      const attachmentsPayload = (formData.step4.attachments || []).map((file, index) => ({
+        attachment_id: String(index + 1)
+      }));
+      
+      const mapDepartmentToBackend = (dept) => {
+        const deptMap = {
+          '116': '1',
+          'labor': '2'
+        };
+        return deptMap[dept] || '0';
+      };
+      
+      const mapGBVRelatedToBackend = (gbvId) => {
+        if (!gbvId) return '0';
+        const gbvRelatedIds = ['118002', '363070'];
+        return gbvRelatedIds.includes(String(gbvId)) ? '1' : '0';
+      };
+      
       const casePayload = {
-  src: "ceemis",
-  src_uid: "ceemis-d0a0fca3-1753869019",
-  src_address: formData.step2.phone || "256701234567",
-  src_uid2: "walkin-100-1743763537",
-  src_usr: "ceemis",
-  src_vector: "2",
-  src_callid: "44dea031-f268-4ed6-af7b-9231dc3c1b29",
-  src_ts: "1753869019.836215",
-  reporter_nickname: "ceemis_user",
-  case_category: "COMPLAINT",
-  case_category_id: "362484",
-  narrative: formData.step3.narrative || "",
-  complaint_text: null,
-  complaint_image: null,
-  complaint_audio: null,
-  complaint_video: null,
-  message_id_ref: "",
-  session_id: "d47e3704-1dbb-45f1-82c8-9a8902005a60",
-  plan: formData.step3.casePlan || "---",
-  priority: "1",
-  status:  "1",
-  escalated_to_id: mapEscalationToBackend(formData.step4.escalatedTo) || "0",
-  gbv_related: mapGBVRelatedToBackend(formData.step3.isGBVRelated) || "0",
-
-  reporters_uuid: {
-    fname: formData.step2.name || "",
-    age_t: "0",
-    age: formData.step2.age || "",
-    dob: "",
-    age_group_id: mapAgeGroupToBackend(formData.step2.ageGroup) || "",
-    location_id: mapLocationToBackend(formData.step2.location) || "258783",
-    sex_id: mapGenderToBackend(formData.step2.gender) || "",
-    landmark: formData.step2.nearestLandmark || "",
-    nationality_id: mapNationalityToBackend(formData.step2.nationality) || "",
-    national_id_type_id: mapIdTypeToBackend(formData.step2.idType) || "1",
-    national_id: formData.step2.idNumber || "C7845123",
-    lang_id: mapLanguageToBackend(formData.step2.language) || "",
-    tribe_id: mapTribeToBackend(formData.step2.tribe) || "",
-    phone: formData.step2.phone || "256701234567",
-    phone2: formData.step2.altPhone || "",
-    email: formData.step2.email || "",
-    ".id": ""
-  },
-
-  clients_case: (formData.step2.clients.length > 0 ? formData.step2.clients : [{}]).map(client => ({
-    fname: client.name || formData.step2.name || "",
-    age_t: "0",
-    age: client.age || formData.step2.age || "",
-    dob: client.dob || "",
-    age_group_id: mapAgeGroupToBackend(client.ageGroup || formData.step2.ageGroup) || "",
-    location_id: mapLocationToBackend(client.location || formData.step2.location) || "258783",
-    sex_id: mapGenderToBackend(client.sex || formData.step2.gender) || "",
-    landmark: client.landmark || formData.step2.nearestLandmark || "",
-    nationality_id: mapNationalityToBackend(client.nationality || formData.step2.nationality) || "",
-    national_id_type_id: mapIdTypeToBackend(client.idType || formData.step2.idType) || "1",
-    national_id: client.idNumber || formData.step2.idNumber || "C7845123",
-    lang_id: mapLanguageToBackend(client.language || formData.step2.language) || "",
-    tribe_id: mapTribeToBackend(client.tribe || formData.step2.tribe) || "",
-    phone: client.phone || formData.step2.phone || "256701234567",
-    phone2: client.alternativePhone || formData.step2.altPhone || "",
-    email: client.email || formData.step2.email || "",
-    ".id": ""
-  })),
-
-  perpetrators_case: (formData.step2.perpetrators.length > 0 ? formData.step2.perpetrators : [{}]).map(perpetrator => ({
-    fname: perpetrator.name || "",
-    age_t: "0",
-    age: perpetrator.age || "",
-    dob: perpetrator.dob || "",
-    age_group_id: mapAgeGroupToBackend(perpetrator.ageGroup) || "",
-    age_group: perpetrator.ageGroup || "",
-    location_id: mapLocationToBackend(perpetrator.location) || "258783",
-    sex_id: mapGenderToBackend(perpetrator.sex) || "",
-    sex: perpetrator.sex || "",
-    landmark: perpetrator.landmark || "",
-    nationality_id: mapNationalityToBackend(perpetrator.nationality) || "",
-    national_id_type_id: mapIdTypeToBackend(perpetrator.idType) || "2",
-    national_id: perpetrator.idNumber || "EMP789456",
-    lang_id: mapLanguageToBackend(perpetrator.language) || "",
-    tribe_id: mapTribeToBackend(perpetrator.tribe) || "",
-    phone: perpetrator.phone || "",
-    phone2: perpetrator.alternativePhone || "",
-    email: perpetrator.email || "",
-    relationship_id: mapRelationshipToBackend(perpetrator.relationship) || "",
-    relationship: perpetrator.relationship || "Employer",
-    shareshome_id: mapSharesHomeToBackend(perpetrator.sharesHome) || "",
-    health_id: mapHealthStatusToBackend(perpetrator.healthStatus) || "",
-    employment_id: mapEmploymentToBackend(perpetrator.profession) || "1",
-    marital_id: mapMaritalStatusToBackend(perpetrator.maritalStatus) || "",
-    guardian_fullname: perpetrator.guardianName || "",
-    notes: perpetrator.additionalDetails || "Employer in Housemaid sector",
-    ".id": ""
-  })),
-
-  attachments_case: [],
-  services: Array.isArray(formData.step4.servicesOffered) ? formData.step4.servicesOffered : (formData.step4.servicesOffered ? [formData.step4.servicesOffered] : [])
-};  
+        ".id": "",
+        ...baseSourceFields,
+        src_address: getValueOrDefault(formData.step2.phone),
+        
+        reporter_contact_id: "86808",
+        reporter_fullname: getValueOrDefault(formData.step2.name),
+        reporter_age_group_id: getValueOrDefault(formData.step2.ageGroup),
+        reporter_sex_id: getValueOrDefault(formData.step2.gender),
+        
+        reporter_age: getValueOrDefault(formData.step2.age),
+        reporter_phone: getValueOrDefault(formData.step2.phone),
+        reporter_location_id: getValueOrDefault(formData.step2.location),
+        reporter_nationality_id: getValueOrDefault(formData.step2.nationality),
+        
+        case_category_id: getValueOrDefault(formData.step4.categories),
+        narrative: getValueOrDefault(formData.step3.narrative),
+        plan: getValueOrDefault(formData.step3.casePlan),
+        dept: mapDepartmentToBackend(formData.step4.department),
+        disposition_id: "363037",
+        escalated_to_id: getValueOrDefault(formData.step4.escalatedTo, "0"),
+        gbv_related: mapGBVRelatedToBackend(formData.step3.isGBVRelated),
+        knowabout116_id: getValueOrDefault(formData.step4.referralSource),
+        police_ob_no: getValueOrDefault(formData.step4.policeDetails),
+        priority: getValueOrDefault(formData.step4.priority) || "1",
+        status: getValueOrDefault(formData.step4.status) || "1",
+        
+        reporters_uuid: formData.step1.selectedReporter ? undefined : {
+          fname: formData.step2.name || "",
+          age_t: "0",
+          age: formData.step2.age || "",
+          dob: formData.step2.dob || "",
+          age_group_id: formData.step2.ageGroup || "",
+          location_id: formData.step2.location || "",
+          sex_id: formData.step2.gender || "",
+          landmark: formData.step2.nearestLandmark || "",
+          nationality_id: formData.step2.nationality || "",
+          national_id_type_id: formData.step2.idType || "",
+          national_id: formData.step2.idNumber || "",
+          lang_id: formData.step2.language || "",
+          tribe_id: formData.step2.tribe || "",
+          phone: formData.step2.phone || "",
+          phone2: formData.step2.altPhone || "",
+          email: formData.step2.email || "",
+          ".id": ""
+        },
+        
+        services: servicesPayload,
+        referals: referralsPayload,
+        specify_service: getValueOrDefault(formData.step4.otherServicesDetails),
+        clients_case: clientsPayload,
+        perpetrators_case: perpetratorsPayload,
+        attachments_case: attachmentsPayload
+      };
+      
+      Object.keys(casePayload).forEach(key => {
+        if (casePayload[key] === undefined) {
+          delete casePayload[key];
+        }
+      });
+      
+      // FORCE REMOVE reporter_uuid_id if it somehow gets added
+      delete casePayload.reporter_uuid_id;
+      
       try {
-        console.log('Case created:', casePayload);
+        console.log('Submitting payload:', JSON.stringify(casePayload, null, 2));
         await casesStore.createCase(casePayload);
         alert("Case created successfully!");
-       // router.push("/cases");
+        router.push("/cases");
       } catch (error) {
         console.error("Failed to create case:", error);
-        alert("An error occurred while creating the case.");
+        alert("An error occurred while creating the case: " + error.message);
       }
     };
     
-   // Mapping functions for backend values
-const mapPriorityToBackend = (priority) => {
-  const priorityMap = {
-    'low': '1',      // Low -> 1
-    'medium': '2',   // Medium -> 2
-    'high': '3',     // High -> 3
-    'none': '0',     // None -> 0
-    '': '0'          // Blank -> 0
-  };
-  console.log('Priority:', priority);
-  return priorityMap[priority?.toLowerCase()] || '1'; // default Low
-};
-
-const mapStatusToBackend = (status) => {
-  const statusMap = {
-    'ongoing': '1',       // Ongoing -> 1
-    'closed': '2',        // Closed -> 2
-    'escalated': '3',     // Escalated -> 3
-    'none': '0',          // None -> 0
-    '': '0'               // Blank -> 0
-  };
-  console.log('Status:', status);
-  return statusMap[status?.toLowerCase()] || '1'; // default Ongoing
-};
-
-    
-    const mapEscalationToBackend = (escalatedTo) => {
-      const escalationMap = {
-        "": '0',
-        'none': '0',
-        'supervisor': '1',
-        'manager': '2',
-        'director': '3',
-        'external-agency': '4',
-        'law-enforcement': '5'
-      };
-      return escalationMap[escalatedTo?.toLowerCase()]|| '0';
+    const saveStep = ({ step, data }) => {
+      const stepNumber = typeof step === 'string' ? parseInt(step.replace('step', '')) : step;
+      const stepKey = typeof step === 'string' ? step : `step${step}`;
+      
+      if (stepKey === 'step4' && data.servicesOfferedSelection) {
+        formData.step4 = { ...formData.step4, ...data };
+        formData.step4.servicesOffered = data.servicesOfferedSelection.values || [];
+        formData.step4.servicesOfferedText = data.servicesOfferedSelection.texts || [];
+      } else {
+        formData[stepKey] = { ...formData[stepKey], ...data };
+      }
+      
+      stepStatus[stepNumber] = "completed";
+      
+      const nextStep = stepNumber + 1;
+      if (nextStep <= totalSteps) {
+        navigateToStep(nextStep);
+      }
     };
-    
-    // Add other mapping functions as needed
-    const mapAgeGroupToBackend = (ageGroup) => {
-      // Implementation depends on your age group mapping
-      return '';
-    };
-    
-    const mapLocationToBackend = (location) => {
-      // Implementation depends on your location mapping
-      return '';
-    };
-    
-    const mapGenderToBackend = (gender) => {
-      const genderMap = {
-        'male': '1',
-        'female': '2',
-        'other': '3'
-      };
-      return genderMap[gender] || '';
-    };
-    
-    const mapNationalityToBackend = (nationality) => {
-      // Implementation depends on your nationality mapping
-      return '';
-    };
-    
-    const mapIdTypeToBackend = (idType) => {
-      const idTypeMap = {
-        'national-id': '1',
-        'passport': '2',
-        'birth-certificate': '3',
-        'refugee-id': '4',
-        'other': '5'
-      };
-      return idTypeMap[idType] || '1';
-    };
-    
-    const mapLanguageToBackend = (language) => {
-      // Implementation depends on your language mapping
-      return '';
-    };
-    
-    const mapTribeToBackend = (tribe) => {
-      // Implementation depends on your tribe mapping
-      return '';
-    };
-    
-    const mapRelationshipToBackend = (relationship) => {
-      // Implementation depends on your relationship mapping
-      return '';
-    };
-    
-    const mapSharesHomeToBackend = (sharesHome) => {
-      const sharesHomeMap = {
-        'yes': '1',
-        'no': '0',
-        'unknown': '2'
-      };
-      return sharesHomeMap[sharesHome] || '';
-    };
-    
-    const mapGBVRelatedToBackend = (gbv) => {
-  const gbvMap = {
-    'Not GBV': '0',
-    'Test GBV': '1',
-    0: '0',
-    1: '1',
-    '': '0',      // default
-    null: '0',    // default
-    undefined: '0'
-  };
-  return gbvMap[gbv] || '0';
-};
-
-    const mapHealthStatusToBackend = (healthStatus) => {
-      const healthMap = {
-        'good': '1',
-        'fair': '2',
-        'poor': '3',
-        'unknown': '4'
-      };
-      return healthMap[healthStatus] || '';
-    };
-    
-    const mapEmploymentToBackend = (employment) => {
-      const employmentMap = {
-        'employed': '1',
-        'self-employed': '2',
-        'unemployed': '3',
-        'student': '4',
-        'retired': '5',
-        'other': '6'
-      };
-      return employmentMap[employment] || '1';
-    };
-    
-    const mapMaritalStatusToBackend = (maritalStatus) => {
-      const maritalMap = {
-        'single': '1',
-        'married': '2',
-        'divorced': '3',
-        'widowed': '4',
-        'separated': '5'
-      };
-      return maritalMap[maritalStatus] || '';
-    };
-    
-    // Add inside setup()
-const saveStep = ({ step, data }) => {
-  formData[step] = { ...formData[step], ...data };
-  stepStatus[step] = "completed";
-  console.log("Step saved:", step, data);
-};
 
     return {
-      // State
       currentStep,
       totalSteps,
       isAIEnabled,
@@ -778,8 +682,6 @@ const saveStep = ({ step, data }) => {
       filteredSpecialServices,
       currentPerpetratorStep,
       perpetratorForm,
-      
-      // Methods
       updateFormData,
       navigateToStep,
       goToStep,
@@ -810,12 +712,12 @@ const saveStep = ({ step, data }) => {
       createNewClient,
       handleAIToggle,
       saveStep,
-      submitCase
+      submitCase,
+      getValue
     };
   }
 };
 </script>
-
 <style scoped>
 .case-creation-container {
   max-width: 1000px;

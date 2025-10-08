@@ -1,7 +1,7 @@
 <template>
   <!-- Step 2: Reporter Details -->
   <div v-show="currentStep === 2" class="step-content">
-    <form class="case-form" @submit.prevent="saveAndProceed(2)">
+    <form class="case-form" @submit.prevent="handleFormSubmit">
       <div class="form-section">
         <div class="section-title">
           {{ selectedReporter ? "Reporter Details" : "New Reporter Information" }}
@@ -33,6 +33,7 @@
             label="DOB"
             type="date"
             v-model="formData.dob"
+            @input="handleDobChange"
           />
           <BaseSelect
             id="reporter-age-group"
@@ -134,12 +135,13 @@
           />
         </div>
 
+        <!-- Is Reporter a Client Section -->
         <div class="form-row">
           <div class="form-group">
             <label>Is Reporter also a Client?</label>
             <div class="radio-group">
               <label class="radio-option">
-                <input v-model="formData.isClient" type="radio" :value="true" />
+                <input v-model="formData.isClient" type="radio" :value="true" @change="handleClientSelection" />
                 <span class="radio-indicator"></span>
                 <span class="radio-label">Yes</span>
               </label>
@@ -160,16 +162,16 @@
           <div class="form-group">
             <label>Perpetrators</label>
             <div class="perpetrators-section">
-              <div v-if="formData.perpetrators.length" class="perpetrators-list">
+              <div v-if="formData.perpetrators && formData.perpetrators.length" class="perpetrators-list">
                 <div
                   v-for="(perpetrator, index) in formData.perpetrators"
                   :key="index"
                   class="perpetrator-item"
                 >
                   <div class="perpetrator-info">
-                    <div class="perpetrator-name">{{ perpetrator.name }}</div>
+                    <div class="perpetrator-name">{{ perpetrator.name || 'Unnamed' }}</div>
                     <div class="perpetrator-details">
-                      {{ perpetrator.age }} {{ perpetrator.sex }} - {{ perpetrator.location }}
+                      {{ perpetrator.age || 'Unknown age' }} {{ perpetrator.sex || 'Unknown gender' }} - {{ perpetrator.location || 'Unknown location' }}
                     </div>
                   </div>
                   <button
@@ -181,6 +183,9 @@
                   </button>
                 </div>
               </div>
+              <div v-else class="empty-state">
+                <p>No perpetrators added yet</p>
+              </div>
               <button
                 type="button"
                 class="btn btn--primary btn--sm add-perpetrator-btn"
@@ -190,54 +195,72 @@
               </button>
             </div>
           </div>
+        </div>
 
-        <!-- Clients Section - Only show if "Is Reporter a Client?" is "No" -->
-<div v-if="formData.isClient === false" class="form-group">
-  <label>Clients</label>
-  <div class="clients-section">
-    <div v-if="formData.clients && formData.clients.length" class="clients-list">
-      <div
-        v-for="(client, index) in formData.clients"
-        :key="index"
-        class="client-item"
-      >
-        <div class="client-info">
-          <div class="client-name">{{ client.name }}</div>
-          <div class="client-details">
-            {{ client.age }} {{ client.sex }} - {{ client.phone || "No phone" }}
+        <!-- Clients Section - ALWAYS VISIBLE NOW -->
+        <div class="form-group">
+          <label class="form-label">Clients</label>
+          
+          <div class="clients-section">
+            <!-- Show existing clients if any -->
+            <div v-if="formData.clients && formData.clients.length > 0" class="clients-list">
+              <div
+                v-for="(client, index) in formData.clients"
+                :key="`client-${index}`"
+                class="client-item"
+                :class="{ 'is-reporter': client.isReporter }"
+              >
+                <div class="client-info">
+                  <div class="client-name">
+                    {{ client.name || 'Unnamed Client' }}
+                    <span v-if="client.isReporter" class="reporter-badge">Reporter</span>
+                  </div>
+                  <div class="client-details">
+                    {{ client.age ? client.age + ' years' : 'Age unknown' }} • 
+                    {{ client.sex || 'Gender unknown' }} • 
+                    {{ client.phone || "No phone" }}
+                  </div>
+                </div>
+                <button
+                  v-if="!client.isReporter"
+                  type="button"
+                  class="remove-client btn btn--danger btn--sm"
+                  @click="removeClient(index)"
+                  title="Remove client"
+                >
+                  ×
+                </button>
+                <span v-else class="auto-added-label">Auto-added</span>
+              </div>
+            </div>
+
+            <!-- Show empty state when no clients -->
+            <div v-else class="empty-state">
+              <div class="empty-icon">👥</div>
+              <p class="empty-text">No clients added yet</p>
+              <p class="empty-subtext">
+                {{ formData.isClient === true ? 'Reporter will be added as client automatically' : 'Click below to add a client' }}
+              </p>
+            </div>
+
+            <!-- Add More Clients Button -->
+            <button
+              type="button"
+              class="btn btn--secondary btn--sm add-client-btn"
+              @click="handleAddClient"
+            >
+              <span class="btn-icon">+</span>
+              {{ formData.clients.length > 0 ? 'Add Another Client' : 'Add Client' }}
+            </button>
           </div>
         </div>
-        <button
-          type="button"
-          class="remove-client"
-          @click="removeClient(index)"
-        >
-          ×
-        </button>
-      </div>
-    </div>
 
-    <div v-else class="empty-state">
-      <p>No clients added yet</p>
-    </div>
-
-    <button
-      type="button"
-      class="btn btn--primary btn--sm add-client-btn"
-      @click="openClientModal"
-    >
-      + Add Client
-    </button>
-  </div>
-</div>
-
-        </div>
       </div>
 
       <div class="form-actions">
-        <BaseButton variant="secondary" @click="goToStep(1)">Back</BaseButton>
+        <BaseButton type="button" variant="secondary" @click="goToStep(1)">Back</BaseButton>
         <div>
-          <BaseButton variant="secondary" @click="skipStep(2)">Skip</BaseButton>
+          <BaseButton type="button" variant="secondary" @click="handleSkipStep">Skip</BaseButton>
           <BaseButton type="submit">Next</BaseButton>
         </div>
       </div>
@@ -265,55 +288,209 @@ const emit = defineEmits([
   "save-step",
   "open-perpetrator-modal",
   "open-client-modal",
+  "remove-client",
+  "remove-perpetrator"
 ]);
 
-// Navigation
-const goToStep = (step) => emit("step-change", step);
-const skipStep = (step) => emit("skip-step", { step, data: props.formData });
-const saveAndProceed = (step) =>
-  emit("save-step", { step, data: props.formData });
+// Navigation functions
+const goToStep = (step) => {
+  console.log('Going to step:', step);
+  // Update parent formData before navigating
+  emit("update:formData", props.formData);
+  emit("step-change", step);
+};
 
-// Perpetrators
+const handleSkipStep = () => {
+  console.log('Skipping step 2');
+  emit("skip-step", { step: 2, data: props.formData });
+};
+
+// Form submission handler - this handles the Next button
+const handleFormSubmit = () => {
+  console.log('Form submitted - Next button clicked');
+  
+  // Basic validation
+  if (!validateForm()) {
+    return; // Stop if validation fails
+  }
+  
+  // Save the current step data and proceed to next step
+  console.log('Emitting save-step with data:', props.formData);
+  emit("save-step", { step: 2, data: props.formData });
+};
+
+// Form validation - UPDATED to remove isClient requirement
+const validateForm = () => {
+  const errors = [];
+  
+  // Check required fields
+  if (!props.formData.name?.trim()) {
+    errors.push('Full Name is required');
+  }
+  
+  if (!props.formData.phone?.trim()) {
+    errors.push('Phone Number is required');
+  }
+  
+  // Removed the isClient validation since it's optional now
+  
+  // Show validation errors if any
+  if (errors.length > 0) {
+    alert('Please fix the following errors:\n\n' + errors.join('\n'));
+    console.log('Validation errors:', errors);
+    return false;
+  }
+  
+  console.log('Form validation passed');
+  return true;
+};
+
+// Client and perpetrator handlers
 const removePerpetrator = (index) => {
-  props.formData.perpetrators.splice(index, 1);
-  emit("update:formData", props.formData);
+  console.log('Removing perpetrator at index:', index);
+  emit("remove-perpetrator", index);
 };
 
-// Remove a client from step2.clients
 const removeClient = (index) => {
-  props.formData.clients.splice(index, 1);
-  emit("update:formData", props.formData);
+  console.log('Removing client at index:', index);
+  emit("remove-client", index);
 };
 
+const openPerpetratorModal = () => {
+  console.log('Opening perpetrator modal');
+  emit("open-perpetrator-modal");
+};
 
-const openPerpetratorModal = () => emit("open-perpetrator-modal");
-const openClientModal = () => emit("open-client-modal");
+const handleAddClient = () => {
+  console.log('Add Client button clicked in Step2');
+  console.log('About to emit open-client-modal');
+  emit("open-client-modal");
+  console.log('open-client-modal event emitted');
+};
 
+// Utility function to calculate age from date of birth
+const calculateAge = (dob) => {
+  if (!dob) return null;
+  
+  const birthDate = new Date(dob);
+  const today = new Date();
+  
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  
+  // Adjust if birthday hasn't occurred this year yet
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  
+  return age >= 0 ? age : null;
+};
+
+// Function to determine age group based on age
+const getAgeGroup = (age) => {
+  if (!age || age < 0) return '';
+  
+  if (age < 6) return '0-5';
+  if (age <= 12) return '6-12';
+  if (age <= 17) return '13-17';
+  if (age <= 25) return '18-25';
+  if (age <= 35) return '26-35';
+  if (age <= 50) return '36-50';
+  return '51+';
+};
+
+// Handle DOB change and auto-calculate age and age group
+const handleDobChange = (event) => {
+  const dob = event.target ? event.target.value : event;
+  console.log('DOB changed:', dob);
+  
+  if (dob) {
+    const calculatedAge = calculateAge(dob);
+    const ageGroup = getAgeGroup(calculatedAge);
+    
+    console.log('Calculated age:', calculatedAge);
+    console.log('Calculated age group:', ageGroup);
+    
+    // Update form data
+    props.formData.dob = dob;
+    if (calculatedAge !== null) {
+      props.formData.age = calculatedAge.toString();
+      props.formData.ageGroup = ageGroup;
+    }
+    
+    // Emit update to parent
+    emit("update:formData", props.formData);
+  } else {
+    // Clear age and age group if DOB is cleared
+    props.formData.age = '';
+    props.formData.ageGroup = '';
+    emit("update:formData", props.formData);
+  }
+};
 
 const handleClientSelection = () => {
-  props.formData.isClient = props.formData.isClient === true; // ensure boolean
-  if (!props.formData.isClient) {
-    props.formData.clients = props.formData.clients || [];
-  } else {
-    props.formData.clients = [];
+  console.log('Client selection changed:', props.formData.isClient);
+  
+  if (props.formData.isClient === true) {
+    // Reporter is a client - add reporter details as the first client
+    const reporterAsClient = {
+      name: props.formData.name || '',
+      age: props.formData.age || '',
+      dob: props.formData.dob || '',
+      ageGroup: props.formData.ageGroup || '',
+      location: props.formData.location || '',
+      sex: props.formData.gender || '', // Note: mapping gender to sex
+      landmark: props.formData.nearestLandmark || '',
+      nationality: props.formData.nationality || '',
+      idType: props.formData.idType || '',
+      idNumber: props.formData.idNumber || '',
+      language: props.formData.language || '',
+      tribe: props.formData.tribe || '',
+      phone: props.formData.phone || '',
+      alternativePhone: props.formData.altPhone || '',
+      email: props.formData.email || '',
+      isReporter: true, // Special flag to identify this as the reporter
+      relationship: 'Self', // Reporter relationship to themselves
+      relationshipComment: 'Reporter is also the client'
+    };
+
+    // Check if reporter is already in clients list (avoid duplicates)
+    const existingReporterIndex = props.formData.clients.findIndex(client => client.isReporter);
+    
+    if (existingReporterIndex >= 0) {
+      // Update existing reporter client with current data
+      props.formData.clients[existingReporterIndex] = reporterAsClient;
+    } else {
+      // Add reporter as first client
+      props.formData.clients.unshift(reporterAsClient);
+    }
+    
+    console.log('Added reporter as client:', reporterAsClient);
+  } else if (props.formData.isClient === false) {
+    // Reporter is NOT a client - remove reporter from clients list if present
+    props.formData.clients = props.formData.clients.filter(client => !client.isReporter);
+    console.log('Removed reporter from clients list');
   }
+  
+  // Ensure clients array exists
+  props.formData.clients = props.formData.clients || [];
+  
+  // Emit update to parent
   emit("update:formData", props.formData);
 };
 </script>
 
 <style>
-
+/* Your existing styles remain the same */
 .step-content {
   min-height: 400px;
 }
 
-/* Forms */
 .case-form {
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
-
 
 .form-row {
   display: grid;
@@ -341,16 +518,6 @@ const handleClientSelection = () => {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
 }
-
-.perpetrator-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px;
-  background: var(--color-surface-muted);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-} 
 
 .perpetrator-name {
   font-weight: 600;
@@ -396,7 +563,6 @@ const handleClientSelection = () => {
   flex-direction: column;
   gap: 12px;
 }
-
 
 .clients-list,
 .perpetrators-list {
@@ -482,9 +648,58 @@ const handleClientSelection = () => {
 .form-actions {
   display: flex;
   gap: 12px;
-  justify-content: flex-end;
+  justify-content: space-between;
   margin-top: 24px;
   padding-top: 20px;
   border-top: 1px solid var(--color-border);
+}
+
+.form-actions > div {
+  display: flex;
+  gap: 12px;
+}
+
+.info-message {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  color: #1e40af;
+}
+
+.info-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.info-content strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.client-item.is-reporter {
+  border-color: var(--color-primary);
+  background: rgba(var(--color-primary-rgb), 0.05);
+}
+
+.reporter-badge {
+  display: inline-block;
+  background: var(--color-primary);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  margin-left: 8px;
+  vertical-align: top;
+}
+
+.auto-added-label {
+  font-size: 12px;
+  color: var(--color-muted);
+  font-style: italic;
+  padding: 4px 8px;
 }
 </style>
