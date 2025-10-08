@@ -8,27 +8,27 @@ hero:
   actions:
     - theme: brand
       text: Getting Started
-      link: /getting-started/overview
+      link: /getting-started/introduction
     - theme: alt
       text: Explore API
-      link: /api/overview
+      link: /developer-documentation/api-reference/overview
     - theme: primary
       text: User Guides
-      link: /user-guides/operators
+      link: /user-guides/for-helpline-operators/daily-workflow-guide
 
 features:
   - title: Helpline Service
     details: Full call center workflow, compliance, and training resources for child protection.
-    link: /helpline-service/overview
+    link: /getting-started/introduction
   - title: AI Service
     details: Transcription, translation, QA, NER, classification, summarization, and insights for helpline data.
-    link: /ai-service/overview
+    link: /ai-services/overview
   - title: Ecosystem & Community
     details: Learn about openCHS ecosystem, community contributions, and collaborative tools.
-    link: /ecosystem/overview
+    link: /case-studies-impact/success-stories
   - title: API & Integration
     details: Integrate with openCHS APIs for both Helpline and AI Services.
-    link: /api/overview
+    link: /developer-documentation/api-reference/overview
 
 testimonials:
   - name: UNICEF
