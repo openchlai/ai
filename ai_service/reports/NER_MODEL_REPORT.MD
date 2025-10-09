@@ -1,4 +1,4 @@
-# Experiment Report: NER v1 - DistilBERT for Child Helpline Entities
+# Experiment Report: ner-distilbert-en-synthetic-v1 - DistilBERT for Child Helpline Entities
 
 **Date:** 2025-10-08  
 **AI Lead:** Rogendo  
@@ -30,17 +30,17 @@ This report details the training and evaluation of a Named Entity Recognition (N
 | Field | Value |
 |-------|-------|
 | Model Version | v1.0.0 |
-| Model Name | `ner-distilbert-en-synthetic-v2` |
+| Model Name | `ner-distilbert-en-synthetic-v1` |
 | Base Model | `distilbert-base-cased` |
-| Dataset Version | `ner_synthetic_dataset_v2.jsonl` |
+| Dataset Version | `ner_synthetic_dataset_v2` |
 | Training Samples | 1,638 (80%) |
 | Validation Samples | 205 (10%) |
 | Test Samples | 205 (10%) |
-| MLflow Run ID | [Link to MLflow run] |
-| GitHub Branch | [Link to branch/commit] |
-| Hugging Face Model | [Link if published] |
+| MLflow Run ID |  |
+| GitHub Branch | [openchs/ner_distillbert_v1](https://github.com) |
+| Hugging Face Model | [openchs/ner_distillbert_v1](https://huggingface.co/openchs/ner_distillbert_v1)|
 | Training Duration | ~5 epochs |
-| Compute Resources | [e.g., 1x GPU, 8x CPUs] |
+| Compute Resources |  [NVIDIA GeForce RTX 4060 Ti , 16GB GPU memory 32 cores] |
 | Final Eval Loss | 0.0474 |
 
 ---
@@ -70,7 +70,7 @@ An effective NER model can automate this extraction, enabling faster case proces
 The hypothesis was based on:
 1. DistilBERT's proven effectiveness for token classification tasks
 2. Domain-specific fine-tuning's ability to adapt to specialized vocabulary
-3. Synthetic data's potential to provide diverse, consistent training examples
+3. Synthetic data's potential to provide diverse, consistent training examples 
 
 ### Success Criteria
 
@@ -93,11 +93,11 @@ The hypothesis was based on:
 
 ### Data Sources
 
-**Primary Source:** `ner_synthetic_dataset_v2.jsonl`
+**Primary Source:** [`synthetic-helpline-ner-v1`](https://huggingface.co/datasets/openchs/synthetic-helpline-ner-v1)
 - **Total Samples:** 2,048 synthetic child helpline conversations
 - **Generation Method:** Carefully crafted to represent realistic helpline scenarios
 - **Quality Assurance:** Validated by child protection professionals
-- **Language:** English (with plans for Swahili expansion)
+- **Language:** English (with plans for Swahili and luganda expansion)
 
 ### Data Split
 
@@ -152,7 +152,7 @@ Configuration based on `config_v2.yaml` (80/10/10 split):
 ### Data Ethics & Compliance
 
 -  Synthetic data used, mitigating direct privacy concerns
--  No real PII (Personally Identifiable Information) in dataset
+-  No real PII (Personally Identifiable Information) in dataset as it is synthetic
 -  Child data protection principles followed in generation
 -  Ethical review completed before data creation
 -  Compliant with GDPR and local data protection regulations
@@ -202,7 +202,7 @@ metric_for_best_model: "eval_f1"
 
 ### Infrastructure
 
-- **Hardware:** [Specify: e.g., NVIDIA Tesla T4, 16GB GPU memory]
+- **Hardware:** [NVIDIA GeForce RTX 4060 Ti , 16GB GPU memory 32 cores]
 - **Framework:** PyTorch 2.0+
 - **Key Libraries:** 
   - `transformers==4.35.0`
@@ -333,6 +333,7 @@ metric_for_best_model: "eval_f1"
    - **LOCATION** performance (17.3%) below expectations
    - Locations in conversational text are often embedded in complex contexts
    - May need geographic entity gazetteers or external knowledge
+4. More training data for the NER model
 
 **Unexpected Findings:**
 
@@ -463,11 +464,13 @@ metric_for_best_model: "eval_f1"
    - **Impact:** Unknown (not measured in this experiment)
    - **Mitigation:** Sliding window or hierarchical attention for long documents
 
+4. **Multilingual data:** This model performs poorly on multilingual data, but it could do better if finetuned with language specific data
+
 ### Operational Limitations
 
 1. **Domain Shift Risk:**
    - Trained on synthetic English conversations
-   - **Risk:** Real-world accents, dialects, code-switching may degrade performance
+   - **Risk:** Real-world accents, dialects, noise, code-switching may degrade performance
    - **Plan:** Continuous monitoring with real-world data; periodic retraining
 
 2. **Ethical Considerations:**
@@ -499,8 +502,8 @@ CUDA >= 11.0 (optional but recommended)
 **Installation:**
 ```bash
 # Clone repository
-git clone [repository-url]
-cd tasks/ner
+git clone https://github.com/openchlsystem/openchs_rnd.git
+cd openchlsystem/openchs_rnd/tasks/ner
 
 # Create virtual environment
 python -m venv ner_env
@@ -533,7 +536,7 @@ with open('ner_synthetic_dataset_v2.jsonl') as f:
 
 ```bash
 # Train model with config file
-python trainer.py --config config_v2.yaml
+python trainer.py --config config.yaml
 
 # Or specify parameters directly
 python trainer.py \
@@ -549,13 +552,13 @@ python trainer.py \
 
 ```bash
 # Evaluate trained model
-python evaluate_ner.py \
+python eval.py \
     --model_path ./models/ner-distilbert-v1 \
     --test_data ner_synthetic_dataset_v2.jsonl \
     --output_dir ./ner_evaluation_results
 
 # Generate confusion matrix
-python evaluate_ner.py --plot_confusion_matrix
+python eval.py
 ```
 
 ### Expected Outputs
@@ -571,30 +574,13 @@ After training, you should see:
 
 ./ner_evaluation_results/
 ├── metrics.json
-├── per_entity_scores.csv
 ├── ner_confusion_matrix.png
-└── error_analysis.txt
 ```
 
-### Verification
-
-```bash
-# Verify results match report
-python -c "
-import json
-with open('./ner_evaluation_results/metrics.json') as f:
-    metrics = json.load(f)
-    print(f'Overall F1: {metrics[\"eval_f1\"]:.3f}')
-    print(f'Accuracy: {metrics[\"eval_accuracy\"]:.3f}')
-    assert metrics['eval_f1'] > 0.98, 'F1 score mismatch!'
-"
-```
 
 ---
 
 ## 9. Next Steps & Recommendations
-
-### Immediate Actions (Priority: High)
 
 **1. Address Failing Entity Types**
 - [ ] **LANDMARK & PHONE_NUMBER:**
@@ -636,29 +622,11 @@ with open('./ner_evaluation_results/metrics.json') as f:
   - **Deliverable:** Error analysis report with actionable insights
 
 - [ ] **Continuous Monitoring:**
-  - Set up MLflow tracking for production model
-  - Monitor entity-level F1 scores weekly
+  - Monitor entity-level F1 scores after every iteration
   - Alert on performance degradation (>5% F1 drop)
   - **Tools:** MLflow, Grafana dashboard
 
-### Medium-Term Improvements (Priority: Medium)
-
-**1. Model Architecture Experiments (Estimated: 2-3 weeks)**
-
-*Hypothesis:* Larger models with more contextual capacity will improve performance on complex entities (INCIDENT_TYPE, LOCATION).
-
-| Experiment | Base Model | Expected F1 | Rationale |
-|------------|------------|-------------|-----------|
-| **Exp-2.1** | `bert-base-cased` | 0.90-0.92 | 12 layers vs DistilBERT's 6; better context |
-| **Exp-2.2** | `roberta-base` | 0.91-0.93 | Superior pre-training; dynamic masking |
-| **Exp-2.3** | `xlm-roberta-base` | 0.89-0.91 | Multilingual support for Swahili expansion |
-
-**Approach:**
-- Keep training config identical (control for hyperparameters)
-- Compare per-entity improvements, especially INCIDENT_TYPE and LOCATION
-- Measure inference time trade-offs (DistilBERT: ~50ms → BERT: ~100ms)
-
-**2. Data Augmentation Strategies**
+**4. Data Augmentation Strategies**
 
 - [ ] **Back-Translation for Diversity:**
   - Translate English→Swahili→English to create paraphrases
@@ -670,12 +638,7 @@ with open('./ner_evaluation_results/metrics.json') as f:
   - Prompt engineering: "Rephrase 'child labor' in 10 different ways"
   - **Target:** 1,000 samples per weak entity type
 
-- [ ] **Real-World Data Integration:**
-  - Partner with helplines to collect anonymized real transcripts
-  - Start with 500 samples for pilot real-world evaluation
-  - Measure domain shift: compare F1 on synthetic vs real data
-
-**3. Advanced NER Techniques**
+**5. Advanced NER Techniques**
 
 - [ ] **Conditional Random Fields (CRF) Layer:**
   - Add CRF on top of DistilBERT for structured predictions
@@ -692,15 +655,13 @@ with open('./ner_evaluation_results/metrics.json') as f:
   - Train model to adapt to new entity types with <100 examples
   - **Approach:** Meta-learning framework (e.g., MAML)
 
-### Long-Term Roadmap (Priority: Low)
-
-**1. Multilingual Expansion (Estimated: 1-2 months)**
+**6. Multilingual Expansion **
 - [ ] Collect Swahili helpline conversation dataset
 - [ ] Fine-tune `xlm-roberta-base` for Swahili→English joint NER
 - [ ] Evaluate cross-lingual transfer learning effectiveness
 - [ ] **Target:** F1 > 0.80 for Swahili NER
 
-**2. Hierarchical Entity Recognition**
+**7. Hierarchical Entity Recognition**
 - [ ] Design taxonomy: INCIDENT_TYPE → {Abuse, Neglect, Bullying, ...}
 - [ ] Train two-stage model: coarse type → fine type
 - [ ] **Benefit:** Better performance on ambiguous incidents
@@ -738,17 +699,6 @@ with open('./ner_evaluation_results/metrics.json') as f:
    - Continuous monitoring to detect performance degradation
    - Pilot phase (2-4 weeks) to validate real-world effectiveness
 
-4. **Business Value:**
-   - **Immediate:** 50-70% reduction in manual documentation time
-   - **Short-term:** Consistent, structured data for analytics
-   - **Long-term:** Foundation for multilingual NER and advanced case routing
-
-**Approval Required:**
-- [ ] **Product Manager:** Sign-off on pilot deployment timeline
-- [ ] **Engineering Lead:** Infrastructure readiness (API, monitoring)
-- [ ] **Data Protection Officer:** Ethical review and compliance check
-- [ ] **Helpline Manager:** Pilot counselor selection and training plan
-
 ---
 
 ## 10. Lessons Learned & Best Practices
@@ -770,240 +720,27 @@ with open('./ner_evaluation_results/metrics.json') as f:
    - Use synthetic data for training, real data for validation
    - **Impact:** Earlier detection of domain shift issues
 
-### Best Practices for Future NER Projects
-
-1. **Data Requirements:**
-   - Minimum 500 examples per entity type
-   - Aim for 1,000+ for complex/contextual entities
-   - Maintain <5:1 ratio between most and least frequent classes
-
-2. **Annotation Quality:**
+4. **Annotation Quality:**
    - Use clear, unambiguous annotation guidelines
    - Conduct inter-annotator agreement checks (κ > 0.80)
    - Regular calibration sessions for annotators
 
-3. **Model Selection:**
+5. **Model Selection:**
    - Start with efficient models (DistilBERT) for fast iteration
    - Scale to larger models only if necessary
    - Balance accuracy vs inference time for production
 
-4. **Evaluation Strategy:**
+6. **Evaluation Strategy:**
    - Report per-entity metrics, not just overall scores
    - Use confusion matrices to identify systematic errors
    - Qualitative error analysis is as important as quantitative metrics
 
-5. **Deployment Planning:**
+7. **Deployment Planning:**
    - Always include human-in-the-loop for initial deployment
    - Set confidence thresholds based on risk tolerance
    - Monitor production performance continuously
 
 ---
-
-## Appendix
-
-### A. Per-Entity Detailed Analysis
-
-**NAME (F1: 0.786)**
-- **Strengths:** High precision (85.5%) - confident predictions
-- **Weaknesses:** Lower recall (72.7%) - misses some names
-- **Common Errors:** 
-  - Misses names in complex grammatical structures
-- **Recommendation:** Augment data with diverse name contexts
-
-**AGE (F1: 0.772)**
-- **Strengths:** Exceptional precision (99.2%) - very accurate when it predicts
-- **Weaknesses:** Lower recall (63.2%) - misses ~37% of ages
-- **Common Errors:** 
-  - Misses ages in non-standard formats ("early teens", "around 10")
-  - Struggles with ages embedded in longer phrases
-- **Recommendation:** Augment with diverse age expressions
-
-### B. Training Curves
-
-**Note:** The following training progression is reconstructed from final metrics and typical DistilBERT fine-tuning dynamics. For exact curves, extract from `trainer_state.json` in the model checkpoint directory.
-
-**Training Configuration:**
-- **Total Epochs:** 5
-- **Training Samples:** 1,638
-- **Validation Samples:** 205
-- **Batch Size:** 8
-- **Evaluation Strategy:** Every 1,000 steps
-- **Warmup Steps:** ~205 steps (10% of total)
-
-**Estimated Training Progression:**
-
-Based on the final metrics (Epoch 5: F1=0.985, Loss=0.047) and typical transformer fine-tuning patterns:
-
-| Epoch | Train Loss | Eval Loss | Eval F1 | Eval Accuracy | Eval Precision | Eval Recall |
-|-------|------------|-----------|---------|---------------|----------------|-------------|
-| 1 | ~0.180 | 0.125 | 0.850 | 0.920 | 0.845 | 0.855 |
-| 2 | ~0.085 | 0.078 | 0.935 | 0.965 | 0.932 | 0.938 |
-| 3 | ~0.055 | 0.061 | 0.968 | 0.980 | 0.965 | 0.971 |
-| 4 | ~0.042 | 0.052 | 0.978 | 0.984 | 0.976 | 0.980 |
-| 5 | ~0.035 | **0.047** | **0.985** | **0.987** | **0.986** | **0.987** |
-
-**Key Observations:**
-
-1. **Rapid Initial Improvement (Epochs 1-2):**
-   - F1 score jumped from ~85% to ~93.5% in first 2 epochs
-   - Typical of transfer learning from pre-trained DistilBERT
-   - Warmup schedule (10%) helped stabilize early training
-
-2. **Steady Convergence (Epochs 3-4):**
-   - More gradual improvements as model fine-tuned to domain
-   - Evaluation loss continued decreasing without overfitting signs
-   - F1 improved ~3-4 points per epoch
-
-3. **Final Refinement (Epoch 5):**
-   - Model reached near-optimal performance
-   - Minimal gap between train and eval loss suggests good generalization
-   - Could potentially train 1-2 more epochs but diminishing returns
-
-**Learning Dynamics:**
-
-```
-F1 Score Progression:
-100% |                              ●
-     |                           ●
-     |                       ●
-     |                   ●
- 90% |            ●
-     |        ●
- 85% |    ●
-     |___________________________________
-        1    2    3    4    5    Epoch
-
-Loss Progression:
-0.20 | ●
-     |   ╲
-0.15 |     ●
-     |      ╲___
-0.10 |          ●___
-     |              ●___
-0.05 |                  ●___●  (Eval Loss)
-     |___________________________________
-        1    2    3    4    5    Epoch
-```
-
-**Training Stability Indicators:**
-
--  **No Overfitting:** Eval loss continued decreasing through epoch 5
--  **Stable Convergence:** No erratic fluctuations or divergence
--  **Balanced Precision/Recall:** Both metrics improved in tandem (0.986 vs 0.987)
--  **Appropriate Stopping:** F1 plateaued near 98.5%, further training unlikely to yield significant gains
-
-**Training Efficiency:**
-
-| Metric | Value | Notes |
-|--------|-------|-------|
-| Total Training Time | ~[X minutes] | 5 epochs × ~[Y] min/epoch |
-| Samples per Second | 122.4 | Evaluation throughput |
-| Steps per Second | 15.5 | Efficient GPU utilization |
-| Peak GPU Memory | ~[X] GB | DistilBERT's memory footprint |
-
-**To Extract Actual Training Curves:**
-
-```python
-import json
-import matplotlib.pyplot as plt
-import pandas as pd
-
-# Load trainer state
-with open('./models/ner-distilbert-v1/trainer_state.json', 'r') as f:
-    state = json.load(f)
-
-# Extract log history
-logs = pd.DataFrame(state['log_history'])
-
-# Plot training curves
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
-
-# Loss curves
-train_logs = logs[logs['loss'].notna()]
-eval_logs = logs[logs['eval_loss'].notna()]
-
-ax1.plot(train_logs['epoch'], train_logs['loss'], 'b-o', label='Train Loss')
-ax1.plot(eval_logs['epoch'], eval_logs['eval_loss'], 'r-o', label='Eval Loss')
-ax1.set_xlabel('Epoch')
-ax1.set_ylabel('Loss')
-ax1.set_title('Training and Validation Loss')
-ax1.legend()
-ax1.grid(True)
-
-# F1 curves
-ax2.plot(eval_logs['epoch'], eval_logs['eval_f1'], 'g-o', label='Eval F1')
-ax2.set_xlabel('Epoch')
-ax2.set_ylabel('F1 Score')
-ax2.set_title('Validation F1 Score Progression')
-ax2.legend()
-ax2.grid(True)
-
-plt.tight_layout()
-plt.savefig('training_curves.png', dpi=300, bbox_inches='tight')
-print("✓ Training curves saved to training_curves.png")
-```
-
-**Expected Behavior Validation:**
-
-The training progression shows typical characteristics of successful NER fine-tuning:
-
-1. **Fast Initial Learning:** Model leverages pre-trained knowledge effectively
-2. **No Catastrophic Forgetting:** Pre-trained weights not destroyed
-3. **Smooth Convergence:** No sudden drops or spikes in performance
-4. **Appropriate Regularization:** Weight decay (0.01) prevented overfitting
-5. **Optimal Stopping:** Could have stopped at epoch 4 with minimal performance loss
-
-**Alternative: If Actual Logs Unavailable:**
-
-If `trainer_state.json` is not available, reconstruct from MLflow:
-
-```python
-import mlflow
-
-mlflow.set_tracking_uri("./mlruns")
-client = mlflow.tracking.MlflowClient()
-
-# Get run by experiment name
-runs = client.search_runs(
-    experiment_ids=["0"],  # Default experiment
-    filter_string="tags.mlflow.runName = 'ner-distilbert-v1'"
-)
-
-if runs:
-    run_id = runs[0].info.run_id
-    
-    # Extract metric history
-    for metric in ['train_loss', 'eval_loss', 'eval_f1']:
-        history = client.get_metric_history(run_id, metric)
-        print(f"{metric}: {[(h.step, h.value) for h in history]}")
-```
-
-**Training Curve Interpretation for Stakeholders:**
-
-- **For Product Managers:** Model learned quickly (2 epochs to 93% F1), suggesting we can iterate rapidly on improvements
-- **For Engineers:** Stable training with no hyperparameter tuning needed; can deploy with confidence
-- **For Researchers:** Transfer learning highly effective; DistilBERT sufficient for this task (no need for larger models)
-- **For Business:** Fast training time means quick iterations and cost-effective experimentation
-
-### C. Sample Predictions
-
-**Example 1: Successful Extraction**
-```
-Input: "Hello, I'm Faustina, a 13-year-old girl from Kilosa, Morogoro."
-Predictions:
-  - NAME: "Faustina" ✓
-  - AGE: "13" ✓
-  - GENDER: "girl" ✓
-  - LOCATION: "Kilosa, Morogoro" ✓
-```
-
-**Example 2: Partial Success**
-```
-Input: "My younger brother has been forced to work long hours at a factory."
-Predictions:
-  - INCIDENT_TYPE: "forced to work long hours" ✗ (missed)
-  - LOCATION: "factory" ✗ (not a specific location)
-```
 
 ### D. References
 
@@ -1014,19 +751,6 @@ Predictions:
 
 ---
 
-## Contact & Support
-
-**For questions about this experiment:**
-- **AI Lead:** Rogendo (rogendo@openchs.org)
-- **Project Manager:** Franklin (k-nurf@openchs.org)
-- **GitHub Issues:** [Repository issues page]
-
-**For access to:**
-- MLflow dashboard: [Link]
-- Trained model: [HuggingFace link]
-- Evaluation results: `./ner_evaluation_results/`
-
----
-
-*Report finalized: 2025-10-08*  
-*Next review: 2025-10-22 (post-pilot deployment)*
+Report prepared by: Rogendo
+Last updated: 2025-10-08
+Review status: [✅] Draft | [ ] Under Review | [ ] Approved
