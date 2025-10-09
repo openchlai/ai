@@ -43,7 +43,7 @@ class Settings(BaseSettings):
     translation_hf_repo_id: Optional[str] = "openchs/sw-en-opus-mt-mul-en-v1"
     qa_hf_repo_id: Optional[str] = "openchs/qa-helpline-distilbert-v1"
     ner_hf_repo_id: Optional[str] = "openchs/ner_distillbert_v1"
-    whisper_hf_repo_id: Optional[str] = "openai/whisper-large-v3-turbo"
+    whisper_hf_repo_id: Optional[str] = "openchs/asr-whisper-helpline-sw-v1"
     
     # Redis Configuration
     redis_url: str = "redis://localhost:6379/0"
@@ -152,8 +152,8 @@ class Settings(BaseSettings):
     hf_organization: str = "openchs"
     
     # HuggingFace Model IDs
-    hf_whisper_large_v3: str = "openai/whisper-large-v3"
-    hf_whisper_large_turbo: str = "openai/whisper-large-v3-turbo"
+    hf_whisper_large_v3: str = "openchs/asr-whisper-helpline-sw-v1"
+    hf_whisper_large_turbo: str = "openchs/asr-whisper-helpline-sw-v1"
     hf_classifier_model: str = "openchs/cls-gbv-distilbert-v1"
     hf_ner_model: str = "openchs/ner_distillbert_v1"
     hf_translator_model: str = "openchs/sw-en-opus-mt-mul-en-v1"
@@ -176,12 +176,8 @@ class Settings(BaseSettings):
     def get_active_whisper_path(self) -> str:
         """Get path to the currently active whisper model"""
         if self.use_hf_models:
-            if self.whisper_model_variant == "large_v3":
-                return self._get_hf_model_id("whisper_large_v3")
-            elif self.whisper_model_variant == "large_turbo":
-                return self._get_hf_model_id("whisper_large_turbo")
-            else:
-                return self.hf_whisper_large_v3
+            # Always use the custom Swahili helpline model
+            return "openchs/asr-whisper-helpline-sw-v1"
         else:
             if self.whisper_model_variant == "large_v3":
                 return os.path.abspath(self.whisper_large_v3_path)
@@ -207,13 +203,56 @@ class Settings(BaseSettings):
         if not model_id and self.hf_organization:
             model_id = f"{self.hf_organization}/{model_name.replace('_', '-')}"
         
-        return model_id or model_id_map.get("whisper_large_v3", "openai/whisper-large-v3")
+        return model_id or "openchs/asr-whisper-helpline-sw-v1"
     
     def get_hf_model_kwargs(self) -> Dict[str, Any]:
         """Get common kwargs for HuggingFace model loading - NO TOKEN for public models"""
         # Return empty dict - no authentication needed for public models
         return {}
-    
+
+    # --- Translation helpers -------------------------------------------------
+    def get_translator_model_id(self) -> str:
+        """
+        Return the HuggingFace translator model id from configuration.
+        Falls back to a sensible id built from hf_organization if not set.
+        """
+        if self.hf_translator_model:
+            return self.hf_translator_model
+        return self._get_hf_model_id("translator")
+
+    def translation_backend(self, include_translation: bool) -> str:
+        """
+        Decide which backend should perform translation.
+        - If include_translation is False -> 'none'
+        - If include_translation is True and use_hf_models -> 'hf'
+        - Otherwise -> 'whisper' (use Whisper built-in translation)
+        Callers (audio endpoint / model manager) should use this to avoid
+        defaulting to Whisper when the HF translator is the desired target.
+        """
+        if not include_translation:
+            return "none"
+        if self.use_hf_models and self.hf_translator_model:
+            return "hf"
+        # fallback to whisper built-in translation
+        return "whisper"
+
+    def resolve_translation_target(self, include_translation: bool) -> Dict[str, str]:
+        """
+        Resolve and return the translation target information for callers.
+        Returns a dict with keys:
+          - backend: 'hf' | 'whisper' | 'none'
+          - model: model identifier or whisper variant
+        Example:
+          settings.resolve_translation_target(True) -> {"backend":"hf", "model":"openchs/..."}
+        """
+        backend = self.translation_backend(include_translation)
+        if backend == "hf":
+            return {"backend": "hf", "model": self.get_translator_model_id()}
+        if backend == "whisper":
+            # Return the whisper variant name so whisper manager can pick the right weights
+            return {"backend": "whisper", "model": self.whisper_model_variant}
+        return {"backend": "none", "model": ""}
+
     def get_processing_mode_config(self) -> Dict[str, Any]:
         """Get complete processing mode configuration as dictionary"""
         return {
