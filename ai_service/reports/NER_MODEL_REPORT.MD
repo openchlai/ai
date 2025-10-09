@@ -655,7 +655,7 @@ After training, you should see:
   - Train model to adapt to new entity types with <100 examples
   - **Approach:** Meta-learning framework (e.g., MAML)
 
-**6. Multilingual Expansion **
+**6. Multilingual Expansion**
 - [ ] Collect Swahili helpline conversation dataset
 - [ ] Fine-tune `xlm-roberta-base` for Swahili→English joint NER
 - [ ] Evaluate cross-lingual transfer learning effectiveness
@@ -666,12 +666,12 @@ After training, you should see:
 - [ ] Train two-stage model: coarse type → fine type
 - [ ] **Benefit:** Better performance on ambiguous incidents
 
-**3. Knowledge-Enhanced NER**
+**8. Knowledge-Enhanced NER**
 - [ ] Integrate external knowledge bases (GeoNames for locations, entity gazetteers)
 - [ ] Use entity linking to disambiguate entities
 - [ ] Experiment with retrieval-augmented generation (RAG) for context
 
-**4. Real-Time Inference Optimization**
+**9. Real-Time Inference Optimization**
 - [ ] Model quantization (INT8) for 2-3× speedup
 - [ ] ONNX conversion for cross-platform deployment
 - [ ] Batch inference for processing multiple conversations simultaneously
