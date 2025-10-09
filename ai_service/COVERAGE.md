@@ -1,18 +1,18 @@
 # 📊 Code Coverage Report - AI Service
 
 **Branch:** 403/merge
-**Commit:** [\`410b6ef\`](https://github.com/openchlai/ai/commit/410b6ef252ffcf2b7fa09976cfd0d71fd015080e)
-**Generated:** 2025-10-08 11:08:02 UTC
+**Commit:** [\`a134c86\`](https://github.com/openchlai/ai/commit/a134c8675a0fc17611c5b66ab10b66c0edeff318)
+**Generated:** 2025-10-09 04:50:20 UTC
 **Python Version:** 3.12
-**Workflow:** [\`18342395313\`](https://github.com/openchlai/ai/actions/runs/18342395313)
+**Workflow:** [\`18365720918\`](https://github.com/openchlai/ai/actions/runs/18365720918)
 
 ## 🎯 Coverage Summary
 
-![Coverage](https://img.shields.io/badge/Coverage-48%25-orange)
+![Coverage](https://img.shields.io/badge/Coverage-47%25-orange)
 
 | Metric | Value | Status |
 |--------|-------|--------|
-| **Coverage** | 48% | ❌ Fail |
+| **Coverage** | 47% | ❌ Fail |
 | **Threshold** | 80% | Target |
 
 ## 📈 Detailed Coverage Report
@@ -37,7 +37,7 @@ app/api/whisper_model_routes.py                104     75    28%   30-38, 43-57,
 app/api/whisper_routes.py                       65      4    94%   46, 75, 130, 153
 app/celery_app.py                               10      1    90%   7
 app/config/__init__.py                           0      0   100%
-app/config/settings.py                         187     31    83%   181-191, 208, 215, 219, 262-268, 298, 306-319
+app/config/settings.py                         200     46    77%   182-187, 191-206, 211, 219-221, 232-237, 248-254, 258, 301-307, 337, 345-358
 app/core/__init__.py                             0      0   100%
 app/core/celery_monitor.py                      61     42    31%   21-93, 97, 106, 114
 app/core/notification_manager.py               169    117    31%   57-60, 76-78, 91-128, 132-138, 142-152, 156-160, 164-170, 189-210, 214-230, 236-287, 291-300, 304, 319-325
@@ -56,7 +56,7 @@ app/model_scripts/ner_model.py                 152     64    58%   14-16, 44-45,
 app/model_scripts/qa_model.py                  160     97    39%   50-52, 58-64, 106-123, 140-158, 168-228, 232-254, 261-308, 312, 316-318
 app/model_scripts/summarizer_model.py          157     67    57%   38, 60-64, 95-100, 122-124, 134-196, 208, 213-238, 243, 261, 277, 282, 291-293, 298, 310-312
 app/model_scripts/translator_model.py          172    102    41%   40, 48-52, 55-56, 68-69, 95-120, 124-155, 159-196, 202-220, 224-253, 257-259, 272-288, 293, 302-303
-app/model_scripts/whisper_model.py             265    113    57%   25-26, 77-87, 130-171, 194-202, 229, 243, 246, 251, 255-258, 270, 279-332, 356-375, 398, 413, 418-499
+app/model_scripts/whisper_model.py             319    164    49%   31-36, 87-97, 140-181, 204-212, 239, 253, 256, 261, 265-268, 280, 289-342, 366-385, 408, 423, 428-509, 544-581, 598-613, 647-689
 app/models/__init__.py                           0      0   100%
 app/models/model_loader.py                      12     12     0%   2-18
 app/services/agent_notification_service.py     198    137    31%   56-63, 70-71, 75-120, 124-144, 148-150, 154-160, 166-225, 229-237, 242-251, 256-266, 271-286, 291-304, 309-320, 324-333, 337-346, 350-358, 362-370, 375-385, 390-400, 406-415, 419-445, 455-484, 488-497
@@ -73,7 +73,7 @@ app/utils/audio_utils.py                         0      0   100%
 app/utils/scp_audio_downloader.py              172    132    23%   31-32, 89-117, 127-129, 136-147, 154-155, 168-230, 248-284, 294-301, 308-350, 369-390, 398-409, 414-423
 app/utils/text_utils.py                        230    193    16%   29-33, 53-108, 112-127, 142-180, 186, 205-252, 256-264, 271, 286-329, 349-397, 412-447, 455-503
 --------------------------------------------------------------------------
-TOTAL                                         6415   3338    48%
+TOTAL                                         6482   3404    47%
 ```
 
 ---
