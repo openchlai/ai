@@ -752,5 +752,7 @@ After training, you should see:
 ---
 
 Report prepared by: Rogendo
+
 Last updated: 2025-10-08
+
 Review status: [✅] Draft | [ ] Under Review | [ ] Approved
