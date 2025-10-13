@@ -18,12 +18,15 @@ class AsteriskAudioBuffer:
         
     def add_chunk(self, chunk: bytes) -> Optional[np.ndarray]:
         """
-        Add 10ms chunk (320 bytes), return audio array when 5-second window ready
+        Add audio chunk of any size, return audio array when 5-second window ready
         Mixed-mono audio contains both caller and agent voices in one channel
         """
-        # Validate chunk size (log warning if unexpected)
-        if len(chunk) != self.expected_chunk_size:
-            logger.warning(f"⚠️ Unexpected chunk size: {len(chunk)} bytes (expected {self.expected_chunk_size})")
+        # Accept chunks of any size - Asterisk may send variable chunk sizes
+        # Only log debug info for significantly different sizes
+        if len(chunk) != self.expected_chunk_size and len(chunk) < 50:
+            logger.debug(f"🔧 Small chunk received: {len(chunk)} bytes (typical: {self.expected_chunk_size})")
+        elif len(chunk) > self.expected_chunk_size * 2:
+            logger.debug(f"🔧 Large chunk received: {len(chunk)} bytes (typical: {self.expected_chunk_size})")
         
         self.buffer.extend(chunk)
         self.chunk_count += 1
@@ -50,7 +53,7 @@ class AsteriskAudioBuffer:
                 self.offset = 0
                 logger.info(f"🔄 Buffer reset after 50 seconds")
                 
-            logger.debug(f"🎵 Audio window ready: {len(audio_array)} samples ({len(audio_array)/16000:.1f}s)")
+            logger.debug(f"🎵 Audio ready: {len(audio_array)/16000:.1f}s")
             return audio_array
             
         return None

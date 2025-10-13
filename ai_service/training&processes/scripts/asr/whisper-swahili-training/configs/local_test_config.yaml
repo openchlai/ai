@@ -1,0 +1,31 @@
+# Local test configuration - Common Voice 17 Swahili
+parent: "base_config.yaml"
+
+dataset:
+  train_samples: 50   # Very small for quick test
+  test_samples: 10
+  num_workers: 1
+
+training:
+  max_steps: 10       # Just a few steps to verify
+  warmup_steps: 2
+  per_device_train_batch_size: 1  # Small batch for any hardware
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 2
+  gradient_checkpointing: false  # Disable to avoid backward error
+  fp16: false  # Disable for stability in test
+  eval_steps: 5
+  save_steps: 5
+  logging_steps: 1
+  push_to_hub: false
+  output_dir: "./test-output"
+
+mlflow:
+  tracking_uri: "http://localhost:5000"  # Local MLflow server
+  use_ngrok: false    # Local only
+  experiment_name: "whisper-swahili-test"
+
+logging:
+  use_mlflow: false  # Disable for quick testing
+  use_tensorboard: false
+  use_wandb: false

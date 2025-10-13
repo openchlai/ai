@@ -1,0 +1,3 @@
+record_id,record_idx,source_length,target_length,length_ratio,source_word_count,target_word_count,similarity_score,has_encoding_issues,is_untranslated,extreme_length_ratio,source_lang_hints,target_lang_hints,source_preview,target_preview
+record_11739,11739,75,75,1.0,13,13,1.0,False,True,False,2,1,The overall performance in the final exams was not good across the country.,The overall performance in the final exams was not good across the country.
+record_36745,36745,75,75,1.0,13,13,1.0,False,True,False,2,1,The overall performance in the final exams was not good across the country.,The overall performance in the final exams was not good across the country.

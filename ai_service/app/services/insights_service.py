@@ -102,7 +102,7 @@ Context: Respond with JSON only. Avoid additional explanations.
 
     try:
         response = session.post(
-            'http://127.0.0.1:11434/api/generate',
+            'http://192.168.8.18:11434/api/generate',
             json={
                 'model': 'mistral',
                 'prompt': prompt,
@@ -268,7 +268,7 @@ Context: This analysis is based on complete high-quality audio recording with bo
 
     try:
         response = session.post(
-            'http://127.0.0.1:11434/api/generate',
+            'http://192.168.8.18:11434/api/generate',
             json={
                 'model': 'mistral',
                 'prompt': prompt,

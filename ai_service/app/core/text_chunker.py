@@ -73,7 +73,7 @@ class IntelligentTextChunker:
         
         # Initialize spaCy for sentence segmentation
         try:
-            self.nlp = spacy.load("en_core_web_md", disable=["ner", "parser", "tagger"])
+            self.nlp = spacy.load("en_core_web_lg", disable=["ner", "parser", "tagger"])
         except Exception as e:
             logger.warning(f"Could not load spaCy model: {e}. Using regex fallback.")
             self.nlp = None

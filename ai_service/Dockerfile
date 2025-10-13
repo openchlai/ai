@@ -3,7 +3,7 @@ FROM python:3.11-slim
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies (including curl for health checks and audio libraries)
+# Install system dependencies (including curl for health checks, audio libraries, and SCP tools)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     build-essential \
@@ -14,6 +14,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libsndfile1 \
     libsox-fmt-all \
     sox \
+    sshpass \
+    openssh-client \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /root/.cache
 

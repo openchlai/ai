@@ -110,6 +110,10 @@ class ModelLoader:
             "summarizer": {
                 "required": ["torch", "transformers", "numpy"],
                 "description": "Text summarization"
+            },
+            "qa": {
+                "required": ["torch", "transformers", "numpy"],
+                "description": "QA scoring"
             }
         }
         
@@ -174,18 +178,27 @@ class ModelLoader:
                 return
             
             if model_name == "whisper":
-                from .whisper_model import whisper_model
+                # Use WhisperModelManager for dynamic variant loading
+                from ..core.whisper_model_manager import whisper_model_manager
                 
-                success = whisper_model.load()
-                if success:
-                    model_status.loaded = True
-                    model_status.error = None
-                    model_status.model_info = whisper_model.get_model_info()
-                    self.models[model_name] = whisper_model
-                    logger.info("✅ Whisper model loaded successfully")
-                else:
-                    model_status.error = whisper_model.error or "Failed to load Whisper model"
-                    logger.error(f"❌ Whisper model failed to load: {model_status.error}")
+                try:
+                    success = await whisper_model_manager.load_whisper_model()
+                    if success:
+                        model_status.loaded = True
+                        model_status.error = None
+                        model_status.model_info = whisper_model_manager.get_loaded_variant_info()
+                        # Store the actual whisper model instance for backward compatibility
+                        self.models[model_name] = whisper_model_manager.whisper_model
+                        # Unified instance: whisper_translation_model references the same instance
+                        self.models['whisper_translation_model'] = whisper_model_manager.whisper_model
+                        logger.info(f"✅ Whisper model loaded successfully: {whisper_model_manager.current_variant.value}")
+                        logger.info("✅ Unified Whisper instance created for both transcription and translation")
+                    else:
+                        model_status.error = "Failed to load Whisper model via WhisperModelManager"
+                        logger.error(f"❌ Whisper model failed to load: {model_status.error}")
+                except Exception as e:
+                    model_status.error = f"WhisperModelManager error: {str(e)}"
+                    logger.error(f"❌ Whisper model manager failed: {model_status.error}")
                 
                 model_status.load_time = datetime.now()
                 return
@@ -253,6 +266,21 @@ class ModelLoader:
                     model_status.error = summarization_model.error or "Failed to load summarization model"
                     logger.error(f"❌ Summarization model failed to load: {model_status.error}")
 
+                model_status.load_time = datetime.now()
+                return
+            
+            if model_name == "qa":
+                from .qa_model import qa_model
+                success = qa_model.load()
+                if success:
+                    model_status.loaded = True
+                    model_status.error = None
+                    model_status.model_info = qa_model.get_model_info()
+                    self.models[model_name] = qa_model
+                    logger.info("✅ QA model loaded successfully")
+                else:
+                    model_status.error = qa_model.error or "Failed to load QA model"
+                    logger.error(f"❌ QA model failed to load: {model_status.error}")
                 model_status.load_time = datetime.now()
                 return
             

@@ -32,11 +32,11 @@ class AgentNotificationService:
         # Import settings here to avoid circular imports
         from ..config.settings import settings
         
-        # Configuration
+        # Configuration from settings
         self.asterisk_server_ip = settings.asterisk_server_ip
-        self.endpoint_url = f"https://192.168.10.3/hh5aug2025/api/msg/"
-        self.auth_endpoint_url = f"https://192.168.10.3/hh5aug2025/api/"
-        self.basic_auth = "dGVzdDpwQHNzdzByZA=="  # Base64: test:p@ssw0rd
+        self.endpoint_url = settings.notification_endpoint_url
+        self.auth_endpoint_url = settings.notification_auth_endpoint_url
+        self.basic_auth = settings.notification_basic_auth
         
         # Dynamic token management
         self.bearer_token: Optional[str] = None
@@ -46,10 +46,10 @@ class AgentNotificationService:
         # HTTP session for connection pooling
         self.session: Optional[aiohttp.ClientSession] = None
         
-        # Rate limiting and retry settings
-        self.max_retries = 3
+        # Rate limiting and retry settings from configuration
+        self.max_retries = settings.notification_max_retries
         self.retry_delay = 1.0  # seconds
-        self.request_timeout = 10.0  # seconds
+        self.request_timeout = float(settings.notification_request_timeout)
         
     async def _ensure_session(self):
         """Ensure HTTP session is available"""
@@ -345,6 +345,18 @@ class AgentNotificationService:
         
         return await self._send_notification(call_id, UpdateType.CALL_SUMMARY, payload)
     
+    async def send_call_insights(self, call_id: str, insights: Dict[str, Any]) -> bool:
+        """Send call insights analysis to agent"""
+        payload = {
+            "update_type": "call_insights",
+            "call_id": call_id,
+            "timestamp": datetime.now().isoformat(),
+            "insights": insights,
+            "processing_complete": True
+        }
+        
+        return await self._send_notification(call_id, UpdateType.CALL_INSIGHTS, payload)
+    
     async def send_gpt_insights(self, call_id: str, insights: Dict[str, Any]) -> bool:
         """Send GPT-generated case insights to agent"""
         payload = {
@@ -356,6 +368,21 @@ class AgentNotificationService:
         }
         
         return await self._send_notification(call_id, UpdateType.GPT_INSIGHTS, payload)
+    
+    async def send_unified_insight(self, call_id: str, pipeline_result: Dict[str, Any], 
+                                 audio_info: Dict[str, Any], metadata: Dict[str, Any]) -> bool:
+        """Send unified insight with complete pipeline results"""
+        payload = {
+            "update_type": "unified_insight",
+            "call_id": call_id,
+            "timestamp": datetime.now().isoformat(),
+            "pipeline_result": pipeline_result,
+            "audio_quality_info": audio_info,
+            "processing_metadata": metadata,
+            "processing_complete": True
+        }
+        
+        return await self._send_notification(call_id, UpdateType.CALL_INSIGHTS, payload)
     
     async def send_error_notification(self, call_id: str, error_type: str, 
                                     error_message: str, error_context: Dict[str, Any] = None) -> bool:

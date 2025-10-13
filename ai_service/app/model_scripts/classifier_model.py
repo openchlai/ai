@@ -53,6 +53,7 @@ class ClassifierModel:
     def __init__(self, model_path: str = None):
         from ..config.settings import settings
         
+        self.settings = settings
         self.model_path = model_path or settings.get_model_path("classifier")
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.tokenizer = None
@@ -61,6 +62,11 @@ class ClassifierModel:
         self.load_time = None
         self.error = None
         self.max_length = 256  # Model's maximum token limit
+        
+        # Hugging Face repo configuration (hub-first, no local model loading)
+        from ..config.settings import settings as _settings
+        self.hf_repo_id = os.getenv("CLASSIFIER_HF_REPO_ID") or getattr(_settings, "classifier_hf_repo_id", None)
+        # Public models only — no auth token usage
         
         # Category configs - will be loaded in load() method
         self.category_info = {}
@@ -82,11 +88,23 @@ class ClassifierModel:
             configs = {}
             for config_name, filename in config_files.items():
                 config_file_path = os.path.join(self.model_path, filename)
-                if not os.path.exists(config_file_path):
-                    raise FileNotFoundError(f"Config file not found: {config_file_path}")
-                
-                with open(config_file_path) as f:
-                    configs[config_name] = json.load(f)
+                if os.path.exists(config_file_path):
+                    with open(config_file_path) as f:
+                        configs[config_name] = json.load(f)
+                else:
+                    # Attempt to fetch from Hugging Face repo if configured
+                    if not self.hf_repo_id:
+                        raise FileNotFoundError(f"Config file not found: {config_file_path}")
+                    try:
+                        from huggingface_hub import hf_hub_download
+                        download_path = hf_hub_download(
+                            repo_id=self.hf_repo_id,
+                            filename=filename
+                        )
+                        with open(download_path) as f:
+                            configs[config_name] = json.load(f)
+                    except Exception as hf_err:
+                        raise FileNotFoundError(f"Failed to fetch {filename} from HF repo {self.hf_repo_id}: {hf_err}")
             
             # Set the category lists
             self.main_categories = configs["main_categories"]
@@ -109,41 +127,46 @@ class ClassifierModel:
             self.error = f"Config loading failed: {str(e)}"
             return False
 
-    def load(self) -> bool:
-        """Load model and tokenizer"""
+    def _load_category_configs_from_hf(self, model_id: str) -> bool:
+        """Load category configs from HuggingFace model repository"""
         try:
-            logger.info(f"Loading classifier model: {self.model_path}")
+
+            logger.info(f"📦 Initializing classifier model loader")
             start_time = datetime.now()
+
             
-            # First load the category configs
-            if not self._load_category_configs():
-                return False
+            config_files = {
+                "main_categories": "main_categories.json",
+                "sub_categories": "sub_categories.json", 
+                "interventions": "interventions.json",
+                "priorities": "priorities.json"
+            }
             
-            # Load tokenizer and model from local path
-            model_files_path = os.path.join(self.model_path, "multitask_distilbert")
-            if not os.path.exists(model_files_path):
-                raise FileNotFoundError(f"Model files not found at: {model_files_path}")
-            
+            # Hub-first: require HF repo id (public access)
+            if not self.hf_repo_id:
+                raise RuntimeError("CLASSIFIER_HF_REPO_ID or settings.classifier_hf_repo_id must be set for hub loading")
+            logger.info(f"📦 Loading classifier model from Hugging Face Hub: {self.hf_repo_id} (ignoring local path {self.model_path})")
             self.tokenizer = AutoTokenizer.from_pretrained(
-                model_files_path,
-                local_files_only=True  # Force local loading
+                self.hf_repo_id,
+                local_files_only=False
             )
             
             self.model = MultiTaskDistilBert.from_pretrained(
-                model_files_path,
-                local_files_only=True,  # Force local loading
+                self.hf_repo_id,
                 num_main=len(self.main_categories),
                 num_sub=len(self.sub_categories),
                 num_interv=len(self.interventions),
-                num_priority=len(self.priorities)
+                num_priority=len(self.priorities),
+                local_files_only=False
             )
             self.model = self.model.to(self.device)
             self.model.eval()
+
             
             self.loaded = True
             self.load_time = datetime.now()
             load_duration = (self.load_time - start_time).total_seconds()
-            logger.info(f"✅ Classifier model loaded successfully in {load_duration:.2f}s")
+            logger.info(f"✅ Classifier model loaded from Hugging Face Hub ({self.hf_repo_id}) in {load_duration:.2f}s on {self.device}")
             return True
             
         except Exception as e:
@@ -156,6 +179,27 @@ class ClassifierModel:
         """Clean and normalize input text"""
         text = text.lower().strip()
         return re.sub(r'[^a-z0-9\s]', '', text)
+
+    def load(self) -> bool:
+        """Load tokenizer, model weights, and category configs from HF Hub or local files"""
+        try:
+            # Load category configs first (local or fetch from HF)
+            if not self._load_category_configs():
+                return False
+            # Require HF repo id for weights
+            if not self.hf_repo_id:
+                raise RuntimeError("HF repo id not configured for classifier (CLASSIFIER_HF_REPO_ID or settings.classifier_hf_repo_id)")
+            # Load from hub
+            ok = self._load_category_configs_from_hf(self.hf_repo_id)
+            if not ok:
+                return False
+            self.loaded = True
+            return True
+        except Exception as e:
+            logger.error(f"❌ Failed to load classifier: {e}")
+            self.error = str(e)
+            self.loaded = False
+            return False
     
     def classify(self, narrative: str) -> Dict[str, str]:
         """

@@ -1,0 +1,85 @@
+# RunPod Production Configuration
+# Optimized for A100 40GB/80GB GPU with ample storage
+parent: "base_config.yaml"
+
+dataset:
+  # STREAMING mode - minimal disk space required
+  # Set at least one to non-null to enable streaming
+  # Use null in streaming mode to stream all samples
+  train_samples: 999999   # Large number = stream all training samples
+  test_samples: 2000      # Stream 2000 validation samples
+
+  num_workers: 8        # RunPod has 8-16 CPU cores
+  preprocessing_batch_size: 100
+
+training:
+  output_dir: "./whisper-large-v2-sw"
+
+  # Training hyperparameters
+  max_steps: 10000      # ~8-12 hours on A100
+  learning_rate: 0.00001  # Conservative for fine-tuning
+  warmup_steps: 500
+
+  # Batch configuration - optimized for A100 40GB
+  per_device_train_batch_size: 16   # A100 40GB: 12-16, A100 80GB: 20-24
+  per_device_eval_batch_size: 16
+  gradient_accumulation_steps: 1    # Set to 1 to avoid gradient checkpointing bug
+
+  # Memory optimization
+  gradient_checkpointing: true  # Re-enabled with use_reentrant=False to fix backward graph bug
+  fp16: true
+  optim: "adamw_torch"
+  dataloader_num_workers: 2  # Reduced from 4 (dataset has only 2 shards in streaming mode)
+
+  # Evaluation and checkpointing
+  evaluation_strategy: "steps"
+  eval_steps: 500       # Every 500 steps (~30-45 min)
+  save_steps: 500
+  logging_steps: 50
+  save_total_limit: 3   # Keep last 3 checkpoints (~9GB total)
+
+  # Best model selection
+  load_best_model_at_end: true
+  metric_for_best_model: "wer"
+  greater_is_better: false
+
+  # Early stopping (optional)
+  early_stopping_patience: 5  # Stop if no improvement for 5 evals (2500 steps)
+
+  # HuggingFace Hub - push your final model
+  push_to_hub: true
+  hub_model_id: "openchs/asr-whisper-helpline-sw-v1"  # CHANGE THIS!
+  hub_strategy: "checkpoint"   # Push all checkpoints (or "end" for final only)
+
+mlflow:
+  tracking_uri: "http://localhost:5000"  # Local MLflow server
+  experiment_name: "whisper-swahili-production"
+  use_ngrok: false  # Set to true and update URI if using ngrok
+  tags:
+    project: "OpenCHS"
+    model_type: "whisper-large-v2"
+    dataset: "common_voice_17"
+    language: "swahili"
+    environment: "runpod"
+    gpu: "a100"
+
+logging:
+  use_mlflow: true
+  use_tensorboard: true
+  use_wandb: false  # Set true if using Weights & Biases
+  tensorboard_dir: "./logs/tensorboard"
+
+# RunPod Production Checklist:
+# 1. Set your HuggingFace token: export HF_TOKEN="your_token"
+# 2. Update hub_model_id above with your username
+# 3. Start ngrok locally: ngrok http 5000
+# 4. Paste ngrok URL in mlflow.tracking_uri above
+# 5. Run: python train.py --config configs/runpod_config.yaml
+#
+# Performance expectations:
+# - A100 40GB: batch_size=16, ~38GB VRAM usage
+# - A100 80GB: batch_size=24, ~50GB VRAM usage
+# - Training time: ~8-12 hours for 10K steps
+# - Checkpoint size: ~3GB each
+# - Total disk: 50-100GB recommended
+# - Expected final WER: <20% (baseline ~30-40%)

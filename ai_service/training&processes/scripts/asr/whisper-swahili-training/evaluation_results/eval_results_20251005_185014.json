@@ -1,0 +1,16 @@
+{
+  "model_path": "./whisper-large-v2-sw",
+  "dataset": "mozilla-foundation/common_voice_17_0",
+  "language": "sw",
+  "split": "test",
+  "num_samples": 2000,
+  "wer": 29.34,
+  "timestamp": "2025-10-05T18:49:37.793226",
+  "device": "cuda",
+  "wer_stats": {
+    "mean": 32.14,
+    "min": 0.0,
+    "max": 2200.0,
+    "median": 22.22
+  }
+}

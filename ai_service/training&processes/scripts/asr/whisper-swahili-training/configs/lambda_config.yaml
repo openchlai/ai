@@ -1,0 +1,15 @@
+# Lambda Labs production config
+parent: "base_config.yaml"
+
+training:
+  per_device_train_batch_size: 8  # A100 can handle more
+  gradient_accumulation_steps: 1
+  max_steps: 10000
+  push_to_hub: true
+  
+mlflow:
+  use_ngrok: false  # Use SSH tunnel instead
+  ssh_tunnel:
+    enabled: true
+    local_port: 5000
+    remote_port: 5001

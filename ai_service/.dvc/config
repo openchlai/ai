@@ -1,0 +1,6 @@
+[core]
+    remote = ssh-storage
+['remote "ssh-storage"']
+    url = ssh://ml-server-local/opt/dvc-storage
+['remote "ssh-storage-vpn"']
+    url = ssh://ml-server-vpn/opt/dvc-storage
