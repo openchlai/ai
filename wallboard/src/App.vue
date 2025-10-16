@@ -60,7 +60,7 @@ import { useCounsellorData } from './composables/useCounsellorData'
 import { useApiData } from './composables/useApiData'
 import { formatDuration, getStatusText } from './utils/formatters'
 
-const WSHOST = 'wss://192.168.10.120:8384/ami/sync?c=-2'
+const WSHOST = 'wss://192.168.10.3:8384/ami/sync?c=-2'
 
 export default {
   name: 'App',
@@ -249,7 +249,7 @@ export default {
       return channels.value
         .filter(ch => {
           const context = (ch.CHAN_CONTEXT || '').toLowerCase()
-          return context === 'dlpn_callcenter'
+          return context === 'trunk' || context === 'dlpn_callcenter'
         })
         .map((ch) => {
           return {
