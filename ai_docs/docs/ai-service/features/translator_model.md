@@ -570,6 +570,86 @@ GET /translate/info
 
 ---
 
+### 3.2. Via Hugging Face Hub
+
+The model is publicly available on Hugging Face for direct inference and fine-tuning.
+
+#### Model Repository
+- **Organization:** [openchs](https://huggingface.co/openchs)
+- **Model:** [openchs/sw-en-opus-mt-mul-en-v1](https://huggingface.co/openchs/sw-en-opus-mt-mul-en-v1)
+
+#### Installation
+
+```bash
+pip install transformers torch
+```
+
+#### Inference Example
+
+**Using Pipeline (Recommended):**
+```python
+from transformers import pipeline
+
+# Load the translation pipeline
+translator = pipeline(
+    "translation",
+    model="openchs/sw-en-opus-mt-mul-en-v1"
+)
+
+# Translate Swahili to English
+text = "Ninajisikia vibaya sana. Nahitaji mtu wa kuongea naye."
+result = translator(text)
+
+print(result[0]["translation_text"])
+# Output: "I feel very bad. I need someone to talk to."
+```
+
+**Using Model and Tokenizer Directly:**
+```python
+from transformers import MarianMTModel, MarianTokenizer
+
+# Load model and tokenizer
+model_name = "openchs/sw-en-opus-mt-mul-en-v1"
+tokenizer = MarianTokenizer.from_pretrained(model_name)
+model = MarianMTModel.from_pretrained(model_name)
+
+# Prepare input
+text = ["Mtoto wangu amepotea. Tafadhali nisaidieni."]
+inputs = tokenizer(text, return_tensors="pt", padding=True)
+
+# Generate translation
+translated = model.generate(**inputs)
+output = tokenizer.decode(translated[0], skip_special_tokens=True)
+
+print(output)
+# Output: "My child is missing. Please help me."
+```
+
+#### Batch Translation
+```python
+from transformers import pipeline
+
+translator = pipeline(
+    "translation",
+    model="openchs/sw-en-opus-mt-mul-en-v1"
+)
+
+texts = [
+    "Habari za asubuhi",
+    "Ninahitaji usaidizi",
+    "Je, mnaweza kunisaidia?"
+]
+
+results = translator(texts)
+
+for original, result in zip(texts, results):
+    print(f"{original} → {result['translation_text']}")
+```
+
+**Note:** When using the model directly from Hugging Face, you'll need to implement your own chunking logic for texts longer than 512 tokens. The AI Service API handles this automatically.
+
+---
+
 ## 4. Production Considerations
 
 ### Token Limits
