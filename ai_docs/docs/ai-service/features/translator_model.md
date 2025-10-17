@@ -127,11 +127,11 @@ class TranslationModel:
             self.model.to(self.device)
             self.loaded = True
             
-            logger.info(f"✅ Translation model loaded on {self.device}")
+            logger.info(f" Translation model loaded on {self.device}")
             return True
             
         except Exception as e:
-            logger.error(f"❌ Failed to load translation model: {e}")
+            logger.error(f" Failed to load translation model: {e}")
             return False
 ```
 
