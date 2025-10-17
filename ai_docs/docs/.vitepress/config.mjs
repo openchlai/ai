@@ -12,11 +12,11 @@ export default defineConfig({
     nav: [
         { text: 'Home', link: '/' },
         { text: 'Getting Started', link: '/getting-started/introduction' },
-        { text: 'User Guides', link: '/user-guides/for-helpline-operators/call-case-management' },
+        { text: 'User Guides', link: '/user-guides/for-helpline-operators/daily-workflow-guide' },
         { text: 'Deployment & Administration', link: '/deployment-administration/installation/system-requirements' },
         { text: 'Developer Documentation', link: '/developer-documentation/api-reference/authentication' },
         { text: 'AI Services', link: '/ai-services/overview' },
-        { text: 'Governance & Legal', link: '/governance-legal/project-ownership-governance-model' },
+        { text: 'Governance & Legal', link: '/governance-legal/project-governance' },
         { text: 'Case Studies & Impact', link: '/case-studies-impact/success-stories' },
         { text: 'Resources', link: '/resources/faqs' }
     ],
@@ -35,48 +35,37 @@ export default defineConfig({
         ],
 
         '/user-guides/': [
+    {
+        text: 'User Guides',
+        items: [
             {
-                text: 'User Guides',
+                text: 'For Helpline Operators',
                 items: [
-                    {
-                        text: 'For Helpline Operators',
-                        items: [
-                            { text: 'Call & Case Management', link: '/user-guides/for-helpline-operators/call-case-management' },
-                            { text: 'Compliance', link: '/user-guides/for-helpline-operators/compliance' },
-                            { text: 'Overview', link: '/user-guides/for-helpline-operators/overview' },
-                            {
-                                text: 'Operations',
-                                items: [
-                                    { text: 'Call Flow', link: '/user-guides/for-helpline-operators/operations/call-flow' }
-                                ]
-                            },
-                            {
-                                text: 'Training',
-                                items: [
-                                    { text: 'Training Materials', link: '/user-guides/for-helpline-operators/training/training-materials' }
-                                ]
-                            }
-                        ]
-                    },
-                    {
-                        text: 'For Supervisors & Managers',
-                        items: [
-                            { text: 'Team & Workflow Management', link: '/user-guides/for-supervisors-managers/team-workflow-management' },
-                            { text: 'Quality Assurance & Monitoring', link: '/user-guides/for-supervisors-managers/quality-assurance-monitoring' },
-                            { text: 'Reporting & Dashboards', link: '/user-guides/for-supervisors-managers/reporting-dashboards' }
-                        ]
-                    },
-                    {
-                        text: 'For Reporting Users',
-                        items: [
-                            { text: 'Accessing & Interpreting Reports', link: '/user-guides/for-reporting-users/accessing-interpreting-reports' },
-                            { text: 'Custom Report Generation', link: '/user-guides/for-reporting-users/custom-report-generation' },
-                            { text: 'Data Export', link: '/user-guides/for-reporting-users/data-export' }
-                        ]
+                    { text: 'Daily Workflow Guide', link: '/user-guides/for-helpline-operators/daily-workflow-guide' },
+                    { text: 'Case Management Guide', link: '/user-guides/for-helpline-operators/case-management-guide' },
+                    { text: 'Using AI Features', link: '/user-guides/for-helpline-operators/using-ai-features' }
+                ]
+            },
+            {
+                text: 'For Supervisors & Managers',
+                items: [
+                    { text: 'Quality Assurance Monitoring', link: '/user-guides/for-supervisors-managers/quality-assurance-monitoring' },
+                    { text: 'Team Workflow Management', link: '/user-guides/for-supervisors-managers/team-workflow-management' },
+                    { text: 'Reporting Dashboards', link: '/user-guides/for-supervisors-managers/reporting-dashboards' }
+                ]
+            },
+            {
+                text: 'For Reporting Users',
+                items: [
+                    { text: 'Accessing & Interpreting Reports', link: '/user-guides/for-reporting-users/accessing-interpreting-reports' },
+                    { text: 'Custom Report Generation', link: '/user-guides/for-reporting-users/custom-report-generation' },
+                    { text: 'Data Export', link: '/user-guides/for-reporting-users/data-export' }
+                            ]
                     }
                 ]
             }
         ],
+
 
         '/deployment-administration/': [
             {
@@ -203,20 +192,19 @@ export default defineConfig({
         ],
 
         '/governance-legal/': [
-            {
-                text: 'Governance & Legal',
-                items: [
-                    { text: 'Project Ownership & Governance Model', link: '/governance-legal/project-ownership-governance-model' },
-                    { text: 'Open Source License', link: '/governance-legal/open-source-license' },
-                    { text: 'Data Privacy & Security', link: '/governance-legal/data-privacy-security' },
-                    { text: 'Mapping to SDGs', link: '/governance-legal/mapping-to-sdgs' },
-                    { text: 'Overview', link: '/governance-legal/overview.md' },
-                    { text: 'Privacy', link: '/governance-legal/privacy.md' },
-                    { text: 'Project Charter', link: '/governance-legal/project-charter.md' },
-                    { text: 'Project Governance', link: '/governance-legal/project-governance.md' }
-                ]
-            }
-        ],
+    {
+        text: 'Governance & Legal',
+        items: [
+            { text: 'Open Source License', link: '/governance-legal/open-source-license' },
+            { text: 'Project Governance', link: '/governance-legal/project-governance' },
+            { text: 'Project Charter', link: '/governance-legal/project-charter' },
+            { text: 'Data Privacy & Compliance', link: '/governance-legal/data-privacy-compliance' },
+            { text: 'Privacy Policy', link: '/governance-legal/privacy-policy' },
+            { text: 'Terms of Service', link: '/governance-legal/terms-of-service' },
+            { text: 'Accessibility & CRPD', link: '/governance-legal/accessibility-crpd' }
+        ]
+    }
+],
 
         '/case-studies-impact/': [
             {
