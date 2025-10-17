@@ -111,6 +111,7 @@ export function useWebSocketConnection(wsHost) {
 
       ws.value.onmessage = (ev) => {
         try {
+          console.log('WebSocket message received', ev.data)
           handleMessage(ev.data, fetchCounsellorName, fetchCounsellorStats)
         } catch (err) {
           // Handle silently
