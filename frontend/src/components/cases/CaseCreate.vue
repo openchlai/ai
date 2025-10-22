@@ -83,6 +83,7 @@
       :showSpecialServicesDropdown="showSpecialServicesDropdown"
       :specialServicesSearch="specialServicesSearch"
       :filteredSpecialServices="filteredSpecialServices"
+      :loading="clientStore.loading"
       @close-modal="closeClientModal"
       @remove-client="removeClient"
       @update-client-form="updateClientForm"
@@ -98,6 +99,7 @@
       :perpetratorForm="perpetratorForm"
       :currentPerpetratorStep="currentPerpetratorStep"
       :perpetratorModalOpen="perpetratorModalOpen"
+      :loading="perpetratorStore.loading"
       @close-modal="closePerpetratorModal"
       @remove-perpetrator="removePerpetrator"
       @update-perpetrator-form="updatePerpetratorForm"
@@ -109,11 +111,14 @@
 </template>
 
 <script>
-import { ref, reactive, computed, watch } from 'vue';
+import { ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCaseStore } from '@/stores/cases';
 import { useReporterStore } from '@/stores/reporters';
 import { useCategoryStore } from '@/stores/categories';
+import { useClientStore } from '@/stores/clients';
+import { usePerpetratorStore } from '@/stores/perpetrators';
+import { useFilesStore } from '@/stores/files';
 
 import CaseHeader from '@/components/cases/CaseHeader.vue';
 import ProgressTracker from '@/components/cases/ProgressTracker.vue';
@@ -139,25 +144,20 @@ export default {
     PerpetratorModal
   },
   setup() {
+    // Initialize stores first
     const router = useRouter();
     const casesStore = useCaseStore();
     const reporterStore = useReporterStore();
     const categoryStore = useCategoryStore();
+    const clientStore = useClientStore();
+    const perpetratorStore = usePerpetratorStore();
+    const filesStore = useFilesStore();
     
-    const getValue = (contact, fieldName) => {
-      if (!contact || !Array.isArray(contact)) return '';
-      
-      const mapping = reporterStore.reporters_k?.[`contact_${fieldName}`] || reporterStore.reporters_k?.[fieldName];
-      if (mapping && Array.isArray(mapping) && mapping.length > 0) {
-        const idx = mapping[0];
-        return contact[idx] || '';
-      }
-      return '';
-    };
-    
+    // Initialize basic reactive variables first
     const currentStep = ref(1);
     const totalSteps = 5;
     const isAIEnabled = ref(false);
+    const isSubmittingCase = ref(false);
     
     const stepStatus = reactive({
       1: "active",
@@ -183,6 +183,7 @@ export default {
       'Review all information before creating the case.'
     ];
     
+    // Initialize formData AFTER other variables
     const formData = reactive({
       step1: {
         searchQuery: '',
@@ -236,6 +237,7 @@ export default {
       }
     });
     
+    // Initialize other reactive variables
     const searchQuery = ref('');
     const debouncedQuery = ref('');
     const filteredContacts = ref([]);
@@ -316,7 +318,20 @@ export default {
       guardianName: '',
       additionalDetails: ''
     });
+
+    // Helper function
+    const getValue = (contact, fieldName) => {
+      if (!contact || !Array.isArray(contact)) return '';
+      
+      const mapping = reporterStore.reporters_k?.[`contact_${fieldName}`] || reporterStore.reporters_k?.[fieldName];
+      if (mapping && Array.isArray(mapping) && mapping.length > 0) {
+        const idx = mapping[0];
+        return contact[idx] || '';
+      }
+      return '';
+    };
     
+    // Methods
     const updateFormData = (step, data) => {
       if (step === 'step4') {
         if (data.servicesOfferedSelection) {
@@ -417,9 +432,104 @@ export default {
       }
     };
     
-    const addClient = () => {
-      formData.step2.clients.push({ ...clientForm });
-      closeClientModal();
+    const addClient = async () => {
+      // Validate required field
+      if (!clientForm.name || clientForm.name.trim() === '') {
+        alert('Client name is required');
+        return;
+      }
+
+      try {
+        // Generate unique identifiers for this client creation
+        const timestamp = Date.now();
+        const timestampSeconds = (timestamp / 1000).toFixed(3);
+        const userId = "100";
+        const srcUid = `walkin-${userId}-${timestamp}`;
+        const srcUid2 = `${srcUid}-1`;
+        const srcCallId = srcUid2;
+
+        const getValueOrDefault = (value, defaultValue = "") => {
+          return value !== null && value !== undefined && value !== "" ? value : defaultValue;
+        };
+
+        const baseSourceFields = {
+          src: "walkin",
+          src_ts: timestampSeconds,
+          src_uid: srcUid,
+          src_uid2: srcUid2,
+          src_callid: srcCallId,
+          src_usr: userId,
+          src_vector: "2"
+        };
+
+        // Build client payload
+        const clientPayload = {
+          ".id": "",
+          ...baseSourceFields,
+          fname: getValueOrDefault(clientForm.name),
+          age_t: "0",
+          age: getValueOrDefault(clientForm.age),
+          dob: getValueOrDefault(clientForm.dob),
+          age_group_id: getValueOrDefault(clientForm.ageGroup),
+          location_id: getValueOrDefault(clientForm.location),
+          sex_id: getValueOrDefault(clientForm.sex),
+          landmark: getValueOrDefault(clientForm.landmark),
+          nationality_id: getValueOrDefault(clientForm.nationality),
+          national_id_type_id: getValueOrDefault(clientForm.idType),
+          national_id: getValueOrDefault(clientForm.idNumber),
+          lang_id: getValueOrDefault(clientForm.language),
+          is_refugee: getValueOrDefault(clientForm.isRefugee),
+          tribe_id: getValueOrDefault(clientForm.tribe),
+          phone: getValueOrDefault(clientForm.phone),
+          phone2: getValueOrDefault(clientForm.alternativePhone),
+          email: getValueOrDefault(clientForm.email),
+          relationship_to_reporter_id: getValueOrDefault(clientForm.relationship),
+          relationship_comment: getValueOrDefault(clientForm.relationshipComment),
+          adults_in_household: getValueOrDefault(clientForm.adultsInHousehold),
+          household_type_id: getValueOrDefault(clientForm.householdType),
+          head_occupation_id: getValueOrDefault(clientForm.headOccupation),
+          parent_guardian_name: getValueOrDefault(clientForm.parentGuardianName),
+          parent_marital_status_id: getValueOrDefault(clientForm.parentMaritalStatus),
+          parent_id_number: getValueOrDefault(clientForm.parentIdNumber),
+          health_status_id: getValueOrDefault(clientForm.healthStatus),
+          hiv_status_id: getValueOrDefault(clientForm.hivStatus),
+          marital_status_id: getValueOrDefault(clientForm.maritalStatus),
+          attending_school_id: getValueOrDefault(clientForm.attendingSchool),
+          school_name: getValueOrDefault(clientForm.schoolName),
+          school_level_id: getValueOrDefault(clientForm.schoolLevel),
+          school_address: getValueOrDefault(clientForm.schoolAddress),
+          school_type_id: getValueOrDefault(clientForm.schoolType),
+          school_attendance_id: getValueOrDefault(clientForm.schoolAttendance),
+          is_disabled: getValueOrDefault(clientForm.isDisabled),
+          disability_id: getValueOrDefault(clientForm.disability),
+          special_services_referred: getValueOrDefault(clientForm.specialServicesReferred),
+          special_services_referral: (clientForm.specialServicesReferral || []).map(serviceId => ({
+            category_id: String(serviceId)
+          }))
+        };
+
+        // Call the API to create client
+        const result = await clientStore.createClient(clientPayload);
+        
+        if (result && result.id) {
+          // Add the client data with the returned ID to the formData
+          const clientData = { 
+            ...clientForm, 
+            id: result.id  // Store the returned ID
+          };
+          
+          formData.step2.clients.push(clientData);
+          console.log('Client created successfully with ID:', result.id);
+          closeClientModal();
+        } else {
+          throw new Error('No client ID returned from server');
+        }
+
+      } catch (error) {
+        console.error('Error creating client:', error);
+        alert(`Failed to create client: ${error.message}`);
+        // Don't close the modal so user can retry
+      }
     };
     
     const removeClient = (index) => {
@@ -442,9 +552,88 @@ export default {
       }
     };
     
-    const addPerpetrator = () => {
-      formData.step2.perpetrators.push({ ...perpetratorForm });
-      closePerpetratorModal();
+    const addPerpetrator = async () => {
+      // Validate required field
+      if (!perpetratorForm.name || perpetratorForm.name.trim() === '') {
+        alert('Perpetrator name is required');
+        return;
+      }
+
+      try {
+        // Generate unique identifiers for this perpetrator creation
+        const timestamp = Date.now();
+        const timestampSeconds = (timestamp / 1000).toFixed(3);
+        const userId = "100";
+        const srcUid = `walkin-${userId}-${timestamp}`;
+        const srcUid2 = `${srcUid}-1`;
+        const srcCallId = srcUid2;
+
+        const getValueOrDefault = (value, defaultValue = "") => {
+          return value !== null && value !== undefined && value !== "" ? value : defaultValue;
+        };
+
+        const baseSourceFields = {
+          src: "walkin",
+          src_ts: timestampSeconds,
+          src_uid: srcUid,
+          src_uid2: srcUid2,
+          src_callid: srcCallId,
+          src_usr: userId,
+          src_vector: "2"
+        };
+
+        // Build perpetrator payload
+        const perpetratorPayload = {
+          ".id": "",
+          ...baseSourceFields,
+          fname: getValueOrDefault(perpetratorForm.name),
+          age_t: "0",
+          age: getValueOrDefault(perpetratorForm.age),
+          dob: getValueOrDefault(perpetratorForm.dob),
+          age_group_id: getValueOrDefault(perpetratorForm.ageGroup),
+          location_id: getValueOrDefault(perpetratorForm.location),
+          sex_id: getValueOrDefault(perpetratorForm.sex),
+          landmark: getValueOrDefault(perpetratorForm.landmark),
+          nationality_id: getValueOrDefault(perpetratorForm.nationality),
+          national_id_type_id: getValueOrDefault(perpetratorForm.idType),
+          national_id: getValueOrDefault(perpetratorForm.idNumber),
+          lang_id: getValueOrDefault(perpetratorForm.language),
+          is_refugee: getValueOrDefault(perpetratorForm.isRefugee),
+          tribe_id: getValueOrDefault(perpetratorForm.tribe),
+          phone: getValueOrDefault(perpetratorForm.phone),
+          phone2: getValueOrDefault(perpetratorForm.alternativePhone),
+          email: getValueOrDefault(perpetratorForm.email),
+          relationship_to_reporter_id: getValueOrDefault(perpetratorForm.relationship),
+          shares_home: getValueOrDefault(perpetratorForm.sharesHome),
+          health_status_id: getValueOrDefault(perpetratorForm.healthStatus),
+          profession_id: getValueOrDefault(perpetratorForm.profession),
+          marital_status_id: getValueOrDefault(perpetratorForm.maritalStatus),
+          guardian_name: getValueOrDefault(perpetratorForm.guardianName),
+          additional_details: getValueOrDefault(perpetratorForm.additionalDetails)
+        };
+
+        // Call the API to create perpetrator
+        const result = await perpetratorStore.createPerpetrator(perpetratorPayload);
+        
+        if (result && result.id) {
+          // Add the perpetrator data with the returned ID to the formData
+          const perpetratorData = { 
+            ...perpetratorForm, 
+            id: result.id  // Store the returned ID
+          };
+          
+          formData.step2.perpetrators.push(perpetratorData);
+          console.log('Perpetrator created successfully with ID:', result.id);
+          closePerpetratorModal();
+        } else {
+          throw new Error('No perpetrator ID returned from server');
+        }
+
+      } catch (error) {
+        console.error('Error creating perpetrator:', error);
+        alert(`Failed to create perpetrator: ${error.message}`);
+        // Don't close the modal so user can retry
+      }
     };
     
     const removePerpetrator = (index) => {
@@ -510,126 +699,208 @@ export default {
     };
     
     const submitCase = async () => {
-      const timestamp = Date.now();
-      const timestampSeconds = (timestamp / 1000).toFixed(3);
-      const userId = "100";
-      const srcUid = `walkin-${userId}-${timestamp}`;
-      const srcUid2 = `${srcUid}-1`;
-      const srcCallId = srcUid2;
-      
-      const getValueOrDefault = (value, defaultValue = "") => {
-        return value !== null && value !== undefined && value !== "" ? value : defaultValue;
-      };
-      
-      const baseSourceFields = {
-        src: "walkin",
-        src_ts: timestampSeconds,
-        src_uid: srcUid,
-        src_uid2: srcUid2,
-        src_callid: srcCallId,
-        src_usr: userId,
-        src_vector: "2"
-      };
-      
-      const clientsPayload = formData.step2.clients.map(client => ({
-        client_id: client.id || ""
-      }));
-      
-      const perpetratorsPayload = formData.step2.perpetrators.map(perpetrator => ({
-        perpetrator_id: perpetrator.id || ""
-      }));
-      
-      const servicesPayload = (formData.step4.servicesOffered || []).map(serviceId => ({
-        category_id: String(serviceId)
-      }));
-      
-      const referralsPayload = (formData.step4.referralsType || []).map(referralId => ({
-        category_id: String(referralId)
-      }));
-      
-      const attachmentsPayload = (formData.step4.attachments || []).map((file, index) => ({
-        attachment_id: String(index + 1)
-      }));
-      
-      const mapDepartmentToBackend = (dept) => {
-        const deptMap = {
-          '116': '1',
-          'labor': '2'
-        };
-        return deptMap[dept] || '0';
-      };
-      
-      const mapGBVRelatedToBackend = (gbvId) => {
-        if (!gbvId) return '0';
-        const gbvRelatedIds = ['118002', '363070'];
-        return gbvRelatedIds.includes(String(gbvId)) ? '1' : '0';
-      };
-      
-      const casePayload = {
-        ".id": "",
-        ...baseSourceFields,
-        src_address: getValueOrDefault(formData.step2.phone),
-        
-        reporter_contact_id: "86808",
-        reporter_fullname: getValueOrDefault(formData.step2.name),
-        reporter_age_group_id: getValueOrDefault(formData.step2.ageGroup),
-        reporter_sex_id: getValueOrDefault(formData.step2.gender),
-        
-        reporter_age: getValueOrDefault(formData.step2.age),
-        reporter_phone: getValueOrDefault(formData.step2.phone),
-        reporter_location_id: getValueOrDefault(formData.step2.location),
-        reporter_nationality_id: getValueOrDefault(formData.step2.nationality),
-        
-        case_category_id: getValueOrDefault(formData.step4.categories),
-        narrative: getValueOrDefault(formData.step3.narrative),
-        plan: getValueOrDefault(formData.step3.casePlan),
-        dept: mapDepartmentToBackend(formData.step4.department),
-        disposition_id: "363037",
-        escalated_to_id: getValueOrDefault(formData.step4.escalatedTo, "0"),
-        gbv_related: mapGBVRelatedToBackend(formData.step3.isGBVRelated),
-        knowabout116_id: getValueOrDefault(formData.step4.referralSource),
-        police_ob_no: getValueOrDefault(formData.step4.policeDetails),
-        priority: getValueOrDefault(formData.step4.priority) || "1",
-        status: getValueOrDefault(formData.step4.status) || "1",
-        
-        reporters_uuid: formData.step1.selectedReporter ? undefined : {
-          fname: formData.step2.name || "",
-          age_t: "0",
-          age: formData.step2.age || "",
-          dob: formData.step2.dob || "",
-          age_group_id: formData.step2.ageGroup || "",
-          location_id: formData.step2.location || "",
-          sex_id: formData.step2.gender || "",
-          landmark: formData.step2.nearestLandmark || "",
-          nationality_id: formData.step2.nationality || "",
-          national_id_type_id: formData.step2.idType || "",
-          national_id: formData.step2.idNumber || "",
-          lang_id: formData.step2.language || "",
-          tribe_id: formData.step2.tribe || "",
-          phone: formData.step2.phone || "",
-          phone2: formData.step2.altPhone || "",
-          email: formData.step2.email || "",
-          ".id": ""
-        },
-        
-        services: servicesPayload,
-        referals: referralsPayload,
-        specify_service: getValueOrDefault(formData.step4.otherServicesDetails),
-        clients_case: clientsPayload,
-        perpetrators_case: perpetratorsPayload,
-        attachments_case: attachmentsPayload
-      };
-      
-      Object.keys(casePayload).forEach(key => {
-        if (casePayload[key] === undefined) {
-          delete casePayload[key];
-        }
-      });
-      
-      // FORCE REMOVE reporter_uuid_id if it somehow gets added
-      delete casePayload.reporter_uuid_id;
-      
+      // Prevent double submission
+      if (isSubmittingCase.value) {
+        console.log('Case submission already in progress, ignoring duplicate request');
+        return;
+      }
+
+      isSubmittingCase.value = true;
+
       try {
+        const timestamp = Date.now();
+        const timestampSeconds = (timestamp / 1000).toFixed(3);
+        const userId = "100";
+        const srcUid = `walkin-${userId}-${timestamp}`;
+        const srcUid2 = `${srcUid}-1`;
+        const srcCallId = srcUid2;
+        
+        const getValueOrDefault = (value, defaultValue = "") => {
+          return value !== null && value !== undefined && value !== "" ? value : defaultValue;
+        };
+        
+        const baseSourceFields = {
+          src: "walkin",
+          src_ts: timestampSeconds,
+          src_uid: srcUid,
+          src_uid2: srcUid2,
+          src_callid: srcCallId,
+          src_usr: userId,
+          src_vector: "2"
+        };
+        
+        // Now using the actual IDs stored when creating clients/perpetrators
+        const clientsPayload = formData.step2.clients.map(client => ({
+          client_id: client.id || ""
+        }));
+        
+        const perpetratorsPayload = formData.step2.perpetrators.map(perpetrator => ({
+          perpetrator_id: perpetrator.id || ""
+        }));
+        
+        const servicesPayload = (formData.step4.servicesOffered || []).map(serviceId => ({
+          category_id: String(serviceId)
+        }));
+        
+        const referralsPayload = (formData.step4.referralsType || []).map(referralId => ({
+          category_id: String(referralId)
+        }));
+        
+        // Updated attachments payload to use real IDs
+        const attachmentsPayload = (formData.step4.attachments || []).map((attachment) => ({
+          attachment_id: String(attachment.id || attachment.attachment_id || "")
+        })).filter(item => item.attachment_id !== "");
+        
+        const mapDepartmentToBackend = (dept) => {
+          const deptMap = {
+            '116': '1',
+            'labor': '2'
+          };
+          return deptMap[dept] || '0';
+        };
+        
+        const mapGBVRelatedToBackend = (gbvId) => {
+          if (!gbvId) return '0';
+          const gbvRelatedIds = ['118002', '363070'];
+          return gbvRelatedIds.includes(String(gbvId)) ? '1' : '0';
+        };
+        
+        const casePayload = {
+          ".id": "",
+          ...baseSourceFields,
+          src_address: getValueOrDefault(formData.step2.phone),
+          
+          reporter_id: "1",  // Hardcoded for now
+          reporter_contact_id: "1",  // Changed from 86808 to 1 since 86808 doesn't exist
+          reporter_fullname: getValueOrDefault(formData.step2.name),
+          reporter_age_group_id: getValueOrDefault(formData.step2.ageGroup),
+          reporter_sex_id: getValueOrDefault(formData.step2.gender),
+          
+          reporter_age: getValueOrDefault(formData.step2.age),
+          reporter_phone: getValueOrDefault(formData.step2.phone),
+          reporter_location_id: getValueOrDefault(formData.step2.location),
+          reporter_nationality_id: getValueOrDefault(formData.step2.nationality),
+          
+          case_category_id: getValueOrDefault(formData.step4.categories),
+          narrative: getValueOrDefault(formData.step3.narrative),
+          plan: getValueOrDefault(formData.step3.casePlan),
+          dept: mapDepartmentToBackend(formData.step4.department),
+          disposition_id: "363037",
+          escalated_to_id: getValueOrDefault(formData.step4.escalatedTo, "0"),
+          gbv_related: mapGBVRelatedToBackend(formData.step3.isGBVRelated),
+          knowabout116_id: getValueOrDefault(formData.step4.referralSource),
+          police_ob_no: getValueOrDefault(formData.step4.policeDetails),
+          priority: getValueOrDefault(formData.step4.priority) || "1",
+          status: getValueOrDefault(formData.step4.status) || "1",
+          
+          reporters_uuid: formData.step1.selectedReporter ? undefined : {
+            fname: formData.step2.name || "",
+            age_t: "0",
+            age: formData.step2.age || "",
+            dob: formData.step2.dob || "",
+            age_group_id: formData.step2.ageGroup || "",
+            location_id: formData.step2.location || "",
+            sex_id: formData.step2.gender || "",
+            landmark: formData.step2.nearestLandmark || "",
+            nationality_id: formData.step2.nationality || "",
+            national_id_type_id: formData.step2.idType || "",
+            national_id: formData.step2.idNumber || "",
+            lang_id: formData.step2.language || "",
+            tribe_id: formData.step2.tribe || "",
+            phone: formData.step2.phone || "",
+            phone2: formData.step2.altPhone || "",
+            email: formData.step2.email || "",
+            ".id": ""
+          },
+          
+          services: servicesPayload,
+          referals: referralsPayload,
+          specify_service: getValueOrDefault(formData.step4.otherServicesDetails),
+          clients_case: clientsPayload,
+          perpetrators_case: perpetratorsPayload,
+          attachments_case: attachmentsPayload
+        };
+        
+        Object.keys(casePayload).forEach(key => {
+          if (casePayload[key] === undefined) {
+            delete casePayload[key];
+          }
+        });
+        
+        // FORCE REMOVE reporter_uuid_id if it somehow gets added
+        delete casePayload.reporter_uuid_id;
+        
+        // Step 1: Handle reporter as client if needed
+        let reporterAsClientId = null;
+        if (formData.step2.isClient) {
+          console.log('Reporter is also a client, creating client record...');
+          
+          const reporterClientPayload = {
+            ".id": "",
+            ...baseSourceFields,
+            fname: getValueOrDefault(formData.step2.name),
+            age_t: "0",
+            age: getValueOrDefault(formData.step2.age),
+            dob: getValueOrDefault(formData.step2.dob),
+            age_group_id: getValueOrDefault(formData.step2.ageGroup),
+            location_id: getValueOrDefault(formData.step2.location),
+            sex_id: getValueOrDefault(formData.step2.gender),
+            landmark: getValueOrDefault(formData.step2.nearestLandmark),
+            nationality_id: getValueOrDefault(formData.step2.nationality),
+            national_id_type_id: getValueOrDefault(formData.step2.idType),
+            national_id: getValueOrDefault(formData.step2.idNumber),
+            lang_id: getValueOrDefault(formData.step2.language),
+            is_refugee: "", // Reporter form doesn't have this field
+            tribe_id: getValueOrDefault(formData.step2.tribe),
+            phone: getValueOrDefault(formData.step2.phone),
+            phone2: getValueOrDefault(formData.step2.altPhone),
+            email: getValueOrDefault(formData.step2.email),
+            relationship_to_reporter_id: "", // Reporter is self, so relationship might be empty or "self"
+            relationship_comment: "Reporter is also the client",
+            // Other client-specific fields can be empty since reporter form doesn't have them
+            adults_in_household: "",
+            household_type_id: "",
+            head_occupation_id: "",
+            parent_guardian_name: "",
+            parent_marital_status_id: "",
+            parent_id_number: "",
+            health_status_id: "",
+            hiv_status_id: "",
+            marital_status_id: "",
+            attending_school_id: "",
+            school_name: "",
+            school_level_id: "",
+            school_address: "",
+            school_type_id: "",
+            school_attendance_id: "",
+            is_disabled: "",
+            disability_id: "",
+            special_services_referred: "",
+            special_services_referral: []
+          };
+
+          const reporterClientResult = await clientStore.createClient(reporterClientPayload);
+          if (reporterClientResult && reporterClientResult.id) {
+            reporterAsClientId = reporterClientResult.id;
+            console.log('Reporter created as client with ID:', reporterAsClientId);
+          } else {
+            throw new Error('Failed to create reporter as client - no ID returned');
+          }
+        }
+
+        // Step 2: Update clients payload to include reporter as client if created
+        const allClientIds = [...formData.step2.clients.map(client => client.id || "")];
+        if (reporterAsClientId) {
+          allClientIds.push(reporterAsClientId);
+        }
+        
+        const finalClientsPayload = allClientIds.filter(id => id !== "").map(clientId => ({
+          client_id: clientId
+        }));
+
+        // Update the casePayload with the final clients list
+        casePayload.clients_case = finalClientsPayload;
+
         console.log('Submitting payload:', JSON.stringify(casePayload, null, 2));
         await casesStore.createCase(casePayload);
         alert("Case created successfully!");
@@ -637,6 +908,8 @@ export default {
       } catch (error) {
         console.error("Failed to create case:", error);
         alert("An error occurred while creating the case: " + error.message);
+      } finally {
+        isSubmittingCase.value = false;
       }
     };
     
@@ -660,6 +933,7 @@ export default {
       }
     };
 
+    // Return all variables and methods
     return {
       currentStep,
       totalSteps,
@@ -682,6 +956,11 @@ export default {
       filteredSpecialServices,
       currentPerpetratorStep,
       perpetratorForm,
+      // Store access for loading states
+      clientStore,
+      perpetratorStore,
+      filesStore,
+      isSubmittingCase,
       updateFormData,
       navigateToStep,
       goToStep,
