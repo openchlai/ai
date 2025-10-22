@@ -11,6 +11,7 @@ export default defineConfig({
     host: '0.0.0.0', // This allows access from any network interface
     open: true,
     hmr: true,
+    cors: true, 
     proxy: {
       // Any request that starts with /api-proxy will be proxied
       // e.g. GET /api-proxy/auth/login --> https://demo-openchs.bitz-itc.com/helpline/auth/login
