@@ -731,5 +731,5 @@ This documentation is proprietary to BITZ ITC and provided for authorized users 
 ---
 
 **Documentation Version:** 1.0.0  
-**Last Updated:** October 24, 2025  
+**Last Updated:** October 28, 2025  
 **API Base URL:** http://192.168.8.18:8123
