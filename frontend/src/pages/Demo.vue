@@ -1,3 +1,13 @@
+
+<script setup lang="ts">
+  import CaseCreate from '../components/cases/CaseCreate.vue';
+
+</script>
+
+<template>
+  <CaseCreate />
+</template>
+=======
 <template>
   <div class="flex min-h-screen bg-white">
     <!-- Left Section -->
@@ -113,3 +123,4 @@ input:focus {
   outline: 2px solid #fbbf24;
 }
 </style>
+
