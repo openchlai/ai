@@ -10,7 +10,7 @@
     <div class="flex-1 flex justify-center items-center bg-black">
       <div class="w-80 bg-black p-8 rounded-lg shadow-lg">
         <h2 class="text-white text-3xl font-bold mb-6">Log in</h2>
-
+ 
         <form @submit.prevent="handleLogin">
           <div class="mb-4">
             <label class="text-white block mb-1">Username</label>
