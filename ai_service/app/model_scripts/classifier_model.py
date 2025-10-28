@@ -1,4 +1,3 @@
-# app/models/classifier_model.py (Fixed)
 import logging
 from typing import Dict, List, Optional
 from datetime import datetime
@@ -61,14 +60,17 @@ class ClassifierModel:
         self.loaded = False
         self.load_time = None
         self.error = None
-        self.max_length = 256  # Model's maximum token limit
+        self.max_length = 256
         
+<<<<<<< HEAD
         # Hugging Face repo configuration (hub-first, no local model loading)
         from ..config.settings import settings as _settings
         self.hf_repo_id = os.getenv("CLASSIFIER_HF_REPO_ID") or getattr(_settings, "classifier_hf_repo_id", None)
         # Public models only — no auth token usage
         
         # Category configs - will be loaded in load() method
+=======
+>>>>>>> ai-service-dev
         self.category_info = {}
         self.main_categories = []
         self.sub_categories = []
@@ -106,7 +108,6 @@ class ClassifierModel:
                     except Exception as hf_err:
                         raise FileNotFoundError(f"Failed to fetch {filename} from HF repo {self.hf_repo_id}: {hf_err}")
             
-            # Set the category lists
             self.main_categories = configs["main_categories"]
             self.sub_categories = configs["sub_categories"]
             self.interventions = configs["interventions"]
@@ -119,11 +120,11 @@ class ClassifierModel:
                 "priorities": self.priorities
             }
             
-            logger.info(f"✅ Loaded classifier configs: {len(self.main_categories)} main categories, {len(self.sub_categories)} sub categories")
+            logger.info(f"Loaded classifier configs: {len(self.main_categories)} main categories, {len(self.sub_categories)} sub categories")
             return True
             
         except Exception as e:
-            logger.error(f"❌ Failed to load classifier configs: {e}")
+            logger.error(f"Failed to load classifier configs: {e}")
             self.error = f"Config loading failed: {str(e)}"
             return False
 
@@ -142,6 +143,7 @@ class ClassifierModel:
                 "priorities": "priorities.json"
             }
             
+<<<<<<< HEAD
             # Hub-first: require HF repo id (public access)
             if not self.hf_repo_id:
                 raise RuntimeError("CLASSIFIER_HF_REPO_ID or settings.classifier_hf_repo_id must be set for hub loading")
@@ -162,17 +164,146 @@ class ClassifierModel:
             self.model = self.model.to(self.device)
             self.model.eval()
 
+=======
+            configs = {}
+            for config_name, filename in config_files.items():
+                try:
+                    config_path = hf_hub_download(
+                        repo_id=model_id,
+                        filename=filename
+                    )
+                    with open(config_path) as f:
+                        configs[config_name] = json.load(f)
+                except Exception as e:
+                    logger.warning(f"Could not load {filename} from HF model: {e}")
+                    return False
+            
+            self.main_categories = configs["main_categories"]
+            self.sub_categories = configs["sub_categories"]
+            self.interventions = configs["interventions"]
+            self.priorities = configs["priorities"]
+            
+            self.category_info = {
+                "main_categories": self.main_categories,
+                "sub_categories": self.sub_categories,
+                "interventions": self.interventions,
+                "priorities": self.priorities
+            }
+            
+            logger.info(f"Loaded classifier configs from HF: {len(self.main_categories)} main categories")
+            return True
+            
+        except Exception as e:
+            logger.warning(f"Failed to load category configs from HuggingFace: {e}")
+            return False
+
+    def _load_default_categories(self) -> bool:
+        """Load default/fallback categories"""
+        try:
+            self.main_categories = [
+                "general_inquiry", "crisis", "medical", "mental_health", "social_services",
+                "legal", "education", "housing", "employment", "financial"
+            ]
+            self.sub_categories = [
+                "assessment_needed", "immediate_risk", "follow_up_required", 
+                "referral_needed", "information_provided", "resolved"
+            ]
+            self.interventions = [
+                "initial_assessment", "crisis_intervention", "referral", 
+                "information_provision", "follow_up", "emergency_response"
+            ]
+            self.priorities = ["low", "medium", "high", "urgent"]
+            
+            self.category_info = {
+                "main_categories": self.main_categories,
+                "sub_categories": self.sub_categories,
+                "interventions": self.interventions,
+                "priorities": self.priorities
+            }
+            
+            logger.info("Using default classifier categories")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to load default categories: {e}")
+            return False
+
+    def load(self) -> bool:
+        """Load model and tokenizer - NO AUTHENTICATION"""
+        try:
+            logger.info(f"Loading classifier model...")
+            start_time = datetime.now()
+            
+            if self.settings.use_hf_models and self.settings.hf_classifier_model:
+                model_id = self.settings._get_hf_model_id("classifier")
+                logger.info(f"Loading classifier model from HuggingFace Hub: {model_id}")
+                
+                if not self._load_category_configs_from_hf(model_id):
+                    if not self._load_default_categories():
+                        return False
+                
+                try:
+                    self.tokenizer = AutoTokenizer.from_pretrained(model_id)
+                    
+                    self.model = MultiTaskDistilBert.from_pretrained(
+                        model_id,
+                        num_main=len(self.main_categories),
+                        num_sub=len(self.sub_categories),
+                        num_interv=len(self.interventions),
+                        num_priority=len(self.priorities)
+                    )
+                    
+                    self.model = self.model.to(self.device)
+                    self.model.eval()
+                    
+                    self.loaded = True
+                    self.load_time = datetime.now()
+                    load_duration = (self.load_time - start_time).total_seconds()
+                    logger.info(f"Classifier model loaded from HF Hub in {load_duration:.2f}s on {self.device}")
+                    return True
+                    
+                except Exception as e:
+                    logger.warning(f"Failed to load HF classifier model {model_id}: {e}")
+                    logger.info("Falling back to local model loading")
+            
+            if not self._load_category_configs():
+                return False
+            
+            model_files_path = os.path.join(self.model_path, "multitask_distilbert")
+            if not os.path.exists(model_files_path):
+                raise FileNotFoundError(f"Model files not found at: {model_files_path}")
+            
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                model_files_path,
+                local_files_only=True
+            )
+            
+            self.model = MultiTaskDistilBert.from_pretrained(
+                model_files_path,
+                local_files_only=True,
+                num_main=len(self.main_categories),
+                num_sub=len(self.sub_categories),
+                num_interv=len(self.interventions),
+                num_priority=len(self.priorities)
+            )
+            self.model = self.model.to(self.device)
+            self.model.eval()
+>>>>>>> ai-service-dev
             
             self.loaded = True
             self.load_time = datetime.now()
             load_duration = (self.load_time - start_time).total_seconds()
+<<<<<<< HEAD
             logger.info(f"✅ Classifier model loaded from Hugging Face Hub ({self.hf_repo_id}) in {load_duration:.2f}s on {self.device}")
+=======
+            logger.info(f"Classifier model loaded locally in {load_duration:.2f}s on {self.device}")
+>>>>>>> ai-service-dev
             return True
             
         except Exception as e:
             self.error = str(e)
             self.load_time = datetime.now()
-            logger.error(f"❌ Failed to load classifier model: {e}")
+            logger.error(f"Failed to load classifier model: {e}")
             return False
 
     def preprocess_text(self, text: str) -> str:
@@ -202,15 +333,7 @@ class ClassifierModel:
             return False
     
     def classify(self, narrative: str) -> Dict[str, str]:
-        """
-        Classify case narrative with automatic chunking for long inputs
-        
-        Args:
-            narrative: Input case description
-            
-        Returns:
-            Dict: Classification results with confidence scores
-        """
+        """Classify case narrative with automatic chunking for long inputs"""
         if not self.loaded or not self.tokenizer or not self.model:
             raise RuntimeError("Classifier model not loaded. Call load() first.")
         
@@ -220,23 +343,19 @@ class ClassifierModel:
         narrative = narrative.strip()
         
         try:
-            # Check if text needs chunking
             clean_text = self.preprocess_text(narrative)
             token_count = len(self.tokenizer.encode(clean_text, add_special_tokens=True))
             
-            if token_count <= self.max_length - 10:  # Leave buffer
-                # Single classification
+            if token_count <= self.max_length - 10:
                 return self._classify_single(clean_text)
             else:
-                # Chunked classification with aggregation
-                logger.info(f"🔄 Text too long ({token_count} tokens), using chunked classification")
+                logger.info(f"Text too long ({token_count} tokens), using chunked classification")
                 return self._classify_chunked(clean_text)
                 
         except Exception as e:
             logger.error(f"Classification failed: {e}")
             raise RuntimeError(f"Classification failed: {str(e)}")
         finally:
-            # Clean up GPU memory
             self._cleanup_memory()
 
     def _classify_single(self, text: str) -> Dict[str, str]:
@@ -254,13 +373,11 @@ class ClassifierModel:
                 logits = self.model(**inputs)
                 logits_main, logits_sub, logits_interv, logits_priority = logits
             
-            # Get predictions
             preds_main = torch.argmax(logits_main, dim=1).item()
             preds_sub = torch.argmax(logits_sub, dim=1).item()
             preds_interv = torch.argmax(logits_interv, dim=1).item()
             preds_priority = torch.argmax(logits_priority, dim=1).item()
             
-            # Calculate confidence scores
             main_conf = torch.softmax(logits_main, dim=1).max().item()
             sub_conf = torch.softmax(logits_sub, dim=1).max().item()
             interv_conf = torch.softmax(logits_interv, dim=1).max().item()
@@ -288,9 +405,8 @@ class ClassifierModel:
         """Classify text using intelligent chunking and result aggregation"""
         from ..core.text_chunker import text_chunker
         
-        # Get chunks optimized for classification
         chunks = text_chunker.chunk_text(text, strategy="classification")
-        logger.info(f"🔄 Processing {len(chunks)} classification chunks")
+        logger.info(f"Processing {len(chunks)} classification chunks")
         
         chunk_results = []
         
@@ -298,22 +414,18 @@ class ClassifierModel:
             try:
                 logger.debug(f"Classifying chunk {i+1}/{len(chunks)} ({chunk.token_count} tokens)")
                 
-                # Classify individual chunk
                 chunk_result = self._classify_single(chunk.text)
                 chunk_results.append(chunk_result)
                 
-                # Clean up between chunks
-                if i % 5 == 0:  # Every 5 chunks
+                if i % 5 == 0:
                     self._cleanup_memory()
                     
             except Exception as e:
                 logger.error(f"Failed to classify chunk {i+1}: {e}")
-                # Use default classification for failed chunk
                 chunk_results.append(self._get_default_classification())
         
-        # Aggregate results from all chunks
         aggregated_result = self._aggregate_classification_results(chunk_results, chunks)
-        logger.info(f"✅ Chunked classification completed with {len(chunk_results)} chunks")
+        logger.info(f"Chunked classification completed with {len(chunk_results)} chunks")
         
         return aggregated_result
 
@@ -325,7 +437,6 @@ class ClassifierModel:
         if len(chunk_results) == 1:
             return chunk_results[0]
         
-        # Collect all predictions with weights based on chunk size and confidence
         main_votes = Counter()
         sub_votes = Counter()
         interv_votes = Counter()
@@ -335,7 +446,6 @@ class ClassifierModel:
         confidence_scores = []
         
         for i, result in enumerate(chunk_results):
-            # Weight by chunk size and confidence
             chunk_weight = chunks[i].token_count * result.get("confidence", 0.5)
             total_weight += chunk_weight
             
@@ -346,16 +456,13 @@ class ClassifierModel:
             
             confidence_scores.append(result.get("confidence", 0.5))
         
-        # Get most common predictions
         final_main = main_votes.most_common(1)[0][0]
         final_sub = sub_votes.most_common(1)[0][0]
         final_interv = interv_votes.most_common(1)[0][0]
         final_priority = priority_votes.most_common(1)[0][0]
         
-        # Calculate aggregated confidence
         final_confidence = sum(confidence_scores) / len(confidence_scores)
         
-        # Apply business logic for priority escalation
         final_priority = self._apply_priority_escalation(chunk_results, final_priority)
         
         return {
@@ -373,7 +480,6 @@ class ClassifierModel:
 
     def _apply_priority_escalation(self, chunk_results: List[Dict], default_priority: str) -> str:
         """Apply priority escalation logic for critical cases"""
-        # If any chunk indicates high priority, escalate
         priorities_seen = [result.get("priority", "medium") for result in chunk_results]
         
         if "high" in priorities_seen:
@@ -400,16 +506,7 @@ class ClassifierModel:
         gc.collect()
 
     def classify_with_fallback(self, narrative: str, max_retries: int = 2) -> Optional[Dict[str, str]]:
-        """
-        Classify with fallback strategies for robust processing
-        
-        Args:
-            narrative: Input case description
-            max_retries: Maximum number of retry attempts
-            
-        Returns:
-            Classification result or default if all attempts fail
-        """
+        """Classify with fallback strategies for robust processing"""
         if not narrative or not narrative.strip():
             return self._get_default_classification()
             
@@ -423,7 +520,6 @@ class ClassifierModel:
                     logger.error(f"All classification attempts failed for text length {len(narrative)}")
                     return self._get_default_classification()
                 
-                # Clean up before retry
                 self._cleanup_memory()
         
         return self._get_default_classification()
@@ -438,7 +534,7 @@ class ClassifierModel:
         token_count = len(self.tokenizer.encode(text)) if self.tokenizer else len(text) // 4
         
         if token_count <= self.max_length:
-            return 0.5  # Single chunk
+            return 0.5
         else:
             chunks = text_chunker.chunk_text(text, strategy="classification")
             return text_chunker.estimate_processing_time(chunks, "classification")
@@ -474,5 +570,4 @@ class ClassifierModel:
         """Check if model is ready for inference"""
         return self.loaded and self.tokenizer is not None and self.model is not None
 
-# Global classifier model instance
 classifier_model = ClassifierModel()
