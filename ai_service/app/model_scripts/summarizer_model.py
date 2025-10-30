@@ -27,7 +27,7 @@ class SummarizationModel:
         self.max_length = 512  # Model's maximum input token limit
         
         # Hugging Face repo support (hub-first)
-        self.hf_repo_id = os.getenv("SUMMARIZATION_HF_REPO_ID") or getattr(settings, "summarization_hf_repo_id", None)
+        self.hf_repo_id = os.getenv("SUMMARIZATION_HF_REPO_ID") or getattr(settings, "hf_summarizer_model", None)
 
     def load(self) -> bool:
         try:
@@ -35,7 +35,7 @@ class SummarizationModel:
             start_time = datetime.now()
             
             if not self.hf_repo_id:
-                raise RuntimeError("SUMMARIZATION_HF_REPO_ID or settings.summarization_hf_repo_id must be set for hub loading")
+                raise RuntimeError("SUMMARIZATION_HF_REPO_ID or settings.hf_summarizer_model must be set for hub loading")
             logger.info(f"📦 Loading summarization model from Hugging Face Hub: {self.hf_repo_id} (ignoring local path {self.model_path})")
             self.tokenizer = AutoTokenizer.from_pretrained(self.hf_repo_id, local_files_only=False)
             self.model = AutoModelForSeq2SeqLM.from_pretrained(self.hf_repo_id, local_files_only=False)
@@ -318,19 +318,36 @@ class SummarizationModel:
             }
 
     def get_model_info(self) -> Dict:
-        return {
+        """Get standardized model information"""
+        
+        # Basic information
+        info = {
+            "model_type": "summarizer",
             "model_path": self.model_path,
-            "device": str(self.device),
+            "hf_repo_id": self.hf_repo_id,
             "loaded": self.loaded,
             "load_time": self.load_time.isoformat() if self.load_time else None,
+            "device": str(self.device),
             "error": self.error,
-            "task": "text-summarization",
-            "framework": "transformers",
-            "max_length": self.max_length,
-            "chunking_supported": True,
-            "summarization_strategies": ["single_pass", "hierarchical"],
-            "fallback_strategy": "extractive_summary"
         }
+
+        # Detailed model-specific information
+        if self.loaded and self.model:
+            details = {
+                "model_class": type(self.model).__name__,
+                "tokenizer_class": type(self.tokenizer).__name__,
+                "max_length": self.max_length,
+                "task": "text-summarization",
+                "framework": "transformers",
+                "chunking": {
+                    "supported": True,
+                    "strategies": ["single_pass", "hierarchical"],
+                },
+                "fallback_strategy": "extractive_summary",
+            }
+            info["details"] = details
+        
+        return info
 
 # Global instance
 summarization_model = SummarizationModel()

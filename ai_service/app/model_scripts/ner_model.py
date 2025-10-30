@@ -27,7 +27,7 @@ class NERModel:
         self.hf_model_name = "spacy/en_core_web_lg"
         
         # Initialize missing attributes that were causing the error
-        self.hf_repo_id = settings.ner_hf_repo_id
+        self.hf_repo_id = settings.hf_ner_model
         self.hf_token = settings.hf_token
         self.use_hf = False
         
@@ -218,29 +218,45 @@ class NERModel:
             raise RuntimeError(f"NER processing failed: {str(e)}")
     
     def get_model_info(self) -> Dict:
-        """Get model information"""
+        """Get standardized model information"""
+        
+        # Basic information
         info = {
+            "model_type": "ner",
             "model_path": self.model_path,
-            "fallback_model_name": self.fallback_model_name,
-            "hf_model_name": self.hf_model_name,
             "hf_repo_id": self.hf_repo_id,
-            "model_type": self.model_type,
             "loaded": self.loaded,
             "load_time": self.load_time.isoformat() if self.load_time else None,
+            "device": "cpu",  # spaCy models typically run on CPU
             "error": self.error,
-            "transformers_available": TRANSFORMERS_AVAILABLE,
-            "use_hf": self.use_hf
         }
+
+        # Detailed model-specific information
+        details = {
+            "fallback_model_name": self.fallback_model_name,
+            "hf_model_name": self.hf_model_name,
+            "transformers_available": TRANSFORMERS_AVAILABLE,
+            "use_hf_pipeline": self.use_hf,
+            "model_backend": self.model_type,
+        }
+
+        if self.loaded:
+            if self.nlp:
+                details.update({
+                    "spacy_version": spacy.__version__,
+                    "model_version": self.nlp.meta.get("version", "unknown"),
+                    "language": self.nlp.meta.get("lang", "unknown"),
+                    "pipeline_components": list(self.nlp.pipe_names),
+                    "entity_labels": list(self.nlp.get_pipe("ner").labels) if "ner" in self.nlp.pipe_names else []
+                })
+            elif self.hf_pipeline:
+                details.update({
+                    "hf_pipeline_task": self.hf_pipeline.task,
+                    "hf_model_name_or_path": self.hf_pipeline.model.name_or_path,
+                    "hf_tokenizer_name_or_path": self.hf_pipeline.tokenizer.name_or_path,
+                })
         
-        if self.loaded and self.nlp:
-            info.update({
-                "spacy_version": spacy.__version__,
-                "model_version": self.nlp.meta.get("version", "unknown"),
-                "language": self.nlp.meta.get("lang", "unknown"),
-                "pipeline": list(self.nlp.pipe_names),
-                "labels": list(self.nlp.get_pipe("ner").labels) if "ner" in self.nlp.pipe_names else []
-            })
-        
+        info["details"] = details
         return info
     
     def is_ready(self) -> bool:

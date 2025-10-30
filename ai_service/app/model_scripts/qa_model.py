@@ -87,7 +87,7 @@ class QAModel:
             start_time = datetime.now()
 
             # Try HuggingFace Hub first if configured
-            model_id = getattr(self.settings, "qa_hf_repo_id", None) or getattr(self.settings, "hf_qa_model", None)
+            model_id = getattr(self.settings, "hf_qa_model", None)
             if model_id:
                 logger.info(f"Loading QA model from HuggingFace Hub: {model_id}")
                 
@@ -318,17 +318,31 @@ class QAModel:
         gc.collect()
 
     def get_model_info(self) -> Dict:
-        """Return information about the loaded QA model."""
-        return {
+        """Get standardized model information"""
+        
+        # Basic information
+        info = {
+            "model_type": "qa",
             "model_path": self.model_path,
+            "hf_repo_id": getattr(self.settings, "hf_qa_model", None),
             "loaded": self.loaded,
             "load_time": self.load_time.isoformat() if self.load_time else None,
             "device": str(self.device),
             "error": self.error,
-            "max_length": self.max_length,
-            "model_type": type(self.model).__name__ if self.model else None,
-            "qa_heads": list(QA_HEADS_CONFIG.keys())
         }
+
+        # Detailed model-specific information
+        if self.loaded and self.model:
+            details = {
+                "model_class": type(self.model).__name__,
+                "tokenizer_class": type(self.tokenizer).__name__,
+                "max_length": self.max_length,
+                "qa_heads_config": QA_HEADS_CONFIG,
+                "head_submetric_labels": HEAD_SUBMETRIC_LABELS,
+            }
+            info["details"] = details
+        
+        return info
         
     def is_ready(self) -> bool:
         """Check if the model is loaded and ready for inference."""

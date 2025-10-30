@@ -95,25 +95,29 @@ class WhisperModelManager:
         return self.whisper_model is not None and getattr(self.whisper_model, 'is_loaded', False)
     
     def get_loaded_variant_info(self) -> Dict[str, Any]:
-        """Get information about currently loaded model"""
-        if not self.is_model_loaded():
-            return {
-                "loaded": False,
-                "variant": self.current_variant.value if self.current_variant else None,
-                "strategy": self.current_strategy.value if self.current_strategy else None
-            }
+        """Get standardized information about currently loaded model variant"""
         
-        model_info = self.whisper_model.get_model_info() if hasattr(self.whisper_model, 'get_model_info') else {}
-        
-        return {
-            "loaded": True,
-            "variant": self.current_variant.value,
-            "strategy": self.current_strategy.value,
+        info = {
+            "model_type": "whisper_variant_info",
+            "loaded": self.is_model_loaded(),
+            "load_time": None, # Not directly tracked by manager for this level
+            "device": self.whisper_model.device if self.whisper_model else None,
+            "error": self.whisper_model.error if self.whisper_model else None,
+        }
+
+        details = {
+            "variant": self.current_variant.value if self.current_variant else None,
+            "strategy": self.current_strategy.value if self.current_strategy else None,
             "model_path": self.get_current_model_path(),
             "supports_builtin_translation": self.current_variant == WhisperVariant.LARGE_V3,
             "translation_strategy_active": self.current_strategy.value,
-            "model_info": model_info
         }
+
+        if self.is_model_loaded():
+            details["model_info"] = self.whisper_model.get_model_info()
+        
+        info["details"] = details
+        return info
     
     async def load_whisper_model(self, force_reload: bool = False) -> bool:
         """
@@ -377,7 +381,16 @@ class WhisperModelManager:
     
     async def get_model_status(self) -> Dict[str, Any]:
         """Get comprehensive status of whisper models and configuration"""
-        return {
+        
+        info = {
+            "model_type": "whisper_manager",
+            "loaded": self.is_model_loaded(),
+            "load_time": None, # Not directly tracked by manager
+            "device": self.whisper_model.device if self.whisper_model else None,
+            "error": self.whisper_model.error if self.whisper_model else None,
+        }
+
+        details = {
             "current_configuration": {
                 "variant": self.current_variant.value if self.current_variant else None,
                 "strategy": self.current_strategy.value if self.current_strategy else None,
@@ -403,6 +416,8 @@ class WhisperModelManager:
                 "cuda_memory_reserved": torch.cuda.memory_reserved() if torch.cuda.is_available() else 0
             }
         }
+        info["details"] = details
+        return info
     
     async def switch_configuration(self, variant: str, strategy: str) -> Tuple[bool, str]:
         """

@@ -109,12 +109,14 @@ async def get_translation_info():
 
     translator_model = model_loader.models.get("translator")
     if translator_model:
+        model_info = translator_model.get_model_info()
         return {
             "status": "ready",
-            "model_info": translator_model.get_model_info()
+            "model_info": model_info
         }
     else:
         return {
             "status": "error",
-            "message": "Translation model not found"
+            "message": "Translation model not found",
+            "model_info": {"error": "Model instance not found"}
         }

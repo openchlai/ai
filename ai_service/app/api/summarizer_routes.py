@@ -117,8 +117,13 @@ async def get_summarizer_info():
 
     summarizer_model = model_loader.models.get("summarizer")
     if summarizer_model:
-        return {"status": "ready", "model_info": summarizer_model.get_model_info()}
-    return {"status": "error", "message": "Summarizer model not found"}
+        model_info = summarizer_model.get_model_info()
+        return {"status": "ready", "model_info": model_info}
+    return {
+        "status": "error",
+        "message": "Summarizer model not found",
+        "model_info": {"error": "Model instance not found"}
+    }
 
 
 @router.post("/demo", response_model=SummarizationResponse)
