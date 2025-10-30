@@ -248,14 +248,16 @@ async def get_classifier_info():
 
     classifier = model_loader.models.get("classifier_model")
     if classifier:
+        model_info = classifier.get_model_info()
         return {
             "status": "ready",
-            "model_info": classifier.get_model_info()
+            "model_info": model_info
         }
     else:
         return {
             "status": "error",
-            "message": "Classifier model not found"
+            "message": "Classifier model not found",
+            "model_info": {"error": "Model instance not found"}
         }
 
 @router.post("/demo")

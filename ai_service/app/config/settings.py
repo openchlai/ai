@@ -38,12 +38,6 @@ class Settings(BaseSettings):
     
     # Hugging Face configuration - NO TOKEN for public models
     hf_token: Optional[str] = None
-    classifier_hf_repo_id: Optional[str] = "openchs/cls-gbv-distilbert-v1"
-    summarization_hf_repo_id: Optional[str] = "openchs/sum-flan-t5-base-synthetic-v1"
-    translation_hf_repo_id: Optional[str] = "openchs/sw-en-opus-mt-mul-en-v1"
-    qa_hf_repo_id: Optional[str] = "openchs/qa-helpline-distilbert-v1"
-    ner_hf_repo_id: Optional[str] = "openchs/ner_distillbert_v1"
-    whisper_hf_repo_id: Optional[str] = "openchs/asr-whisper-helpline-sw-v1"
     
     # Redis Configuration
     redis_url: str = "redis://localhost:6379/0"

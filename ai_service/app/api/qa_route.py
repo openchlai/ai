@@ -250,7 +250,7 @@ async def get_qa_info():
     """Get QA model information"""
     if not qa_model.is_ready():
         # Return the error from the model if loading failed
-        return {"status": "not_ready", "message": "QA model not loaded", "error": qa_model.error}
+        return {"status": "not_ready", "message": "QA model not loaded", "model_info": qa_model.get_model_info()}
 
     return {"status": "ready", "model_info": qa_model.get_model_info()}
 

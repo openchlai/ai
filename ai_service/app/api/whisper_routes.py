@@ -122,14 +122,16 @@ async def get_whisper_info():
     
     whisper_model = model_loader.models.get("whisper")
     if whisper_model:
+        model_info = whisper_model.get_model_info()
         return {
             "status": "ready",
-            "model_info": whisper_model.get_model_info()
+            "model_info": model_info
         }
     else:
         return {
             "status": "error",
-            "message": "Whisper model not found"
+            "message": "Whisper model not found",
+            "model_info": {"error": "Model instance not found"}
         }
 
 @router.get("/languages")

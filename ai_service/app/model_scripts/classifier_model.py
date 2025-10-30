@@ -65,7 +65,7 @@ class ClassifierModel:
         
         # Hugging Face repo configuration (hub-first, no local model loading)
         from ..config.settings import settings as _settings
-        self.hf_repo_id = os.getenv("CLASSIFIER_HF_REPO_ID") or getattr(_settings, "classifier_hf_repo_id", None)
+        self.hf_repo_id = os.getenv("CLASSIFIER_HF_REPO_ID") or getattr(settings, "hf_classifier_model", None)
         # Public models only — no auth token usage
         
         # Category configs - will be loaded in load() method
@@ -144,7 +144,7 @@ class ClassifierModel:
             
             # Hub-first: require HF repo id (public access)
             if not self.hf_repo_id:
-                raise RuntimeError("CLASSIFIER_HF_REPO_ID or settings.classifier_hf_repo_id must be set for hub loading")
+                raise RuntimeError("CLASSIFIER_HF_REPO_ID or settings.hf_classifier_model must be set for hub loading")
             logger.info(f"📦 Loading classifier model from Hugging Face Hub: {self.hf_repo_id} (ignoring local path {self.model_path})")
             self.tokenizer = AutoTokenizer.from_pretrained(
                 self.hf_repo_id,
@@ -188,7 +188,7 @@ class ClassifierModel:
                 return False
             # Require HF repo id for weights
             if not self.hf_repo_id:
-                raise RuntimeError("HF repo id not configured for classifier (CLASSIFIER_HF_REPO_ID or settings.classifier_hf_repo_id)")
+                raise RuntimeError("HF repo id not configured for classifier (CLASSIFIER_HF_REPO_ID or settings.hf_classifier_model)")
             # Load from hub
             ok = self._load_category_configs_from_hf(self.hf_repo_id)
             if not ok:
@@ -444,29 +444,38 @@ class ClassifierModel:
             return text_chunker.estimate_processing_time(chunks, "classification")
 
     def get_model_info(self) -> Dict:
+        """Get standardized model information"""
+        
+        # Basic information
         info = {
+            "model_type": "classifier",
             "model_path": self.model_path,
+            "hf_repo_id": self.hf_repo_id,
             "loaded": self.loaded,
             "load_time": self.load_time.isoformat() if self.load_time else None,
             "device": str(self.device),
             "error": self.error,
-            "max_length": self.max_length,
-            "chunking_supported": True,
-            "aggregation_strategy": "weighted_voting",
-            "priority_escalation": True,
-            "num_categories": {
-                "main": len(self.main_categories),
-                "sub": len(self.sub_categories),
-                "intervention": len(self.interventions),
-                "priority": len(self.priorities)
-            }
         }
-        
+
+        # Detailed model-specific information
         if self.loaded and self.model:
-            info.update({
-                "model_type": type(self.model).__name__,
-                "tokenizer": type(self.tokenizer).__name__
-            })
+            details = {
+                "model_class": type(self.model).__name__,
+                "tokenizer_class": type(self.tokenizer).__name__,
+                "max_length": self.max_length,
+                "chunking": {
+                    "supported": True,
+                    "strategy": "weighted_voting",
+                    "priority_escalation": True,
+                },
+                "categories": {
+                    "main": len(self.main_categories),
+                    "sub": len(self.sub_categories),
+                    "intervention": len(self.interventions),
+                    "priority": len(self.priorities),
+                }
+            }
+            info["details"] = details
         
         return info
     

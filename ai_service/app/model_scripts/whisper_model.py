@@ -697,29 +697,39 @@ class WhisperModel:
         return self.supported_languages.copy()
     
     def get_model_info(self) -> Dict[str, Any]:
-        """Get model information"""
-        return {
-            "model_name": "whisper",
+        """Get standardized model information"""
+        
+        # Basic information
+        info = {
+            "model_type": "whisper",
             "model_path": self.model_path,
-            "fallback_model_id": self.fallback_model_id,
-            "model_type": "speech-to-text",
-            "framework": "transformers",
+            "hf_repo_id": self.fallback_model_id, # Using fallback_model_id as the primary HF identifier
+            "loaded": self.is_loaded,
+            "load_time": None, # Whisper model doesn't track load_time explicitly
             "device": str(self.device) if self.device else None,
-            "torch_dtype": str(self.torch_dtype) if self.torch_dtype else None,
-            "is_loaded": self.is_loaded,
             "error": self.error,
+        }
+
+        # Detailed model-specific information
+        details = {
+            "model_name": "whisper",
+            "model_version": self.model_version,
+            "current_model_id": self.current_model_id,
+            "framework": "transformers",
+            "torch_dtype": str(self.torch_dtype) if self.torch_dtype else None,
             "supported_formats": ["wav", "mp3", "flac", "m4a", "ogg"],
             "max_audio_length": "unlimited (chunked processing)",
             "sample_rate": "16kHz",
-            "tasks_supported": "transcribe" if not self.enable_translation else "transcribe, translate",
+            "tasks_supported": ["transcribe"] + (["translate"] if self.enable_translation else []),
             "languages": "multilingual (99+ languages)",
-            "version": self.model_version,
-            "current_model_id": self.current_model_id,
             "translation_enabled": self.enable_translation,
             "long_form_support": True,
+            "local_model_available": self._check_local_model_exists(),
             "supported_language_codes": list(self.supported_languages.keys()),
-            "local_model_available": self._check_local_model_exists()
         }
+        info["details"] = details
+        
+        return info
     
     def is_ready(self) -> bool:
         """Check if model is ready for inference"""

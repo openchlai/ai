@@ -136,14 +136,16 @@ async def get_ner_info():
     
     ner_model = model_loader.models.get("ner")
     if ner_model:
+        model_info = ner_model.get_model_info()
         return {
             "status": "ready",
-            "model_info": ner_model.get_model_info()
+            "model_info": model_info
         }
     else:
         return {
             "status": "error",
-            "message": "NER model not found"
+            "message": "NER model not found",
+            "model_info": {"error": "Model instance not found"}
         }
 
 @router.post("/demo")

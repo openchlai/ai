@@ -25,7 +25,7 @@ class TranslationModel:
         self.max_length = 512  # Model's maximum token limit
         
         # Hugging Face repo support (hub-first)
-        self.hf_repo_id = os.getenv("TRANSLATION_HF_REPO_ID") or getattr(settings, "translation_hf_repo_id", None)
+        self.hf_repo_id = os.getenv("TRANSLATION_HF_REPO_ID") or getattr(settings, "hf_translator_model", None)
         # Target language configuration (default to English)
         self.target_language = os.getenv("TRANSLATION_TARGET_LANGUAGE", "en").lower()
         # Optional explicit target token override (e.g., ">>eng<<")
@@ -37,7 +37,7 @@ class TranslationModel:
             start_time = datetime.now()
             
             if not self.hf_repo_id:
-                raise RuntimeError("TRANSLATION_HF_REPO_ID or settings.translation_hf_repo_id must be set for hub loading")
+                raise RuntimeError("TRANSLATION_HF_REPO_ID or settings.hf_translator_model must be set for hub loading")
             logger.info(f"📦 Loading translation model from Hugging Face Hub: {self.hf_repo_id} (ignoring local path {self.model_path})")
             self.tokenizer = AutoTokenizer.from_pretrained(self.hf_repo_id, local_files_only=False)
             self.model = AutoModelForSeq2SeqLM.from_pretrained(self.hf_repo_id, local_files_only=False)
@@ -303,17 +303,35 @@ class TranslationModel:
             return text_chunker.estimate_processing_time(chunks, "translation")
 
     def get_model_info(self) -> Dict:
-        return {
+        """Get standardized model information"""
+        
+        # Basic information
+        info = {
+            "model_type": "translator",
             "model_path": self.model_path,
             "hf_repo_id": self.hf_repo_id,
-            "device": str(self.device),
             "loaded": self.loaded,
             "load_time": self.load_time.isoformat() if self.load_time else None,
+            "device": str(self.device),
             "error": self.error,
-            "max_length": self.max_length,
-            "chunking_supported": True,
-            "fallback_strategies": ["chunked_translation", "memory_cleanup", "retry_logic"]
         }
+
+        # Detailed model-specific information
+        if self.loaded and self.model:
+            details = {
+                "model_class": type(self.model).__name__,
+                "tokenizer_class": type(self.tokenizer).__name__,
+                "max_length": self.max_length,
+                "target_language": self.target_language,
+                "target_token_override": self.target_token_override,
+                "chunking": {
+                    "supported": True,
+                    "fallback_strategies": ["chunked_translation", "memory_cleanup", "retry_logic"],
+                },
+            }
+            info["details"] = details
+        
+        return info
 
 # Global instance
 translator_model = TranslationModel()
