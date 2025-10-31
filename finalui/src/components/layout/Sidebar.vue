@@ -27,11 +27,11 @@
         📊 Cases
       </RouterLink>
       <RouterLink
-        to="/chats"
+        to="/messages"
         class="hover:text-blue-600 transition"
         active-class="text-blue-600 font-semibold"
       >
-        📊 Chats
+        📊 Messages
       </RouterLink>
       <RouterLink
         to="/transcribe"

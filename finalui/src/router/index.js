@@ -6,10 +6,11 @@ import Dashboard from '@/pages/Dashboard.vue'
 import Reports from '@/pages/Reports.vue'
 import Calls from '@/pages/Calls.vue'
 import Cases from '@/pages/Cases.vue'
-import Chats from '@/pages/Chats.vue'
 import Transcribe from '@/pages/Transcribe.vue'
 import Wallboard from '@/pages/Wallboard.vue'
 import Qa from '@/pages/Qa.vue'
+import Demo from '../pages/Demo.vue'
+import Messages from '../pages/Messages.vue'
 
 const routes = [
   {
@@ -27,10 +28,11 @@ const routes = [
   { path: '/reports', name: 'Reports', component: Reports, meta: { requiresAuth: true } },
   { path: '/calls', name: 'Calls', component: Calls, meta: { requiresAuth: true } },
   { path: '/cases', name: 'Cases', component: Cases, meta: { requiresAuth: true } },
-  { path: '/chats', name: 'Chats', component: Chats, meta: { requiresAuth: true } },
+  { path: '/messages', name: 'messages', component: Messages, meta: { requiresAuth: true } },
   { path: '/transcribe', name: 'Transcribe', component: Transcribe, meta: { requiresAuth: true } },
   { path: '/wallboard', name: 'Wallboard', component: Wallboard, meta: { requiresAuth: true } },
   { path: '/qa', name: 'Qa', component: Qa, meta: { requiresAuth: true } },
+  { path: '/demo', name: 'Demo', component: Demo, meta: { requiresAuth: true } },
   { path: '/:pathMatch(.*)*', redirect: '/' }
 ]
 
