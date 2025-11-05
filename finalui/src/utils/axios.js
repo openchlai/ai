@@ -26,6 +26,55 @@ axiosInstance.interceptors.request.use((config) => {
     return config;
 }, (error) => Promise.reject(error));
 
+// This fetches the main dashboard/cases statistics
+export async function fetchCasesData() {
+    try {
+        const { data } = await axiosInstance.get("/api/wallonly/rpt", {
+            params: {
+                
+              dash_period: "today",  // ← Add this back
+                type: "bar",
+                stacked: "stacked",
+                xaxis: "hangup_status_txt",
+                yaxis: "-",  
+                vector: 1,
+                rpt: "call_count",
+                metrics: "call_count",
+            },
+        });
+        return data;
+    } catch (err) {
+        console.error("Error fetching cases data:", err.message);
+        console.error("Full error:", err);
+        return null;
+    }
+}
+
+// This fetches the calls report data for the status cards
+export async function fetchCallsReportData() {
+    try {
+        const { data } = await axiosInstance.get("/api/wallonly/rpt", {
+            params: {
+                dash_period: "today",
+                type: "bar",
+                stacked: "stacked",
+                xaxis: "hangup_status_txt",
+                yaxis: "-",
+                vector: 1,
+                rpt: "call_count",
+                metrics: "call_count",
+            },
+        });
+        
+        return data;
+        
+    } catch (err) {
+        console.error("Error fetching calls report data:", err.message);
+        console.error("Full error:", err);
+        return null;
+    }
+}
+
 export default axiosInstance;
 
 // import axios from 'axios'
