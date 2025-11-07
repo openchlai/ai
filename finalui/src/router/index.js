@@ -24,8 +24,6 @@ const routes = [
   { path: '/messages', name: 'Messages', component: Messages },
   { path: '/wallboard', name: 'Wallboard', component: Wallboard },
   { path: '/qa', name: 'Qa', component: Qa },
-
-  // ✅ Newly added
   { path: '/users', name: 'Users', component: Users },
   { path: '/case-creation', name: 'CaseCreation', component: CaseCreation },
   { path: '/qa-creation', name: 'QaCreation', component: QaCreation },

@@ -44,7 +44,7 @@
       </RouterLink>
 
       <RouterLink
-        to="/case-create"
+        to="/case-creation"
         class="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-amber-100 transition"
         :class="{ 'bg-amber-200 text-amber-900 font-semibold': $route.path === '/case-create' }"
       >
@@ -62,7 +62,7 @@
       </RouterLink>
 
       <RouterLink
-        to="/qa-create"
+        to="/qa-creation"
         class="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-amber-100 transition"
         :class="{ 'bg-amber-200 text-amber-900 font-semibold': $route.path === '/qa-create' }"
       >

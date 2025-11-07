@@ -1,23 +1,53 @@
 <template>
-  <div>
-    <h2 class="text-2xl font-bold mb-4">Admin Dashboard</h2>
-    <div class="grid grid-cols-3 gap-4">
-      <div class="bg-white dark:bg-gray-800 p-4 rounded shadow">
-        <p class="text-sm text-gray-500">Total Users</p>
-        <p class="text-3xl font-bold">156</p>
+  <div class="p-6 space-y-6">
+
+    <h1 class="text-2xl font-bold text-gray-800 mb-4">Dashboard</h1>
+
+    <!-- 🔥 Shared Filters Bar -->
+    <CasesFilters @update:filters="applyFilters" />
+
+    <!-- Grid for the analytics blocks -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      <!-- Case Categories -->
+      <div class="bg-white shadow rounded-lg p-4">
+        <CaseCategories :filters="filters" />
       </div>
-      <div class="bg-white dark:bg-gray-800 p-4 rounded shadow">
-        <p class="text-sm text-gray-500">Total Cases</p>
-        <p class="text-3xl font-bold">489</p>
+
+      <!-- Case Locations -->
+      <div class="bg-white shadow rounded-lg p-4">
+        <CaseLocations :filters="filters" />
       </div>
-      <div class="bg-white dark:bg-gray-800 p-4 rounded shadow">
-        <p class="text-sm text-gray-500">Active Counsellors</p>
-        <p class="text-3xl font-bold">23</p>
+
+      <!-- Daily Cases by Source -->
+      <div class="bg-white shadow rounded-lg p-4 md:col-span-2">
+        <CasesBySourceDaily :filters="filters" />
       </div>
+
+      <!-- Case Status + Priority -->
+      <div class="bg-white shadow rounded-lg p-4 md:col-span-2">
+        <CaseStatusPriority :filters="filters" />
+      </div>
+
     </div>
   </div>
 </template>
 
 <script setup>
-// future: fetch analytics data here
+import { ref } from 'vue'
+import CasesFilters from "@/components/dashboard/CasesFilters.vue";
+import CaseCategories from "@/components/dashboard/CaseCategories.vue";
+import CaseLocations from "@/components/dashboard/CaseLocations.vue";
+import CasesBySourceDaily from "@/components/dashboard/CasesBySourceDaily.vue";
+import CaseStatusPriority from "@/components/dashboard/CaseStatusPriority.vue";
+
+const filters = ref({
+  dash_period: 'all',
+  dash_gbv: 'both',
+  dash_src: 'all'
+})
+
+function applyFilters(updatedFilters) {
+  filters.value = updatedFilters
+}
 </script>
