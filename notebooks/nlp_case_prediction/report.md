@@ -15,7 +15,7 @@ geometry: "a4paper, margin=2cm"
 
 \newpage
 
-# SECTION 1 — Metric Definitions {#metric-definitions}
+# SECTION 1 — Metric Definitions 
 
 | Metric | Description | Interpretation | Ideal Range |
 |---|---|---|---|
@@ -28,7 +28,7 @@ These metrics jointly assess model completeness, correctness, and balance. A hig
 
 \newpage
 
-# SECTION 2 — Dataset Overview and Comparative Tables {#dataset-overview-and-comparative-tables}
+# SECTION 2 — Dataset Overview and Comparative Tables 
 
 This section presents a side-by-side comparison of the models for each dataset. The highest value for each metric and task is **bolded**. Models are ranked by their average F1-Score, with the top-ranked model marked with a (Winner) icon.
 
@@ -76,7 +76,7 @@ On this dataset, models demonstrate varying stability across classification subt
 
 \newpage
 
-# SECTION 3 — Visual Analysis {#visual-analysis}
+# SECTION 3 — Visual Analysis 
 
 ## F1-Score for Main Category
 ![F1-Score for Main Category](./assets/f1_score_main_category.png)
@@ -108,7 +108,7 @@ On this dataset, models demonstrate varying stability across classification subt
 
 \newpage
 
-# SECTION 4 — Analytical Summary {#analytical-summary}
+# SECTION 4 — Analytical Summary
 
 The evaluation of the two models across the three datasets reveals significant performance differences. F1-Scores across tasks range from 0.001 to 0.685, indicating a wide variance in model performance depending on the task and dataset. Both models show improved performance on the synthetic data compared to the raw audio transcripts, suggesting that the structured nature of the synthetic data is easier for the models to learn.
 
