@@ -1,21 +1,21 @@
 Model,Dataset,ROUGE-1,ROUGE-2,ROUGE-L,BLEU,BERTScore-F1,LLM_as_judge,C-Sema_Human_eval
-"openchs/sum-flan-t5-base-synthetic-v1","Own dataset (500 Synthetically generated samples)",0.473,0.227,0.386,0.1342,0.8409,NULL,NULL
-"openchs/sum-flan-t5-base-synthetic-v1","CNN/DailyMail(500 samples)",0.3201,0.1159,0.227,0.086,0.7932,NULL,NULL
-"openchs/sum-flan-t5-base-synthetic-v1","SAMSum(dialogsum)Dataset(500 samples)",0.3173,0.0963,0.2432,0.066,0.7944,NULL,NULL
-"openchs/sum-flan-t5-base-synthetic-v1","Own Real dataset",0.4329,0.111,0.222,0.065,0.61,NULL,NULL
-"google/flan-t5-base","Own dataset (500 Synthetically generated samples)",0.1325,0.0499,0.1005,0.0024,0.7022,NULL,NULL
-"google/flan-t5-base","CNN/DailyMail(500 samples)",0.2673,0.0991,0.2018,0.077,0.7748,NULL,NULL
-"google/flan-t5-base","SAMSum(dialogsum)Dataset(500 samples)",0.276,0.0885,0.2287,0.0786,0.7719,NULL,NULL
-"google/flan-t5-base","Own Real dataset",0.213,0.069,0.143,0.0059,0.494,NULL,NULL
-"google-t5/t5-base","Own dataset (500 Synthetically generated samples)",0.3625,0.1631,0.267,0.1121,0.7838,NULL,NULL
-"google-t5/t5-base","CNN/DailyMail(500 samples)",0.3157,0.1242,0.2304,0.0905,0.7901,NULL,NULL
-"google-t5/t5-base","SAMSum(dialogsum)Dataset(500 samples)",0.2603,0.0614,0.1967,0.0761,0.7816,NULL,NULL
-"google-t5/t5-base","Own Real dataset",0.332,0.065,0.153,0.024,0.518,NULL,NULL
-"google/pegasus-cnn_dailymail","Own dataset (500 Synthetically generated samples)",0.361,0.156,0.2651,0.1121,0.7763,NULL,NULL
-"google/pegasus-cnn_dailymail","CNN/DailyMail(500 samples)",0.3545,0.1514,0.2613,0.1094,0.7945,NULL,NULL
-"google/pegasus-cnn_dailymail","SAMSum(dialogsum)Dataset(500 samples)",0.2479,0.0616,0.1877,0.0511,0.762,NULL,NULL
-"google/pegasus-cnn_dailymail","Own Real dataset",0.321,0.071,0.177,0.027,0.538,NULL,NULL
-"facebook/bart-large-cnn","Own dataset (500 Synthetically generated samples)",0.44,0.2166,0.3216,0.1505,0.8096,NULL,NULL
-"facebook/bart-large-cnn","CNN/DailyMail(500 samples)",0.3526,0.147,0.2534,0.1023,0.8049,NULL,NULL
-"facebook/bart-large-cnn","SAMSum(dialogsum)Dataset(500 samples)",0.2717,0.0801,0.1991,0.0582,0.7777,NULL,NULL
-"facebook/bart-large-cnn","Own Real dataset",0.33,0.067,0.165,0.035,0.526,NULL,NULL
+openchs/sum-flan-t5-base-synthetic-v1,Own dataset (500 Synthetically generated samples),0.473,0.227,0.386,0.1342,0.8409,,
+openchs/sum-flan-t5-base-synthetic-v1,CNN/DailyMail(500 samples),0.3201,0.1159,0.227,0.086,0.7932,,
+openchs/sum-flan-t5-base-synthetic-v1,SAMSum(dialogsum)Dataset(500 samples),0.3173,0.0963,0.2432,0.066,0.7944,,
+openchs/sum-flan-t5-base-synthetic-v1,Own Real dataset,0.4329,0.111,0.222,0.065,0.61,,
+google/flan-t5-base,Own dataset (500 Synthetically generated samples),0.1325,0.0499,0.1005,0.0024,0.7022,,
+google/flan-t5-base,CNN/DailyMail(500 samples),0.2673,0.0991,0.2018,0.077,0.7748,,
+google/flan-t5-base,SAMSum(dialogsum)Dataset(500 samples),0.276,0.0885,0.2287,0.0786,0.7719,,
+google/flan-t5-base,Own Real dataset,0.213,0.069,0.143,0.0059,0.494,,
+google-t5/t5-base,Own dataset (500 Synthetically generated samples),0.3625,0.1631,0.267,0.1121,0.7838,,
+google-t5/t5-base,CNN/DailyMail(500 samples),0.3157,0.1242,0.2304,0.0905,0.7901,,
+google-t5/t5-base,SAMSum(dialogsum)Dataset(500 samples),0.2603,0.0614,0.1967,0.0761,0.7816,,
+google-t5/t5-base,Own Real dataset,0.332,0.065,0.153,0.024,0.518,,
+google/pegasus-cnn_dailymail,Own dataset (500 Synthetically generated samples),0.361,0.156,0.2651,0.1121,0.7763,,
+google/pegasus-cnn_dailymail,CNN/DailyMail(500 samples),0.3545,0.1514,0.2613,0.1094,0.7945,,
+google/pegasus-cnn_dailymail,SAMSum(dialogsum)Dataset(500 samples),0.2479,0.0616,0.1877,0.0511,0.762,,
+google/pegasus-cnn_dailymail,Own Real dataset,0.321,0.071,0.177,0.027,0.538,,
+facebook/bart-large-cnn,Own dataset (500 Synthetically generated samples),0.44,0.2166,0.3216,0.1505,0.8096,,
+facebook/bart-large-cnn,CNN/DailyMail(500 samples),0.3526,0.147,0.2534,0.1023,0.8049,,
+facebook/bart-large-cnn,SAMSum(dialogsum)Dataset(500 samples),0.2717,0.0801,0.1991,0.0582,0.7777,,
+facebook/bart-large-cnn,Own Real dataset,0.33,0.067,0.165,0.035,0.526,,
