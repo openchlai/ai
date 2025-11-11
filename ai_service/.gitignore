@@ -51,6 +51,7 @@ coverage.xml
 
 # Local test databases
 db.sqlite3
+ai/ai_service/ai_service.db
 
 # Logs
 *.log

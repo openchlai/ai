@@ -1149,7 +1149,9 @@ def process_feedback_audio_task(self, call_id: str, agent_id: str, feedback_note
         if not audio_bytes:
             error_msg = f"Failed to download audio for call {call_id}: {download_info.get('error', 'Unknown error')}"
             logger.error(error_msg)
-            raise Exception(error_msg)
+            # raise Exception(error_msg)
+            raise RuntimeError(error_msg)
+
         
         logger.info(f"Downloaded audio file: {download_info.get('file_size_mb', 0):.1f} MB")
         
@@ -1195,7 +1197,8 @@ def process_feedback_audio_task(self, call_id: str, agent_id: str, feedback_note
             if not result.success:
                 error_msg = f"Audio preprocessing failed: {result.error_message}"
                 logger.error(error_msg)
-                raise Exception(error_msg)
+                # raise Exception(error_msg)
+                raise RuntimeError(error_msg)
             
             # TODO: Step 4: Create Label Studio tasks (integrate with existing process)
             # This would typically call your existing Label Studio integration
@@ -1235,18 +1238,26 @@ def process_feedback_audio_task(self, call_id: str, agent_id: str, feedback_note
                 os.unlink(temp_audio_path)
             except:
                 pass
-        
+                
     except Exception as e:
-        logger.error(f"Feedback audio processing failed for call {call_id}: {e}")
+        return handle_task_error(self, f"Processing failed for call {call_id}: {e}", call_id)
+    # except Exception as e:
+    #     logger.error(f"Feedback audio processing failed for call {call_id}: {e}")
         
         # Update task state to failure
-        self.update_state(
-            state='FAILURE',
-            meta={
-                'call_id': call_id,
-                'error': str(e),
-                'message': f'Processing failed: {str(e)}'
-            }
-        )
+        # self.update_state(
+        #     state='FAILURE',
+        #     meta={
+        #         'call_id': call_id,
+        #         'error': str(e),
+        #         'message': f'Processing failed: {str(e)}'
+        #     }
+        # )
         
         raise
+
+def handle_task_error(self, error_msg, call_id=None):
+    """Consistent error handling for all Celery tasks"""
+    logger.error(error_msg)
+    # log and re-raise - let Celery handle the state
+    raise RuntimeError(error_msg)
