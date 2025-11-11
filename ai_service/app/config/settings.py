@@ -5,6 +5,9 @@ from pathlib import Path
 import redis
 
 class Settings(BaseSettings):
+    # database
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./ai_service.db")
+    
     # Application
     app_name: str = "AI Pipeline"
     app_version: str = "0.1.0"
