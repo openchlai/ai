@@ -474,5 +474,3 @@ For dataset contributions, model improvements, or bug reports, contact the BITZ 
 This model is released under the **Apache 2.0 License**, allowing for both commercial and non-commercial use with proper attribution.
 
 ---
-
-*Documentation last updated: October 17, 2025*

@@ -1,4 +1,4 @@
-# Audio API Reference
+# Audio API Endpoint
 
 ## Overview
 
@@ -15,25 +15,7 @@ The Audio API provides audio processing endpoints for transcription, translation
 
 ---
 
-## Table of Contents
-
-1. [Audio Processing Endpoints](#audio-processing-endpoints)
-   - [POST /audio/process](#post-audioprocess)
-   - [POST /audio/analyze](#post-audioanalyze)
-   - [POST /audio/process-stream](#post-audioprocess-stream)
-2. [Task Management Endpoints](#task-management-endpoints)
-   - [GET /audio/task/{task_id}](#get-audiotasktask_id)
-   - [DELETE /audio/task/{task_id}](#delete-audiotasktask_id)
-   - [GET /audio/tasks/active](#get-audiotasksactive)
-3. [System Monitoring Endpoints](#system-monitoring-endpoints)
-   - [GET /audio/queue/status](#get-audiqueuestatus)
-   - [GET /audio/workers/status](#get-audioworkersstatus)
-4. [Complete Examples](#complete-examples)
-5. [Error Handling](#error-handling)
-
----
-
-## Audio Processing Endpoints
+## 1. Audio Processing Endpoints
 
 ### POST /audio/process
 
@@ -562,7 +544,7 @@ data: {"task_id": "abc123", "status": "stream_error", "error": "Connection lost"
 
 ---
 
-## Task Management Endpoints
+## 2. Task Management Endpoints
 
 ### GET /audio/task/{task_id}
 
@@ -874,7 +856,7 @@ for task in data['active_tasks']:
 
 ---
 
-## System Monitoring Endpoints
+## 3. System Monitoring Endpoints
 
 ### GET /audio/queue/status
 
@@ -1113,7 +1095,7 @@ for worker_name, worker_info in data['workers'].items():
 
 ---
 
-## Complete Examples
+## 4. Complete Examples
 
 ### Example 1: Basic Asynchronous Processing
 
@@ -1461,7 +1443,7 @@ for _ in range(30):
 
 ---
 
-## Error Handling
+## 5. Error Handling
 
 ### HTTP Status Codes
 
@@ -1568,61 +1550,6 @@ for _ in range(30):
 }
 ```
 
-### Error Handling Best Practices
-
-**1. Always Check HTTP Status**:
-```python
-response = requests.post(url, ...)
-if response.status_code != 200:
-    print(f"Error: HTTP {response.status_code}")
-    print(response.json())
-```
-
-**2. Handle Validation Errors**:
-```python
-try:
-    response = requests.post(url, ...)
-    response.raise_for_status()
-except requests.exceptions.HTTPError as e:
-    if e.response.status_code == 400:
-        print("Validation error:", e.response.json()['detail'])
-    elif e.response.status_code == 503:
-        print("Service unavailable, check system health")
-```
-
-**3. Implement Retry Logic**:
-```python
-from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
-
-session = requests.Session()
-retry = Retry(
-    total=3,
-    backoff_factor=1,
-    status_forcelist=[500, 502, 503, 504]
-)
-adapter = HTTPAdapter(max_retries=retry)
-session.mount('http://', adapter)
-session.mount('https://', adapter)
-
-response = session.post(url, ...)
-```
-
-**4. Handle Task Failures**:
-```python
-status_data = response.json()
-if status_data['status'] == 'failed':
-    error = status_data.get('error', 'Unknown error')
-    
-    # Check if error is retryable
-    if 'model' in error.lower():
-        # Retry after checking system health
-        pass
-    elif 'File too large' in error:
-        # Don't retry, file is invalid
-        pass
-```
-
 **5. Monitor System Health**:
 ```python
 def is_system_ready():
@@ -1648,21 +1575,3 @@ if not is_system_ready():
 - **Individual Models**: `/whisper`, `/translate`, `/ner`, `/classifier`, `/summarizer`
 - **API Documentation**: `/docs` (Swagger UI)
 - **System Information**: `/info`
-
-### Model Information
-
-- **Translation Model**: [openchs/sw-en-opus-mt-mul-en-v1](https://huggingface.co/openchs/sw-en-opus-mt-mul-en-v1)
-- **Whisper**: OpenAI Whisper Large V3 Turbo
-- **License**: Apache 2.0
-
-### Support
-
-For technical support or questions:
-- **Email**: info@bitz-itc.com
-- **Organization**: OpenCHS (Open Child Helpline Services)
-
----
-
-*Documentation version: 1.0  
-Last updated: October 25, 2025  
-API Base: `/audio`*

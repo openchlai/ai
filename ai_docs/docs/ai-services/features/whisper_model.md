@@ -1032,5 +1032,3 @@ For dataset contributions, model improvements, or bug reports, please contact th
 This model is released under the **Apache 2.0 License**, allowing for both commercial and non-commercial use with proper attribution.
 
 ---
-
-*Documentation last updated: October 21, 2025*
