@@ -582,5 +582,3 @@ For dataset contributions, model improvements, or bug reports, please contact th
 This model inherits the **Apache 2.0 License** from the base FLAN-T5 model, allowing for both commercial and non-commercial use with proper attribution. Please ensure compliance with local data protection and child welfare regulations when using this model.
 
 ---
-
-*Documentation last updated: October 17, 2025*

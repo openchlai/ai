@@ -691,5 +691,3 @@ For dataset contributions, model improvements, or bug reports, please contact th
 **Apache 2.0 License**—free for commercial/non-commercial use with proper attribution.
 
 ***
-
-*Documentation last updated: October 17, 2025*
