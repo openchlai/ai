@@ -2,6 +2,7 @@ import logging
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 import os
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +80,51 @@ class ModelStatus:
 class ModelLoader:
     """Manages loading and status of all models with optional dependencies"""
     
+        
+    def load_all_models_sync(self):
+        """
+        Synchronous wrapper for load_all_models() 
+        Use this in Celery worker initialization
+        """
+        try:
+            # Try to use existing event loop
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # If loop is running, we can't use run_until_complete
+                # Create new loop in separate thread
+                import threading
+                result_container = {'success': False}
+                
+                def run_async_load():
+                    new_loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(new_loop)
+                    try:
+                        new_loop.run_until_complete(self.load_all_models())
+                        result_container['success'] = True
+                    except Exception as e:
+                        logger.error(f"Error loading models in thread: {e}")
+                    finally:
+                        new_loop.close()
+                
+                thread = threading.Thread(target=run_async_load)
+                thread.start()
+                thread.join(timeout=300)  # 5 minute timeout
+                
+                return result_container['success']
+            else:
+                # Use existing loop
+                loop.run_until_complete(self.load_all_models())
+                return True
+                
+        except RuntimeError:
+            # No event loop exists, create new one
+            asyncio.run(self.load_all_models())
+            return True
+        except Exception as e:
+            logger.error(f"Failed to load models synchronously: {e}")
+            return False
+        
+        
     def __init__(self, models_path: str = None):
         # Import settings here to avoid circular imports
         from ..config.settings import settings

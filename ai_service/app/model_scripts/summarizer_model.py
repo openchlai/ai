@@ -37,8 +37,13 @@ class SummarizationModel:
             if not self.hf_repo_id:
                 raise RuntimeError("SUMMARIZATION_HF_REPO_ID or settings.hf_summarizer_model must be set for hub loading")
             logger.info(f"📦 Loading summarization model from Hugging Face Hub: {self.hf_repo_id} (ignoring local path {self.model_path})")
-            self.tokenizer = AutoTokenizer.from_pretrained(self.hf_repo_id, local_files_only=False)
-            self.model = AutoModelForSeq2SeqLM.from_pretrained(self.hf_repo_id, local_files_only=False)
+            
+            # Get HF authentication kwargs
+            from ..config.settings import settings
+            hf_kwargs = settings.get_hf_model_kwargs()
+            
+            self.tokenizer = AutoTokenizer.from_pretrained(self.hf_repo_id, local_files_only=False, **hf_kwargs)
+            self.model = AutoModelForSeq2SeqLM.from_pretrained(self.hf_repo_id, local_files_only=False, **hf_kwargs)
             
             self.model.to(self.device)
             

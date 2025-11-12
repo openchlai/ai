@@ -21,8 +21,8 @@ class WhisperModel:
         if enable_translation:
             # Use configured HF whisper large v3 as fallback (do not reference OpenAI)
             self.fallback_model_id = (
-                self.settings.hf_whisper_large_v3
-                if getattr(self.settings, "hf_whisper_large_v3", None)
+                self.settings.hf_asr_model
+                if getattr(self.settings, "hf_asr_model", None)
                 else self.settings.get_active_whisper_path()
             )
             self.model_version = "large-v3"
@@ -115,15 +115,17 @@ class WhisperModel:
                 logger.info(f"Loading Whisper model from HuggingFace Hub (public): {model_id}")
                 
                 try:
-                    # Load WITHOUT any authentication kwargs
+                    # Load with authentication kwargs from settings
+                    hf_kwargs = self.settings.get_hf_model_kwargs()
                     self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
                         model_id,
                         torch_dtype=self.torch_dtype, 
                         low_cpu_mem_usage=True, 
-                        use_safetensors=True
+                        use_safetensors=True,
+                        **hf_kwargs
                     )
                     
-                    self.processor = AutoProcessor.from_pretrained(model_id)
+                    self.processor = AutoProcessor.from_pretrained(model_id, **hf_kwargs)
                     self.current_model_id = model_id
                     logger.info(f"HuggingFace Whisper model loaded successfully")
                     
@@ -131,13 +133,15 @@ class WhisperModel:
                     logger.warning(f"Failed to load HF model {model_id}: {e}")
                     logger.info(f"Falling back to default HuggingFace model: {self.fallback_model_id}")
                     
+                    hf_kwargs = self.settings.get_hf_model_kwargs()
                     self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
                         self.fallback_model_id, 
                         torch_dtype=self.torch_dtype, 
                         low_cpu_mem_usage=True, 
-                        use_safetensors=True
+                        use_safetensors=True,
+                        **hf_kwargs
                     )
-                    self.processor = AutoProcessor.from_pretrained(self.fallback_model_id)
+                    self.processor = AutoProcessor.from_pretrained(self.fallback_model_id, **hf_kwargs)
                     self.current_model_id = self.fallback_model_id
                     
             else:
@@ -170,14 +174,16 @@ class WhisperModel:
                 else:
                     logger.info(f"Local model not found, downloading from HuggingFace Hub: {self.fallback_model_id}")
                     
+                    hf_kwargs = self.settings.get_hf_model_kwargs()
                     self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
                         self.fallback_model_id, 
                         torch_dtype=self.torch_dtype, 
                         low_cpu_mem_usage=True, 
-                        use_safetensors=True
+                        use_safetensors=True,
+                        **hf_kwargs
                     )
                     
-                    self.processor = AutoProcessor.from_pretrained(self.fallback_model_id)
+                    self.processor = AutoProcessor.from_pretrained(self.fallback_model_id, **hf_kwargs)
                     self.current_model_id = self.fallback_model_id
             
             # Move model to device
@@ -195,15 +201,17 @@ class WhisperModel:
                     
                     from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor
                     
+                    hf_kwargs = self.settings.get_hf_model_kwargs()
                     self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
                         self.fallback_model_id, 
                         torch_dtype=self.torch_dtype, 
                         low_cpu_mem_usage=True, 
-                        use_safetensors=True
+                        use_safetensors=True,
+                        **hf_kwargs
                     )
                     self.model.to(self.device)
                     
-                    self.processor = AutoProcessor.from_pretrained(self.fallback_model_id)
+                    self.processor = AutoProcessor.from_pretrained(self.fallback_model_id, **hf_kwargs)
                     self.current_model_id = self.fallback_model_id
                     
                     self.is_loaded = True

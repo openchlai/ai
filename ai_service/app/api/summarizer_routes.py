@@ -3,24 +3,21 @@ from pydantic import BaseModel
 from typing import Dict
 from datetime import datetime
 import logging
-
+from typing import Dict, Optional
+from celery.result import AsyncResult
+from ..tasks.model_tasks import summarization_summarize_task
 from ..model_scripts.model_loader import model_loader
-
-import sys
-import os
-from ..utils.text_utils import SummarizationChunker
+from ..utils.mode_detector import is_api_server_mode
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/summarizer", tags=["summarizer"])
 
 
-# Request model
 class SummarizationRequest(BaseModel):
     text: str
     max_length: int = 256
 
 
-# Response model
 class SummarizationResponse(BaseModel):
     summary: str
     processing_time: float
@@ -28,102 +25,140 @@ class SummarizationResponse(BaseModel):
     timestamp: str
 
 
-@router.post("/summarize", response_model=SummarizationResponse)
-async def summarize_text_endpoint(request: SummarizationRequest):
-    """Summarize a given text"""
+class SummarizationTaskResponse(BaseModel):
+    task_id: str
+    status: str
+    message: str
+    estimated_time: str
+    status_endpoint: str
 
+
+class SummarizationTaskStatusResponse(BaseModel):
+    task_id: str
+    status: str
+    result: Optional[SummarizationResponse] = None
+    error: Optional[str] = None
+    progress: Optional[Dict] = None
+
+
+@router.post("/summarize", response_model=SummarizationTaskResponse)
+async def summarize_text_endpoint(request: SummarizationRequest):
+    """Summarize text (async via Celery)"""
+    
     if not request.text.strip():
         raise HTTPException(status_code=400, detail="Text input cannot be empty")
-
-    if not model_loader.is_model_ready("summarizer"):
-        raise HTTPException(
-            status_code=503,
-            detail="Summarizer model not ready. Check /health/models for status."
-        )
-
-    summarizer_model = model_loader.models.get("summarizer")
-    if not summarizer_model:
-        raise HTTPException(status_code=503, detail="Summarizer model not available")
-
-    try:
-        start_time = datetime.now()
-        tokenizer_name = "openchs/sum-flan-t5-base-synthetic-v1"
     
-        # Initialize chunker with configuration from test file
-        chunker = SummarizationChunker(
-            # tokenizer_name=summarizer_model.model_path,
-            tokenizer_name=tokenizer_name,
-            max_tokens=512,      # From test file: Leave room for prompt
-            overlap_tokens=0     # From test file: No overlap for summarization
+    if is_api_server_mode():
+        # API Server mode - delegate to Celery worker
+        # Skip local model check as models are on workers
+        pass
+    else:
+        # Standalone mode - check local model
+        if not model_loader.is_model_ready("summarizer"):
+            raise HTTPException(
+                status_code=503,
+                detail="Summarizer model not ready. Check /health/models for status."
+            )
+    
+    try:
+        task = summarization_summarize_task.apply_async(
+            args=[request.text, request.max_length],
+            queue='model_processing'
         )
         
-        # Count tokens including prompt prefix
-        prompt_prefix = "Summarize the following child helpline case call transcript: "
-        full_input = prompt_prefix + request.text
-        token_count = chunker.count_tokens(full_input)
+        logger.info(f"📤 Summarization task submitted: {task.id}")
         
-        # Model max source length from test file
-        MAX_SOURCE_LENGTH = 512 # was fine-tuned with 512 token limit in mind, should be 1024
-
-        if token_count <= MAX_SOURCE_LENGTH:
-            # Original logic: Direct summarization
-            summary = summarizer_model.summarize(request.text, max_length=request.max_length)
-        else:
-            # Chunking needed for long text
-            logger.info(f"📦 Applying chunking: {token_count} tokens > {MAX_SOURCE_LENGTH}")
-            
-            # Create chunks
-            chunks = chunker.chunk_transcript(request.text)
-            
-            # Summarize each chunk
-            chunk_summaries = []
-            for i, chunk_info in enumerate(chunks):
-                chunk_summary = summarizer_model.summarize(
-                    chunk_info['text'], 
-                    max_length=request.max_length
-                )
-                chunk_summaries.append(chunk_summary)
-            
-            # Reconstruct final summary (joins with \n\n from text_utils.py)
-            summary = chunker.reconstruct_summary(chunk_summaries)
-            
-            logger.info(f"✅ Processed {len(chunks)} chunks")
- 
-        # Generate summary
-        # summary = summarizer_model.summarize(request.text, max_length=request.max_length)
-
-        processing_time = (datetime.now() - start_time).total_seconds()
-        model_info = summarizer_model.get_model_info()
-
-        logger.info(f"✅ Summarizer processed {len(request.text)} characters in {processing_time:.2f}s")
-
-        return SummarizationResponse(
-            summary=summary,
-            processing_time=processing_time,
-            model_info=model_info,
-            timestamp=datetime.now().isoformat()
+        return SummarizationTaskResponse(
+            task_id=task.id,
+            status="queued",
+            message="Summarization started. Check status at /summarizer/task/{task_id}",
+            estimated_time="10-30 seconds",
+            status_endpoint=f"/summarizer/task/{task.id}"
         )
-
+        
     except Exception as e:
-        logger.exception("❌ Summarization failed")
-        raise HTTPException(status_code=500, detail=f"Summarization failed: {str(e)}")
+        logger.error(f"Failed to submit summarization task: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to submit task: {str(e)}")
+
+
+@router.get("/task/{task_id}", response_model=SummarizationTaskStatusResponse)
+async def get_summarization_task_status(task_id: str):
+    """Get summarization task status"""
+    try:
+        task_result = AsyncResult(task_id)
+        
+        if task_result.state == 'PENDING':
+            return SummarizationTaskStatusResponse(
+                task_id=task_id,
+                status="pending",
+                progress={"message": "Task is queued"}
+            )
+        
+        elif task_result.state == 'PROCESSING':
+            return SummarizationTaskStatusResponse(
+                task_id=task_id,
+                status="processing",
+                progress=task_result.info or {}
+            )
+        
+        elif task_result.state == 'SUCCESS':
+            result = task_result.result
+            
+            summary_response = SummarizationResponse(
+                summary=result['summary'],
+                processing_time=result['processing_time'],
+                model_info=result['model_info'],
+                timestamp=result['timestamp']
+            )
+            
+            return SummarizationTaskStatusResponse(
+                task_id=task_id,
+                status="success",
+                result=summary_response
+            )
+        
+        elif task_result.state == 'FAILURE':
+            return SummarizationTaskStatusResponse(
+                task_id=task_id,
+                status="failed",
+                error=str(task_result.info)
+            )
+        
+        else:
+            return SummarizationTaskStatusResponse(
+                task_id=task_id,
+                status=task_result.state.lower(),
+                progress={"message": f"Task state: {task_result.state}"}
+            )
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error checking task: {str(e)}")
 
 
 @router.get("/info")
 async def get_summarizer_info():
     """Get summarizer model information"""
-    if not model_loader.is_model_ready("summarizer"):
-        return {"status": "not_ready", "message": "Summarizer model not loaded"}
+    if is_api_server_mode():
+        # API Server mode - models are on Celery workers
+        return {
+            "status": "api_server_mode",
+            "message": "Summarizer model loaded on Celery workers",
+            "model_info": {"mode": "api_server"}
+        }
+    else:
+        # Standalone mode - check local model
+        if not model_loader.is_model_ready("summarizer"):
+            return {"status": "not_ready", "message": "Summarizer model not loaded"}
 
-    summarizer_model = model_loader.models.get("summarizer")
-    if summarizer_model:
-        model_info = summarizer_model.get_model_info()
-        return {"status": "ready", "model_info": model_info}
-    return {
-        "status": "error",
-        "message": "Summarizer model not found",
-        "model_info": {"error": "Model instance not found"}
-    }
+        summarizer_model = model_loader.models.get("summarizer")
+        if summarizer_model:
+            model_info = summarizer_model.get_model_info()
+            return {"status": "ready", "model_info": model_info}
+        return {
+            "status": "error",
+            "message": "Summarizer model not found",
+            "model_info": {"error": "Model instance not found"}
+        }
 
 
 @router.post("/demo", response_model=SummarizationResponse)
@@ -139,3 +174,4 @@ async def summarizer_demo():
 
     request = SummarizationRequest(text=demo_text, max_length=60)
     return await summarize_text_endpoint(request)
+
