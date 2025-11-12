@@ -7,6 +7,7 @@ from typing import Dict, Optional
 from celery.result import AsyncResult
 from ..tasks.model_tasks import summarization_summarize_task
 from ..model_scripts.model_loader import model_loader
+from ..utils.mode_detector import is_api_server_mode
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/summarizer", tags=["summarizer"])
@@ -47,11 +48,17 @@ async def summarize_text_endpoint(request: SummarizationRequest):
     if not request.text.strip():
         raise HTTPException(status_code=400, detail="Text input cannot be empty")
     
-    if not model_loader.is_model_ready("summarizer"):
-        raise HTTPException(
-            status_code=503,
-            detail="Summarizer model not ready. Check /health/models for status."
-        )
+    if is_api_server_mode():
+        # API Server mode - delegate to Celery worker
+        # Skip local model check as models are on workers
+        pass
+    else:
+        # Standalone mode - check local model
+        if not model_loader.is_model_ready("summarizer"):
+            raise HTTPException(
+                status_code=503,
+                detail="Summarizer model not ready. Check /health/models for status."
+            )
     
     try:
         task = summarization_summarize_task.apply_async(
@@ -131,18 +138,27 @@ async def get_summarization_task_status(task_id: str):
 @router.get("/info")
 async def get_summarizer_info():
     """Get summarizer model information"""
-    if not model_loader.is_model_ready("summarizer"):
-        return {"status": "not_ready", "message": "Summarizer model not loaded"}
+    if is_api_server_mode():
+        # API Server mode - models are on Celery workers
+        return {
+            "status": "api_server_mode",
+            "message": "Summarizer model loaded on Celery workers",
+            "model_info": {"mode": "api_server"}
+        }
+    else:
+        # Standalone mode - check local model
+        if not model_loader.is_model_ready("summarizer"):
+            return {"status": "not_ready", "message": "Summarizer model not loaded"}
 
-    summarizer_model = model_loader.models.get("summarizer")
-    if summarizer_model:
-        model_info = summarizer_model.get_model_info()
-        return {"status": "ready", "model_info": model_info}
-    return {
-        "status": "error",
-        "message": "Summarizer model not found",
-        "model_info": {"error": "Model instance not found"}
-    }
+        summarizer_model = model_loader.models.get("summarizer")
+        if summarizer_model:
+            model_info = summarizer_model.get_model_info()
+            return {"status": "ready", "model_info": model_info}
+        return {
+            "status": "error",
+            "message": "Summarizer model not found",
+            "model_info": {"error": "Model instance not found"}
+        }
 
 
 @router.post("/demo", response_model=SummarizationResponse)

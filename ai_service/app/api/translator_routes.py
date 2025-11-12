@@ -3,12 +3,12 @@ from pydantic import BaseModel
 from datetime import datetime
 from ..model_scripts.model_loader import model_loader
 from ..utils.text_utils import TranslationChunker
+from ..utils.mode_detector import is_api_server_mode
 
 from typing import Dict, Optional
 import logging
 from celery.result import AsyncResult
 from ..tasks.model_tasks import translation_translate_task
-from ..model_scripts.model_loader import model_loader
 
 
 logger = logging.getLogger(__name__)
@@ -45,11 +45,15 @@ class TranslationTaskStatusResponse(BaseModel):
 async def translate_text(request: TranslationRequest):
     """Translate text (async via Celery)"""
     
-    if not model_loader.is_model_ready("translator"):
-        raise HTTPException(
-            status_code=503,
-            detail="Translation model not ready. Check /health/models for status."
-        )
+    # Mode-aware model readiness check
+    if not is_api_server_mode():
+        # In standalone mode, check local model readiness
+        if not model_loader.is_model_ready("translator"):
+            raise HTTPException(
+                status_code=503,
+                detail="Translation model not ready. Check /health/models for status."
+            )
+    # In API server mode, models are on workers - no local check needed
     
     if not request.text.strip():
         raise HTTPException(status_code=400, detail="Text input cannot be empty")
@@ -130,25 +134,42 @@ async def get_translation_task_status(task_id: str):
 
 @router.get("/info")
 async def get_translation_info():
-    if not model_loader.is_model_ready("translator"):
+    if is_api_server_mode():
+        # In API server mode, models are on Celery workers
         return {
-            "status": "not_ready",
-            "message": "Translation model not loaded"
-        }
-
-    translator_model = model_loader.models.get("translator")
-    if translator_model:
-        model_info = translator_model.get_model_info()
-        return {
-            "status": "ready",
-            "model_info": model_info
+            "status": "api_server_mode",
+            "message": "Translation model available on Celery workers",
+            "mode": "api_server",
+            "model_info": {
+                "name": "Translation Model",
+                "location": "celery_workers",
+                "note": "Model loaded on worker nodes"
+            }
         }
     else:
-        return {
-            "status": "error",
-            "message": "Translation model not found",
-            "model_info": {"error": "Model instance not found"}
-        }
+        # In standalone mode, check local model
+        if not model_loader.is_model_ready("translator"):
+            return {
+                "status": "not_ready",
+                "message": "Translation model not loaded",
+                "mode": "standalone"
+            }
+
+        translator_model = model_loader.models.get("translator")
+        if translator_model:
+            model_info = translator_model.get_model_info()
+            return {
+                "status": "ready",
+                "mode": "standalone",
+                "model_info": model_info
+            }
+        else:
+            return {
+                "status": "error",
+                "message": "Translation model not found",
+                "mode": "standalone",
+                "model_info": {"error": "Model instance not found"}
+            }
 
 @router.post("/demo")
 async def translation_demo():
@@ -165,6 +186,6 @@ async def translation_demo():
         "I'll guide you through the steps to fix it. First, please open your network settings..."
     )
 
-    request = TranslationRequest(transcript=demo_transcript)
+    request = TranslationRequest(text=demo_transcript)
     return await translate_text(request)
     # return demo_transcript

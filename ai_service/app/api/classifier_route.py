@@ -4,10 +4,10 @@ import logging
 from datetime import datetime
 from ..utils.text_utils import ClassificationChunker, ClassificationAggregator
 from ..model_scripts.model_loader import model_loader
+from ..utils.mode_detector import is_api_server_mode, get_execution_mode
 from typing import List, Dict, Optional
 from celery.result import AsyncResult
 from ..tasks.model_tasks import classifier_classify_task
-from ..model_scripts.model_loader import model_loader
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/classifier", tags=["classifier"])
@@ -69,11 +69,17 @@ class ClassifierTaskStatusResponse(BaseModel):
 async def classify_narrative(request: ClassifierRequest):
     """Classify case narrative (async via Celery)"""
     
-    if not model_loader.is_model_ready("classifier_model"):
-        raise HTTPException(
-            status_code=503, 
-            detail="Classifier model not ready. Check /health/models for status."
-        )
+    if is_api_server_mode():
+        # API Server mode - delegate to Celery worker
+        # Skip local model check as models are on workers
+        pass
+    else:
+        # Standalone mode - check local model
+        if not model_loader.is_model_ready("classifier_model"):
+            raise HTTPException(
+                status_code=503, 
+                detail="Classifier model not ready. Check /health/models for status."
+            )
     
     if not request.narrative.strip():
         raise HTTPException(status_code=400, detail="Narrative input cannot be empty")
@@ -163,25 +169,34 @@ async def get_classifier_task_status(task_id: str):
 @router.get("/info")
 async def get_classifier_info():
     """Get classifier model information"""
-    if not model_loader.is_model_ready("classifier_model"):
+    if is_api_server_mode():
+        # API Server mode - models are on Celery workers
         return {
-            "status": "not_ready",
-            "message": "Classifier model not loaded"
-        }
-
-    classifier = model_loader.models.get("classifier_model")
-    if classifier:
-        model_info = classifier.get_model_info()
-        return {
-            "status": "ready",
-            "model_info": model_info
+            "status": "api_server_mode",
+            "message": "Classifier model loaded on Celery workers",
+            "model_info": {"mode": "api_server"}
         }
     else:
-        return {
-            "status": "error",
-            "message": "Classifier model not found",
-            "model_info": {"error": "Model instance not found"}
-        }
+        # Standalone mode - check local model
+        if not model_loader.is_model_ready("classifier_model"):
+            return {
+                "status": "not_ready",
+                "message": "Classifier model not loaded"
+            }
+
+        classifier = model_loader.models.get("classifier_model")
+        if classifier:
+            model_info = classifier.get_model_info()
+            return {
+                "status": "ready",
+                "model_info": model_info
+            }
+        else:
+            return {
+                "status": "error",
+                "message": "Classifier model not found",
+                "model_info": {"error": "Model instance not found"}
+            }
 
 @router.post("/demo")
 async def classifier_demo():
