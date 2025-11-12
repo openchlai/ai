@@ -21,8 +21,8 @@ class WhisperModel:
         if enable_translation:
             # Use configured HF whisper large v3 as fallback (do not reference OpenAI)
             self.fallback_model_id = (
-                self.settings.hf_whisper_large_v3
-                if getattr(self.settings, "hf_whisper_large_v3", None)
+                self.settings.hf_asr_model
+                if getattr(self.settings, "hf_asr_model", None)
                 else self.settings.get_active_whisper_path()
             )
             self.model_version = "large-v3"

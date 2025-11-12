@@ -1,11 +1,15 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import Dict
 from datetime import datetime
-import logging
-
 from ..model_scripts.model_loader import model_loader
 from ..utils.text_utils import TranslationChunker
+
+from typing import Dict, Optional
+import logging
+from celery.result import AsyncResult
+from ..tasks.model_tasks import translation_translate_task
+from ..model_scripts.model_loader import model_loader
+
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/translate", tags=["translation"])
@@ -13,91 +17,116 @@ router = APIRouter(prefix="/translate", tags=["translation"])
 class TranslationRequest(BaseModel):
     text: str
 
+
 class TranslationResponse(BaseModel):
     translated: str
     processing_time: float
     model_info: Dict
     timestamp: str
 
-@router.post("/", response_model=TranslationResponse)
-async def translate_text(request: TranslationRequest):
-    """Translate text with automatic chunking for long inputs"""
 
+class TranslationTaskResponse(BaseModel):
+    task_id: str
+    status: str
+    message: str
+    estimated_time: str
+    status_endpoint: str
+
+
+class TranslationTaskStatusResponse(BaseModel):
+    task_id: str
+    status: str
+    result: Optional[TranslationResponse] = None
+    error: Optional[str] = None
+    progress: Optional[Dict] = None
+
+
+@router.post("/", response_model=TranslationTaskResponse)
+async def translate_text(request: TranslationRequest):
+    """Translate text (async via Celery)"""
+    
     if not model_loader.is_model_ready("translator"):
         raise HTTPException(
             status_code=503,
             detail="Translation model not ready. Check /health/models for status."
         )
-
+    
     if not request.text.strip():
-        raise HTTPException(
-            status_code=400,
-            detail="Text input cannot be empty"
-        )
-
+        raise HTTPException(status_code=400, detail="Text input cannot be empty")
+    
     try:
-        start_time = datetime.now()
-
-        translator_model = model_loader.models.get("translator")
-        if not translator_model:
-            raise HTTPException(
-                status_code=503,
-                detail="Translator model not available"
-            )
-        # Define translation tokenizer name for chunking
-        tokenizer_name = "openchs/sw-en-opus-mt-mul-en-v1"
-        
-        # Initialize chunker with configuration
-        chunker = TranslationChunker(
-            tokenizer_name=tokenizer_name,
-            max_tokens=512
+        task = translation_translate_task.apply_async(
+            args=[request.text],
+            queue='model_processing'
         )
         
-        # Count tokens
-        token_count = chunker.count_tokens(request.text)
-        MAX_SOURCE_LENGTH = 512
+        logger.info(f"📤 Translation task submitted: {task.id}")
         
-        if token_count <= MAX_SOURCE_LENGTH:
-            # Direct translation for short text
-            translated = translator_model.translate(request.text)
-            logger.info(f" Translated {len(request.text)} chars (no chunking needed)")
-        else:
-            # Chunking needed for long text
-            logger.info(f" Applying chunking: {token_count} tokens > {MAX_SOURCE_LENGTH}")
-            
-            # Create chunks
-            chunks = chunker.chunk_transcript(request.text)
-            
-            # Translate each chunk
-            translated_chunks = []
-            for i, chunk_info in enumerate(chunks):
-                chunk_translated = translator_model.translate(chunk_info['text'])
-                translated_chunks.append(chunk_translated)
-                logger.debug(f"  Chunk {i+1}/{len(chunks)} translated")
-            
-            # Reconstruct final translation (joins with spaces)
-            translated = chunker.reconstruct_translation(translated_chunks)
-            
-            logger.info(f" Processed {len(chunks)} chunks")
-        
-
-
-        # translated = translator_model.translate(request.text)
-        processing_time = (datetime.now() - start_time).total_seconds()
-        model_info = translator_model.get_model_info()
-
-        logger.info(f"Translated {len(request.text)} chars in {processing_time:.3f}s")
-
-        return TranslationResponse(
-            translated=translated,
-            processing_time=processing_time,
-            model_info=model_info,
-            timestamp=datetime.now().isoformat()
+        return TranslationTaskResponse(
+            task_id=task.id,
+            status="queued",
+            message="Translation started. Check status at /translate/task/{task_id}",
+            estimated_time="5-20 seconds",
+            status_endpoint=f"/translate/task/{task.id}"
         )
-
+        
     except Exception as e:
-        logger.error(f"Translation failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Translation failed: {str(e)}")
+        logger.error(f"Failed to submit translation task: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to submit task: {str(e)}")
+
+
+@router.get("/task/{task_id}", response_model=TranslationTaskStatusResponse)
+async def get_translation_task_status(task_id: str):
+    """Get translation task status"""
+    try:
+        task_result = AsyncResult(task_id)
+        
+        if task_result.state == 'PENDING':
+            return TranslationTaskStatusResponse(
+                task_id=task_id,
+                status="pending",
+                progress={"message": "Task is queued"}
+            )
+        
+        elif task_result.state == 'PROCESSING':
+            return TranslationTaskStatusResponse(
+                task_id=task_id,
+                status="processing",
+                progress=task_result.info or {}
+            )
+        
+        elif task_result.state == 'SUCCESS':
+            result = task_result.result
+            
+            translation_response = TranslationResponse(
+                translated=result['translated'],
+                processing_time=result['processing_time'],
+                model_info=result['model_info'],
+                timestamp=result['timestamp']
+            )
+            
+            return TranslationTaskStatusResponse(
+                task_id=task_id,
+                status="success",
+                result=translation_response
+            )
+        
+        elif task_result.state == 'FAILURE':
+            return TranslationTaskStatusResponse(
+                task_id=task_id,
+                status="failed",
+                error=str(task_result.info)
+            )
+        
+        else:
+            return TranslationTaskStatusResponse(
+                task_id=task_id,
+                status=task_result.state.lower(),
+                progress={"message": f"Task state: {task_result.state}"}
+            )
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error checking task: {str(e)}")
 
 @router.get("/info")
 async def get_translation_info():
@@ -120,3 +149,22 @@ async def get_translation_info():
             "message": "Translation model not found",
             "model_info": {"error": "Model instance not found"}
         }
+
+@router.post("/demo")
+async def translation_demo():
+    """Demo endpoint for translation"""
+
+    demo_transcript = (
+        "Agent: Good morning! Thank you for calling TechSupport. My name is Alex. How can I help you today? "
+        "Customer: Hi, I'm having issues with my internet connection. "
+        "Agent: I'm sorry to hear that. Let me help you with that. Could you please tell me what exactly is happening? "
+        "Customer: It keeps disconnecting every few minutes. "
+        "Agent: I understand how frustrating that must be. Let me check your connection settings. "
+        "Could you please hold for a moment while I investigate this? "
+        "Agent: Thank you for holding. I've found the issue. "
+        "I'll guide you through the steps to fix it. First, please open your network settings..."
+    )
+
+    request = TranslationRequest(transcript=demo_transcript)
+    return await translate_text(request)
+    # return demo_transcript

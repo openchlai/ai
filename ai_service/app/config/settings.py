@@ -149,8 +149,7 @@ class Settings(BaseSettings):
     hf_organization: str = "openchs"
     
     # HuggingFace Model IDs
-    hf_whisper_large_v3: str = "openchs/asr-whisper-helpline-sw-v1"
-    hf_whisper_large_turbo: str = "openchs/asr-whisper-helpline-sw-v1"
+    hf_asr_model: str = "openchs/asr-whisper-helpline-sw-v1"
     hf_classifier_model: str = "openchs/cls-gbv-distilbert-v1"
     hf_ner_model: str = "openchs/ner_distillbert_v1"
     hf_translator_model: str = "openchs/sw-en-opus-mt-mul-en-v1"
@@ -186,7 +185,7 @@ class Settings(BaseSettings):
     def _get_hf_model_id(self, model_name: str) -> str:
         """Get HuggingFace model ID"""
         model_id_map = {
-            "whisper_large_v3": self.hf_whisper_large_v3,
+            "whisper_large_v3": self.hf_asr_model,
             "whisper_large_turbo": self.hf_whisper_large_turbo,
             "classifier": self.hf_classifier_model,
             "ner": self.hf_ner_model,
