@@ -69,6 +69,12 @@ class WhisperModelManager:
             else:
                 logger.warning(f"Unknown translation strategy '{strategy_str}', defaulting to custom_model")
                 self.current_strategy = TranslationStrategy.CUSTOM_MODEL
+
+            # Respect explicit translator configuration: prefer custom model when available
+            translation_backend = self.settings.translation_backend(include_translation=True)
+            if translation_backend == "hf" and self.current_strategy != TranslationStrategy.CUSTOM_MODEL:
+                logger.info("🔁 Detected dedicated HF translation model; switching strategy to custom_model")
+                self.current_strategy = TranslationStrategy.CUSTOM_MODEL
             
             # Auto-upgrade to Large-V3 when whisper_builtin is configured
             if self.current_strategy == TranslationStrategy.WHISPER_BUILTIN and self.current_variant != WhisperVariant.LARGE_V3:
