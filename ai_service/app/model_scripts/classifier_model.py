@@ -146,9 +146,15 @@ class ClassifierModel:
             if not self.hf_repo_id:
                 raise RuntimeError("CLASSIFIER_HF_REPO_ID or settings.hf_classifier_model must be set for hub loading")
             logger.info(f"📦 Loading classifier model from Hugging Face Hub: {self.hf_repo_id} (ignoring local path {self.model_path})")
+            
+            # Get HF authentication kwargs
+            from ..config.settings import settings
+            hf_kwargs = settings.get_hf_model_kwargs()
+            
             self.tokenizer = AutoTokenizer.from_pretrained(
                 self.hf_repo_id,
-                local_files_only=False
+                local_files_only=False,
+                **hf_kwargs
             )
             
             self.model = MultiTaskDistilBert.from_pretrained(
@@ -157,7 +163,8 @@ class ClassifierModel:
                 num_sub=len(self.sub_categories),
                 num_interv=len(self.interventions),
                 num_priority=len(self.priorities),
-                local_files_only=False
+                local_files_only=False,
+                **hf_kwargs
             )
             self.model = self.model.to(self.device)
             self.model.eval()

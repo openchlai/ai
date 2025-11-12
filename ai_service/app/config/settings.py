@@ -39,8 +39,8 @@ class Settings(BaseSettings):
     logs_path: str = "./logs"
     temp_path: str = "./temp"
     
-    # Hugging Face configuration - NO TOKEN for public models
-    hf_token: Optional[str] = None
+    # Hugging Face configuration (read from environment)
+    hf_token: Optional[str]
     
     # Redis Configuration
     redis_url: str = "redis://localhost:6379/0"
@@ -148,13 +148,13 @@ class Settings(BaseSettings):
     use_hf_models: bool = True
     hf_organization: str = "openchs"
     
-    # HuggingFace Model IDs
-    hf_asr_model: str = "openchs/asr-whisper-helpline-sw-v1"
-    hf_classifier_model: str = "openchs/cls-gbv-distilbert-v1"
-    hf_ner_model: str = "openchs/ner_distillbert_v1"
-    hf_translator_model: str = "openchs/sw-en-opus-mt-mul-en-v1"
-    hf_summarizer_model: str = "openchs/sum-flan-t5-base-synthetic-v1"
-    hf_qa_model: str = "openchs/qa-helpline-distilbert-v1"
+    # HuggingFace Model IDs (read from environment variables)
+    hf_asr_model: str
+    hf_classifier_model: str
+    hf_ner_model: str
+    hf_translator_model: str
+    hf_summarizer_model: str
+    hf_qa_model: str
     
     # Agent Notification Configuration
     enable_agent_notifications: bool = True
@@ -172,8 +172,8 @@ class Settings(BaseSettings):
     def get_active_whisper_path(self) -> str:
         """Get path to the currently active whisper model"""
         if self.use_hf_models:
-            # Always use the custom Swahili helpline model
-            return "openchs/asr-whisper-helpline-sw-v1"
+            # Use the ASR model from .env configuration
+            return self.hf_asr_model
         else:
             if self.whisper_model_variant == "large_v3":
                 return os.path.abspath(self.whisper_large_v3_path)
@@ -186,7 +186,7 @@ class Settings(BaseSettings):
         """Get HuggingFace model ID"""
         model_id_map = {
             "whisper_large_v3": self.hf_asr_model,
-            "whisper_large_turbo": self.hf_whisper_large_turbo,
+            "whisper_large_turbo": self.hf_asr_model,  # Use same ASR model for turbo
             "classifier": self.hf_classifier_model,
             "ner": self.hf_ner_model,
             "translator": self.hf_translator_model,
@@ -199,12 +199,14 @@ class Settings(BaseSettings):
         if not model_id and self.hf_organization:
             model_id = f"{self.hf_organization}/{model_name.replace('_', '-')}"
         
-        return model_id or "openchs/asr-whisper-helpline-sw-v1"
+        return model_id or self.hf_asr_model
     
     def get_hf_model_kwargs(self) -> Dict[str, Any]:
-        """Get common kwargs for HuggingFace model loading - NO TOKEN for public models"""
-        # Return empty dict - no authentication needed for public models
-        return {}
+        """Get common kwargs for HuggingFace model loading with authentication"""
+        kwargs = {}
+        if self.hf_token:
+            kwargs["token"] = self.hf_token
+        return kwargs
 
     # --- Translation helpers -------------------------------------------------
     def get_translator_model_id(self) -> str:

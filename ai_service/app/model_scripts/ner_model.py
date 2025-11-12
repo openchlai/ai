@@ -50,10 +50,15 @@ class NERModel:
             logger.info(f"Downloading spaCy model {self.hf_model_name} from Hugging Face to {local_model_dir}")
             os.makedirs(self.model_path, exist_ok=True)
             
+            # Get HF authentication kwargs
+            from ..config.settings import settings
+            hf_kwargs = settings.get_hf_model_kwargs()
+            
             snapshot_download(
                 repo_id=self.hf_model_name,
                 local_dir=local_model_dir,
-                local_dir_use_symlinks=False
+                local_dir_use_symlinks=False,
+                **hf_kwargs
             )
             
             with open(os.path.join(local_model_dir, "download_info.txt"), "w") as f:
@@ -77,11 +82,14 @@ class NERModel:
             if self.hf_repo_id and TRANSFORMERS_AVAILABLE:
                 logger.info(f"Loading NER model from Hugging Face Hub (public): {self.hf_repo_id}")
                 try:
-                    # Load WITHOUT authentication
+                    # Get HF authentication kwargs
+                    from ..config.settings import settings
+                    hf_kwargs = settings.get_hf_model_kwargs()
+                    
                     self.hf_pipeline = pipeline(
                         "token-classification",
-                        model=AutoModelForTokenClassification.from_pretrained(self.hf_repo_id),
-                        tokenizer=AutoTokenizer.from_pretrained(self.hf_repo_id),
+                        model=AutoModelForTokenClassification.from_pretrained(self.hf_repo_id, **hf_kwargs),
+                        tokenizer=AutoTokenizer.from_pretrained(self.hf_repo_id, **hf_kwargs),
                         aggregation_strategy="simple"
                     )
                     self.use_hf = True

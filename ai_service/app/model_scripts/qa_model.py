@@ -45,8 +45,10 @@ class MultiHeadQAClassifier(nn.Module):
     
     def __init__(self, model_name="distilbert-base-uncased", heads_config=QA_HEADS_CONFIG, dropout=0.2, hf_token: Optional[str] = None):
         super().__init__()
-        token_kwargs = {"token": hf_token.strip()} if isinstance(hf_token, str) and hf_token.strip() else {}
-        self.bert = DistilBertModel.from_pretrained(model_name, **token_kwargs)
+        # Get HF authentication kwargs
+        from ..config.settings import settings
+        hf_kwargs = settings.get_hf_model_kwargs()
+        self.bert = DistilBertModel.from_pretrained(model_name, **hf_kwargs)
         hidden_size = self.bert.config.hidden_size
         self.dropout = nn.Dropout(dropout)
         self.heads = nn.ModuleDict({
@@ -92,21 +94,19 @@ class QAModel:
                 logger.info(f"Loading QA model from HuggingFace Hub: {model_id}")
                 
                 try:
-                    # Build optional auth kwargs (token only if provided)
-                    hf_token = getattr(self.settings, "hf_token", None)
-                    tok_kwargs = {"token": hf_token.strip()} if isinstance(hf_token, str) and hf_token.strip() else {}
+                    # Get HF authentication kwargs
+                    hf_kwargs = self.settings.get_hf_model_kwargs()
 
                     # Load tokenizer
-                    self.tokenizer = DistilBertTokenizer.from_pretrained(model_id, **tok_kwargs)
+                    self.tokenizer = DistilBertTokenizer.from_pretrained(model_id, **hf_kwargs)
                     
-                    # Load base model with optional token
-                    self.model = MultiHeadQAClassifier(model_name=model_id, hf_token=hf_token)
+                    # Load base model
+                    self.model = MultiHeadQAClassifier(model_name=model_id)
                     
                     # Try to load state dict from HF Hub
                     try:
                         from huggingface_hub import hf_hub_download
-                        hub_kwargs = {"token": hf_token.strip()} if isinstance(hf_token, str) and hf_token.strip() else {}
-                        model_state_path = hf_hub_download(repo_id=model_id, filename="pytorch_model.bin", **hub_kwargs)
+                        model_state_path = hf_hub_download(repo_id=model_id, filename="pytorch_model.bin", **hf_kwargs)
                         state_dict = torch.load(model_state_path, map_location=self.device)
                         self.model.load_state_dict(state_dict)
                     except Exception as state_error:
