@@ -11,19 +11,29 @@ logger = logging.getLogger(__name__)
 class WhisperModel:
     """HuggingFace Whisper model supporting both transcription and translation"""
     
-    def __init__(self, model_path: str = None, enable_translation: bool = True):
+    def __init__(self, model_path: str = None):
         from ..config.settings import settings
         
         self.model_path = model_path or settings.get_model_path("whisper")
-        self.enable_translation = enable_translation
+        # self.enable_translation = enable_translation
         
-        # Model selection based on capability requirements
-        if enable_translation:
-            self.fallback_model_id = "openai/whisper-large-v3"  # Full V3 supports translation
-            self.model_version = "large-v3"
-        else:
-            self.fallback_model_id = "openai/whisper-large-v3-turbo"  # Turbo for transcription only
-            self.model_version = "large-v3-turbo"
+        # if enable_translation:
+        #     # Use configured HF whisper large v3 as fallback (do not reference OpenAI)
+        #     model_id = (
+        #         self.settings.hf_asr_model
+        #         if getattr(self.settings, "hf_asr_model", None)
+        #         else self.settings.get_active_whisper_path()
+        #     )
+        #     self.model_version = "large-v3"
+        # else:
+        #     # Use configured HF whisper large turbo as fallback (do not reference OpenAI)
+        #     model_id = (
+        #         self.settings.hf_whisper_large_turbo
+        #         if getattr(self.settings, "hf_whisper_large_turbo", None)
+        #         else self.settings.get_active_whisper_path()
+        #     )
+        #     self.model_version = "large-v3-turbo"
+        
         self.model = None
         self.processor = None
         self.device = None
@@ -98,14 +108,17 @@ class WhisperModel:
             self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
             self.torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
             
-            logger.info(f"🎙️ Using device: {self.device}, dtype: {self.torch_dtype}")
-            logger.info(f"🎙️ Translation enabled: {self.enable_translation}, Target model: {self.model_version}")
+            logger.info(f"Using device: {self.device}, dtype: {self.torch_dtype}")
+            # logger.info(f"Translation enabled: {self.enable_translation}, Target model: {self.model_version}")
             
-            # Try loading from local path first
-            if self._check_local_model_exists():
+            if self.settings.use_hf_models:
+                # Use HuggingFace Hub models WITHOUT authentication
+                model_id = self.settings.get_asr_model_id()
+                logger.info(f"Loading Whisper model from HuggingFace Hub (public): {model_id}")
+                
                 try:
-                    logger.info(f"🎙️ Loading local Whisper model from {self.model_path}")
-                    
+                    # Load with authentication kwargs from settings
+                    hf_kwargs = self.settings.get_hf_model_kwargs()
                     self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
                         self.model_path,
                         local_files_only=True,  # Force local loading
@@ -123,23 +136,61 @@ class WhisperModel:
                     logger.info(f"✅ Local Whisper model loaded successfully")
                     
                 except Exception as e:
-                    logger.warning(f"⚠️ Failed to load local model: {e}")
-                    logger.info(f"🌐 Falling back to HuggingFace Hub download")
-                    raise  # Re-raise to trigger fallback
+                    logger.warning(f"Failed to load HF model {model_id}: {e}")
+                    # logger.info(f"Falling back to default HuggingFace model: {model_id}")
+                    
+                    # hf_kwargs = self.settings.get_hf_model_kwargs()
+                    # self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
+                    #     model_id, 
+                    #     torch_dtype=self.torch_dtype, 
+                    #     low_cpu_mem_usage=True, 
+                    #     use_safetensors=True,
+                    #     **hf_kwargs
+                    # )
+                    # self.processor = AutoProcessor.from_pretrained(model_id, **hf_kwargs)
+                    # self.current_model_id = model_id
                     
             else:
-                # No local model, use fallback
-                logger.info(f"🌐 Local model not found, downloading from HuggingFace Hub: {self.fallback_model_id}")
-                
-                self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
-                    self.fallback_model_id, 
-                    torch_dtype=self.torch_dtype, 
-                    low_cpu_mem_usage=True, 
-                    use_safetensors=True
-                )
-                
-                self.processor = AutoProcessor.from_pretrained(self.fallback_model_id)
-                self.current_model_id = self.fallback_model_id
+                # Use local models with fallback to HuggingFace
+                if self._check_local_model_exists():
+                    try:
+                        logger.info(f"Loading local Whisper model from {self.model_path}")
+                        
+                        self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
+                            self.model_path,
+                            local_files_only=True,
+                            torch_dtype=self.torch_dtype, 
+                            low_cpu_mem_usage=True, 
+                            use_safetensors=True
+                        )
+                        
+                        self.processor = AutoProcessor.from_pretrained(
+                            self.model_path,
+                            local_files_only=True
+                        )
+                        
+                        self.current_model_id = self.model_path
+                        logger.info(f"Local Whisper model loaded successfully")
+                        
+                    except Exception as e:
+                        logger.warning(f"Failed to load local model: {e}")
+                        logger.info(f"Falling back to HuggingFace Hub download")
+                        raise
+                        
+                else:
+                    logger.info(f"Local model not found, downloading from HuggingFace Hub: {model_id}")
+                    
+                    # hf_kwargs = self.settings.get_hf_model_kwargs()
+                    # self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
+                    #     model_id, 
+                    #     torch_dtype=self.torch_dtype, 
+                    #     low_cpu_mem_usage=True, 
+                    #     use_safetensors=True,
+                    #     **hf_kwargs
+                    # )
+                    
+                    # self.processor = AutoProcessor.from_pretrained(model_id, **hf_kwargs)
+                    # self.current_model_id = model_id
             
             # Move model to device
             self.model.to(self.device)
@@ -156,22 +207,20 @@ class WhisperModel:
             # If local loading failed, try fallback
             if "local_files_only" in str(e) or "not found" in str(e).lower():
                 try:
-                    logger.info(f"🌐 Local loading failed, downloading from HuggingFace Hub: {self.fallback_model_id}")
+                    logger.info(f"Local loading failed, downloading from HuggingFace Hub: {model_id}")
                     
                     from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
                     
                     self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
-                        self.fallback_model_id, 
+                        model_id, 
                         torch_dtype=self.torch_dtype, 
                         low_cpu_mem_usage=True, 
                         use_safetensors=True
                     )
                     self.model.to(self.device)
                     
-                    self.processor = AutoProcessor.from_pretrained(self.fallback_model_id)
-                    self.current_model_id = self.fallback_model_id
-                    
-                    # No pipeline - use direct model calls for better quality control
+                    # self.processor = AutoProcessor.from_pretrained(model_id, **hf_kwargs)
+                    # self.current_model_id = model_id
                     
                     self.is_loaded = True
                     self.error = None
@@ -220,13 +269,11 @@ class WhisperModel:
         try:
             logger.info(f"🎙️ Transcribing audio file: {Path(audio_file_path).name}")
             
-            # Validate task parameter
-            if task not in ["transcribe", "translate"]:
-                raise ValueError(f"Task must be 'transcribe' or 'translate', got: {task}")
+            # if task not in ["transcribe", "translate"]:
+            #     raise ValueError(f"Task must be 'transcribe' or 'translate', got: {task}")
             
-            # Check translation capability
-            if task == "translate" and not self.enable_translation:
-                raise RuntimeError("Translation requested but model loaded without translation support. Use enable_translation=True.")
+            # if task == "translate" and not self.enable_translation:
+            #     raise RuntimeError("Translation requested but model loaded without translation support. Use enable_translation=True.")
             
             # Validate and normalize language
             validated_language = self._validate_language(language)
@@ -536,6 +583,185 @@ class WhisperModel:
             logger.error(f"❌ PCM {task_desc} failed: {e}")
             raise RuntimeError(f"PCM {task_desc} failed: {str(e)}")
     
+    # ============================================================================
+    # NEW METHODS: Ensure both transcript and translation are returned
+    # ============================================================================
+    
+    # def transcribe_and_translate(
+    #     self,
+    #     audio_file_path: str,
+    #     language: Optional[str] = None
+    # ) -> Dict[str, str]:
+    #     """
+    #     Get both transcript (original language) AND translation (English) from audio file
+        
+    #     This method ensures you always get both outputs instead of just one.
+        
+    #     Args:
+    #         audio_file_path: Path to audio file
+    #         language: Source language code (e.g., "sw" for Swahili)
+        
+    #     Returns:
+    #         Dict with keys:
+    #             - 'transcript': Original language text
+    #             - 'translation': English translation (or None if translation not enabled)
+        
+    #     Example:
+    #         result = whisper_model.transcribe_and_translate("audio.wav", language="sw")
+    #         print(result['transcript'])   # "Mimi nina tatizo..."
+    #         print(result['translation'])  # "I have a problem..."
+    #     """
+    #     if not self.is_loaded:
+    #         raise RuntimeError("Whisper model not loaded")
+        
+    #     logger.info(f"📝 Processing audio for both transcription and translation")
+        
+    #     result = {
+    #         "transcript": None,
+    #         "translation": None
+    #     }
+        
+    #     try:
+    #         # STEP 1: Always get original language transcript first
+    #         logger.info(f"  Step 1: Transcribing in {language or 'auto-detected language'}...")
+    #         result["transcript"] = self.transcribe_audio_file(
+    #             audio_file_path=audio_file_path,
+    #             language=language,
+    #             task="transcribe"  # ALWAYS transcribe first
+    #         )
+    #         logger.info(f"✅ Transcript complete: {len(result['transcript'])} characters")
+            
+    #         # STEP 2: Get English translation
+    #         if self.enable_translation:
+    #             logger.info(f"  Step 2: Translating to English...")
+    #             result["translation"] = self.transcribe_audio_file(
+    #                 audio_file_path=audio_file_path,
+    #                 language=language,
+    #                 task="translate"  # Now get English translation
+    #             )
+    #             logger.info(f"✅ Translation complete: {len(result['translation'])} characters")
+    #         else:
+    #             logger.warning("⚠️ Translation skipped (model loaded without enable_translation=True)")
+    #             result["translation"] = None
+            
+    #         return result
+            
+    #     except Exception as e:
+    #         logger.error(f"❌ Transcription and translation failed: {e}")
+    #         raise RuntimeError(f"Transcription and translation failed: {str(e)}")
+    
+    # def transcribe_and_translate_bytes(
+    #     self,
+    #     audio_bytes: bytes,
+    #     language: Optional[str] = None
+    # ) -> Dict[str, str]:
+    #     """
+    #     Get both transcript and translation from audio bytes
+        
+    #     Args:
+    #         audio_bytes: Audio data as bytes
+    #         language: Source language code (e.g., "sw")
+        
+    #     Returns:
+    #         Dict with 'transcript' and 'translation' keys
+    #     """
+    #     if not self.is_loaded:
+    #         raise RuntimeError("Whisper model not loaded")
+        
+    #     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_file:
+    #         try:
+    #             temp_file.write(audio_bytes)
+    #             temp_file.flush()
+                
+    #             result = self.transcribe_and_translate(temp_file.name, language)
+    #             return result
+                
+    #         finally:
+    #             try:
+    #                 os.unlink(temp_file.name)
+    #             except:
+    #                 pass
+    
+    def process_audio_with_options(
+        self,
+        audio_file_path: str,
+        language: Optional[str] = None,
+        include_translation: bool = False
+    ) -> Dict[str, Any]:
+        """
+        Flexible audio processing method that returns transcript and optional translation
+        
+        This is the main method you should use in your endpoints.
+        
+        Args:
+            audio_file_path: Path to audio file
+            language: Source language code (e.g., "sw")
+            include_translation: Whether to include English translation
+        
+        Returns:
+            Dict with keys:
+                - 'transcript': Original language text (ALWAYS present)
+                - 'translation': English translation (only if include_translation=True)
+                - 'language': Language code used
+                - 'has_translation': Boolean indicating if translation was performed
+        
+        Example:
+            # Just transcription
+            result = whisper_model.process_audio_with_options("audio.wav", "sw", False)
+            # Returns: {'transcript': '...', 'translation': None, ...}
+            
+            # Transcription + translation
+            result = whisper_model.process_audio_with_options("audio.wav", "sw", True)
+            # Returns: {'transcript': '...', 'translation': '...', ...}
+        """
+        if not self.is_loaded:
+            raise RuntimeError("Whisper model not loaded")
+        
+        logger.info(f"🎤 Processing audio: {Path(audio_file_path).name}")
+        logger.info(f"   Language: {language or 'auto-detect'}")
+        logger.info(f"   Include translation: {include_translation}")
+        
+        result = {
+            "transcript": None,
+            "translation": None,
+            "language": language,
+            "has_translation": False
+        }
+        
+        try:
+            # ALWAYS get transcript first
+            result["transcript"] = self.transcribe_audio_file(
+                audio_file_path=audio_file_path,
+                language=language,
+                task="transcribe"
+            )
+            logger.info(f"✅ Transcript: {len(result['transcript'])} chars")
+            
+            # Optionally get translation
+            if include_translation:
+                if self.enable_translation:
+                    result["translation"] = self.transcribe_audio_file(
+                        audio_file_path=audio_file_path,
+                        language=language,
+                        task="translate"
+                    )
+                    result["has_translation"] = True
+                    logger.info(f"✅ Translation: {len(result['translation'])} chars")
+                else:
+                    logger.warning("⚠️ Translation requested but model doesn't support it")
+                    result["translation"] = None
+                    result["has_translation"] = False
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"❌ Audio processing failed: {e}")
+            raise RuntimeError(f"Audio processing failed: {str(e)}")
+    
+    # ============================================================================
+    # End of new methods
+    # ============================================================================
+    
     def get_supported_languages(self) -> Dict[str, str]:
         """Get dictionary of supported language codes and names"""
         return self.supported_languages.copy()
@@ -545,9 +771,9 @@ class WhisperModel:
         return {
             "model_name": "whisper",
             "model_path": self.model_path,
-            "fallback_model_id": self.fallback_model_id,
-            "model_type": "speech-to-text",
-            "framework": "transformers",
+            "hf_repo_id": self.current_model_id, # Using model_id as the primary HF identifier
+            "loaded": self.is_loaded,
+            "load_time": None, # Whisper model doesn't track load_time explicitly
             "device": str(self.device) if self.device else None,
             "torch_dtype": str(self.torch_dtype) if self.torch_dtype else None,
             "is_loaded": self.is_loaded,
@@ -569,6 +795,6 @@ class WhisperModel:
         """Check if model is ready for inference"""
         return self.is_loaded and self.model is not None and self.processor is not None
 
-# Global instances - use single Whisper Large model for both transcription and translation
-whisper_model = WhisperModel(enable_translation=True)  # Single Whisper Large model for both tasks
-whisper_translation_model = whisper_model  # Same instance for translation tasks
+# Global instances
+whisper_model = WhisperModel()
+# whisper_translation_model = whisper_model

@@ -156,6 +156,65 @@ class ClassifierModel:
         """Clean and normalize input text"""
         text = text.lower().strip()
         return re.sub(r'[^a-z0-9\s]', '', text)
+
+    def load(self) -> bool:
+        """Load tokenizer, model weights, and category configs from HF Hub or local files"""
+        try:
+            logger.info(f"📦 Initializing classifier model loader")
+            start_time = datetime.now()
+
+            # Load category configs first (local or fetch from HF)
+            if not self._load_category_configs():
+                return False
+
+            # HACK: Force the number of main categories to 5 to match the checkpoint
+            num_main = 5
+            num_sub = len(self.sub_categories)
+            num_interv = len(self.interventions)
+            num_priority = len(self.priorities)
+
+            # Require HF repo id for weights
+            if not self.hf_repo_id:
+                raise RuntimeError("HF repo id not configured for classifier (CLASSIFIER_HF_REPO_ID or settings.hf_classifier_model)")
+
+            logger.info(f"📦 Loading classifier model from Hugging Face Hub: {self.hf_repo_id} (ignoring local path {self.model_path})")
+            
+            # Get HF authentication kwargs
+            from ..config.settings import settings
+            hf_kwargs = settings.get_hf_model_kwargs()
+            
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                self.hf_repo_id,
+                local_files_only=False,
+                **hf_kwargs
+            )
+            
+            print(f"DEBUG: Loading model with num_main = {num_main}")
+            self.model = MultiTaskDistilBert.from_pretrained(
+                self.hf_repo_id,
+                num_main=num_main,
+                num_sub=num_sub,
+                num_interv=num_interv,
+                num_priority=num_priority,
+                local_files_only=False,
+                ignore_mismatched_sizes=True,
+                **hf_kwargs
+            )
+            self.model = self.model.to(self.device)
+            self.model.eval()
+
+            self.loaded = True
+            self.load_time = datetime.now()
+            load_duration = (self.load_time - start_time).total_seconds()
+            logger.info(f"✅ Classifier model loaded from Hugging Face Hub ({self.hf_repo_id}) in {load_duration:.2f}s on {self.device}")
+            return True
+            
+        except Exception as e:
+            self.error = str(e)
+            self.load_time = datetime.now()
+            logger.error(f"❌ Failed to load classifier model: {e}")
+            self.loaded = False
+            return False
     
     def classify(self, narrative: str) -> Dict[str, str]:
         """

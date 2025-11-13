@@ -96,25 +96,30 @@ class Settings(BaseSettings):
     adaptive_high_priority_keywords: str = "emergency,urgent,critical,suicide,violence,accident,medical,police,fire,ambulance"
     
     # SCP Audio Download Configuration
-    scp_user: str = "helpline"
-    scp_server: str = "192.168.10.3"
-    scp_password: str = "h3lpl1n3"
+    scp_user: str 
+    scp_server: str 
+    scp_password: str 
     scp_remote_path_template: str = "/home/dat/helpline/calls/{call_id}.gsm"
     scp_timeout_seconds: int = 30
     
-    # Whisper Model Configuration
-    whisper_model_variant: str = "large_v3"  # large_v3, large_turbo
-    translation_strategy: str = "whisper_builtin"  # whisper_builtin, custom_model
-    whisper_large_v3_path: str = "./models/whisper_large_v3"
-    whisper_large_turbo_path: str = "./models/whisper_large_turbo"
-    whisper_active_symlink: str = "./models/whisper"  # Symlink for backward compatibility
+    # HuggingFace Hub Configuration
+    use_hf_models: bool = True
+    hf_organization: str = "openchs"
+    
+    # HuggingFace Model IDs (read from environment variables)
+    hf_asr_model: str
+    hf_classifier_model: str
+    hf_ner_model: str
+    hf_translator_model: str
+    hf_summarizer_model: str
+    hf_qa_model: str
     
     # Agent Notification Configuration
     enable_agent_notifications: bool = True
-    notification_mode: str = "results_only"  # all, results_only, critical_only, disabled
-    notification_endpoint_url: str = "https://192.168.10.3/hh5aug2025/api/msg/"
-    notification_auth_endpoint_url: str = "https://192.168.10.3/hh5aug2025/api/"
-    notification_basic_auth: str = "dGVzdDpwQHNzdzByZA=="  # Base64 encoded
+    notification_mode: str = "results_only"
+    notification_endpoint_url: str
+    notification_auth_endpoint_url: str 
+    notification_basic_auth: str 
     notification_request_timeout: int = 10
     notification_max_retries: int = 3
     
@@ -122,16 +127,95 @@ class Settings(BaseSettings):
         """Get absolute path for a model"""
         return os.path.join(self.models_path, model_name)
     
-    def get_active_whisper_path(self) -> str:
-        """Get path to the currently active whisper model"""
-        if self.whisper_model_variant == "large_v3":
-            return os.path.abspath(self.whisper_large_v3_path)
-        elif self.whisper_model_variant == "large_turbo":
-            return os.path.abspath(self.whisper_large_turbo_path)
-        else:
-            # Fallback to symlink path
-            return os.path.abspath(self.whisper_active_symlink)
+    # def get_active_whisper_path(self) -> str:
+    #     """Get path to the currently active whisper model"""
+    #     if self.use_hf_models:
+    #         # Use the ASR model from .env configuration
+    #         return self.hf_asr_model
+    #     else:
+    #         if self.whisper_model_variant == "large_v3":
+    #             return os.path.abspath(self.whisper_large_v3_path)
+    #         elif self.whisper_model_variant == "large_turbo":
+    #             return os.path.abspath(self.whisper_large_turbo_path)
+    #         else:
+    #             return os.path.abspath(self.whisper_active_symlink)
     
+    def _get_hf_model_id(self, model_name: str) -> str:
+        """Get HuggingFace model ID"""
+        model_id_map = {
+            "asr_model": self.hf_asr_model,
+            "classifier": self.hf_classifier_model,
+            "ner": self.hf_ner_model,
+            "translator": self.hf_translator_model,
+            "summarizer": self.hf_summarizer_model,
+            "qa": self.hf_qa_model
+        }
+        
+        model_id = model_id_map.get(model_name, "")
+        
+        if not model_id and self.hf_organization:
+            model_id = f"{self.hf_organization}/{model_name.replace('_', '-')}"
+        
+        return model_id or self.hf_asr_model
+    
+    def get_hf_model_kwargs(self) -> Dict[str, Any]:
+        """Get common kwargs for HuggingFace model loading with authentication"""
+        kwargs = {}
+        if self.hf_token:
+            kwargs["token"] = self.hf_token
+        return kwargs
+    
+    def get_asr_model_id(self) -> str:
+        """Return the HuggingFace ASR model id from configuration.
+        Falls back to a sensible id built from hf_organization if not set.
+        """
+        if self.hf_asr_model:
+            return self.hf_asr_model
+        return self._get_hf_model_id("asr_model")
+
+    # --- Translation helpers -------------------------------------------------
+    def get_translator_model_id(self) -> str:
+        """
+        Return the HuggingFace translator model id from configuration.
+        Falls back to a sensible id built from hf_organization if not set.
+        """
+        if self.hf_translator_model:
+            return self.hf_translator_model
+        return self._get_hf_model_id("translator")
+
+    def translation_backend(self, include_translation: bool) -> str:
+        """
+        Decide which backend should perform translation.
+        - If include_translation is False -> 'none'
+        - If include_translation is True and use_hf_models -> 'hf'
+        - Otherwise -> 'whisper' (use Whisper built-in translation)
+        Callers (audio endpoint / model manager) should use this to avoid
+        defaulting to Whisper when the HF translator is the desired target.
+        """
+        if not include_translation:
+            return "none"
+        if self.use_hf_models and self.hf_translator_model:
+            return "hf"
+        # fallback to whisper built-in translation
+        return "whisper"
+
+    def resolve_translation_target(self, include_translation: bool) -> Dict[str, str]:
+        """
+        Resolve and return the translation target information for callers.
+        Returns a dict with keys:
+          - backend: 'hf' | 'whisper' | 'none'
+          - model: model identifier or whisper variant
+        Example:
+          settings.resolve_translation_target(True) -> {"backend":"hf", "model":"openchs/..."}
+        """
+        backend = self.translation_backend(include_translation)
+        if backend == "hf":
+            return {"backend": "hf", "model": self.get_translator_model_id()}
+        if backend == "whisper":
+            # Return the whisper variant name so whisper manager can pick the right weights
+            return {"backend": "whisper", "model": self.whisper_model_variant}
+        return {"backend": "none", "model": ""}
+
     def get_processing_mode_config(self) -> Dict[str, Any]:
         """Get complete processing mode configuration as dictionary"""
         return {
