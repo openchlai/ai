@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     # Application
     app_name: str = "AI Pipeline"
     app_version: str = "0.1.0"
+    app_port: int = 8125
     debug: bool = True
     log_level: str = "INFO"
     

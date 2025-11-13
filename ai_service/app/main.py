@@ -167,7 +167,7 @@ async def root():
             "quick_audio_analysis": "/audio/analyze",
             "celery_status": "/health/celery/status",
             "asterisk_status": "/asterisk/status",
-            "websocket_audio_stream": "ws://localhost:8123/audio/stream",
+            "websocket_audio_stream": f"ws://localhost:{settings.app_port}/audio/stream",
             "call_sessions": "/api/v1/calls",
             "active_calls": "/api/v1/calls/active",
             "call_stats": "/api/v1/calls/stats",
@@ -237,22 +237,22 @@ if __name__ == "__main__":
     
     # Log the configuration
     logger.info(f"Configuration - Streaming: {getattr(settings, 'enable_streaming', False)}")
-    
-    # Use different ports for API vs Worker  
-    port = 8123 if not settings.enable_model_loading else 8123
-    
+
+    # Get port from settings (configurable via APP_PORT env var, defaults to 8125)
+    port = settings.app_port
+
     # If streaming is enabled, we need to start both FastAPI and streaming server
     if getattr(settings, 'enable_streaming', False):
-        logger.info("🎙️ Starting with streaming support - FastAPI on 8123, Streaming on 8300")
+        logger.info(f"🎙️ Starting with streaming support - FastAPI on {port}, Streaming on {settings.streaming_port}")
         # For now, just start FastAPI - we'll add streaming server in Task 1.3
         # TODO: Add streaming server startup here in Task 1.3
     else:
-        logger.info("📦 Starting FastAPI only on port 8123")
-    
+        logger.info(f"📦 Starting FastAPI only on port {port}")
+
     uvicorn.run(
         "app.main:app",
-        host="0.0.0.0", 
-        port=8125,
+        host="0.0.0.0",
+        port=port,
         reload=settings.debug,
         log_level=settings.log_level.lower()
     )

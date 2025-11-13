@@ -17,25 +17,37 @@ services:
   ai-pipeline:
     build: .
     ports:
-      - "8123:8123"
-      - "8300:8300"
+      - "${APP_PORT:-8125}:${APP_PORT:-8125}"
+      - "${STREAMING_PORT:-8300}:${STREAMING_PORT:-8300}"
     depends_on:
       redis:
         condition: service_healthy
     environment:
-      - DEBUG=true
-      - LOG_LEVEL=INFO
-      - SITE_ID=dev-local
+      - APP_PORT=${APP_PORT:-8125}
+      - DEBUG=${DEBUG:-true}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - SITE_ID=${SITE_ID:-dev-local}
       - ENABLE_MODEL_LOADING=false  # API server doesn't need models
       - REDIS_URL=redis://redis:6379/0
-      - REDIS_TASK_DB=1
+      - REDIS_TASK_DB=${REDIS_TASK_DB:-1}
       - DOCKER_CONTAINER=true
       - ENABLE_STREAMING=${ENABLE_STREAMING:-false}
       - MAX_STREAMING_SLOTS=${MAX_STREAMING_SLOTS:-2}
       - MAX_BATCH_SLOTS=${MAX_BATCH_SLOTS:-1}
       - STREAMING_PORT=${STREAMING_PORT:-8300}
       - STREAMING_HOST=${STREAMING_HOST:-0.0.0.0}
-      - REDIS_STREAMING_DB=${REDIS_STREAMING_DB:-2}  # Separate Redis DB for streaming
+      - REDIS_STREAMING_DB=${REDIS_STREAMING_DB:-2}
+      # HuggingFace Configuration
+      - HF_TOKEN=${HF_TOKEN}
+      - USE_HF_MODELS=${USE_HF_MODELS:-true}
+      - HF_ORGANIZATION=${HF_ORGANIZATION:-openchs}
+      - HF_ASR_MODEL=${HF_ASR_MODEL}
+      - HF_CLASSIFIER_MODEL=${HF_CLASSIFIER_MODEL}
+      - HF_NER_MODEL=${HF_NER_MODEL}
+      - HF_TRANSLATOR_MODEL=${HF_TRANSLATOR_MODEL}
+      - HF_SUMMARIZER_MODEL=${HF_SUMMARIZER_MODEL}
+      - HF_QA_MODEL=${HF_QA_MODEL}
+      - HF_HOME=/app/.cache/huggingface
     volumes:
       - ./logs:/app/logs
       - ./temp:/app/temp
@@ -55,7 +67,7 @@ services:
       "
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8123/health"]
+      test: ["CMD", "sh", "-c", "curl -f http://localhost:$${APP_PORT:-8125}/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -67,24 +79,36 @@ services:
       redis:
         condition: service_healthy
     environment:
-      - DEBUG=true
-      - LOG_LEVEL=INFO
-      - ENABLE_MODEL_LOADING=true  # Worker needs models
-      - NUMBA_CACHE_DIR=/tmp/numba_cache  # Writable cache location
-      - NUMBA_DISABLE_JIT=0               # Keep JIT enabled
-      - NUMBA_DISABLE_CACHING=1           # Disable persistent caching 
+      - DEBUG=${DEBUG:-true}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - NUMBA_CACHE_DIR=/tmp/numba_cache
+      - NUMBA_DISABLE_JIT=0
+      - NUMBA_DISABLE_CACHING=1
       - REDIS_URL=redis://redis:6379/0
-      - REDIS_TASK_DB=1
+      - REDIS_TASK_DB=${REDIS_TASK_DB:-1}
       - DOCKER_CONTAINER=true
+      # HuggingFace Configuration
+      - HF_TOKEN=${HF_TOKEN}
+      - USE_HF_MODELS=${USE_HF_MODELS:-true}
+      - HF_ORGANIZATION=${HF_ORGANIZATION:-openchs}
+      - HF_ASR_MODEL=${HF_ASR_MODEL}
+      - HF_CLASSIFIER_MODEL=${HF_CLASSIFIER_MODEL}
+      - HF_NER_MODEL=${HF_NER_MODEL}
+      - HF_TRANSLATOR_MODEL=${HF_TRANSLATOR_MODEL}
+      - HF_SUMMARIZER_MODEL=${HF_SUMMARIZER_MODEL}
+      - HF_QA_MODEL=${HF_QA_MODEL}
+      - HF_HOME=/app/.cache/huggingface
     volumes:
       - ./logs:/app/logs
       - ./temp:/app/temp
-    command: celery -A app.celery_app worker --loglevel=info -E --pool=solo --hostname=worker@%h
+      - ~/.cache/huggingface:/app/.cache/huggingface  # Share host's HuggingFace cache
+    # IMPORTANT: Must specify -Q model_processing,celery to consume from correct queues
+    command: celery -A app.celery_app worker --loglevel=info -E --pool=solo -Q model_processing,celery --hostname=worker@%h
     # Production command with concurrency and GPU support
-    # command: celery -A app.celery_app worker --loglevel=info -E --pool=prefork --concurrency=2 --hostname=worker@%h
+    # command: celery -A app.celery_app worker --loglevel=info -E --pool=prefork --concurrency=2 -Q model_processing,celery --hostname=worker@%h
     restart: unless-stopped
     deploy:
-      replicas: 3  # This sets the default number of worker replicas to 3
+      replicas: 1  # This sets the default number of worker replicas to 3
       resources:
         reservations:
           devices:
@@ -107,6 +131,19 @@ services:
       - celery-worker
     environment:
       - REDIS_URL=redis://redis:6379/0
+      - REDIS_TASK_DB=${REDIS_TASK_DB:-1}
+      - DOCKER_CONTAINER=true
+      # HuggingFace Configuration (needed for task module imports)
+      - HF_TOKEN=${HF_TOKEN}
+      - USE_HF_MODELS=${USE_HF_MODELS:-true}
+      - HF_ORGANIZATION=${HF_ORGANIZATION:-openchs}
+      - HF_ASR_MODEL=${HF_ASR_MODEL}
+      - HF_CLASSIFIER_MODEL=${HF_CLASSIFIER_MODEL}
+      - HF_NER_MODEL=${HF_NER_MODEL}
+      - HF_TRANSLATOR_MODEL=${HF_TRANSLATOR_MODEL}
+      - HF_SUMMARIZER_MODEL=${HF_SUMMARIZER_MODEL}
+      - HF_QA_MODEL=${HF_QA_MODEL}
+      - HF_HOME=/app/.cache/huggingface
     ports:
       - "5555:5555"
     command: celery -A app.celery_app flower --port=5555
