@@ -22,8 +22,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Create non-root user
 RUN groupadd -g 1000 appuser && useradd -r -u 1000 -g appuser appuser
 
-# Create necessary directories
-RUN mkdir -p /app/models /app/logs /app/temp \
+# Create necessary directories including HuggingFace cache
+RUN mkdir -p /app/models /app/logs /app/temp /app/.cache/huggingface \
     && chown -R appuser:appuser /app
 
 # Copy requirements first for better caching
@@ -41,13 +41,17 @@ COPY models/ /app/models/
 # Copy application code
 COPY app/ /app/app/
 
-# Create __init__.py files
+# Create __init__.py files for Python packages
 RUN touch /app/app/__init__.py \
     && touch /app/app/core/__init__.py \
     && touch /app/app/api/__init__.py \
-    && touch /app/app/models/__init__.py \
+    && touch /app/app/model_scripts/__init__.py \
     && touch /app/app/config/__init__.py \
-    && touch /app/app/tasks/__init__.py
+    && touch /app/app/tasks/__init__.py \
+    && touch /app/app/utils/__init__.py \
+    && touch /app/app/services/__init__.py \
+    && touch /app/app/streaming/__init__.py \
+    && touch /app/app/db/__init__.py
 
 # Set ownership
 RUN chown -R appuser:appuser /app
@@ -55,12 +59,13 @@ RUN chown -R appuser:appuser /app
 # Switch to non-root user
 USER appuser
 
-# Expose port
-EXPOSE 8123
+# Expose ports (configurable via env vars, defaults: 8125 for API, 8300 for streaming)
+EXPOSE ${APP_PORT:-8125} ${STREAMING_PORT:-8300}
 
-# Health check for FastAPI
+# Health check for FastAPI (uses APP_PORT env var)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8123/health || exit 1
+    CMD curl -f http://localhost:${APP_PORT:-8125}/health || exit 1
 
 # Default command (can be overridden in docker-compose)
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8123"]
+# Note: This is overridden by docker-compose, which uses app.main startup
+CMD ["python", "-m", "app.main"]

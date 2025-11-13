@@ -16,8 +16,8 @@ celery_app = Celery(
     "audio_pipeline",
     broker=broker_url,
     backend=result_backend,
-    # IMPORTANT: Include both audio_tasks and model_tasks
-    include=["app.tasks.audio_tasks", "app.tasks.model_tasks"]
+    # IMPORTANT: Include audio_tasks, model_tasks, and health_tasks
+    include=["app.tasks.audio_tasks", "app.tasks.model_tasks", "app.tasks.health_tasks"]
 )
 
 # PRODUCTION-GRADE CONFIGURATION
