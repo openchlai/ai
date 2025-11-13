@@ -10,19 +10,9 @@ import os
 
 from ..config.settings import redis_task_client
 from .progressive_processor import progressive_processor
-from ..core.processing_strategy_manager import processing_strategy_manager
-from ..utils.scp_audio_downloader import download_audio_by_method, convert_gsm_to_wav
-from ..core.notification_manager import notification_manager, NotificationType
-
+from app.core.enhanced_processing_manager import enhanced_processing_manager, EnhancedProcessingMode
+from ..services.enhanced_notification_service import notification_service as enhanced_notification_service, NotificationType
 logger = logging.getLogger(__name__)
-
-# Import agent notification service
-try:
-    from ..services.agent_notification_service import agent_notification_service
-    AGENT_NOTIFICATIONS_ENABLED = True
-except ImportError:
-    AGENT_NOTIFICATIONS_ENABLED = False
-    logger.warning("Agent notification service not available")
 
 @dataclass
 class CallSession:
@@ -36,7 +26,7 @@ class CallSession:
     total_audio_duration: float
     segment_count: int
     status: str  # 'active', 'completed', 'timeout'
-    processing_mode: str = "hybrid"  # Processing mode for this call
+    processing_mode: EnhancedProcessingMode = EnhancedProcessingMode.DUAL  # Processing mode for this call
     processing_plan: Optional[Dict] = None  # Detailed processing plan
     
     def to_dict(self) -> Dict:
@@ -103,8 +93,9 @@ class CallSessionManager:
             if mode_override:
                 call_context["mode_override"] = mode_override
             
-            # Determine processing strategy
-            processing_plan = processing_strategy_manager.create_call_processing_plan(call_context)
+            # Determine processing mode and get configuration
+            determined_mode = enhanced_processing_manager.determine_mode(call_context)
+            processing_config = enhanced_processing_manager.get_processing_config(determined_mode)
             
             session = CallSession(
                 call_id=call_id,
@@ -116,8 +107,8 @@ class CallSessionManager:
                 total_audio_duration=0.0,
                 segment_count=0,
                 status='active',
-                processing_mode=processing_plan["processing_mode"],
-                processing_plan=processing_plan
+                processing_mode=determined_mode,
+                processing_plan=processing_config
             )
             
             # Store in memory
@@ -127,12 +118,15 @@ class CallSessionManager:
             redis_success = self._store_session_in_redis(session)
             
             logger.info(f"📞 [session] Started call session: {call_id}")
-            logger.info(f"📞 [session] Processing mode: {session.processing_mode}")
+            logger.info(f"📞 [session] Processing mode: {session.processing_mode.value}")
             logger.info(f"📞 [session] Active sessions: {len(self.active_sessions)}")
             logger.info(f"📞 [session] Redis storage: {'✅ success' if redis_success else '❌ failed'}")
             
-            # Skip call start notification - disabled to reduce noise
-            logger.debug(f"📞 [session] Call start notification skipped for {call_id}")
+            # Send CALL_START notification
+            await enhanced_notification_service.send_call_start(
+                call_id, determined_mode, processing_config,
+                ui_metadata={"display_priority": "high", "panel": "call_overview"}
+            )
             
             # Start cleanup task if not running
             if self._cleanup_task is None:
@@ -177,9 +171,9 @@ class CallSessionManager:
             )
             
             # Trigger progressive processing if enabled for this call's mode
-            realtime_enabled = session.processing_plan.get("realtime_processing", {}).get("enabled", False)
+            streaming_enabled = enhanced_processing_manager.should_enable_streaming(session.processing_mode)
             
-            if realtime_enabled:
+            if streaming_enabled:
                 try:
                     processed_window = await progressive_processor.process_if_ready(
                         call_id, 
@@ -196,17 +190,13 @@ class CallSessionManager:
                 except Exception as e:
                     logger.error(f"❌ Progressive processing failed for call {call_id}: {e}")
             else:
-                logger.debug(f"ℹ️ [session] Real-time processing disabled for call {call_id} (mode: {session.processing_mode})")
-                segment['metadata']['realtime_processing_disabled'] = True
+                logger.debug(f"ℹ️ [session] Streaming processing disabled for call {call_id} (mode: {session.processing_mode.value})")
+                segment['metadata']['streaming_processing_disabled'] = True
             
             # Store updated session
             redis_update_success = self._store_session_in_redis(session)
             if not redis_update_success:
                 logger.warning(f"⚠️ [session] Failed to update session {call_id} in Redis")
-            
-            # Skip real-time segment notifications - only send post-call summary
-            # Real-time segment notifications create too much noise
-            logger.debug(f"📝 [session] Segment {segment['segment_id']} added (no real-time notification)")
             
             logger.info(f"📝 [session] Added segment {segment['segment_id']} to call {call_id}")
             logger.info(f"📝 [session] Transcript length: {len(session.cumulative_transcript)} chars")
@@ -302,9 +292,8 @@ class CallSessionManager:
             except Exception as e:
                 logger.error(f"❌ Failed to finalize progressive analysis for call {call_id}: {e}")
             
-            # Check if post-call processing is enabled for this session
-            postcall_processing_config = session.processing_plan.get("postcall_processing", {})
-            postcall_enabled = postcall_processing_config.get("enabled", False)
+            # Check if post-call processing should be enabled for this session
+            postcall_enabled = enhanced_processing_manager.should_enable_postcall(session.processing_mode)
             
             logger.info(f"📋 [session] Post-call processing enabled: {postcall_enabled}")
             
@@ -322,7 +311,7 @@ class CallSessionManager:
                 # For post-call only mode, trigger if audio was downloaded (regardless of transcript)
                 # For other modes, trigger if transcript is substantial
                 should_trigger = False
-                if session.processing_mode == "postcall_only":
+                if session.processing_mode == EnhancedProcessingMode.POST_CALL:
                     if audio_download_task:
                         should_trigger = True
                         logger.info(f"🧠 [session] Triggering AI pipeline for post-call only mode with downloaded audio")
@@ -337,18 +326,14 @@ class CallSessionManager:
                 if should_trigger:
                     ai_task = await self._trigger_ai_pipeline_with_mode(session, audio_download_task)
                     
-                # Wait for AI pipeline completion and send summary/insights
-                if ai_task and AGENT_NOTIFICATIONS_ENABLED:
-                    try:
-                        await self._wait_and_send_ai_results(call_id, ai_task)
-                    except Exception as e:
-                        logger.error(f"❌ Failed to send AI results for {call_id}: {e}")
             else:
-                logger.info(f"ℹ️ [session] Post-call processing disabled for call {call_id} (mode: {session.processing_mode})")
-                
-                # Even without full post-call processing, send complete transcript and basic insights
-                await self._send_simple_post_call_notification(session, reason)
+                logger.info(f"ℹ️ [session] Post-call processing disabled for call {call_id} (mode: {session.processing_mode.value})")
             
+            # Send CALL_END_STREAMING notification
+            await enhanced_notification_service.send_call_end_streaming(
+                call_id, session.cumulative_transcript, session.processing_mode,
+                ui_metadata={"display_priority": "low", "panel": "call_summary"}
+            )
             
             # Remove from active sessions
             if call_id in self.active_sessions:
