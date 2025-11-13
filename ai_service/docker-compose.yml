@@ -101,7 +101,7 @@ services:
     volumes:
       - ./logs:/app/logs
       - ./temp:/app/temp
-      - ~/.cache/huggingface:/app/.cache/huggingface  # Share host's HuggingFace cache
+      - huggingface_cache:/app/.cache/huggingface  # Docker-managed volume for HuggingFace cache
     # IMPORTANT: Must specify -Q model_processing,celery to consume from correct queues
     command: celery -A app.celery_app worker --loglevel=info -E --pool=solo -Q model_processing,celery --hostname=worker@%h
     # Production command with concurrency and GPU support
@@ -151,3 +151,4 @@ services:
 
 volumes:
   redis_data:
+  huggingface_cache:
