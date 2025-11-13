@@ -8,6 +8,7 @@ from ..utils.mode_detector import is_api_server_mode, get_execution_mode
 from typing import List, Dict, Optional
 from celery.result import AsyncResult
 from ..tasks.model_tasks import classifier_classify_task
+from ..celery_app import celery_app
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/classifier", tags=["classifier"])
@@ -111,7 +112,7 @@ async def classify_narrative(request: ClassifierRequest):
 async def get_classifier_task_status(task_id: str):
     """Get classification task status"""
     try:
-        task_result = AsyncResult(task_id)
+        task_result = AsyncResult(task_id, app=celery_app)
         
         if task_result.state == 'PENDING':
             return ClassifierTaskStatusResponse(
