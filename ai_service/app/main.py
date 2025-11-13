@@ -72,11 +72,14 @@ async def lifespan(app: FastAPI):
     if os.getenv("ENABLE_ASTERISK_TCP", "true").lower() == "true":
         try:
             logger.info("🎙️ Starting Asterisk TCP listener...")
-            asterisk_server = AsteriskTCPServer()  # Remove model_loader parameter
+            asterisk_server = AsteriskTCPServer(
+                host=settings.streaming_host,
+                port=settings.streaming_port
+            )
             
             # Start TCP listener in background
             asyncio.create_task(asterisk_server.start_server())
-            logger.info("🎙️ Asterisk TCP listener started on port 8300 - waiting for connections")
+            logger.info(f"🎙️ Asterisk TCP listener started on port {settings.streaming_port} - waiting for connections")
             
         except Exception as e:
             logger.error(f"❌ Failed to start Asterisk TCP listener: {e}")

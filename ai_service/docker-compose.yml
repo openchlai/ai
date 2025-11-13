@@ -81,6 +81,7 @@ services:
     environment:
       - DEBUG=${DEBUG:-true}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - ENABLE_MODEL_LOADING=true
       - NUMBA_CACHE_DIR=/tmp/numba_cache
       - NUMBA_DISABLE_JIT=0
       - NUMBA_DISABLE_CACHING=1
