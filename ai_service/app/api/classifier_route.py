@@ -15,10 +15,10 @@ router = APIRouter(prefix="/classifier", tags=["classifier"])
 
 
 class ConfidenceScores(BaseModel):
-    main_category: float
-    sub_category: float
-    intervention: float
-    priority: float
+    main_category: Optional[float] = None
+    sub_category: Optional[float] = None
+    intervention: Optional[float] = None
+    priority: Optional[float] = None
 
 
 class ChunkPrediction(BaseModel):
@@ -92,6 +92,7 @@ async def classify_narrative(request: ClassifierRequest):
             args=[request.narrative],
             queue='model_processing'
         )
+
         
         logger.info(f"📤 Classification task submitted: {task.id}")
         
@@ -143,7 +144,8 @@ async def get_classifier_task_status(task_id: str):
                 model_info=result['model_info'],
                 timestamp=result['timestamp']
             )
-            
+
+            print("============== results ========== ", classifier_response)
             return ClassifierTaskStatusResponse(
                 task_id=task_id,
                 status="success",
