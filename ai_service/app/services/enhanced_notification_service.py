@@ -19,6 +19,10 @@ from pydantic import BaseModel, Field
 
 from app.config.settings import settings
 
+# Suppress SSL warnings for self-signed certificates
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 # Configure logging
 logger = logging.getLogger(__name__)
 
@@ -98,14 +102,77 @@ class EnhancedNotificationService:
         self.token_refresh_threshold = 300  # 5 minutes
         self.use_base64 = settings.use_base64_encoding
         self.site_id = settings.site_id
-        
-        # Create async HTTP client
+
+        # Create async HTTP client (disable SSL verification for self-signed certs)
         self.client = httpx.AsyncClient(
-            timeout=settings.notification_request_timeout
+            timeout=settings.notification_request_timeout,
+            verify=False  # Disable SSL verification for self-signed certificates
         )
-        
+
+        # Payload logging configuration
+        self.enable_payload_logging = settings.enable_agent_payload_logging
+        self.payload_log_file = settings.agent_payload_log_file
+
+        # Initialize payload logging if enabled
+        if self.enable_payload_logging:
+            self._initialize_payload_logging()
+
         logger.info("✅ EnhancedNotificationService initialized")
-    
+
+    def _initialize_payload_logging(self):
+        """Initialize payload logging file and directory."""
+        try:
+            import os
+            log_dir = os.path.dirname(self.payload_log_file)
+            if log_dir and not os.path.exists(log_dir):
+                os.makedirs(log_dir, exist_ok=True)
+
+            # Create or verify the log file exists
+            if not os.path.exists(self.payload_log_file):
+                with open(self.payload_log_file, 'w') as f:
+                    # Write header comment
+                    f.write(f"# Agent Payload Log - Started at {datetime.now().isoformat()}\n")
+                    f.write("# Each line is a JSON object representing a notification payload\n")
+                    f.write("# Format: JSONL (JSON Lines) - one object per line\n")
+
+            logger.info(f"📝 Payload logging enabled: {self.payload_log_file}")
+
+        except Exception as e:
+            logger.error(f"❌ Failed to initialize payload logging: {e}")
+            self.enable_payload_logging = False
+
+    def _log_payload(self, payload: Dict[str, Any], request_body: Dict[str, Any]):
+        """
+        Log payload to file for UI development.
+
+        Args:
+            payload: The original notification payload (v2.0 format)
+            request_body: The actual request body being sent (may be wrapped in base64)
+        """
+        if not self.enable_payload_logging:
+            return
+
+        try:
+            log_entry = {
+                "logged_at": datetime.now().isoformat(),
+                "notification_type": payload.get("notification_type"),
+                "call_id": payload.get("call_metadata", {}).get("call_id"),
+                "message_id": payload.get("message_id"),
+                "processing_mode": payload.get("processing_mode"),
+                "use_base64_encoding": self.use_base64,
+                "original_payload": payload,
+                "request_body": request_body
+            }
+
+            # Append to JSONL file
+            with open(self.payload_log_file, 'a') as f:
+                f.write(json.dumps(log_entry, ensure_ascii=False) + '\n')
+
+            logger.debug(f"📝 Logged payload: {payload.get('notification_type')} for call {log_entry['call_id']}")
+
+        except Exception as e:
+            logger.error(f"❌ Failed to log payload: {e}")
+
     async def _ensure_valid_token(self) -> bool:
         """Ensure we have a valid bearer token."""
         now = datetime.now()
@@ -137,29 +204,47 @@ class EnhancedNotificationService:
                 "Authorization": f"Basic {self.basic_auth}",
                 "Content-Type": "application/json"
             }
-            
+
+            # Debug logging
+            logger.info(f"🔐 [token] Fetching token from: {self.auth_endpoint_url}")
+            logger.info(f"🔐 [token] Headers: Authorization=Basic {self.basic_auth[:20]}..., Content-Type={headers['Content-Type']}")
+
             response = await self.client.post(
                 self.auth_endpoint_url,
                 headers=headers
             )
-            
+
+            # Debug response
+            logger.info(f"🔐 [token] Response status: {response.status_code}")
+
             if response.status_code == 200:
                 data = response.json()
+                logger.info(f"🔐 [token] Response keys: {list(data.keys())}")
+
                 token = data.get("access_token") or data.get("token")
-                
+
                 if token:
                     # Set expiration (default 1 hour if not provided)
                     expires_in = data.get("expires_in", 3600)
                     self.token_expires_at = datetime.now() + timedelta(seconds=expires_in)
-                    
+
                     logger.info("✅ Successfully fetched bearer token")
                     return token
-            
-            logger.error(f"❌ Failed to fetch token: HTTP {response.status_code}")
+                else:
+                    logger.error(f"❌ No token found in response. Keys: {list(data.keys())}")
+            else:
+                # Log detailed error response
+                try:
+                    error_body = response.text
+                    logger.error(f"❌ Failed to fetch token: HTTP {response.status_code}")
+                    logger.error(f"❌ Response body: {error_body[:500]}")
+                except:
+                    logger.error(f"❌ Failed to fetch token: HTTP {response.status_code} (couldn't read response body)")
+
             return None
-            
+
         except Exception as e:
-            logger.error(f"❌ Error fetching auth token: {e}")
+            logger.error(f"❌ Error fetching auth token: {e}", exc_info=True)
             return None
     
     async def _get_auth_headers(self) -> Dict[str, str]:
@@ -208,7 +293,7 @@ class EnhancedNotificationService:
     async def _send_notification(self, data: Dict[str, Any]) -> bool:
         """Send notification with retry logic."""
         headers = await self._get_auth_headers()
-        
+
         # Prepare request body
         if self.use_base64:
             json_string = json.dumps(data, ensure_ascii=False)
@@ -222,8 +307,17 @@ class EnhancedNotificationService:
                 "mime": "application/json",
                 "message": encoded
             }
+            logger.info(f"📤 [notify] Using base64 encoding, wrapper keys: {list(request_body.keys())}")
+            logger.info(f"📤 [notify] Original payload keys: {list(data.keys())}")
         else:
             request_body = data
+            logger.info(f"📤 [notify] Using direct JSON, payload keys: {list(request_body.keys())}")
+
+        logger.info(f"📤 [notify] Sending to: {self.endpoint_url}")
+        logger.info(f"📤 [notify] Notification type: {data.get('notification_type')}")
+
+        # Log payload for UI development
+        self._log_payload(data, request_body)
         
         # Retry logic
         retry_attempts = getattr(settings, 'notification_retry_attempts', 3)
@@ -244,10 +338,18 @@ class EnhancedNotificationService:
                 return True
                 
             except httpx.HTTPStatusError as e:
-                logger.error(
-                    f"❌ HTTP Error (attempt {attempt + 1}/{retry_attempts}): "
-                    f"{e.response.status_code}"
-                )
+                # Log detailed error information
+                try:
+                    error_body = e.response.text
+                    logger.error(
+                        f"❌ HTTP Error (attempt {attempt + 1}/{retry_attempts}): "
+                        f"{e.response.status_code} - Response: {error_body[:500]}"
+                    )
+                except:
+                    logger.error(
+                        f"❌ HTTP Error (attempt {attempt + 1}/{retry_attempts}): "
+                        f"{e.response.status_code}"
+                    )
             except httpx.RequestError as e:
                 logger.error(
                     f"❌ Request Error (attempt {attempt + 1}/{retry_attempts}): {e}"
@@ -413,26 +515,9 @@ class EnhancedNotificationService:
         processing_config: Dict,
         **metadata
     ) -> bool:
-        """Send call start notification."""
-        
-        payload_data = {
-            "connection_info": metadata.get("connection_info", {}),
-            "processing_config": processing_config
-        }
-        
-        ui_metadata = metadata.get("ui_metadata", {
-            "priority": 1,
-            "display_panel": "call_overview"
-        })
-        
-        return await self.send_notification(
-            call_id=call_id,
-            notification_type=NotificationType.CALL_START,
-            processing_mode=processing_mode,
-            payload_data=payload_data,
-            call_metadata=metadata,
-            ui_metadata=ui_metadata
-        )
+        """Send call start notification - DISABLED."""
+        logger.debug(f"🔕 call_start notification disabled for call {call_id}")
+        return True  # Return success without sending
 
     async def send_call_end_streaming(
         self,
@@ -441,26 +526,9 @@ class EnhancedNotificationService:
         processing_mode: ProcessingMode,
         **metadata
     ) -> bool:
-        """Send call end streaming notification."""
-        
-        payload_data = {
-            "cumulative_transcript": cumulative_transcript,
-            "transcript_length": len(cumulative_transcript)
-        }
-        
-        ui_metadata = metadata.get("ui_metadata", {
-            "priority": 3,
-            "display_panel": "call_summary"
-        })
-        
-        return await self.send_notification(
-            call_id=call_id,
-            notification_type=NotificationType.CALL_END_STREAMING,
-            processing_mode=processing_mode,
-            payload_data=payload_data,
-            call_metadata=metadata,
-            ui_metadata=ui_metadata
-        )
+        """Send call end streaming notification - DISABLED."""
+        logger.debug(f"🔕 call_end_streaming notification disabled for call {call_id}")
+        return True  # Return success without sending
 
     async def send_postcall_transcription(
         self,

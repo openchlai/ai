@@ -12,6 +12,7 @@ from ..config.settings import redis_task_client
 from .progressive_processor import progressive_processor
 from app.core.enhanced_processing_manager import enhanced_processing_manager, EnhancedProcessingMode
 from ..services.enhanced_notification_service import notification_service as enhanced_notification_service, NotificationType
+from ..utils import download_audio_by_method, convert_gsm_to_wav
 logger = logging.getLogger(__name__)
 
 @dataclass
@@ -65,6 +66,16 @@ class CallSession:
         """Create from dictionary"""
         data['start_time'] = datetime.fromisoformat(data['start_time'])
         data['last_activity'] = datetime.fromisoformat(data['last_activity'])
+
+        # Convert processing_mode string back to enum if needed
+        if 'processing_mode' in data and isinstance(data['processing_mode'], str):
+            try:
+                data['processing_mode'] = EnhancedProcessingMode(data['processing_mode'])
+            except ValueError:
+                # If the string doesn't match any enum value, use default
+                logger.warning(f"Invalid processing_mode '{data['processing_mode']}', using DUAL")
+                data['processing_mode'] = EnhancedProcessingMode.DUAL
+
         return cls(**data)
 
 class CallSessionManager:
@@ -123,8 +134,11 @@ class CallSessionManager:
             logger.info(f"📞 [session] Redis storage: {'✅ success' if redis_success else '❌ failed'}")
             
             # Send CALL_START notification
+            # Convert EnhancedProcessingMode to notification service's ProcessingMode
+            from ..services.enhanced_notification_service import ProcessingMode
+            notification_mode = ProcessingMode(determined_mode.value)
             await enhanced_notification_service.send_call_start(
-                call_id, determined_mode, processing_config,
+                call_id, notification_mode, processing_config,
                 ui_metadata={"display_priority": "high", "panel": "call_overview"}
             )
             
@@ -309,7 +323,7 @@ class CallSessionManager:
                 ai_task = None
                 
                 # For post-call only mode, trigger if audio was downloaded (regardless of transcript)
-                # For other modes, trigger if transcript is substantial
+                # For other modes, trigger if either audio downloaded OR transcript is substantial
                 should_trigger = False
                 if session.processing_mode == EnhancedProcessingMode.POST_CALL:
                     if audio_download_task:
@@ -318,11 +332,14 @@ class CallSessionManager:
                     else:
                         logger.warning(f"⚠️ [session] No audio downloaded for post-call only mode call {call_id}")
                 else:
-                    # For other modes, use transcript length threshold
-                    if len(session.cumulative_transcript.strip()) > 50:
+                    # For DUAL/STREAMING modes: trigger if we have audio OR substantial transcript
+                    if audio_download_task:
                         should_trigger = True
-                        logger.info(f"🧠 [session] Triggering AI pipeline with transcript ({len(session.cumulative_transcript)} chars)")
-                
+                        logger.info(f"🧠 [session] Triggering AI pipeline with downloaded audio ({len(session.cumulative_transcript)} chars transcript)")
+                    elif len(session.cumulative_transcript.strip()) > 50:
+                        should_trigger = True
+                        logger.info(f"🧠 [session] Triggering AI pipeline with transcript only ({len(session.cumulative_transcript)} chars)")
+
                 if should_trigger:
                     ai_task = await self._trigger_ai_pipeline_with_mode(session, audio_download_task)
                     
@@ -330,8 +347,11 @@ class CallSessionManager:
                 logger.info(f"ℹ️ [session] Post-call processing disabled for call {call_id} (mode: {session.processing_mode.value})")
             
             # Send CALL_END_STREAMING notification
+            # Convert EnhancedProcessingMode to notification service's ProcessingMode
+            from ..services.enhanced_notification_service import ProcessingMode
+            notification_mode = ProcessingMode(session.processing_mode.value)
             await enhanced_notification_service.send_call_end_streaming(
-                call_id, session.cumulative_transcript, session.processing_mode,
+                call_id, session.cumulative_transcript, notification_mode,
                 ui_metadata={"display_priority": "low", "panel": "call_summary"}
             )
             
@@ -361,15 +381,13 @@ class CallSessionManager:
             
             from ..tasks.audio_tasks import process_audio_task
             
-            # Create filename for the complete call
-            filename = f"call_{call_id}_{session.start_time.strftime('%Y%m%d_%H%M%S')}.transcript"
-            
             # Choose between downloaded audio or existing transcript based on processing mode
             audio_bytes = None
             is_pretranscribed = True  # Default assumption
-            
-            # For post-call only mode, use downloaded audio file for fresh transcription
-            if session.processing_mode == "postcall_only" and audio_download_task:
+            filename = None
+
+            # If audio was downloaded, use it for fresh transcription (works for POST_CALL and DUAL modes)
+            if audio_download_task:
                 # Try to get the downloaded audio bytes
                 try:
                     if hasattr(audio_download_task, '__len__') and len(audio_download_task) == 2:
@@ -378,7 +396,10 @@ class CallSessionManager:
                         if downloaded_audio_bytes:
                             audio_bytes = downloaded_audio_bytes
                             is_pretranscribed = False  # Will need fresh Whisper transcription
-                            logger.info(f"🎵 [pipeline] Using downloaded audio file ({len(audio_bytes)} bytes) for post-call processing")
+                            # Use appropriate extension for audio files
+                            file_format = download_info.get('format', 'wav')
+                            filename = f"call_{call_id}_{session.start_time.strftime('%Y%m%d_%H%M%S')}.{file_format}"
+                            logger.info(f"🎵 [pipeline] Using downloaded audio file ({len(audio_bytes)} bytes, {file_format} format) for processing")
                         else:
                             logger.warning(f"⚠️ [pipeline] Downloaded audio bytes are None")
                     else:
@@ -393,15 +414,16 @@ class CallSessionManager:
                     'is_pretranscribed': True,
                     'language': 'sw',
                     'processing_mode': session.processing_mode,
-                    'realtime_source': session.processing_mode != "postcall_only"
+                    'realtime_source': session.processing_mode != EnhancedProcessingMode.POST_CALL
                 }
                 audio_bytes = json.dumps(transcript_data).encode('utf-8')
                 is_pretranscribed = True  # Using existing transcript
+                filename = f"call_{call_id}_{session.start_time.strftime('%Y%m%d_%H%M%S')}.transcript"
                 logger.info(f"📝 [pipeline] Using existing transcript ({len(session.cumulative_transcript)} chars) for AI pipeline")
             
-            # Ensure audio_bytes is never None
-            if audio_bytes is None:
-                logger.error(f"❌ [pipeline] audio_bytes is None for {call_id}, cannot process")
+            # Ensure audio_bytes and filename are set
+            if audio_bytes is None or filename is None:
+                logger.error(f"❌ [pipeline] Missing required data for {call_id} (audio_bytes: {audio_bytes is not None}, filename: {filename is not None})")
                 return None
             
             # Configure pipeline based on post-call settings
@@ -415,7 +437,7 @@ class CallSessionManager:
                 language="sw",
                 include_translation=include_translation,
                 include_insights=include_insights,
-                processing_mode=session.processing_mode
+                processing_mode=session.processing_mode.value  # Pass enum value as string
             )
             
             # Store task reference
@@ -424,15 +446,15 @@ class CallSessionManager:
                 'task_id': task.id,
                 'submitted_at': datetime.now().isoformat(),
                 'status': 'processing',
-                'processing_mode': session.processing_mode,
+                'processing_mode': session.processing_mode.value,
                 'whisper_model': whisper_model,
                 'enhanced_transcription': not is_pretranscribed
             }
             
             if self.redis_client:
                 self.redis_client.hset(session_key, 'ai_pipeline', json.dumps(pipeline_info))
-            
-            logger.info(f"🤖 [pipeline] Triggered AI pipeline for call {call_id}, task: {task.id} (mode: {session.processing_mode})")
+
+            logger.info(f"🤖 [pipeline] Triggered AI pipeline for call {call_id}, task: {task.id} (mode: {session.processing_mode.value})")
             return task
             
         except Exception as e:
@@ -946,12 +968,17 @@ class CallSessionManager:
             download_method = download_config.get("method", "scp")
             
             logger.info(f"📥 [download] Starting audio download for call {call_id} using method: {download_method}")
-            
+
             # Download audio using configured method
+            # Pass None if config is empty so downloader uses settings
+            scp_config = download_config.get("config")
+            if scp_config == {}:
+                scp_config = None
+
             audio_bytes, download_info = await download_audio_by_method(
-                call_id, 
-                download_method, 
-                download_config.get("config", {})
+                call_id,
+                download_method,
+                scp_config
             )
             
             if audio_bytes is None:

@@ -228,6 +228,154 @@ def get_worker_status():
             "worker_pid": os.getpid()
         }
 
+def _send_pipeline_notifications(filename: str, result: Dict[str, Any], task_id: str):
+    """
+    Send notifications to the agent system after pipeline processing completes.
+    This runs synchronously in the Celery worker.
+    """
+    try:
+        # Extract call_id from filename (e.g., "call_1763027988.14_20251113_125949.wav16")
+        call_id = None
+        if filename and "call_" in filename:
+            parts = filename.replace("call_", "").split("_")
+            if parts:
+                call_id = parts[0]  # e.g., "1763027988.14"
+
+        if not call_id:
+            logger.warning(f"Could not extract call_id from filename: {filename}")
+            return
+
+        logger.info(f"📤 Sending pipeline notifications for call {call_id}")
+
+        # Import notification service
+        from ..services.enhanced_notification_service import (
+            notification_service as enhanced_notification_service,
+            NotificationType,
+            ProcessingMode,
+            NotificationStatus
+        )
+
+        # Determine processing mode (default to post_call if not specified)
+        processing_mode_value = "post_call"  # Default
+
+        # Create async loop for sending notifications
+        loop = None
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            # No running loop, create a new one
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        async def send_notifications():
+            """Send all post-call notifications"""
+
+            # 1. Send transcription notification
+            if result.get('transcript'):
+                await enhanced_notification_service.send_notification(
+                    call_id=call_id,
+                    notification_type=NotificationType.POST_CALL_TRANSCRIPTION,
+                    processing_mode=ProcessingMode(processing_mode_value),
+                    payload_data={
+                        "transcript": result['transcript'],
+                        "language": result.get('audio_info', {}).get('language_specified', 'sw'),
+                        "transcript_length": len(result['transcript'])
+                    }
+                )
+                logger.info(f"✅ Sent transcription notification for {call_id}")
+
+            # 2. Send translation notification
+            if result.get('translation'):
+                await enhanced_notification_service.send_notification(
+                    call_id=call_id,
+                    notification_type=NotificationType.POST_CALL_TRANSLATION,
+                    processing_mode=ProcessingMode(processing_mode_value),
+                    payload_data={
+                        "translation": result['translation'],
+                        "source_language": "sw",
+                        "target_language": "en",
+                        "translation_length": len(result['translation'])
+                    }
+                )
+                logger.info(f"✅ Sent translation notification for {call_id}")
+
+            # 3. Send entities notification
+            if result.get('entities'):
+                await enhanced_notification_service.send_notification(
+                    call_id=call_id,
+                    notification_type=NotificationType.POST_CALL_ENTITIES,
+                    processing_mode=ProcessingMode(processing_mode_value),
+                    payload_data={
+                        "entities": result['entities'],
+                        "entities_count": len(result['entities'])
+                    }
+                )
+                logger.info(f"✅ Sent entities notification for {call_id}")
+
+            # 4. Send classification notification
+            if result.get('classification'):
+                await enhanced_notification_service.send_notification(
+                    call_id=call_id,
+                    notification_type=NotificationType.POST_CALL_CLASSIFICATION,
+                    processing_mode=ProcessingMode(processing_mode_value),
+                    payload_data={
+                        "classification": result['classification']
+                    }
+                )
+                logger.info(f"✅ Sent classification notification for {call_id}")
+
+            # 5. Send QA scoring notification
+            if result.get('qa_scores'):
+                await enhanced_notification_service.send_notification(
+                    call_id=call_id,
+                    notification_type=NotificationType.POST_CALL_QA_SCORING,
+                    processing_mode=ProcessingMode(processing_mode_value),
+                    payload_data={
+                        "qa_scores": result['qa_scores']
+                    }
+                )
+                logger.info(f"✅ Sent QA scoring notification for {call_id}")
+
+            # 6. Send summary notification
+            if result.get('summary'):
+                await enhanced_notification_service.send_notification(
+                    call_id=call_id,
+                    notification_type=NotificationType.POST_CALL_SUMMARY,
+                    processing_mode=ProcessingMode(processing_mode_value),
+                    payload_data={
+                        "summary": result['summary'],
+                        "insights": result.get('insights')
+                    }
+                )
+                logger.info(f"✅ Sent summary notification for {call_id}")
+
+            # 7. Send final completion notification
+            await enhanced_notification_service.send_notification(
+                call_id=call_id,
+                notification_type=NotificationType.POST_CALL_COMPLETE,
+                processing_mode=ProcessingMode(processing_mode_value),
+                payload_data={
+                    "processing_time": result.get('pipeline_info', {}).get('total_time', 0),
+                    "models_used": result.get('pipeline_info', {}).get('models_used', []),
+                    "status": "completed"
+                },
+                status=NotificationStatus.SUCCESS
+            )
+            logger.info(f"✅ Sent completion notification for {call_id}")
+
+        # Run the async function
+        if loop.is_running():
+            # If event loop is already running (shouldn't happen in Celery worker)
+            asyncio.create_task(send_notifications())
+        else:
+            # Run until complete
+            loop.run_until_complete(send_notifications())
+
+        logger.info(f"📤 All notifications sent successfully for call {call_id}")
+
+    except Exception as e:
+        logger.error(f"Failed to send pipeline notifications: {e}", exc_info=True)
+
 @celery_app.task(bind=True, name="process_audio_task")
 def process_audio_task(self, audio_bytes, filename, language=None, include_translation=True, include_insights=True, processing_mode=None):
     """Simplified error handling to avoid serialization issues"""
@@ -865,13 +1013,19 @@ def _process_audio_sync_worker(
     
     # Publish final result
     publish_update(
-        "completed", 
-        100, 
+        "completed",
+        100,
         f"Audio processing completed in {total_processing_time:.2f}s",
         partial_result=result,
         metadata={"total_duration": total_processing_time}
     )
-    
+
+    # Send notifications to agent system
+    try:
+        _send_pipeline_notifications(filename, result, task_id)
+    except Exception as e:
+        logger.error(f"Failed to send pipeline notifications: {e}")
+
     return result
 
 # Add the quick task with similar pattern
