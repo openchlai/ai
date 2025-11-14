@@ -454,7 +454,6 @@ def summarization_summarize_task(self, text: str, max_length: int = 256) -> Dict
 
 
 # QA TASK
-
 @celery_app.task(bind=True, name="qa_evaluate_task")
 def qa_evaluate_task(
     self, 
@@ -497,16 +496,9 @@ def qa_evaluate_task(
         token_count = chunker.count_tokens(transcript)
         MAX_SOURCE_LENGTH = 512
         
-        chunk_info = {
-            "total_chunks": 1,
-            "token_count": token_count,
-            "chunking_applied": False,
-            "chunk_predictions": []
-        }
-        
         if token_count <= MAX_SOURCE_LENGTH:
             # Direct evaluation
-            logger.info(f" QA evaluation - no chunking: {token_count} tokens")
+            logger.info(f"✅ QA evaluation - no chunking: {token_count} tokens")
             evaluation_result = qa_model.predict(
                 transcript,
                 threshold=threshold,
@@ -517,15 +509,6 @@ def qa_evaluate_task(
             logger.info(f"📦 QA chunking: {token_count} tokens > {MAX_SOURCE_LENGTH}")
             
             chunks = chunker.chunk_transcript(transcript)
-            chunk_info.update({
-                "total_chunks": len(chunks),
-                "chunking_applied": True,
-                "chunk_details": [{
-                    "chunk_index": chunk['chunk_index'],
-                    "token_count": chunk['token_count'],
-                    "sentence_count": chunk['sentence_count']
-                } for chunk in chunks]
-            })
             
             # Evaluate each chunk
             chunk_predictions = []
@@ -537,13 +520,6 @@ def qa_evaluate_task(
                     threshold=threshold,
                     return_raw=True
                 )
-                
-                chunk_pred_data = {
-                    'chunk_index': i,
-                    'token_count': chunk_item['token_count'],
-                    'predictions': chunk_result
-                }
-                chunk_info['chunk_predictions'].append(chunk_pred_data)
                 chunk_predictions.append(chunk_result)
             
             # Aggregate results
@@ -553,33 +529,28 @@ def qa_evaluate_task(
             
             if aggregated_result and aggregated_result['success']:
                 evaluation_result = aggregated_result['predictions']
-                chunk_info['aggregation_success'] = True
-                chunk_info['aggregation_method'] = 'confidence_weighted_voting'
             else:
                 # Fallback aggregation
                 logger.error("QA aggregation failed, using fallback")
                 evaluation_result = _fallback_qa_aggregation(chunk_predictions)
-                chunk_info['aggregation_success'] = False
-                chunk_info['aggregation_method'] = 'fallback_majority_voting'
         
         processing_time = (datetime.now() - start_time).total_seconds()
         model_info = qa_model.get_model_info()
         
-        logger.info(f" QA evaluation complete: {processing_time:.3f}s")
+        logger.info(f"✅ QA evaluation complete: {processing_time:.3f}s")
         
+        # ← CLEAN RESPONSE: No chunk_info at all
         return {
             "evaluations": evaluation_result,
             "processing_time": processing_time,
             "model_info": model_info,
             "timestamp": datetime.now().isoformat(),
-            "chunk_info": chunk_info,
             "task_id": self.request.id
         }
         
     except Exception as e:
-        logger.error(f" QA task failed: {e}")
+        logger.error(f"❌ QA task failed: {e}")
         raise
-
 
 def _fallback_qa_aggregation(chunk_predictions):
     """Fallback aggregation for QA if primary method fails"""

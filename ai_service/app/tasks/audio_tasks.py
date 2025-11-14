@@ -738,30 +738,44 @@ def _process_audio_sync_worker(
         state="PROCESSING",
         meta={"step": "qa_scoring", "progress": 90}
     )
+    publish_update("qa_scoring", 90, "Running quality assurance evaluation...")
+
     step_start = datetime.now()
     try:
+        # ← FIXED: Import QA model directly (same as standalone QA endpoint)
+        from ..model_scripts.qa_model import qa_model
+        
+        if not qa_model.is_ready():
+            raise RuntimeError("QA model not ready")
+        
+        qa_score = qa_model.predict(nlp_text, threshold=threshold, return_raw=return_raw)
 
-    
-        qa_score_model = models.models.get("all_qa_distilbert_v1")
-        if not qa_score_model:
-            raise RuntimeError("QA model not available")
-        # threshold = 0.5  # Default threshold
-        # return_raw  = False  # Default to not return raw scores
-        qa_score = qa_score_model.predict(nlp_text, threshold=threshold, return_raw=return_raw)
-        print(f"QA Score: {qa_score}")
-        logger.info(f"QA Score: {qa_score}")
-        logger.info(".........................................................................................................")
+        qa_duration = (datetime.now() - step_start).total_seconds()
+        
+        publish_update(
+            "qa_scoring_complete", 
+            92, 
+            "Quality assurance evaluation completed",
+            partial_result={"qa_scores": qa_score},
+            metadata={"duration": qa_duration}
+        )
+        
+        logger.info(f"✅ QA Scoring completed in {qa_duration:.3f}s")
+        
         qa_status = {
             "result": qa_score,
-            "duration": (datetime.now() - step_start).total_seconds(),
+            "duration": qa_duration,
             "status": "completed"
         }
 
-
     except Exception as e:
+        qa_duration = (datetime.now() - step_start).total_seconds()
+        publish_update("qa_scoring_error", 90, f"QA scoring failed: {str(e)}")
+        logger.error(f"❌ QA scoring failed: {e}")
+        
         qa_status = {
             "result": {},
-            "duration": (datetime.now() - step_start).total_seconds(),
+            "duration": qa_duration,
             "status": "failed",
             "error": str(e)
         }
@@ -827,6 +841,12 @@ def _process_audio_sync_worker(
                 "duration": classifier_status["duration"],
                 "status": classifier_status["status"],
                 "confidence": classifier_status["result"].get("confidence", 0) if classifier_status["result"] else 0
+            },
+
+            "qa_scoring": {  
+                "duration": qa_status["duration"],
+                "status": qa_status["status"],
+                "evaluations_count": len(qa_status["result"]) if qa_status["result"] else 0
             },
             "summarization": {
                 "duration": summary_status["duration"],
@@ -924,7 +944,7 @@ def process_audio_quick_task(
 
 def _generate_insights(transcript: str, translation: Optional[str], 
                       entities: Dict, classification: Dict, summary: str, qa_scores: Dict) -> Dict[str, Any]:
-    """Generate basic insights from processed data"""
+    """Generate basic insights from processed data including QA evaluation"""
     
     persons = entities.get("PERSON", [])
     locations = entities.get("LOC", []) + entities.get("GPE", [])
@@ -936,6 +956,29 @@ def _generate_insights(transcript: str, translation: Optional[str],
     # Basic risk assessment
     risk_keywords = ["suicide", "abuse", "violence", "threat", "danger", "crisis", "emergency"]
     risk_score = sum(1 for keyword in risk_keywords if keyword.lower() in primary_text.lower())
+    
+    # Calculate QA summary metrics if QA scores are available
+    qa_summary = None
+    if qa_scores and isinstance(qa_scores, dict):
+        total_metrics = 0
+        passed_metrics = 0
+        
+        for category, metrics in qa_scores.items():
+            if isinstance(metrics, list):
+                for metric in metrics:
+                    total_metrics += 1
+                    if metric.get("prediction", False):
+                        passed_metrics += 1
+        
+        if total_metrics > 0:
+            pass_rate = (passed_metrics / total_metrics) * 100
+            qa_summary = {
+                "total_metrics_evaluated": total_metrics,
+                "metrics_passed": passed_metrics,
+                "metrics_failed": total_metrics - passed_metrics,
+                "pass_rate_percentage": round(pass_rate, 1),
+                "overall_quality": "excellent" if pass_rate >= 80 else "good" if pass_rate >= 60 else "fair" if pass_rate >= 40 else "needs_improvement"
+            }
     
     return {
         "case_overview": {
@@ -964,9 +1007,11 @@ def _generate_insights(transcript: str, translation: Optional[str],
             "persons": persons[:5],
             "locations": locations[:3],
             "organizations": organizations[:3],
-            "key_dates": dates[:3],
-            # "qa_scores": qa_scores if qa_scores else {}
-
+            "key_dates": dates[:3]
+        },
+        "quality_assurance": qa_summary if qa_summary else {
+            "status": "not_evaluated",
+            "message": "QA evaluation not available"
         }
     }
     
