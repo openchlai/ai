@@ -39,7 +39,17 @@ async def download_audio_via_scp(call_id: str, scp_config: Dict[str, Any] = None
     
     # Format remote path with call_id
     remote_path = scp_config["remote_path_template"].format(call_id=call_id)
-    
+
+    # Detect format from file extension
+    if remote_path.endswith('.wav16'):
+        file_format = "wav16"
+    elif remote_path.endswith('.wav'):
+        file_format = "wav"
+    elif remote_path.endswith('.gsm'):
+        file_format = "gsm"
+    else:
+        file_format = "unknown"
+
     download_info = {
         "call_id": call_id,
         "server": scp_config["server"],
@@ -49,14 +59,15 @@ async def download_audio_via_scp(call_id: str, scp_config: Dict[str, Any] = None
         "file_size_bytes": 0,
         "file_size_mb": 0.0,
         "error": None,
-        "format": "gsm"
+        "format": file_format
     }
     
     logger.info(f"📥 [scp] Starting audio download for call {call_id}")
     logger.info(f"📥 [scp] Remote: {scp_config['user']}@{scp_config['server']}:{remote_path}")
-    
-    # Create temporary file for download
-    with tempfile.NamedTemporaryFile(suffix='.gsm', delete=False) as temp_file:
+
+    # Create temporary file for download with appropriate extension
+    file_extension = remote_path.split('.')[-1] if '.' in remote_path else 'dat'
+    with tempfile.NamedTemporaryFile(suffix=f'.{file_extension}', delete=False) as temp_file:
         temp_path = temp_file.name
     
     try:
@@ -98,8 +109,8 @@ async def download_audio_via_scp(call_id: str, scp_config: Dict[str, Any] = None
                     "file_size_bytes": file_size_bytes,
                     "file_size_mb": round(file_size_bytes / (1024 * 1024), 2)
                 })
-                
-                logger.info(f"✅ [scp] Downloaded {download_info['file_size_mb']:.2f}MB audio file: {call_id}.gsm")
+
+                logger.info(f"✅ [scp] Downloaded {download_info['file_size_mb']:.2f}MB audio file ({file_format} format)")
                 
                 return audio_bytes, download_info
             else:

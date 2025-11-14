@@ -188,6 +188,10 @@ class Settings(BaseSettings):
     notification_basic_auth: str = "dGVzdDpwQHNzdzByZA=="
     notification_request_timeout: int = 10
     notification_max_retries: int = 3
+
+    # Agent Payload Logging (for UI development)
+    enable_agent_payload_logging: bool = False
+    agent_payload_log_file: str = "./logs/agent_payloads.jsonl"
     
     def get_model_path(self, model_name: str) -> str:
         """Get absolute path for a model"""
