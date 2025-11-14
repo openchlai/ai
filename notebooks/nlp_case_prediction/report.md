@@ -1,6 +1,6 @@
 ---
 title: Classification Model Evaluation — Comparative Performance Across Datasets
-author: Gemini CLI
+author: Peter Rogendo
 date: November 10, 2025
 geometry: "a4paper, margin=2cm"
 ---
