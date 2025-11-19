@@ -125,35 +125,6 @@ class Settings(BaseSettings):
     adaptive_long_call_threshold: int = 600  # seconds
     adaptive_high_priority_keywords: str = "emergency,urgent,critical,suicide,violence,abuse"
     
-    # Agent Feedback Audio Preprocessing Configuration
-    enable_feedback_preprocessing: bool = True
-    feedback_workspace_dir: str = "feedback_audio_workspace"
-    
-    # Audio Quality Thresholds
-    stage1_speech_ratio_threshold: float = 0.7
-    stage1_vad_snr_threshold: float = 10.0
-    stage2_speech_ratio_threshold: float = 0.9
-    stage2_vad_snr_threshold: float = 25.0
-    
-    # Chunking parameters
-    min_chunk_duration: float = 3.0
-    max_chunk_duration: float = 30.0
-    target_chunk_duration: float = 12.0
-    chunk_tolerance: float = 2.0
-    
-    # AWS S3 Configuration for Audio Chunk Storage
-    aws_access_key_id: str = ""
-    aws_secret_access_key: str = ""
-    aws_region: str = "us-east-1"
-    s3_bucket_name: str = "ai-service-audio-chunks"
-    s3_audio_prefix: str = "feedback-chunks"
-    s3_presigned_url_expiry: int = 3600
-    
-    # Label Studio Integration
-    label_studio_url: str = ""
-    label_studio_api_key: str = ""
-    label_studio_project_id: int = 1
-    
     # SCP Audio Download Configuration
     scp_user: str = "helpline"
     scp_server: str = "192.168.10.3"
