@@ -5,9 +5,13 @@ from pathlib import Path
 import redis
 
 class Settings(BaseSettings):
+    # database
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./ai_service.db")
+    
     # Application
     app_name: str = "AI Pipeline"
     app_version: str = "0.1.0"
+    app_port: int = 8125
     debug: bool = True
     log_level: str = "INFO"
     
@@ -36,6 +40,9 @@ class Settings(BaseSettings):
     logs_path: str = "./logs"
     temp_path: str = "./temp"
     
+    # Hugging Face configuration (read from environment)
+    hf_token: Optional[str]
+    
     # Redis Configuration
     redis_url: str = "redis://localhost:6379/0"
     redis_task_db: int = 1
@@ -59,10 +66,30 @@ class Settings(BaseSettings):
     docker_container: bool = False
     
     # Processing Mode Configuration
-    default_processing_mode: str = "postcall_only"  # realtime_only, postcall_only, hybrid, adaptive
-    enable_realtime_processing: bool = False
+    default_processing_mode: str = "dual"  # streaming, post_call, dual, adaptive
+    enable_streaming_processing: bool = True
     enable_postcall_processing: bool = True
     enable_scp_audio_download: bool = True
+
+    # Notification Configuration v2.0
+
+    notification_auth_token: str = "default_token"  # Should be from env
+    notification_retry_attempts: int = 3
+    notification_retry_delay: int = 2  # seconds
+    notification_version: str = "2.0"
+    use_base64_encoding: bool = False  # Prefer direct JSON
+    enable_ui_metadata: bool = True
+    notification_batch_size: int = 1  # Future: batch notifications
+
+    # Notification retry settings
+    notification_retry_attempts: int = 3
+    notification_retry_delay: int = 2  # seconds
+    
+    # Streaming Configuration
+    streaming_transcription_interval: int = 5  # seconds
+    streaming_translation_interval: int = 30  # seconds
+    streaming_entity_update_interval: int = 30
+    streaming_classification_update_interval: int = 30
     
     # Real-time Processing Configuration
     realtime_min_window_chars: int = 150
@@ -75,7 +102,7 @@ class Settings(BaseSettings):
     realtime_enable_agent_notifications: bool = True
     
     # Post-call Processing Configuration
-    postcall_audio_download_method: str = "scp"  # scp, http, local, disabled
+    postcall_audio_download_method: str = "scp"
     postcall_enable_full_pipeline: bool = True
     postcall_enable_enhanced_transcription: bool = True
     postcall_enable_audio_quality_improvement: bool = True
@@ -84,16 +111,48 @@ class Settings(BaseSettings):
     postcall_enable_noise_reduction: bool = True
     postcall_download_timeout_seconds: int = 60
     postcall_convert_to_wav: bool = True
-    postcall_enable_insights_generation: bool = True
+    postcall_enable_insights: bool = True
     postcall_enable_qa_scoring: bool = True
+    postcall_enable_summary: bool = True
+    postcall_processing_timeout: int = 300  # seconds
+    postcall_enable_insights_generation: bool = True
     postcall_enable_summarization: bool = True
     postcall_notify_completion: bool = True
     postcall_send_unified_insights: bool = True
     
-    # Adaptive Processing Rules
-    adaptive_short_call_threshold_seconds: int = 30
-    adaptive_long_call_threshold_seconds: int = 600
-    adaptive_high_priority_keywords: str = "emergency,urgent,critical,suicide,violence,accident,medical,police,fire,ambulance"
+    # Adaptive Rules
+    adaptive_short_call_threshold: int = 30  # seconds
+    adaptive_long_call_threshold: int = 600  # seconds
+    adaptive_high_priority_keywords: str = "emergency,urgent,critical,suicide,violence,abuse"
+    
+    # Agent Feedback Audio Preprocessing Configuration
+    enable_feedback_preprocessing: bool = True
+    feedback_workspace_dir: str = "feedback_audio_workspace"
+    
+    # Audio Quality Thresholds
+    stage1_speech_ratio_threshold: float = 0.7
+    stage1_vad_snr_threshold: float = 10.0
+    stage2_speech_ratio_threshold: float = 0.9
+    stage2_vad_snr_threshold: float = 25.0
+    
+    # Chunking parameters
+    min_chunk_duration: float = 3.0
+    max_chunk_duration: float = 30.0
+    target_chunk_duration: float = 12.0
+    chunk_tolerance: float = 2.0
+    
+    # AWS S3 Configuration for Audio Chunk Storage
+    aws_access_key_id: str = ""
+    aws_secret_access_key: str = ""
+    aws_region: str = "us-east-1"
+    s3_bucket_name: str = "ai-service-audio-chunks"
+    s3_audio_prefix: str = "feedback-chunks"
+    s3_presigned_url_expiry: int = 3600
+    
+    # Label Studio Integration
+    label_studio_url: str = ""
+    label_studio_api_key: str = ""
+    label_studio_project_id: int = 1
     
     # SCP Audio Download Configuration
     scp_user: str 
@@ -101,6 +160,13 @@ class Settings(BaseSettings):
     scp_password: str 
     scp_remote_path_template: str = "/home/dat/helpline/calls/{call_id}.gsm"
     scp_timeout_seconds: int = 30
+    
+    # Whisper Model Configuration
+    whisper_model_variant: str = "large_v3"
+    translation_strategy: str = "whisper_builtin"
+    whisper_large_v3_path: str = "./models/whisper_large_v3"
+    whisper_large_turbo_path: str = "./models/whisper_large_turbo"
+    whisper_active_symlink: str = "./models/whisper"
     
     # HuggingFace Hub Configuration
     use_hf_models: bool = True
@@ -117,33 +183,38 @@ class Settings(BaseSettings):
     # Agent Notification Configuration
     enable_agent_notifications: bool = True
     notification_mode: str = "results_only"
-    notification_endpoint_url: str
-    notification_auth_endpoint_url: str 
-    notification_basic_auth: str 
+    notification_endpoint_url: str = "https://192.168.10.3/hh5aug2025/api/msg/"
+    notification_auth_endpoint_url: str = "https://192.168.10.3/hh5aug2025/api/"
+    notification_basic_auth: str = "dGVzdDpwQHNzdzByZA=="
     notification_request_timeout: int = 10
     notification_max_retries: int = 3
+
+    # Agent Payload Logging (for UI development)
+    enable_agent_payload_logging: bool = False
+    agent_payload_log_file: str = "./logs/agent_payloads.jsonl"
     
     def get_model_path(self, model_name: str) -> str:
         """Get absolute path for a model"""
         return os.path.join(self.models_path, model_name)
     
-    # def get_active_whisper_path(self) -> str:
-    #     """Get path to the currently active whisper model"""
-    #     if self.use_hf_models:
-    #         # Use the ASR model from .env configuration
-    #         return self.hf_asr_model
-    #     else:
-    #         if self.whisper_model_variant == "large_v3":
-    #             return os.path.abspath(self.whisper_large_v3_path)
-    #         elif self.whisper_model_variant == "large_turbo":
-    #             return os.path.abspath(self.whisper_large_turbo_path)
-    #         else:
-    #             return os.path.abspath(self.whisper_active_symlink)
+    def get_active_whisper_path(self) -> str:
+        """Get path to the currently active whisper model"""
+        if self.use_hf_models:
+            # Use the ASR model from .env configuration
+            return self.hf_asr_model
+        else:
+            if self.whisper_model_variant == "large_v3":
+                return os.path.abspath(self.whisper_large_v3_path)
+            elif self.whisper_model_variant == "large_turbo":
+                return os.path.abspath(self.whisper_large_turbo_path)
+            else:
+                return os.path.abspath(self.whisper_active_symlink)
     
     def _get_hf_model_id(self, model_name: str) -> str:
         """Get HuggingFace model ID"""
         model_id_map = {
-            "asr_model": self.hf_asr_model,
+            "whisper_large_v3": self.hf_asr_model,
+            "whisper_large_turbo": self.hf_asr_model,  # Use same ASR model for turbo
             "classifier": self.hf_classifier_model,
             "ner": self.hf_ner_model,
             "translator": self.hf_translator_model,
@@ -164,14 +235,6 @@ class Settings(BaseSettings):
         if self.hf_token:
             kwargs["token"] = self.hf_token
         return kwargs
-    
-    def get_asr_model_id(self) -> str:
-        """Return the HuggingFace ASR model id from configuration.
-        Falls back to a sensible id built from hf_organization if not set.
-        """
-        if self.hf_asr_model:
-            return self.hf_asr_model
-        return self._get_hf_model_id("asr_model")
 
     # --- Translation helpers -------------------------------------------------
     def get_translator_model_id(self) -> str:
@@ -258,48 +321,40 @@ class Settings(BaseSettings):
     
     def initialize_paths(self):
         """Initialize paths - called explicitly, not at import time"""
-        # Auto-detect Docker environment
         self.docker_container = os.getenv("DOCKER_CONTAINER") is not None or os.path.exists("/.dockerenv")
         
-        # Auto-detect paths based on environment
         if self.docker_container:
-            # Docker environment: use /app paths
             if self.models_path == "./models":
                 self.models_path = "/app/models"
             if self.logs_path == "./logs":
                 self.logs_path = "/app/logs"
             if self.temp_path == "./temp":
                 self.temp_path = "/app/temp"
-            print("🐳 Docker environment detected - using /app paths")
+            print("Docker environment detected - using /app paths")
         else:
-            # Local development: use relative paths
-            print("💻 Local development environment detected - using relative paths")
+            print("Local development environment detected - using relative paths")
         
-        # Convert to absolute paths
         self.models_path = os.path.abspath(self.models_path)
         self.logs_path = os.path.abspath(self.logs_path)
         self.temp_path = os.path.abspath(self.temp_path)
         
-        # Create directories if they don't exist
         os.makedirs(self.models_path, exist_ok=True)
         os.makedirs(self.logs_path, exist_ok=True)
         os.makedirs(self.temp_path, exist_ok=True)
         
-        # Debug output
-        print(f"📁 Models path: {self.models_path}")
-        print(f"📁 Models exists: {os.path.exists(self.models_path)}")
-        print(f"🔧 Environment: {'Docker' if self.docker_container else 'Local'}")
+        print(f"Models path: {self.models_path}")
+        print(f"Models exists: {os.path.exists(self.models_path)}")
+        print(f"Environment: {'Docker' if self.docker_container else 'Local'}")
         
         return self.models_path
     
     class Config:
         env_file = ".env"
         case_sensitive = False
+        extra = "allow" # Temporarily allow extra fields to prevent validation errors
 
-# Initialize settings (but don't call path initialization at import time)
 settings = Settings()
 
-# Redis clients with error handling - but don't connect at import time
 redis_client = None
 redis_task_client = None
 
@@ -319,13 +374,12 @@ def initialize_redis():
         redis_client = redis.from_url(redis_url)
         redis_task_client = redis.from_url(f"{redis_url.rsplit('/', 1)[0]}/{settings.redis_task_db}")
         
-        # Test connection
         redis_client.ping()
-        print(f"✅ Redis connected: {redis_url}")
+        print(f"Redis connected: {redis_url}")
         return True
         
     except Exception as e:
-        print(f"⚠️ Redis connection failed: {e}")
+        print(f"Redis connection failed: {e}")
         redis_client = None
         redis_task_client = None
         return False

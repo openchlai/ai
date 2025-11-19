@@ -1,7 +1,7 @@
 <template>
-  <div class="app-container">
+  <div>
     <!-- SidePanel Component -->
-    <SidePanel 
+    <SidePanel
       :userRole="userRole"
       :isInQueue="isInQueue"
       :isProcessingQueue="isProcessingQueue"
@@ -12,1549 +12,1517 @@
     />
 
     <!-- Main Content -->
-<<<<<<< HEAD
     <div class="main-content">
-      <div class="calls-container" :class="{ 'chat-panel-open': showChatPanel }">
+      <div class="page-container">
+        <!-- Header -->
         <div class="header">
-          <h1 class="page-title">All Chats</h1>
-              <div class="header-actions">
-            <button class="theme-toggle" @click="toggleTheme" id="theme-toggle">
-              <svg v-if="currentTheme === 'dark'" id="moon-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-              <svg v-else id="sun-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <line x1="12" y1="1" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <line x1="12" y1="21" x2="12" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <line x1="1" y1="12" x2="3" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <line x1="21" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-              <span id="theme-text">{{ currentTheme === 'dark' ? 'Light Mode' : 'Dark Mode' }}</span>
-                </button>
-              </div>
-            </div>
-        <!-- Channel Filters as View Tabs -->
-        <div class="channel-filters" role="tablist" aria-label="Chat Channels">
-          <div v-for="platform in channelFilters" :key="platform.id" :class="['channel-pill', { active: activePlatform === platform.id }]" @click="setActivePlatform(platform.id)" role="tab" :aria-selected="activePlatform === platform.id" tabindex="0">
+          <div class="header-content">
+            <h1>Chats</h1>
+            <p>Manage conversations and communications across all channels</p>
+        </div>
+        </div>
+
+        <!-- Channel Filters -->
+        <div class="channel-filters">
+          <div
+            v-for="platform in channelFilters"
+            :key="platform.id"
+            :class="[
+              'channel-pill',
+              { active: activePlatform === platform.id },
+            ]"
+            @click="setActivePlatform(platform.id)"
+          >
             {{ platform.name }}
           </div>
-          </div>
-        <!-- Search and Toggle Row -->
-        <div class="search-and-toggle-row">
-=======
-    <div class="main-content chat-main-layout">
-      <div class="chat-list-section">
-        <div class="calls-container" :class="{ 'chat-panel-open': showChatPanel }">
-          <div class="header">
-            <h1 class="page-title">All Chats</h1>
-            <div class="header-actions">
-              <button class="theme-toggle" @click="toggleTheme" id="theme-toggle">
-                <svg v-if="currentTheme === 'dark'" id="moon-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <svg v-else id="sun-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <line x1="12" y1="1" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <line x1="12" y1="21" x2="12" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <line x1="1" y1="12" x2="3" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <line x1="21" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <span id="theme-text">{{ currentTheme === 'dark' ? 'Light Mode' : 'Dark Mode' }}</span>
-              </button>
-            </div>
-          </div>
-          <!-- Channel Filters as View Tabs -->
-          <div class="channel-filters" role="tablist" aria-label="Chat Channels">
-            <div v-for="platform in channelFilters" :key="platform.id" :class="['channel-pill', { active: activePlatform === platform.id }]" @click="setActivePlatform(platform.id)" role="tab" :aria-selected="activePlatform === platform.id" tabindex="0">
-              {{ platform.name }}
-            </div>
-          </div>
-          <!-- Search and Toggle Row -->
-          <div class="search-and-toggle-row">
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
-            <div class="search-container">
-              <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
-                <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2"/>
+        </div>
+
+        <!-- Search and View Controls -->
+        <div class="controls-section">
+          <div class="search-container">
+            <svg
+              class="search-icon"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+              <circle
+                cx="11"
+                cy="11"
+                r="8"
+                stroke="currentColor"
+                stroke-width="2"
+              />
+              <path
+                d="M21 21l-4.35-4.35"
+                stroke="currentColor"
+                stroke-width="2"
+              />
+            </svg>
+            <input
+              v-model="searchQuery"
+              type="text"
+              class="search-input"
+              placeholder="Search conversations..."
+              @input="handleSearch"
+            />
+            <button
+              v-if="searchQuery"
+              class="search-clear"
+              @click="clearSearch"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <line
+                  x1="18"
+                  y1="6"
+                  x2="6"
+                  y2="18"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
+                <line
+                  x1="6"
+                  y1="6"
+                  x2="18"
+                  y2="18"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
               </svg>
-<<<<<<< HEAD
-          <input v-model="searchQuery" type="text" class="search-input" placeholder="Search conversations..." @input="handleSearch" />
-=======
-              <input v-model="searchQuery" type="text" class="search-input" placeholder="Search conversations..." @input="handleSearch" />
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
-              <button v-if="searchQuery" class="search-clear" @click="clearSearch">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                  <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
-                  <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
-                </svg>
-              </button>
-            </div>
-<<<<<<< HEAD
-          <div class="view-toggle-pills" role="tablist" aria-label="View Mode">
-            <div class="view-toggle-pill" :class="{ active: activeView === 'timeline' }" @click="activeView = 'timeline'" role="tab" :aria-selected="activeView === 'timeline'" tabindex="0">Timeline</div>
-            <div class="view-toggle-pill" :class="{ active: activeView === 'table' }" @click="activeView = 'table'" role="tab" :aria-selected="activeView === 'table'" tabindex="0">Table View</div>
-          </div>
-            </div>
-        <!-- Timeline View -->
-        <div class="view-container" v-show="activeView === 'timeline'">
-          <div v-if="groupedMessagesByDayWithDummy['Today'].length === 0 && groupedMessagesByDayWithDummy['Yesterday'].length === 0" class="no-chats">No chats to display.</div>
-          <div class="time-section" v-for="(group, label) in groupedMessagesByDayWithDummy" :key="label">
-            <h2 class="time-section-title">{{ label }}</h2>
-            <div class="call-list">
-              <div v-for="message in group" :key="message.id" :class="['call-item', 'glass-card', 'fine-border', { selected: selectedMessageId === message.id }]" @click="openChatPanel(message)">
-                <div class="call-icon">
-                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-                  </svg>
-                  </div>
-                <div class="call-details">
-                  <div class="call-type">{{ message.senderName }} ({{ getPlatformShortName(message.platform) }})</div>
-                  <div class="call-time">{{ message.time }}</div>
-                  <div class="call-meta">
-                    <span class="case-link">{{ message.text }}</span>
-                </div>
-                      </div>
-                    </div>
-                  </div>
-                    </div>
-                  </div>
-        <!-- Table View -->
-        <div class="view-container" v-show="activeView === 'table'">
-          <div v-if="filteredChats.length > 0" class="calls-table-container">
-            <table class="calls-table">
-              <thead>
-                <tr>
-                  <th>Contact</th>
-                  <th>Platform</th>
-                  <th>Last Message</th>
-                  <th>Time</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="contact in filteredChats" :key="contact.id">
-                  <td>{{ contact.senderName }}</td>
-                  <td>{{ getPlatformShortName(contact.platform) }}</td>
-                  <td>{{ contact.text }}</td>
-                  <td>{{ contact.time }}</td>
-                  <td><span :class="['status-badge', contact.status]">{{ contact.status }}</span></td>
-                </tr>
-              </tbody>
-            </table>
-                </div>
-          <tbody v-else>
-            <tr><td colspan="5" class="no-chats">No chats to display.</td></tr>
-          </tbody>
-              </div>
-            </div>
-      <!-- Chat Panel Modal (Centered) -->
-      <div v-if="showChatPanel" class="chat-modal-overlay" @click.self="closeChatPanel" role="dialog" aria-modal="true">
-        <div class="chat-modal-panel">
-          <div class="chat-details-header">
-            <div class="chat-details-avatar">
-              <div class="avatar-circle" :style="{ background: getAvatarColor(selectedMessage?.senderName || '') }">
-                {{ selectedMessage?.senderName?.charAt(0) || '?' }}
-          </div>
-              <div class="chat-details-title">
-                <span class="contact-name">{{ selectedMessage?.senderName || 'Chat Details' }}</span>
-                <span class="chat-channel-badge">{{ getPlatformShortName(selectedMessage?.platform) }}</span>
-                <span class="chat-status">{{ selectedMessage?.status || 'Active' }}</span>
-        </div>
-              </div>
-            <div class="chat-header-actions">
-              <button class="end-chat-btn" @click="endChat" title="End Chat (Archive)">
-                <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-              <button class="close-details" @click="closeChatPanel" aria-label="Close chat panel">×</button>
-            </div>
-          </div>
-          <div class="chat-details-actions">
-            <button class="chat-action-btn view" @click="viewCase" title="View Case">
-              <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/></svg>
-              </button>
-            <button class="chat-action-btn link" @click="linkToCase" title="Link to Case">
-              <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 1 7 7l-3 3a5 5 0 0 1-7-7l1-1"/><path d="M14 11a5 5 0 0 0-7-7l-3 3a5 5 0 0 0 7 7l1-1"/></svg>
-              </button>
-            <button class="chat-action-btn create" @click="createCase" title="Create Case">
-              <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12h6"/><path d="M12 9v6"/></svg>
-              </button>
-            <button class="chat-action-btn reporter" @click="editReporter" title="Add/Edit Reporter">
-              <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M5.5 21a8.38 8.38 0 0 1 13 0"/></svg>
             </button>
-            <button class="chat-action-btn archive" @click="archiveChat" title="Archive">
-              <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M3 7h18"/></svg>
-              </button>
-            </div>
-          <div class="chat-details-content">
-            <div class="chat-thread whatsapp-style">
-              <div v-for="msg in simulatedChatThread" :key="msg.id" :class="['chat-bubble', msg.sender === 'counsellor' ? 'sent' : 'received']">
-                <div class="bubble-text">{{ msg.text }}</div>
-                <div class="bubble-time">{{ msg.time }}</div>
           </div>
+
+          <div class="view-toggle">
+            <button
+              class="view-btn"
+          :class="{ active: activeView === 'timeline' }"
+          @click="activeView = 'timeline'"
+        >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2"/>
+                <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2"/>
+                <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2"/>
+              </svg>
+          Timeline
+            </button>
+            <button
+              class="view-btn"
+          :class="{ active: activeView === 'table' }"
+          @click="activeView = 'table'"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke="currentColor" stroke-width="2"/>
+                <line x1="9" y1="9" x2="15" y2="9" stroke="currentColor" stroke-width="2"/>
+                <line x1="9" y1="13" x2="15" y2="13" stroke="currentColor" stroke-width="2"/>
+                <line x1="9" y1="17" x2="15" y2="17" stroke="currentColor" stroke-width="2"/>
+              </svg>
+              Table
+            </button>
         </div>
-            <div class="message-input-area chat-panel-input">
-            <div class="input-container">
-                <input v-model="newMessageText" type="text" class="message-input" placeholder="Type a message..." @keypress.enter="sendMessage" />
-                <button v-if="newMessageText.trim()" class="send-btn" @click="sendMessage" title="Send">Send</button>
-              </div>
-            </div>
-            </div>
-          </div>
-        </div>
-=======
-            <div class="view-toggle-pills" role="tablist" aria-label="View Mode">
-              <div class="view-toggle-pill" :class="{ active: activeView === 'timeline' }" @click="activeView = 'timeline'" role="tab" :aria-selected="activeView === 'timeline'" tabindex="0">Timeline</div>
-              <div class="view-toggle-pill" :class="{ active: activeView === 'table' }" @click="activeView = 'table'" role="tab" :aria-selected="activeView === 'table'" tabindex="0">Table View</div>
-            </div>
-          </div>
-          <!-- Timeline View -->
-          <div class="view-container" v-show="activeView === 'timeline'">
-            <div v-if="groupedMessagesByDayWithDummy['Today'].length === 0 && groupedMessagesByDayWithDummy['Yesterday'].length === 0" class="no-chats">No chats to display.</div>
-            <div class="time-section" v-for="(group, label) in groupedMessagesByDayWithDummy" :key="label">
-              <h2 class="time-section-title">{{ label }}</h2>
-              <div class="call-list">
-                <div v-for="message in group" :key="message.id" :class="['call-item', 'glass-card', 'fine-border', { selected: selectedMessageId === message.id }]" @click="openChatPanel(message)">
-                  <div class="call-icon">
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-                    </svg>
-                  </div>
-                  <div class="call-details">
-                    <div class="call-type">{{ message.senderName }} ({{ getPlatformShortName(message.platform) }})</div>
-                    <div class="call-time">{{ message.time }}</div>
-                    <div class="call-meta">
-                      <span class="case-link">{{ message.text }}</span>
+      </div>
+
+    <!-- Timeline View -->
+    <div class="view-container" v-show="activeView === 'timeline'">
+      <div
+        v-if="Object.keys(groupedMessagesByDate).length === 0"
+            class="empty-state"
+          >
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+              <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z" stroke="currentColor" stroke-width="2"/>
+              <path d="M8 9H16" stroke="currentColor" stroke-width="2"/>
+              <path d="M8 13H14" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <h3>No chats to display</h3>
+            <p>Start a conversation or check back later for new messages.</p>
+      </div>
+
+      <div
+        class="time-section"
+        v-for="(group, label) in groupedMessagesByDate"
+        :key="label"
+      >
+        <h2 class="time-section-title">{{ label }}</h2>
+
+            <div class="chat-list">
+          <div
+            v-for="message in group"
+                  :key="message[messagesStore.pmessages_k.id?.[0] || 'id']"
+            :class="[
+                    'chat-item',
+              {
+                selected:
+                  selectedMessageId ===
+                        message[messagesStore.pmessages_k.id?.[0] || 'id'],
+              },
+            ]"
+            @click="openChatPanel(message)"
+          >
+                  <div class="chat-avatar">
+                    <div
+                      class="avatar-circle"
+                      :style="{
+                        background: getAvatarColor(
+                          message[messagesStore.pmessages_k.created_by?.[0] || 'created_by'] || ''
+                        ),
+                      }"
+                    >
+                      {{
+                        message[messagesStore.pmessages_k.created_by?.[0] || 'created_by']?.charAt(0) || "?"
+                      }}
                     </div>
-                  </div>
+            </div>
+
+                  <div class="chat-details">
+                    <div class="chat-header">
+                      <div class="chat-name">
+                        {{ message[messagesStore.pmessages_k.created_by?.[0] || 'created_by'] }}
+              </div>
+                      <div class="chat-time">
+                {{
+                          message[messagesStore.pmessages_k.dth?.[0] || 'dth']
+                    ? new Date(
+                                message[messagesStore.pmessages_k.dth?.[0] || 'dth'] * 1000
+                              ).toLocaleTimeString()
+                    : "N/A"
+                }}
+              </div>
+                    </div>
+                    <div class="chat-meta">
+                      <span class="chat-platform">
+                        {{ message[messagesStore.pmessages_k.src?.[0] || 'src'] }}
+                      </span>
+                      <span class="chat-status"
+                            :class="[
+                              'status-pill',
+                              statusClass(message[messagesStore.pmessages_k.src_status?.[0] || 'src_status'])
+                            ]"
+                      >
+                        <span class="status-dot" :class="dotClass(message[messagesStore.pmessages_k.src_status?.[0] || 'src_status'])"></span>
+                        {{ message[messagesStore.pmessages_k.src_status?.[0] || 'src_status'] || "Active" }}
+                </span>
                 </div>
+                    <div class="chat-preview">
+                      {{ message[messagesStore.pmessages_k.src_msg?.[0] || 'src_msg'] }}
               </div>
             </div>
           </div>
-          <!-- Table View -->
-          <div class="view-container" v-show="activeView === 'table'">
-            <div v-if="filteredChats.length > 0" class="calls-table-container">
-              <table class="calls-table">
-                <thead>
-                  <tr>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table View -->
+    <div class="view-container" v-show="activeView === 'table'">
+      <div
+        v-if="messagesStore.pmessages.length > 0"
+            class="chats-table-container"
+      >
+            <div class="chats-table-wrapper card">
+              <table class="chats-table">
+          <thead>
+            <tr>
                     <th>Contact</th>
                     <th>Platform</th>
-                    <th>Last Message</th>
+                    <th>Message</th>
                     <th>Time</th>
                     <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="contact in filteredChats" :key="contact.id">
-                    <td>{{ contact.senderName }}</td>
-                    <td>{{ getPlatformShortName(contact.platform) }}</td>
-                    <td>{{ contact.text }}</td>
-                    <td>{{ contact.time }}</td>
-                    <td><span :class="['status-badge', contact.status]">{{ contact.status }}</span></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <tbody v-else>
-              <tr><td colspan="5" class="no-chats">No chats to display.</td></tr>
-            </tbody>
+                    <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+                     v-for="message in filteredMessages"
+                     :key="message[messagesStore.pmessages_k.id?.[0] || 'id']"
+                     :class="{
+                       selected:
+                         selectedMessageId ===
+                         message[messagesStore.pmessages_k.id?.[0] || 'id'],
+                     }"
+                     @click="openChatPanel(message)"
+                   >
+                     <td>
+                       <div class="contact-cell">
+                         <div
+                           class="contact-avatar"
+                           :style="{
+                             background: getAvatarColor(
+                               message[messagesStore.pmessages_k.created_by?.[0] || 'created_by'] || ''
+                             ),
+                           }"
+                         >
+                           {{
+                             message[messagesStore.pmessages_k.created_by?.[0] || 'created_by']?.charAt(0) || "?"
+                           }}
+                         </div>
+                         <span>{{ message[messagesStore.pmessages_k.created_by?.[0] || 'created_by'] }}</span>
+                       </div>
+                     </td>
+                     <td>
+                       <span class="platform-badge">
+                         {{ message[messagesStore.pmessages_k.src?.[0] || 'src'] }}
+                       </span>
+                     </td>
+                     <td class="message-cell">
+                       {{ message[messagesStore.pmessages_k.src_msg?.[0] || 'src_msg'] }}
+                     </td>
+                     <td>
+                       {{
+                         message[messagesStore.pmessages_k.dth?.[0] || 'dth']
+                    ? new Date(
+                               message[messagesStore.pmessages_k.dth?.[0] || 'dth'] * 1000
+                      ).toLocaleString()
+                    : "N/A"
+                }}
+              </td>
+              <td>
+                <span
+                         class="status-badge"
+                         :class="statusClass(message[messagesStore.pmessages_k.src_status?.[0] || 'src_status'], true)"
+                       >
+                         {{ message[messagesStore.pmessages_k.src_status?.[0] || 'src_status'] || "Active" }}
+                </span>
+              </td>
+                     <td>
+                       <button
+                         class="action-btn"
+                         @click.stop="openChatPanel(message)"
+                         title="Open Chat"
+                       >
+                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                           <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z" stroke="currentColor" stroke-width="2"/>
+                           <path d="M8 9H16" stroke="currentColor" stroke-width="2"/>
+                           <path d="M8 13H14" stroke="currentColor" stroke-width="2"/>
+                         </svg>
+                       </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
           </div>
         </div>
       </div>
-      <!-- Chat Details Panel (Side Drawer) -->
-      <div class="chat-details-panel" :class="{ active: showChatPanel }">
-        <div class="chat-details-header">
-          <div class="chat-details-avatar">
-            <div class="avatar-circle" :style="{ background: getAvatarColor(selectedMessage?.senderName || '') }">
-              {{ selectedMessage?.senderName?.charAt(0) || '?' }}
-            </div>
-            <div class="chat-details-title">
-              <span class="contact-name">{{ selectedMessage?.senderName || 'Chat Details' }}</span>
-              <span class="chat-channel-badge">{{ getPlatformShortName(selectedMessage?.platform) }}</span>
-              <span class="chat-status">{{ selectedMessage?.status || 'Active' }}</span>
-            </div>
-          </div>
-          <div class="chat-header-actions">
-            <button class="end-chat-btn" @click="endChat" title="End Chat (Archive)">
-              <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-            <button class="close-details" @click="closeChatPanel" aria-label="Close chat panel">×</button>
-          </div>
-        </div>
-        <div class="chat-details-actions">
-          <button class="chat-action-btn view" @click="viewCase" title="View Case">
-            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/></svg>
-          </button>
-          <button class="chat-action-btn link" @click="linkToCase" title="Link to Case">
-            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 1 7 7l-3 3a5 5 0 0 1-7-7l1-1"/><path d="M14 11a5 5 0 0 0-7-7l-3 3a5 5 0 0 0 7 7l1-1"/></svg>
-          </button>
-          <button class="chat-action-btn create" @click="createCase" title="Create Case">
-            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12h6"/><path d="M12 9v6"/></svg>
-          </button>
-          <button class="chat-action-btn reporter" @click="editReporter" title="Add/Edit Reporter">
-            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M5.5 21a8.38 8.38 0 0 1 13 0"/></svg>
-          </button>
-          <button class="chat-action-btn archive" @click="archiveChat" title="Archive">
-            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M3 7h18"/></svg>
-          </button>
-        </div>
-        <div class="chat-details-content">
-          <div class="chat-thread whatsapp-style">
-            <div v-for="msg in simulatedChatThread" :key="msg.id" :class="['chat-bubble', msg.sender === 'counsellor' ? 'sent' : 'received']">
-              <div class="bubble-text">{{ msg.text }}</div>
-              <div class="bubble-time">{{ msg.time }}</div>
-            </div>
-          </div>
-          <div class="message-input-area chat-panel-input">
-            <div class="input-container">
-              <input v-model="newMessageText" type="text" class="message-input" placeholder="Type a message..." @keypress.enter="sendMessage" />
-              <button v-if="newMessageText.trim()" class="send-btn" @click="sendMessage" title="Send">Send</button>
-            </div>
-          </div>
-        </div>
-      </div>
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
     </div>
+
+    <!-- Chat Popup Panel -->
+    <div class="chat-popup-overlay" v-if="showChatPanel" @click="closeChatPanel">
+      <div class="chat-popup" @click.stop>
+        <!-- Header -->
+        <div class="chat-popup-header">
+          <div class="chat-popup-avatar">
+          <div
+            class="avatar-circle"
+            :style="{
+              background: getAvatarColor(
+                  selectedMessage?.[messagesStore.pmessages_k.created_by?.[0] || 'created_by'] || ''
+              ),
+            }"
+          >
+            {{
+              selectedMessage?.[
+                  messagesStore.pmessages_k.created_by?.[0] || 'created_by'
+              ]?.charAt(0) || "?"
+            }}
+          </div>
+          </div>
+          <div class="chat-popup-info">
+            <div class="chat-popup-name">
+              {{ selectedMessage?.[messagesStore.pmessages_k.created_by?.[0] || 'created_by'] || "Chat" }}
+        </div>
+            <div class="chat-popup-meta">
+              <span class="chat-popup-platform">
+                {{ selectedMessage?.[messagesStore.pmessages_k.src?.[0] || 'src'] }}
+            </span>
+              <span class="chat-popup-status"
+                    :class="[
+                      'status-pill',
+                      statusClass(selectedMessage?.[messagesStore.pmessages_k.src_status?.[0] || 'src_status'])
+                    ]"
+              >
+                <span class="status-dot" :class="dotClass(selectedMessage?.[messagesStore.pmessages_k.src_status?.[0] || 'src_status'])"></span>
+                {{ selectedMessage?.[messagesStore.pmessages_k.src_status?.[0] || 'src_status'] || "Active" }}
+              </span>
+        </div>
+      </div>
+          <div class="chat-popup-actions">
+            <button class="popup-action-btn primary" @click="createCase" title="Create Case">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M12 5V19" stroke="currentColor" stroke-width="2"/>
+                <path d="M5 12H19" stroke="currentColor" stroke-width="2"/>
+          </svg>
+              <span>Create Case</span>
+        </button>
+            <button class="popup-action-btn" @click="linkToCase" title="Link to Case">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="currentColor" stroke-width="2"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="currentColor" stroke-width="2"/>
+          </svg>
+        </button>
+            <button class="popup-action-btn danger" @click="endChat" title="End Chat">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M3 6H5H21" stroke="currentColor" stroke-width="2"/>
+                <path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="currentColor" stroke-width="2"/>
+          </svg>
+        </button>
+            <button class="popup-close-btn" @click="closeChatPanel" title="Close">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
+                <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
+          </svg>
+        </button>
+          </div>
+      </div>
+
+        <!-- Content -->
+        <div class="chat-popup-content">
+          <!-- Message Display -->
+          <div class="chat-messages">
+            <div class="message-item">
+              <div class="message-avatar">
+                <div
+                  class="avatar-circle small"
+                  :style="{
+                    background: getAvatarColor(
+                      selectedMessage?.[messagesStore.pmessages_k.created_by?.[0] || 'created_by'] || ''
+                    ),
+                  }"
+                >
+                  {{
+                    selectedMessage?.[
+                      messagesStore.pmessages_k.created_by?.[0] || 'created_by'
+                    ]?.charAt(0) || "?"
+                  }}
+                </div>
+              </div>
+              <div class="message-content">
+                <div class="message-header">
+                  <span class="message-sender">
+                    {{ selectedMessage?.[messagesStore.pmessages_k.created_by?.[0] || 'created_by'] }}
+                  </span>
+                  <span class="message-time">
+                    {{
+                      selectedMessage?.[messagesStore.pmessages_k.dth?.[0] || 'dth']
+                        ? new Date(
+                            selectedMessage?.[messagesStore.pmessages_k.dth?.[0] || 'dth'] * 1000
+                          ).toLocaleString()
+                        : "N/A"
+                    }}
+                  </span>
+                </div>
+                <div class="message-text">
+                  {{ selectedMessage?.[messagesStore.pmessages_k.src_msg?.[0] || 'src_msg'] }}
+                </div>
+              </div>
+          </div>
+        </div>
+
+          <!-- Message Input -->
+          <div class="chat-input-area">
+          <div class="input-container">
+              <textarea
+                v-model="newMessage"
+                placeholder="Type your message..."
+              class="message-input"
+                rows="3"
+              ></textarea>
+              <div class="input-actions">
+                <button class="send-btn" @click="sendMessage" :disabled="!newMessage.trim()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M22 2L11 13" stroke="currentColor" stroke-width="2"/>
+                    <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2"/>
+                  </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+    </div>  
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
-import { useRouter } from 'vue-router'
-import SidePanel from '@/components/SidePanel.vue'
-import { applyTheme } from '@/utils/theme.js'
+import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import SidePanel from "@/components/SidePanel.vue";
+import { useMessagesStore } from "@/stores/messages";
 
-const router = useRouter()
-const isSidebarCollapsed = ref(false)
+const messagesStore = useMessagesStore();
+const router = useRouter();
 
-// Reactive state
-const searchQuery = ref('')
-const activePlatform = ref('all')
-const newMessageText = ref('')
-const currentTheme = ref(localStorage.getItem('theme') || 'dark')
-const showContactInfo = ref(false)
-const showEndChatModal = ref(false)
-const showCallModal = ref(false)
-const callStatus = ref('Calling...')
-const isMuted = ref(false)
-
-// SidePanel related state
-const userRole = ref('super-admin')
-const isInQueue = ref(false)
-const isProcessingQueue = ref(false)
-const currentCall = ref(null)
-
-// Refs
-const messagesArea = ref(null)
-
-// Platform definitions
-const platforms = ref([
-  { id: 'whatsapp', name: 'WhatsApp' },
-  { id: 'sms', name: 'SMS' },
-  { id: 'messenger', name: 'Messenger' },
-  { id: 'telegram', name: 'Telegram' },
-  { id: 'past', name: 'Archive' }
-])
-
-// Dummy chat records for each channel
-const dummyChats = [
-  // WhatsApp
-  { id: 101, senderName: 'Alice Mwangi', platform: 'whatsapp', status: 'Active', date: 'Today', time: '09:00AM', text: 'Hi, I need help with my case.' },
-  { id: 102, senderName: 'Brian Otieno', platform: 'whatsapp', status: 'Active', date: 'Today', time: '09:30AM', text: 'Can I get an update on my report?' },
-  { id: 103, senderName: 'Cynthia Wanjiku', platform: 'whatsapp', status: 'Pending', date: 'Yesterday', time: '10:00AM', text: 'Thank you for your assistance.' },
-  { id: 104, senderName: 'David Kimani', platform: 'whatsapp', status: 'Active', date: 'Today', time: '10:45AM', text: 'Is my case being processed?' },
-  { id: 105, senderName: 'Esther Njeri', platform: 'whatsapp', status: 'Closed', date: 'Yesterday', time: '11:15AM', text: 'My issue was resolved, thanks.' },
-  // SMS
-  { id: 201, senderName: 'Faith Ouma', platform: 'sms', status: 'Active', date: 'Today', time: '09:10AM', text: 'I have a new concern.' },
-  { id: 202, senderName: 'George Kariuki', platform: 'sms', status: 'Pending', date: 'Yesterday', time: '10:20AM', text: 'Please call me back.' },
-  { id: 203, senderName: 'Helen Achieng', platform: 'sms', status: 'Active', date: 'Today', time: '11:00AM', text: 'How do I follow up?' },
-  { id: 204, senderName: 'Isaac Mutua', platform: 'sms', status: 'Closed', date: 'Yesterday', time: '11:30AM', text: 'Thank you for your support.' },
-  { id: 205, senderName: 'Janet Waweru', platform: 'sms', status: 'Active', date: 'Today', time: '12:00PM', text: 'I need urgent help.' },
-  // Messenger
-  { id: 301, senderName: 'Kevin Maina', platform: 'messenger', status: 'Active', date: 'Today', time: '09:20AM', text: 'Can I get more information?' },
-  { id: 302, senderName: 'Lydia Chebet', platform: 'messenger', status: 'Pending', date: 'Yesterday', time: '10:40AM', text: 'I am waiting for a response.' },
-  { id: 303, senderName: 'Martin Otieno', platform: 'messenger', status: 'Active', date: 'Today', time: '12:15PM', text: 'Please update me.' },
-  { id: 304, senderName: 'Nancy Wambui', platform: 'messenger', status: 'Closed', date: 'Yesterday', time: '01:00PM', text: 'Case closed, thank you.' },
-  { id: 305, senderName: 'Oscar Kiptoo', platform: 'messenger', status: 'Active', date: 'Today', time: '01:30PM', text: 'I have a question.' },
-  // Telegram
-  { id: 401, senderName: 'Pauline Njeri', platform: 'telegram', status: 'Active', date: 'Today', time: '09:50AM', text: 'How do I escalate my case?' },
-  { id: 402, senderName: 'Quincy Mwenda', platform: 'telegram', status: 'Pending', date: 'Yesterday', time: '11:10AM', text: 'Still waiting for feedback.' },
-  { id: 403, senderName: 'Ruth Muthoni', platform: 'telegram', status: 'Active', date: 'Today', time: '12:45PM', text: 'Can I speak to an agent?' },
-  { id: 404, senderName: 'Samuel Karanja', platform: 'telegram', status: 'Closed', date: 'Yesterday', time: '01:20PM', text: 'Issue resolved.' },
-  { id: 405, senderName: 'Terry Wainaina', platform: 'telegram', status: 'Active', date: 'Today', time: '02:00PM', text: 'I need more details.' },
-  // Archive
-  { id: 501, senderName: 'Ursula Mwende', platform: 'archive', status: 'Closed', date: 'Yesterday', time: '09:00AM', text: 'Thank you for your help.' },
-  { id: 502, senderName: 'Victor Ochieng', platform: 'archive', status: 'Closed', date: 'Yesterday', time: '09:30AM', text: 'Case archived.' },
-  { id: 503, senderName: 'Winnie Naliaka', platform: 'archive', status: 'Closed', date: 'Yesterday', time: '10:00AM', text: 'No further action needed.' },
-  { id: 504, senderName: 'Xavier Kiplangat', platform: 'archive', status: 'Closed', date: 'Yesterday', time: '10:30AM', text: 'All done, thanks.' },
-  { id: 505, senderName: 'Yvonne Atieno', platform: 'archive', status: 'Closed', date: 'Yesterday', time: '11:00AM', text: 'Appreciate your support.' },
-<<<<<<< HEAD
-=======
-  // CFFS Conversations (children and chatbot)
-  { id: 601, senderName: 'Child', platform: 'cffs', status: 'Active', date: 'Today', time: '10:00AM', text: 'Hello!' },
-  { id: 602, senderName: 'CFFS Chatbot', platform: 'cffs', status: 'Active', date: 'Today', time: '10:01AM', text: 'Hi there! What is your name?' },
-  { id: 603, senderName: 'Child', platform: 'cffs', status: 'Active', date: 'Today', time: '10:02AM', text: 'My name is Amina.' },
-  { id: 604, senderName: 'CFFS Chatbot', platform: 'cffs', status: 'Active', date: 'Today', time: '10:03AM', text: 'How old are you, Amina?' },
-  { id: 605, senderName: 'Child', platform: 'cffs', status: 'Active', date: 'Today', time: '10:04AM', text: 'I am 10 years old. How are you feeling lately?' },
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
-];
-
-// Timeline view: always show all chats grouped by day
-const groupedMessagesByDayWithDummy = computed(() => {
-  const groups = {};
-  filteredChats.value.forEach(chat => {
-    const day = chat.date;
-    if (!groups[day]) groups[day] = [];
-    groups[day].push(chat);
-  });
-  return {
-    'Today': groups['Today'] || [],
-    'Yesterday': groups['Yesterday'] || []
-  };
-});
-
-// Helper functions
-const getPlatformUnreadCount = (platformId) => {
-  // Dummy implementation: count active chats for the platform
-  return dummyChats.filter(chat => chat.platform === platformId && chat.status.toLowerCase() === 'active').length;
-}
-
-<<<<<<< HEAD
-const getPlatformShortName = (platform) => {
-=======
-// Fix getPlatformShortName to be robust:
-const getPlatformShortName = (platform) => {
-  if (!platform || typeof platform !== 'string') return '';
-  const key = platform.toLowerCase();
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
-  const shortNames = {
-    whatsapp: 'WA',
-    sms: 'SMS',
-    messenger: 'MSG',
-<<<<<<< HEAD
-    telegram: 'TG'
-  }
-  return shortNames[platform] || platform.toUpperCase()
-}
-=======
-    telegram: 'TG',
-    cffs: 'CFFS'
-  };
-  return shortNames[key] || key.toUpperCase();
-};
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
-
-const getAvatarColor = (name) => {
-  const colors = [
-    '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
-    '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9'
-  ]
-  const index = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
-  return colors[index % colors.length]
-}
-
-const getRiskLevelClass = (riskLevel) => {
-  if (!riskLevel) return ''
-  if (riskLevel.toLowerCase().includes('high')) return 'high-risk'
-  if (riskLevel.toLowerCase().includes('medium')) return 'medium-risk'
-  if (riskLevel.toLowerCase().includes('low')) return 'low-risk'
-  return ''
-}
+// SidePanel props and state
+const userRole = ref("admin");
+const isInQueue = ref(false);
+const isProcessingQueue = ref(false);
+const currentCall = ref(null);
 
 // SidePanel event handlers
 const handleQueueToggle = () => {
-  isInQueue.value = !isInQueue.value
-}
+  isInQueue.value = !isInQueue.value;
+};
 
 const handleLogout = () => {
-  router.push('/')
-}
+  // Handle logout logic
+  console.log("Logout clicked");
+};
 
-const handleSidebarToggle = (collapsed) => {
-  isSidebarCollapsed.value = collapsed
-}
+const handleSidebarToggle = () => {
+  // Handle sidebar toggle logic
+  console.log("Sidebar toggle clicked");
+};
 
-// Methods
-const toggleTheme = () => {
-  const newTheme = currentTheme.value === 'dark' ? 'light' : 'dark'
-  localStorage.setItem('theme', newTheme)
-  currentTheme.value = newTheme
-  applyTheme(newTheme)
-}
+// Chat state
+const searchQuery = ref("");
+const activePlatform = ref("all");
+const activeView = ref("table");
+const showChatPanel = ref(false);
+const selectedMessage = ref(null);
+const selectedMessageId = ref(null);
+const newMessage = ref("");
 
-const setActivePlatform = (platformId) => {
-  activePlatform.value = platformId
-  searchQuery.value = ''
-}
-
-const selectContact = (contactId) => {
-  selectedMessageId.value = contactId;
-  // No unread count to clear in dummy data
-  nextTick(() => {
-    scrollToBottom();
-  });
-}
-
-const deselectContact = () => {
-  selectedMessageId.value = null
-  showContactInfo.value = false
-}
-
-const toggleContactInfo = () => {
-  showContactInfo.value = !showContactInfo.value
-}
-
-const endChat = () => {
-  if (selectedMessage) {
-    const chat = dummyChats.find(c => c.id === selectedMessage.id);
-    if (chat) {
-      chat.status = 'Closed';
-      chat.platform = 'archive';
-    }
-  }
-  closeChatPanel();
-}
-
-const cancelEndChat = () => {
-  showEndChatModal.value = false
-}
-
-const sendMessage = () => {
-  if (newMessageText.value.trim() !== '' && selectedMessageId.value !== null) {
-    // Find the chat in dummyChats
-    const chat = dummyChats.find(c => c.id === selectedMessageId.value);
-    if (chat && chat.status.toLowerCase() === 'active') {
-      // For demo, just update the selectedMessageThread
-      selectedMessageThread.value.push({
-        id: selectedMessageThread.value.length + 1,
-        text: newMessageText.value,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        sender: 'me'
-      });
-      newMessageText.value = '';
-      nextTick(() => {
-        scrollToBottom();
-      });
-    }
-  }
-}
-
-const scrollToBottom = () => {
-  if (messagesArea.value) {
-    messagesArea.value.scrollTop = messagesArea.value.scrollHeight
-  }
-}
-
-const clearSearch = () => {
-  searchQuery.value = ''
-}
-
-const handleSearch = () => {
-  // Filtering handled by computed property
-}
-
-const handleTyping = () => {
-  // Handle typing indicator
-}
-
-// Placeholder methods
-const showNewChatModal = () => console.log('Show new chat modal')
-const showAttachmentMenu = () => console.log('Show attachment menu')
-const startVoiceMessage = () => console.log('Start voice message')
-const viewFullProfile = () => console.log('View full profile')
-
-// Lifecycle
-onMounted(() => {
-  const savedTheme = localStorage.getItem('theme') || 'dark'
-    currentTheme.value = savedTheme
-  applyTheme(savedTheme)
-})
-
-const queueStatus = computed(() => {
-  return isInQueue ? 'In Queue' : 'Not in queue'
-})
-
-const showChatPanel = ref(false)
-const selectedMessageId = ref(null)
-const selectedMessage = ref(null)
-const selectedMessageThread = ref([])
-
-function openChatPanel(message) {
-  selectedMessageId.value = message.id
-  selectedMessage.value = message
-  // Dummy thread for now, could be replaced with real data
-  selectedMessageThread.value = [
-    { id: 1, text: message.text, time: message.time },
-    { id: 2, text: 'This is a reply.', time: '10:35 AM' }
-  ]
-  showChatPanel.value = true
-}
-function closeChatPanel() {
-  showChatPanel.value = false
-  selectedMessageId.value = null
-  selectedMessage.value = null
-  selectedMessageThread.value = []
-}
-
-// In script, define channelFilters with an 'All' option:
-const channelFilters = [
-  { id: 'all', name: 'All' },
-  { id: 'whatsapp', name: 'WhatsApp' },
-  { id: 'sms', name: 'SMS' },
-  { id: 'messenger', name: 'Messenger' },
-  { id: 'telegram', name: 'Telegram' },
-<<<<<<< HEAD
-=======
-  { id: 'cffs', name: 'CFFS Conversations' },
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
-  { id: 'archive', name: 'Archive' }
-];
-
-// For table view, filter by activePlatform unless 'all'
-const filteredChats = computed(() => {
-  if (activePlatform.value === 'all') return dummyChats;
-  return dummyChats.filter(chat => chat.platform === activePlatform.value);
-});
-
-// Set timeline as the default view on load
-const activeView = ref('timeline');
-
-// In <script setup>, add dummy functions for actions:
-function linkToCase() { alert('Link to Case (dummy)'); }
-function createCase() {
-  // Navigate to case creation with chat data
-  router.push({
-    path: '/case-creation',
-    query: {
-      reporter: selectedMessage?.senderName,
-      platform: selectedMessage?.platform,
-      chatId: selectedMessage?.id
-    }
-  });
-}
-function archiveChat() { alert('Archive Chat (dummy)'); }
-function editReporter() { alert('Add/Edit Reporter (dummy)'); }
-
-// In <script setup>, add a simulated chat thread:
-const simulatedChatThread = computed(() => [
-  { id: 1, sender: 'user', text: selectedMessage?.text || 'Hi, I need help with my case.', time: selectedMessage?.time || '09:00AM' },
-  { id: 2, sender: 'counsellor', text: 'Hello, how can I assist you today?', time: '09:01AM' },
-  { id: 3, sender: 'user', text: 'I want to know the status of my report.', time: '09:02AM' },
-  { id: 4, sender: 'counsellor', text: 'Your report is being processed. We will update you soon.', time: '09:03AM' },
-  { id: 5, sender: 'user', text: 'Thank you!', time: '09:04AM' },
-  { id: 6, sender: 'counsellor', text: 'You are welcome!', time: '09:05AM' },
-  ...selectedMessageThread.value
+// Channel filters
+const channelFilters = ref([
+  { id: "all", name: "All Channels" },
+  { id: "whatsapp", name: "WhatsApp" },
+  { id: "sms", name: "SMS" },
+  { id: "messenger", name: "Messenger" },
+  { id: "telegram", name: "Telegram" },
 ]);
 
-// In <script setup>, update viewCase and createCase to navigate to real pages:
-function viewCase() {
-  // If selectedMessage has a caseId, navigate to /cases/:id, else alert
-  if (selectedMessage?.caseId) {
-    router.push(`/cases/${selectedMessage.caseId}`);
-  } else {
-    alert('No case linked to this chat.');
+// Computed
+const filteredMessages = computed(() => {
+  let messages = messagesStore.pmessages;
+  
+  // If no messages from API, use sample data
+  if (!messages || messages.length === 0) {
+    messages = [
+      {
+        id: 1,
+        created_by: "John Doe",
+        src: "whatsapp",
+        src_msg: "Hello, I need help with my case.",
+        dth: Math.floor(Date.now() / 1000) - 3600, // 1 hour ago
+        src_status: "active"
+      },
+      {
+        id: 2,
+        created_by: "Jane Smith",
+        src: "sms",
+        src_msg: "Thank you for your assistance.",
+        dth: Math.floor(Date.now() / 1000) - 7200, // 2 hours ago
+        src_status: "active"
+      },
+      {
+        id: 3,
+        created_by: "Mike Johnson",
+        src: "messenger",
+        src_msg: "Can you provide an update on my case?",
+        dth: Math.floor(Date.now() / 1000) - 86400, // 1 day ago
+        src_status: "pending"
+      },
+      {
+        id: 4,
+        created_by: "Sarah Wilson",
+        src: "telegram",
+        src_msg: "I have some new information to share.",
+        dth: Math.floor(Date.now() / 1000) - 172800, // 2 days ago
+        src_status: "active"
+      },
+      {
+        id: 5,
+        created_by: "David Brown",
+        src: "whatsapp",
+        src_msg: "When will my case be reviewed?",
+        dth: Math.floor(Date.now() / 1000) - 259200, // 3 days ago
+        src_status: "active"
+      }
+    ];
   }
+  
+  // Filter by platform
+  if (activePlatform.value !== "all") {
+    messages = messages.filter(
+      (msg) => msg[messagesStore.pmessages_k.src?.[0] || 'src'] === activePlatform.value
+    );
+  }
+  
+  // Filter by search query
+  if (searchQuery.value.trim()) {
+    const query = searchQuery.value.toLowerCase();
+    messages = messages.filter((msg) => {
+      const sender = msg[messagesStore.pmessages_k.created_by?.[0] || 'created_by'] || "";
+      const message = msg[messagesStore.pmessages_k.src_msg?.[0] || 'src_msg'] || "";
+      return (
+        sender.toLowerCase().includes(query) ||
+        message.toLowerCase().includes(query)
+      );
+    });
+  }
+  
+  return messages;
+});
+
+const groupedMessagesByDate = computed(() => {
+  const messages = filteredMessages.value;
+  const timeKey = messagesStore.pmessages_k?.dth?.[0] || 'dth';
+
+  if (!Array.isArray(messages) || messages.length === 0) return {};
+
+  const groups = {};
+  for (const msg of messages) {
+    const timestamp = msg[timeKey];
+    if (!timestamp) continue;
+    
+    const date = new Date(timestamp * 1000);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    let label;
+    if (date.toDateString() === today.toDateString()) {
+      label = "Today";
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      label = "Yesterday";
+    } else {
+      label = date.toLocaleDateString();
+    }
+    
+    if (!groups[label]) groups[label] = [];
+    groups[label].push(msg);
+  }
+  
+  return groups;
+});
+
+// Methods
+const setActivePlatform = (platformId) => {
+  activePlatform.value = platformId;
+};
+
+const handleSearch = () => {
+  // Search is handled by computed property
+};
+
+const clearSearch = () => {
+  searchQuery.value = "";
+};
+
+const openChatPanel = (message) => {
+  selectedMessage.value = message;
+  selectedMessageId.value = message[messagesStore.pmessages_k.id?.[0] || 'id'];
+  showChatPanel.value = true;
+};
+
+const closeChatPanel = () => {
+  showChatPanel.value = false;
+  selectedMessage.value = null;
+  selectedMessageId.value = null;
+  newMessage.value = "";
+};
+
+const sendMessage = () => {
+  if (!newMessage.value.trim() || !selectedMessage.value) return;
+  
+  // Here you would typically send the message to your backend
+  console.log("Sending message:", newMessage.value);
+  
+  // For now, just clear the input
+  newMessage.value = "";
+};
+
+const createCase = () => {
+  if (selectedMessage.value) {
+    // Navigate to case creation with chat data
+    console.log("Creating case from chat:", selectedMessage.value);
+    router.push({
+      name: 'CaseCreation',
+      query: {
+        chatId: selectedMessage.value[messagesStore.pmessages_k.id?.[0] || 'id'],
+        contact: selectedMessage.value[messagesStore.pmessages_k.created_by?.[0] || 'created_by'],
+        platform: selectedMessage.value[messagesStore.pmessages_k.src?.[0] || 'src'],
+        message: selectedMessage.value[messagesStore.pmessages_k.src_msg?.[0] || 'src_msg']
+      }
+    });
+    closeChatPanel();
+  }
+};
+
+const viewCase = () => {
+  if (selectedMessage.value) {
+    // Navigate to case details or open case modal
+    console.log("Viewing case for message:", selectedMessage.value);
+  }
+};
+
+const linkToCase = () => {
+  if (selectedMessage.value) {
+    // Navigate to cases page
+    console.log("Linking chat to case:", selectedMessage.value);
+  router.push({
+      name: 'Cases'
+    });
+    closeChatPanel();
+  }
+};
+
+const endChat = () => {
+  if (selectedMessage.value) {
+    // End/archive the chat
+    console.log("Ending chat:", selectedMessage.value);
+    closeChatPanel();
+  }
+};
+
+const getAvatarColor = (name) => {
+  // Use the same brown color as buttons
+  return 'var(--color-primary)';
+};
+
+const statusClass = (raw, isTable = false) => {
+  const v = String(raw || 'active').toLowerCase()
+  const map = {
+    active: isTable ? 'status--active' : 'status--active',
+    pending: isTable ? 'status--pending' : 'status--pending',
+    inactive: 'status--inactive',
+    busy: 'status--busy',
+    away: 'status--away'
+  }
+  return map[v] || map.active
 }
+
+const dotClass = (raw) => {
+  const v = String(raw || 'active').toLowerCase()
+  const map = { active: 'dot--active', pending: 'dot--pending', inactive: 'dot--inactive', busy: 'dot--busy', away: 'dot--away' }
+  return map[v] || map.active
+}
+
+// Lifecycle
+onMounted(async () => {
+  // Initialize messages data
+  try {
+    await messagesStore.fetchAllMessages();
+  } catch (error) {
+    console.error('Failed to fetch messages:', error);
+  }
+});
 </script>
 
 <style>
-  /* Root theme variables and resets */
-  :root, body, html {
-    --background-color: #f5f5f5;
-    --content-bg: #fff;
-    --text-color: #222;
-    --text-secondary: #666;
-    --border-color: #ddd;
-  --accent-color: #964B00;
-  --accent-hover: #b25900;
-    --success-color: #4CAF50;
-    --pending-color: #FFA500;
-    --unassigned-color: #808080;
-    --highlight-color: #ff3b30;
-    --card-bg: #fff;
-    font-family: 'Inter', sans-serif;
-    font-size: 16px;
-    box-sizing: border-box;
-  }
-  [data-theme="dark"], body.dark, :root.dark {
-    --background-color: #000;
-    --content-bg: #181818;
-    --text-color: #fff;
-    --text-secondary: #bbb;
-    --border-color: #333;
-    --card-bg: #181818;
-  --accent-color: #964B00;
-  --accent-hover: #b25900;
-    --success-color: #4CAF50;
-    --pending-color: #FFA500;
-    --unassigned-color: #808080;
-    --highlight-color: #ff3b30;
-  }
-  *, *:before, *:after {
-    box-sizing: inherit;
-  }
-  body, html {
-    background-color: var(--background-color);
-    color: var(--text-color);
-  margin: 0;
-  padding: 0;
-    min-height: 100vh;
-    transition: background-color 0.3s, color 0.3s;
-  }
-
-  /* Main layout */
+@import url("@/styles/chats.css");
+/* Main content layout with SidePanel */
 .main-content {
-    background-color: var(--background-color);
-    min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-    transition: background-color 0.3s;
-  height: 100vh;
-  overflow: hidden;
+  margin-left: var(--sidebar-width);
+  min-height: 100vh;
+  background: var(--color-surface);
+  transition: margin-left 0.3s ease;
 }
-  .calls-container {
-    background-color: var(--background-color);
-  flex: 1;
-    padding: 0 0 40px 0;
-  display: flex;
-  flex-direction: column;
-    transition: background-color 0.3s;
-  overflow-y: auto;
-  min-height: 0;
-  }
 
-  /* Header */
-  .header {
+@media (max-width: 768px) {
+.main-content {
+    margin-left: 0;
+  }
+}
+
+.page-container {
+  padding: 20px;
+  min-height: 100vh;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.header-content h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 900;
+  color: var(--text-color);
+}
+
+.header-content p {
+  margin: 6px 0 0;
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
+/* Channel Filters */
+.channel-filters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.channel-pill {
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: var(--color-surface);
+  color: var(--text-color);
+  border: 1px solid var(--color-border);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.channel-pill.active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.channel-pill:hover:not(.active) {
+  background: var(--color-surface-muted);
+  border-color: var(--color-primary);
+}
+
+/* Controls Section */
+.controls-section {
   display: flex;
   justify-content: space-between;
   align-items: center;
-    padding: 32px 32px 0 32px;
-    background: var(--background-color);
-    flex-shrink: 0;
-  }
-  .page-title {
-    font-size: 2rem;
-    font-weight: 800;
-    color: var(--text-color);
-    margin: 0;
-  }
-.header-actions {
-  display: flex;
-    align-items: center;
-    gap: 20px;
-  }
-  .theme-toggle {
-    background-color: var(--content-bg);
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
-    border-radius: 30px;
-    padding: 8px 15px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-  display: flex;
-  align-items: center;
-    gap: 8px;
-    transition: all 0.3s ease;
-    white-space: nowrap;
-    min-width: 120px;
-  }
-  .theme-toggle:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-  }
-  .theme-toggle svg {
-    width: 16px;
-    height: 16px;
-  }
-
-  /* Tabs */
-  .view-toggle-pills {
-    display: flex;
-    flex-shrink: 0;
-    gap: 12px;
-    min-width: 0;
-    height: 48px;
-  }
-  .view-toggle-pill {
-    border-radius: 30px;
-    height: 48px;
-    min-width: 110px;
-    max-width: 160px;
-    width: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-    font-size: 16px;
-    font-weight: 600;
-    border: 1.5px solid var(--border-color);
-  white-space: nowrap;
-    background: var(--content-bg);
-    color: var(--text-color);
-    transition: background 0.2s, color 0.2s;
-    padding: 0 22px;
-  }
-  .view-toggle-pill.active {
-    background: var(--accent-color);
-    color: #fff;
-    border: 1.5px solid var(--accent-color);
-    z-index: 1;
-  }
-
-  /* Search Bar */
-.search-and-toggle-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 24px;
-    margin: 0 32px 18px 32px;
-    flex-wrap: wrap;
-  }
-.search-container {
-    width: 100%;
-    border-radius: 30px;
-    margin: 0;
-  display: flex;
-  align-items: center;
-    background: var(--content-bg);
-    border: 1px solid var(--border-color);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    padding: 0 18px;
+  gap: 20px;
+  margin-bottom: 24px;
 }
-.search-icon {
-    color: var(--text-secondary);
-    margin-right: 10px;
-    flex-shrink: 0;
-  }
+
+.search-container {
+  position: relative;
+  flex: 1;
+  max-width: 400px;
+}
+
+.search-container svg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-muted);
+  pointer-events: none;
+}
+
 .search-input {
-    flex: 1;
-  border: none;
-    background: transparent;
-    color: var(--text-color);
-    font-size: 15px;
-    outline: none;
-    padding: 14px 0;
-    border-radius: 30px;
-    box-shadow: none;
-    height: 48px;
-    line-height: 1.4;
-    display: flex;
-    align-items: center;
-  }
+  width: 100%;
+  padding: 10px 12px 10px 40px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  color: var(--text-color);
+  font-size: 14px;
+  transition: border-color 0.2s ease;
+}
+
 .search-input:focus {
   outline: none;
-    box-shadow: none;
-}
-.search-clear {
-    background: none;
-  border: none;
-    color: var(--text-secondary);
-    cursor: pointer;
-    margin-left: 8px;
-    font-size: 16px;
-  display: flex;
-  align-items: center;
-}
-.search-clear:hover {
-    color: var(--accent-color);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-primary) 10%, transparent);
 }
 
-  /* Timeline View */
-  .view-container {
-    margin: 0 32px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+.search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--color-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
 }
-  .time-section-title {
-  font-size: 16px;
-    font-weight: 700;
-    color: var(--accent-color);
-    margin: 18px 0 10px 0;
-  }
-  .call-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  .call-item {
-    background: var(--content-bg);
-    color: var(--text-color);
-    border-radius: 20px;
+
+.search-clear:hover {
+  background: var(--color-surface-muted);
+  color: var(--text-color);
+}
+
+.view-toggle {
+  display: flex;
+  gap: 8px;
+}
+
+.view-btn {
   display: flex;
   align-items: center;
-    padding: 16px 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    transition: background 0.3s, color 0.3s, border 0.3s;
-    border: 1.5px solid transparent;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+  color: var(--text-color);
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-    font-size: 15px;
-  }
-  .call-item.selected {
-    border: 2px solid var(--accent-color);
-    background: rgba(150,75,0,0.07);
-    box-shadow: 0 2px 8px rgba(150,75,0,0.08);
-  }
-  .call-item:hover {
-    background: rgba(150,75,0,0.04);
-  }
-  .call-item .call-icon {
-    margin-right: 18px;
+  transition: all 0.2s ease;
+}
+
+.view-btn.active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.view-btn:hover:not(.active) {
+  background: var(--color-surface-muted);
+  border-color: var(--color-primary);
+}
+
+/* View Container */
+.view-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Empty State */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--color-muted);
+}
+
+.empty-state svg {
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.empty-state h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Time Section */
+.time-section {
+  margin-bottom: 24px;
+}
+
+.time-section-title {
+  margin: 0 0 16px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-color);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* Chat List */
+.chat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chat-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.chat-item:hover {
+  background: var(--color-surface-muted);
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.chat-item.selected {
+  background: color-mix(in oklab, var(--color-primary) 8%, transparent);
+  border-color: var(--color-primary);
+}
+
+.chat-avatar {
+  flex-shrink: 0;
+}
+
+.avatar-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: var(--accent-color);
-    color: #fff;
-    flex-shrink: 0;
-  }
-  .call-details {
+  color: white;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.avatar-circle.small {
+  width: 36px;
+  height: 36px;
+  font-size: 14px;
+}
+
+.chat-details {
   flex: 1;
   min-width: 0;
-  }
-  .call-type, .call-time, .call-meta, .case-link {
-    color: var(--text-color);
-    font-size: 14px;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
-  .call-meta {
-    font-size: 13px;
-    color: var(--text-secondary);
-    margin-top: 2px;
-    white-space: normal;
-  }
 
-  /* Table View */
-  .calls-table-container {
-    background: var(--content-bg);
-    border-radius: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    margin-top: 20px;
-    overflow-x: auto;
-  }
-  .calls-table {
-    width: 100%;
-    background: var(--content-bg);
-    color: var(--text-color);
-    border-radius: 20px;
-    border: 1px solid var(--border-color);
-  font-size: 14px;
-    border-collapse: separate;
-    border-spacing: 0;
-  overflow: hidden;
-  }
-  .calls-table th, .calls-table td {
-    padding: 12px 16px;
-  border-bottom: 1px solid var(--border-color);
-    text-align: left;
-  }
-  .calls-table th {
-    background: var(--background-color);
-  color: var(--text-secondary);
-    font-weight: 700;
-  }
-  .calls-table tr:last-child td {
-    border-bottom: none;
-  }
-  .status-badge {
-    color: #fff;
-    padding: 6px 16px;
-    border-radius: 30px;
-    font-size: 12px;
-    display: inline-block;
-    font-weight: 700;
-    text-align: center;
-    min-width: 100px;
-    transition: all 0.3s ease;
-    background: var(--accent-color);
-  }
-
-<<<<<<< HEAD
-  /* Chat Details Panel (see previous code for details) */
-=======
-  /* Chat Details Panel (Side Drawer) */
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
-  .chat-details-panel {
-    position: fixed;
-    top: 0;
-    right: 0;
-    width: 400px;
-    max-width: 100vw;
-    height: 100vh;
-    background: var(--content-bg);
-    border-left: 1px solid var(--border-color);
-    z-index: 2000;
-    box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+.chat-header {
   display: flex;
-  flex-direction: column;
-    transform: translateX(100%);
-    transition: transform 0.3s ease;
-  }
-  .chat-details-panel.active {
-    transform: translateX(0);
-  }
-  .chat-details-header {
-  display: flex;
+  justify-content: space-between;
   align-items: center;
-    justify-content: space-between;
-    padding: 20px 24px 16px 24px;
-  border-bottom: 1px solid var(--border-color);
-    background: var(--content-bg);
-    flex-shrink: 0;
-}
-  .chat-details-avatar {
-  display: flex;
-  align-items: center;
-    gap: 16px;
-  }
-  .avatar-circle {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-    font-size: 22px;
-    font-weight: 700;
-    color: #fff;
-  }
-  .chat-details-title {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-  .contact-name {
-  font-size: 18px;
-    font-weight: 700;
-    color: var(--text-color);
-  }
-  .chat-channel-badge {
-    background: var(--accent-color);
-    color: #fff;
-    border-radius: 12px;
-    padding: 2px 10px;
-    font-size: 13px;
-    font-weight: 700;
-    margin-left: 0;
-    margin-top: 4px;
-    align-self: flex-start;
-  }
-  .chat-status {
-  font-size: 13px;
-  color: var(--text-secondary);
-    margin-top: 2px;
-  }
-  .close-details {
-    background: none;
-    border: none;
-    color: var(--text-color);
-    cursor: pointer;
-    font-size: 24px;
-    font-weight: 700;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-  display: flex;
-  align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-  }
-  .close-details:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-  }
-  .chat-details-actions {
-  display: flex;
-    gap: 10px;
-    padding: 12px 24px;
-    background: var(--content-bg);
-    border-bottom: 1px solid var(--border-color);
-    flex-shrink: 0;
-  }
-  .chat-action-btn {
-    background: #f5f5f5;
-    color: #222;
-  border: none;
-    border-radius: 12px;
-    width: 44px;
-    height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-    font-size: 22px;
-    margin: 0 2px;
-    transition: background 0.2s, color 0.2s, border 0.2s;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-  }
-  .chat-action-btn.view { background: #2196f3; color: #fff; }
-  .chat-action-btn.link { background: #ff9800; color: #fff; }
-  .chat-action-btn.create { background: #4caf50; color: #fff; }
-  .chat-action-btn.reporter { background: #757575; color: #fff; }
-  .chat-action-btn.archive { background: #e53935; color: #fff; }
-  .chat-action-btn:hover { filter: brightness(1.1); }
-  .chat-details-content {
-  flex: 1;
-  overflow-y: auto;
-    overflow-x: hidden;
-    padding: 24px 24px 0 24px;
-  display: flex;
-  flex-direction: column;
-    gap: 18px;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
-  }
-  .chat-thread.whatsapp-style {
-    flex: 1;
-    overflow-y: auto;
-    margin: 0 0 10px 0;
-  display: flex;
-  flex-direction: column;
-    gap: 10px;
-    max-height: 350px;
-    padding-bottom: 10px;
-  }
-  .chat-bubble {
-    max-width: 80%;
-    padding: 12px 18px;
-    border-radius: 18px;
-    font-size: 15px;
-    background: var(--background-color);
-    color: var(--text-color);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    align-self: flex-start;
-  position: relative;
-    word-break: break-word;
-  }
-  .chat-bubble.sent {
-    align-self: flex-end;
-    background: var(--accent-color);
-    color: #fff;
-  }
-  .bubble-text {
   margin-bottom: 4px;
 }
-  .bubble-time {
-    font-size: 12px;
-    color: var(--text-secondary);
-    text-align: right;
-  }
-  .chat-panel-input {
-    margin-top: 10px;
-    background: var(--content-bg);
-  border-top: 1px solid var(--border-color);
-    padding-top: 10px;
-    position: sticky;
-    bottom: 0;
-    z-index: 2;
-}
-.input-container {
-  display: flex;
-    align-items: center;
-  gap: 8px;
-  }
-.message-input {
-  flex: 1;
-    border: 1px solid var(--border-color);
-    border-radius: 24px;
-    padding: 10px 16px;
-  font-size: 15px;
-    background: var(--content-bg);
-    color: var(--text-color);
-  outline: none;
-    transition: border 0.2s;
-  }
-  .send-btn {
-    background: var(--accent-color);
-    color: #fff;
-  border: none;
-    border-radius: 18px;
-    padding: 8px 18px;
-    font-size: 15px;
-    font-weight: 600;
-  cursor: pointer;
-    transition: background 0.2s;
-  }
-.send-btn:hover {
-    background: var(--accent-hover);
-  }
-  @media (max-width: 600px) {
-    .chat-details-panel {
-      width: 100vw;
-      max-width: 100vw;
-      border-radius: 0;
-    }
-    .chat-details-header, .chat-details-actions, .chat-details-content {
-      padding-left: 10px;
-      padding-right: 10px;
-    }
-  }
 
-  /* Empty state */
-  .call-list:empty::before, .calls-table tbody:empty::before {
-    content: 'No messages yet.';
-  color: var(--text-secondary);
-    font-size: 15px;
-  text-align: center;
-    display: block;
-    margin: 40px 0;
-  }
-
-  /* Add or update this in the <style> section */
-  .read-aloud-btn, .read-aloud-btn, button.read-aloud-btn {
-    position: fixed;
-    right: 32px;
-    bottom: 32px;
-    background: var(--accent-color);
-    color: #fff;
-  border: none;
-    border-radius: 16px;
-    padding: 8px 18px;
-    font-size: 15px;
-    font-weight: 700;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    cursor: pointer;
-    z-index: 1000;
-  display: flex;
-  align-items: center;
-    gap: 8px;
-    transition: background 0.2s, box-shadow 0.2s;
-  }
-  .read-aloud-btn:hover {
-    background: var(--accent-hover);
-    box-shadow: 0 4px 16px rgba(150,75,0,0.12);
-  }
-
-  /* Channel filter pills */
-  .channel-filters {
-  display: flex;
-    gap: 16px;
-    margin: 0 32px 18px 32px;
-    padding-top: 10px;
-    padding-bottom: 0;
-  }
-  .channel-pill {
-    padding: 10px 22px;
-    border-radius: 24px;
-    background: var(--content-bg);
-    color: var(--text-color);
-    border: 1.5px solid var(--border-color);
-    font-size: 15px;
+.chat-name {
   font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    outline: none;
-  }
-  .channel-pill.active {
-    background: var(--accent-color);
-    color: #fff;
-    border: 1.5px solid var(--accent-color);
-  }
-  .channel-pill:not(.active):hover {
-    background: var(--accent-light);
-    color: var(--accent-color);
-    border: 1.5px solid var(--accent-color);
-  }
-  /* No chats fallback */
-  .no-chats {
-    text-align: center;
-    color: var(--text-secondary);
-  font-size: 16px;
-    padding: 40px 0;
-  }
-
-  .main-content, .calls-container, .view-container, .call-item, .calls-table-container, .chat-details-panel, .channel-pill, .view-toggle-pill {
-    background-color: var(--background-color) !important;
-    color: var(--text-color) !important;
-  }
-  .channel-pill, .view-toggle-pill {
-    background: var(--content-bg) !important;
-    color: var(--text-color) !important;
-  }
-  .channel-pill.active, .view-toggle-pill.active {
-    background: var(--accent-color) !important;
-    color: #fff !important;
-  }
-  .call-item, .calls-table, .calls-table th, .calls-table td {
-    background: var(--content-bg) !important;
-    color: var(--text-color) !important;
-  }
-
-  /* Search and Toggle Row */
-  .search-and-toggle-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 24px;
-    margin: 0 32px 18px 32px;
-    flex-wrap: wrap;
-  }
-  .search-section {
-    flex: 0 1 400px;
-    max-width: 400px;
-    min-width: 200px;
-    margin-right: 0;
-  }
-  .search-container {
-    width: 100%;
-    border-radius: 30px;
-    margin: 0;
-  display: flex;
-  align-items: center;
-    background: var(--content-bg);
-  border: 1px solid var(--border-color);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    padding: 0 18px;
-  }
-  .search-icon {
-    color: var(--text-secondary);
-    margin-right: 10px;
-    flex-shrink: 0;
-  }
-  .search-input {
-    flex: 1;
-    border: none;
-    background: transparent;
-    color: var(--text-color);
-    font-size: 15px;
-    outline: none;
-    padding: 14px 0;
-    border-radius: 30px;
-    box-shadow: none;
-    height: 48px;
-    line-height: 1.4;
-  display: flex;
-  align-items: center;
-  }
-  .search-input:focus {
-    outline: none;
-    box-shadow: none;
-  }
-  .search-clear {
-    background: none;
-    border: none;
-  color: var(--text-secondary);
-    cursor: pointer;
-    margin-left: 8px;
-    font-size: 16px;
-    display: flex;
-    align-items: center;
-  }
-  .search-clear:hover {
-  color: var(--accent-color);
+  color: var(--text-color);
+  font-size: 15px;
 }
-  .view-toggle-pills {
+
+.chat-time {
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
+.chat-meta {
   display: flex;
-    flex-shrink: 0;
-    gap: 12px;
-    min-width: 0;
-    height: 48px;
-  }
-  .view-toggle-pill {
-  border-radius: 30px;
-    height: 48px;
-    min-width: 110px;
-    max-width: 160px;
-    width: auto;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.chat-platform,
+.chat-status {
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.chat-platform {
+  background: color-mix(in oklab, var(--color-primary) 10%, transparent);
+  color: var(--color-primary);
+}
+
+.chat-status {
+  background: color-mix(in oklab, var(--success-color) 10%, transparent);
+  color: var(--success-color);
+}
+
+.chat-preview {
+  color: var(--color-muted);
+  font-size: 13px;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* Table View */
+.chats-table-container {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.chats-table-wrapper {
+  overflow-x: auto;
+}
+
+.chats-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.chats-table th {
+  background: var(--color-surface-muted);
+  color: var(--text-color);
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.chats-table td {
+  padding: 16px;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--text-color);
+  font-size: 14px;
+}
+
+.chats-table tr:hover {
+  background: var(--color-surface-muted);
+}
+
+.chats-table tr.selected {
+  background: color-mix(in oklab, var(--color-primary) 4%, transparent);
+}
+
+.chats-table tr:last-child td {
+  border-bottom: none;
+}
+
+.contact-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.contact-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-    font-size: 16px;
-    font-weight: 600;
-    border: 1.5px solid var(--border-color);
-    white-space: nowrap;
-    background: var(--content-bg);
-    color: var(--text-color);
-    transition: background 0.2s, color 0.2s;
-    padding: 0 22px;
-  }
-  .view-toggle-pill.active {
-    background: var(--accent-color);
-    color: #fff;
-    border: 1.5px solid var(--accent-color);
-    z-index: 1;
-  }
-  @media (max-width: 900px) {
-    .search-and-toggle-row {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 12px;
-      margin: 0 10px 18px 10px;
-    }
-    .search-section {
-      max-width: 100%;
-    }
-    .search-container, .view-toggle-pills, .view-toggle-pill {
-      border-radius: 30px;
-      min-width: 0;
-      width: 100%;
-      margin: 0;
-    }
-    .view-toggle-pills {
-      flex-direction: row;
-      width: 100%;
-      gap: 12px;
-      height: auto;
-    }
-    .view-toggle-pill {
-      border-radius: 30px;
-      margin: 0;
-      min-width: 0;
-      max-width: none;
-      width: 100%;
-    }
-  }
+  color: white;
+  font-weight: 600;
+  font-size: 12px;
+}
 
-  /* Chat Modal Overlay */
-  .chat-modal-overlay {
+.platform-badge {
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: color-mix(in oklab, var(--color-primary) 10%, transparent);
+  color: var(--color-primary);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.message-cell {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Enhanced status badge styling with proper color coding */
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.status--active {
+  background: rgba(34, 197, 94, 0.1);
+  color: #16a34a;
+}
+
+.status-badge.status--pending {
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+}
+
+.status-badge.status--inactive {
+  background: rgba(107, 114, 128, 0.1);
+  color: #6b7280;
+}
+
+.status-badge.status--busy {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+
+.status-badge.status--away {
+  background: rgba(168, 85, 247, 0.1);
+  color: #a855f7;
+}
+
+/* Status pill styling for timeline view */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-pill.status--active {
+  background: rgba(34, 197, 94, 0.1);
+  color: #16a34a;
+}
+
+.status-pill.status--pending {
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+}
+
+.status-pill.status--inactive {
+  background: rgba(107, 114, 128, 0.1);
+  color: #6b7280;
+}
+
+.status-pill.status--busy {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+
+.status-pill.status--away {
+  background: rgba(168, 85, 247, 0.1);
+  color: #a855f7;
+}
+
+/* Status dot styling */
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-dot.dot--active {
+  background: #16a34a;
+}
+
+.status-dot.dot--pending {
+  background: #d97706;
+}
+
+.status-dot.dot--inactive {
+  background: #6b7280;
+}
+
+.status-dot.dot--busy {
+  background: #dc2626;
+}
+
+.status-dot.dot--away {
+  background: #a855f7;
+}
+
+.action-btn {
+  background: none;
+  border: none;
+  color: var(--color-muted);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+  background: var(--color-surface-muted);
+  color: var(--text-color);
+}
+
+/* Chat Popup Panel */
+.chat-popup-overlay {
   position: fixed;
   top: 0;
   left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0,0,0,0.25);
-    z-index: 3000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  }
-  .chat-modal-panel {
-    background: var(--content-bg);
-    border-radius: 28px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-    width: 100%;
-    max-width: 420px;
-    max-height: 90vh;
-  display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    animation: fadeInScale 0.25s cubic-bezier(.4,1.4,.6,1) 1;
-  }
-  @keyframes fadeInScale {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
-  }
-  .chat-details-header {
-    border-radius: 28px 28px 0 0;
-  }
-  .chat-details-content {
-    border-radius: 0 0 28px 28px;
-    padding-bottom: 0;
-  }
-  .chat-details-actions {
-    justify-content: center;
-    gap: 18px;
-    padding: 14px 0 10px 0;
-    border-bottom: none;
-  }
-  .chat-action-btn {
-    background: var(--content-bg);
-    color: var(--accent-color);
-    border: 2px solid var(--accent-color);
-  border-radius: 50%;
-    width: 44px;
-    height: 44px;
-  display: flex;
-  align-items: center;
-    justify-content: center;
-    font-size: 22px;
-    margin: 0 2px;
-    transition: background 0.2s, color 0.2s, border 0.2s;
-  }
-  .chat-action-btn:hover {
-    background: var(--accent-color);
-  color: #fff;
-    border-color: var(--accent-color);
-  }
-  .action-icon {
-  display: flex;
-    align-items: center;
-  justify-content: center;
-}
-.chat-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.end-chat-btn {
-  background: #e53935;
-  color: #fff;
-  border: none;
-  border-radius: 50%;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  margin-right: 4px;
-  transition: background 0.2s, color 0.2s;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-  cursor: pointer;
-}
-.end-chat-btn:hover {
-  background: #b71c1c;
-}
-<<<<<<< HEAD
-=======
-
-.chat-main-layout {
-  display: flex;
-  flex-direction: row;
+  width: 100vw;
   height: 100vh;
-  position: relative;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.chat-list-section {
+.chat-popup {
+  background: var(--color-surface);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chat-popup-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.chat-popup-avatar {
+  flex-shrink: 0;
+}
+
+.chat-popup-info {
   flex: 1;
   min-width: 0;
+}
+
+.chat-popup-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-color);
+  margin-bottom: 4px;
+}
+
+.chat-popup-meta {
+  display: flex;
+  gap: 8px;
+}
+
+.chat-popup-platform,
+.chat-popup-status {
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.chat-popup-platform {
+  background: color-mix(in oklab, var(--color-primary) 10%, transparent);
+  color: var(--color-primary);
+}
+
+.chat-popup-status {
+  background: color-mix(in oklab, var(--success-color) 10%, transparent);
+  color: var(--success-color);
+}
+
+.chat-popup-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.popup-action-btn,
+.popup-close-btn {
+  background: var(--color-surface-muted);
+  border: none;
+  color: var(--text-color);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.popup-action-btn:hover,
+.popup-close-btn:hover {
+  background: var(--color-surface);
+  transform: translateY(-1px);
+}
+
+.popup-action-btn.primary {
+  background: var(--color-primary);
+  color: white;
+  padding: 8px 12px;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.popup-action-btn.primary:hover {
+  background: color-mix(in oklab, var(--color-primary) 80%, black);
+  color: white;
+}
+
+.popup-action-btn.danger {
+  background: var(--error-color);
+  color: white;
+}
+
+.popup-action-btn.danger:hover {
+  background: color-mix(in oklab, var(--error-color) 80%, black);
+  color: white;
+}
+
+.popup-close-btn:hover {
+  background: var(--error-color);
+  color: white;
+}
+
+.chat-popup-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chat-messages {
+  flex: 1;
+  padding: 20px;
   overflow-y: auto;
 }
 
-.chat-details-panel {
-  width: 400px;
-  max-width: 100vw;
-  position: fixed;
-  right: 0;
-  top: 0;
-  height: 100vh;
-  background: var(--content-bg);
-  box-shadow: -4px 0 24px rgba(0,0,0,0.18);
-  border-top-left-radius: 18px;
-  border-bottom-left-radius: 18px;
-  z-index: 1002;
-  display: none;
-  flex-direction: column;
-  transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
-}
-
-.chat-details-panel.active {
+.message-item {
   display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
-@media (max-width: 900px) {
-  .chat-main-layout {
-    flex-direction: column;
+.message-avatar {
+  flex-shrink: 0;
+}
+
+.message-content {
+  flex: 1;
+  background: var(--color-surface-muted);
+  border-radius: 16px;
+  padding: 12px 16px;
+  min-width: 0;
+}
+
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.message-sender {
+  font-weight: 600;
+  color: var(--text-color);
+  font-size: 13px;
+}
+
+.message-time {
+  color: var(--color-muted);
+  font-size: 11px;
+}
+
+.message-text {
+  color: var(--text-color);
+  font-size: 14px;
+  line-height: 1.4;
+  word-break: break-word;
+  background: var(--color-surface-muted);
+  padding: 12px 16px;
+  border-radius: 12px;
+}
+
+.chat-input-area {
+  padding: 20px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.input-container {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.message-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  color: var(--text-color);
+  font-size: 14px;
+  font-family: inherit;
+  resize: none;
+  min-height: 44px;
+  max-height: 120px;
+  line-height: 1.4;
+  transition: border-color 0.2s ease;
+}
+
+.message-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-primary) 10%, transparent);
+}
+
+.input-actions {
+  flex-shrink: 0;
+}
+
+.send-btn {
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+}
+
+.send-btn:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--color-primary) 80%, black);
+  transform: translateY(-1px);
+}
+
+.send-btn:disabled {
+  background: var(--color-muted);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .controls-section {
+  flex-direction: column;
+    align-items: stretch;
   }
-  .chat-details-panel {
-    width: 100vw;
-    border-radius: 0;
-    left: 0;
-    right: 0;
-    position: fixed;
-    top: 0;
-    z-index: 1002;
+  
+  .search-container {
+    max-width: none;
+  }
+  
+  .view-toggle {
+    justify-content: center;
+  }
+  
+  .chat-popup {
+    margin: 20px;
+    max-height: calc(100vh - 40px);
   }
 }
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .chat-popup-overlay {
+    background: rgba(0, 0, 0, 0.7);
+  }
+}
 </style>

@@ -14,8 +14,9 @@ logger = logging.getLogger(__name__)
 class AsteriskTCPServer:
     """TCP server for Asterisk audio input - uses Celery workers"""
     
-    def __init__(self, model_loader=None):
-        # Don't need model_loader anymore - we'll use Celery
+    def __init__(self, host: str = "0.0.0.0", port: int = 8300):
+        self.host = host
+        self.port = port
         self.active_connections: Dict[str, Dict] = {}  # Maps call_id to connection info
         self.server = None
         
@@ -158,16 +159,16 @@ class AsteriskTCPServer:
         except Exception as e:
             logger.error(f"❌ Failed to submit transcription for call {call_id}: {e}")
             
-    async def start_server(self, host: str = "0.0.0.0", port: int = 8300):
+    async def start_server(self):
         """Start TCP server"""
         try:
             self.server = await asyncio.start_server(
                 self.handle_connection, 
-                host, 
-                port
+                self.host, 
+                self.port
             )
             
-            logger.info(f"🚀 [Main] Asterisk TCP server listening on {host}:{port}")
+            logger.info(f"🚀 [Main] Asterisk TCP server listening on {self.host}:{self.port}")
             async with self.server:
                 await self.server.serve_forever()
                 
@@ -199,5 +200,5 @@ class AsteriskTCPServer:
             "active_connections": len(self.active_connections),
             "call_sessions": connection_stats,
             "transcription_method": "celery_workers",
-            "tcp_port": 8300
+            "tcp_port": self.port
         }

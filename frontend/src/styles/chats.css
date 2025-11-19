@@ -1,0 +1,56 @@
+/* Chats page styles extracted from Chats.vue */
+.main-content { margin-left: var(--sidebar-width); min-height: 100vh; background: var(--color-surface); transition: margin-left 0.3s ease; }
+@media (max-width: 768px){ .main-content { margin-left: 0; } }
+.page-container { padding: 20px; min-height: 100vh; }
+.header { display:flex; align-items:flex-start; gap:20px; margin-bottom:24px; }
+.header-content h1 { margin:0; font-size:26px; font-weight:900; color: var(--text-color); }
+.header-content p { margin:6px 0 0; color: var(--color-muted); font-size:14px; }
+.channel-filters { display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+.channel-pill { padding:8px 16px; border-radius:20px; background: var(--color-surface); color: var(--text-color); border:1px solid var(--color-border); font-size:14px; font-weight:600; cursor:pointer; transition: all 0.2s ease; }
+.channel-pill.active { background: var(--color-primary); color:#fff; border-color: var(--color-primary); }
+.channel-pill:hover:not(.active){ background: var(--color-surface-muted); border-color: var(--color-primary); }
+.controls-section { display:flex; justify-content:space-between; align-items:center; gap:20px; margin-bottom:24px; }
+.search-container { position:relative; flex:1; max-width:400px; }
+.search-container svg { position:absolute; left:12px; top:50%; transform: translateY(-50%); color: var(--color-muted); pointer-events:none; }
+.search-input { width:100%; padding:10px 12px 10px 40px; border:1px solid var(--color-border); border-radius:12px; background: var(--color-surface); color: var(--text-color); font-size:14px; transition: border-color 0.2s ease; }
+.search-input:focus { outline:none; border-color: var(--color-primary); box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-primary) 10%, transparent); }
+.search-clear { position:absolute; right:8px; top:50%; transform: translateY(-50%); background:none; border:none; color: var(--color-muted); cursor:pointer; padding:4px; border-radius:4px; transition: all 0.2s ease; }
+.search-clear:hover { background: var(--color-surface-muted); color: var(--text-color); }
+.view-toggle { display:flex; gap:8px; }
+.view-btn { display:flex; align-items:center; gap:8px; padding:10px 16px; border:1px solid var(--color-border); border-radius:10px; background: var(--color-surface); color: var(--text-color); font-size:14px; font-weight:600; cursor:pointer; transition: all 0.2s ease; }
+.view-btn.active { background: var(--color-primary); color:#fff; border-color: var(--color-primary); }
+.view-btn:hover:not(.active){ background: var(--color-surface-muted); border-color: var(--color-primary); }
+.view-container { display:flex; flex-direction:column; gap:20px; }
+.empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px 20px; text-align:center; color: var(--color-muted); }
+.empty-state svg { margin-bottom:16px; opacity:0.5; }
+.empty-state h3 { margin:0 0 8px; font-size:18px; font-weight:600; color: var(--text-color); }
+.empty-state p { margin:0; font-size:14px; line-height:1.5; }
+.time-section { margin-bottom:24px; }
+.time-section-title { margin:0 0 16px; font-size:16px; font-weight:700; color: var(--text-color); padding-bottom:8px; border-bottom:1px solid var(--color-border); }
+.chat-list { display:flex; flex-direction:column; gap:12px; }
+.chat-item { display:flex; align-items:center; gap:16px; padding:16px; background: var(--color-surface); border:1px solid var(--color-border); border-radius:12px; cursor:pointer; transition: all 0.2s ease; }
+.chat-item:hover { background: var(--color-surface-muted); border-color: var(--color-primary); transform: translateY(-1px); }
+.chat-item.selected { background: color-mix(in oklab, var(--color-primary) 8%, transparent); border-color: var(--color-primary); }
+.avatar-circle { width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:18px; }
+.avatar-circle.small { width:36px; height:36px; font-size:14px; }
+.chat-details { flex:1; min-width:0; }
+.chat-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+.chat-name { font-weight:600; color: var(--text-color); font-size:15px; }
+.chat-time { color: var(--color-muted); font-size:12px; }
+.chat-meta { display:flex; gap:8px; margin-bottom:6px; }
+.chat-platform, .chat-status { padding:2px 8px; border-radius:6px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
+.chat-platform { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); }
+.chat-status { background: color-mix(in oklab, var(--success-color) 10%, transparent); color: var(--success-color); }
+.chat-preview { color: var(--color-muted); font-size:13px; line-height:1.4; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+.chats-table-container { background: var(--color-surface); border:1px solid var(--color-border); border-radius:16px; overflow:hidden; box-shadow: var(--shadow-sm); }
+.chats-table-wrapper { overflow-x:auto; }
+.chats-table { width:100%; border-collapse:collapse; }
+.chats-table th { background: var(--color-surface-muted); color: var(--text-color); font-weight:600; font-size:13px; text-transform:uppercase; letter-spacing:0.5px; padding:16px; text-align:left; border-bottom:1px solid var(--color-border); }
+.chats-table td { padding:16px; border-bottom:1px solid var(--color-border); color: var(--text-color); font-size:14px; }
+.chats-table tr:hover { background: var(--color-surface-muted); }
+.chats-table tr.selected { background: color-mix(in oklab, var(--color-primary) 4%, transparent); }
+.chats-table tr:last-child td { border-bottom:none; }
+.contact-cell { display:flex; align-items:center; gap:12px; }
+.contact-avatar { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:600; font-size:12px; }
+.platform-badge { padding:4px 8px; border-radius:6px; background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); font-size:11px; font-weight:600; text-transform:uppercase; }
+

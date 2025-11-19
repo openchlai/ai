@@ -1,0 +1,61 @@
+# Google Colab Configuration
+# Optimized for Colab T4 GPU (15GB VRAM) with limited storage
+parent: "base_config.yaml"
+
+dataset:
+  # Use streaming mode to save disk space (~2GB instead of ~30GB)
+  train_samples: 5000   # Limited subset for Colab (full dataset = 44k)
+  test_samples: 500     # Smaller test set for faster eval
+  num_workers: 1        # Colab is limited in CPU cores
+
+training:
+  output_dir: "./whisper-large-v2-sw-colab"
+
+  # Training duration - shorter for testing
+  max_steps: 2000       # ~3-4 hours on Colab T4
+  warmup_steps: 200
+
+  # Batch configuration - optimized for T4 15GB
+  per_device_train_batch_size: 4   # T4 can handle 4-8
+  per_device_eval_batch_size: 8
+  gradient_accumulation_steps: 4   # Effective batch = 16
+
+  # Memory optimization - disable for Colab
+  gradient_checkpointing: false
+  fp16: false
+  optim: "adamw_torch"
+  dataloader_num_workers: 1
+
+  # Evaluation and checkpointing
+  evaluation_strategy: "steps"
+  eval_steps: 200       # Evaluate every 200 steps
+  save_steps: 200       # Save frequently (Colab can disconnect)
+  logging_steps: 25
+  save_total_limit: 2   # Keep only last 2 checkpoints (save space)
+
+  # Best model tracking
+  load_best_model_at_end: true
+  metric_for_best_model: "wer"
+  greater_is_better: false
+
+  # HuggingFace Hub - IMPORTANT for Colab (persist your model!)
+  push_to_hub: true
+  hub_model_id: "openchs/asr-whisper-helpline-sw-v1"  # CHANGE THIS!
+  hub_strategy: "checkpoint"
+
+mlflow:
+  tracking_uri: "https://c9833f779028.ngrok-free.app/"  # e.g., "http://abc123.ngrok.io"
+  experiment_name: "whisper-swahili-colab"
+  use_ngrok: false  # You'll manually paste the ngrok URL above
+
+logging:
+  use_mlflow: true
+  use_tensorboard: true
+  tensorboard_dir: "./logs/tensorboard"
+
+# Colab Notes:
+# - Free tier: T4 GPU (15GB), ~12 hour limit, can disconnect anytime
+# - Pro tier: Better GPUs (A100), longer runtime
+# - MUST push_to_hub=true to save progress (Colab VMs are ephemeral)
+# - Expected training time: 3-4 hours for 2000 steps
+# - Checkpoint size: ~3GB each

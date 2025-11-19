@@ -1,0 +1,313 @@
+{
+    "original_file": "/home/rogendo/Desktop/openchs_rnd/experiments/rodgendo_experiments/data_preprocessing/data/raw/train_data1.jsonl",
+    "file_size_bytes": 1247518,
+    "total_records": 1000,
+    "processed_records": 999,
+    "failed_records": 915,
+    "missing_fields_errors_count": 0,
+    "transcript_quality_errors_count": 1,
+    "summary_quality_errors_count": 0,
+    "compression_ratio_errors_count": 117,
+    "category_errors_count": 821,
+    "consistency_errors_count": 611,
+    "duplicate_transcripts_count": 0,
+    "missing_fields_errors": [],
+    "transcript_quality_errors": [
+        {
+            "record_idx": 218,
+            "line_number": 219,
+            "error": "Processing error: 'list' object has no attribute 'strip'"
+        }
+    ],
+    "summary_quality_errors": [],
+    "compression_ratio_errors": [
+        {
+            "record_id": "line_3",
+            "compression_ratio": 0.559,
+            "transcript_length": 623,
+            "summary_length": 348,
+            "expected_range": [
+                0.1,
+                0.5
+            ]
+        },
+        {
+            "record_id": "line_11",
+            "compression_ratio": 0.527,
+            "transcript_length": 640,
+            "summary_length": 337,
+            "expected_range": [
+                0.1,
+                0.5
+            ]
+        },
+        {
+            "record_id": "line_12",
+            "compression_ratio": 0.504,
+            "transcript_length": 613,
+            "summary_length": 309,
+            "expected_range": [
+                0.1,
+                0.5
+            ]
+        },
+        {
+            "record_id": "line_13",
+            "compression_ratio": 0.6,
+            "transcript_length": 620,
+            "summary_length": 372,
+            "expected_range": [
+                0.1,
+                0.5
+            ]
+        },
+        {
+            "record_id": "line_18",
+            "compression_ratio": 0.511,
+            "transcript_length": 556,
+            "summary_length": 284,
+            "expected_range": [
+                0.1,
+                0.5
+            ]
+        }
+    ],
+    "category_errors": [
+        {
+            "record_id": "line_5",
+            "invalid_category": "Work Exploitation",
+            "expected_categories": [
+                "Bullying",
+                "Child Exploitation",
+                "Child Labor",
+                "Child exploitation",
+                "Educational Issues",
+                "Emotional Abuse",
+                "Family Issues",
+                "Health Issues",
+                "Labor exploitation",
+                "Legal Issues",
+                "Neglect",
+                "Other",
+                "Physical Abuse",
+                "Sexual Abuse"
+            ]
+        },
+        {
+            "record_id": "line_6",
+            "invalid_category": "Child protection",
+            "expected_categories": [
+                "Bullying",
+                "Child Exploitation",
+                "Child Labor",
+                "Child exploitation",
+                "Educational Issues",
+                "Emotional Abuse",
+                "Family Issues",
+                "Health Issues",
+                "Labor exploitation",
+                "Legal Issues",
+                "Neglect",
+                "Other",
+                "Physical Abuse",
+                "Sexual Abuse"
+            ]
+        },
+        {
+            "record_id": "line_7",
+            "invalid_category": "Child marriage, Emotional abuse",
+            "expected_categories": [
+                "Bullying",
+                "Child Exploitation",
+                "Child Labor",
+                "Child exploitation",
+                "Educational Issues",
+                "Emotional Abuse",
+                "Family Issues",
+                "Health Issues",
+                "Labor exploitation",
+                "Legal Issues",
+                "Neglect",
+                "Other",
+                "Physical Abuse",
+                "Sexual Abuse"
+            ]
+        },
+        {
+            "record_id": "line_7",
+            "invalid_priority": "High (urgent intervention needed)",
+            "expected_priorities": [
+                "Critical",
+                "High",
+                "Low",
+                "Medium",
+                "Urgent"
+            ]
+        },
+        {
+            "record_id": "line_9",
+            "invalid_category": "Child Protection",
+            "expected_categories": [
+                "Bullying",
+                "Child Exploitation",
+                "Child Labor",
+                "Child exploitation",
+                "Educational Issues",
+                "Emotional Abuse",
+                "Family Issues",
+                "Health Issues",
+                "Labor exploitation",
+                "Legal Issues",
+                "Neglect",
+                "Other",
+                "Physical Abuse",
+                "Sexual Abuse"
+            ]
+        }
+    ],
+    "consistency_errors": [
+        {
+            "record_id": "line_2",
+            "issues": [
+                "victim mentions age but none found in transcript"
+            ]
+        },
+        {
+            "record_id": "line_4",
+            "issues": [
+                "victim mentions age but none found in transcript"
+            ]
+        },
+        {
+            "record_id": "line_7",
+            "issues": [
+                "victim mentions age but none found in transcript"
+            ]
+        },
+        {
+            "record_id": "line_8",
+            "issues": [
+                "victim mentions age but none found in transcript"
+            ]
+        },
+        {
+            "record_id": "line_9",
+            "issues": [
+                "location 'Kisumu, Kenya' not mentioned in transcript"
+            ]
+        }
+    ],
+    "duplicate_transcripts": [],
+    "text_statistics": {
+        "transcript_length": {
+            "mean": 631.5735735735735,
+            "median": 627.0,
+            "min": 462,
+            "max": 953
+        },
+        "summary_length": {
+            "mean": 251.2952952952953,
+            "median": 255.0,
+            "min": 78,
+            "max": 478
+        },
+        "compression_ratio": {
+            "mean": 0.39999267700007374,
+            "median": 0.40536277602523657,
+            "min": 0.12206572769953052,
+            "max": 0.8006700167504187
+        }
+    },
+    "distribution_statistics": {
+        "categories": {
+            "Labor Exploitation": 142,
+            "Labor exploitation": 104,
+            "Child Protection": 77,
+            "Child Labor": 60,
+            "Child labor": 59,
+            "Child protection": 52,
+            "Child Exploitation": 46,
+            "Child Marriage": 42,
+            "Child exploitation": 36,
+            "Emotional abuse": 27
+        },
+        "priorities": {
+            "Urgent": 105,
+            "High": 802,
+            "High (urgent intervention needed)": 2,
+            "Urgent & Dangerous": 1,
+            "High urgency": 12,
+            "Moderate": 5,
+            "High (urgent action required)": 10,
+            "High (due to ongoing abuse and fear that the child might be at immediate risk)": 1,
+            "Medium": 7,
+            "High Priority": 5,
+            "High (Urgent action needed)": 1,
+            "High (urgent intervention required)": 1,
+            "High (Urgent)": 2,
+            "High (Immediate Action Required)": 3,
+            "High (urgency: imminent child marriage)": 1,
+            "High (Urgent Intervention Required)": 1,
+            "High (Given the emotional state of the victim and potential long-term psychological impact)": 1,
+            "High (due to potential long-term emotional harm)": 1,
+            "High - immediate action required": 1,
+            "High Urgency": 1,
+            "Moderate urgency": 1,
+            "High (urgent)": 1,
+            "High (given the urgency of preventing further harm)": 1,
+            "High (Immediate action needed)": 1,
+            "High (urgent action needed)": 2,
+            "High (due to emotional distress)": 1,
+            "High (Given the emotional impact on the child, immediate intervention is crucial)": 1,
+            "High (Urgent action required)": 5,
+            "Urgent and dangerous": 1,
+            "High (immediate action needed)": 1,
+            "Medium - immediate follow-up needed due to emotional impact on the victim": 1,
+            "High Priority - Urgent Action Required": 1,
+            "High (Immediate action required)": 2,
+            "Moderate (since it is emotional abuse, but the child is young and has been subjected to this for some time)": 1,
+            "High (child's health and wellbeing at risk)": 1,
+            "High (Urgency: Child at risk of further neglect, potential malnutrition)": 1,
+            "High (Immediate action required to protect the child's health and well-being)": 1,
+            "High (Immediate action needed due to the victim's mental health)": 1,
+            "High (immediate action required)": 1,
+            "Moderate - ongoing emotional abuse": 1,
+            "High (urgency and danger)": 1,
+            "High (due to potential long-term psychological impact on the victim)": 1,
+            "Critical": 1,
+            "Medium (requires investigation and counseling)": 1,
+            "Moderate (urgent follow-up needed)": 1,
+            "high": 2,
+            "High (urgent intervention required due to potential physical harm and health risks)": 1,
+            "Moderate (Immediate action needed, but not urgent)": 1,
+            "High (due to potential long-term psychological impact on the child)": 1
+        },
+        "locations": {
+            "Mombasa": 236,
+            "Mwanza": 233,
+            "Kisumu": 132,
+            "Mombasa, Kenya": 43,
+            "Eldoret": 34,
+            "Kampala": 33,
+            "Mwanza, Tanzania": 32,
+            "Kisumu, Kenya": 30,
+            "Tororo": 20,
+            "Nairobi": 19
+        },
+        "issues": {
+            "Child labor": 315,
+            "Child Labor": 261,
+            "Forced child marriage": 90,
+            "Emotional abuse": 85,
+            "Child Marriage": 48,
+            "Forced child labor": 43,
+            "Child marriage": 32,
+            "Forced Child Marriage": 24,
+            "Neglect": 19,
+            "Forced Child Labor": 15
+        }
+    },
+    "profile_html": "summarization_profile.html",
+    "failed_records_csv": "summarization_failed.csv",
+    "qc_score": 50
+}

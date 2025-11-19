@@ -1,1256 +1,1641 @@
-image.png<template>
-<div>
-  <!-- SidePanel Component -->
-  <SidePanel 
-    :userRole="userRole"
-    :isInQueue="isInQueue"
-    :isProcessingQueue="isProcessingQueue"
-    :currentCall="currentCall"
-    @toggle-queue="handleQueueToggle"
-    @logout="handleLogout"
-    @sidebar-toggle="handleSidebarToggle"
-  />
+<template>
+  <div>
+    <!-- SidePanel Component -->
+    <SidePanel
+      :userRole="userRole"
+      :isInQueue="isInQueue"
+      :isProcessingQueue="isProcessingQueue"
+      :currentCall="currentCall"
+      @toggle-queue="handleQueueToggle"
+      @logout="handleLogout"
+      @sidebar-toggle="handleSidebarToggle"
+    />
 
-  <!-- Main Content -->
-  <div class="main-content">
-    <div class="cases-container">
-      <div class="header">
-        <div class="header-left">
-          <h1>Cases</h1>
-          <router-link to="/case-creation" class="add-new-case-btn">
-            Add New Case
-          </router-link>
-        </div>
-        <button class="theme-toggle" @click="toggleTheme">
-          <svg v-show="currentTheme === 'dark'" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <svg v-show="currentTheme === 'light'" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <line x1="12" y1="1" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <line x1="12" y1="21" x2="12" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <line x1="1" y1="12" x2="3" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <line x1="21" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <span>{{ currentTheme === 'dark' ? 'Light Mode' : 'Dark Mode' }}</span>
-        </button>
-      </div>
-
-<<<<<<< HEAD
-      <div class="search-container">
-        <input 
-          v-model="searchQuery"
-          class="search-input" 
-          placeholder="Search cases..." 
-=======
-      <div class="search-container" style="position: relative;">
-        <span class="search-icon">
-          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        </span>
-        <input 
-          v-model="searchQuery"
-          class="search-input" 
-          placeholder="Search case by title, assignee, or filer..." 
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
-          type="text"
-          @input="handleSearch"
+    <!-- Main Content -->
+    <div class="main-content">
+      <div class="cases-container">
+        <!-- Cleaned up header section with better structure and spacing -->
+        <CasesHeader
+          :search-query="searchQuery"
+          :current-view="currentView"
+          :filters="filters"
+          :active-filter="activeFilter"
+          @update:search-query="val => searchQuery = val"
+          @set-view="setCurrentView"
+          @set-filter="setActiveFilter"
         />
-      </div>
 
-      <div class="filter-tabs">
-        <button 
-          v-for="filter in filters" 
-          :key="filter.id"
-          :class="['filter-tab', { active: activeFilter === filter.id }]"
-          @click="setActiveFilter(filter.id)"
-        >
-          {{ filter.name }}
-        </button>
-      </div>
-
-      <div class="cases-container-inner">
-        <div class="cases-list">
-          <h2 class="cases-title">Cases</h2>
-          
-          <div 
-            v-for="caseItem in filteredCases" 
-            :key="caseItem.id"
-            :class="['case-item glass-card fine-border', { selected: selectedCaseId === caseItem.id }]"
-            @click="selectCase(caseItem.id)"
-          >
-            <div class="case-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
+        <!-- Added conditional rendering for table view and timeline view -->
+        <!-- Table View -->
+        <div v-if="currentView === 'table'" class="cases-table-container">
+          <CasesTable
+            :cases="filteredCases"
+            :cases-k="casesStore.cases_k"
+            :selected-id="selectedCaseId"
+            @select="selectCase"
+          />
+          <!-- Edit Case Modal -->
+          <div v-if="editModalOpen" class="case-detail-drawer">
+            <div class="case-detail-drawer-header">
+              <div class="case-detail-title">Edit Case</div>
+              <button class="close-details" @click="closeEdit">×</button>
             </div>
-            <div class="case-details">
-              <div class="case-title">{{ caseItem.title }}</div>
-              <div class="case-meta">
-<<<<<<< HEAD
-                <div class="case-priority">
-                  <div :class="['priority-dot', caseItem.priority.toLowerCase()]" />
-                  <span>{{ caseItem.priority }} priority</span>
-                </div>
-                <div v-if="selectedCaseId === caseItem.id" class="case-assigned">
-                  <span>{{ caseItem.assignedTo ? `Assigned: ${caseItem.assignedTo}` : 'Unassigned' }}</span>
-                </div>
-=======
-                <span class="case-priority">
-                  <span :class="['priority-dot', caseItem.priority.toLowerCase()]" />
-                  {{ caseItem.priority }} priority
-                </span>
-                <span class="case-date">{{ caseItem.date }}</span>
-                <span class="case-assigned">{{ caseItem.assignedTo ? `Assigned: ${caseItem.assignedTo}` : 'Unassigned' }}</span>
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
+            <div class="case-detail-content">
+              <div class="detail-item">
+                <div class="detail-label">Priority</div>
+                <div><select v-model="editForm.priority" class="input"><option>Low</option><option>Medium</option><option>High</option></select></div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Status</div>
+                <div><select v-model="editForm.status" class="input"><option>Open</option><option>Pending</option><option>Closed</option></select></div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Assigned To</div>
+                <div><input v-model="editForm.assignedTo" class="input" /></div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Case Plan</div>
+                <div><textarea v-model="editForm.casePlan" class="input" rows="3"/></div>
+              </div>
+              <div style="display:flex; gap:8px; justify-content:flex-end;">
+                <button class="btn btn--secondary btn--sm" @click="closeEdit">Cancel</button>
+                <button class="btn btn--primary btn--sm" @click="saveEdit">Save</button>
               </div>
             </div>
           </div>
         </div>
-        
-        <!-- Side Drawer for Case Details -->
+
+        <!-- Timeline View (Original Card Layout) -->
+        <div v-else class="cases-container-inner">
+          <div class="cases-list">
+            <h2 class="cases-title">Cases</h2>
+
+            <div
+              v-for="caseItem in filteredCases"
+              :key="casesStore.cases_k?.id ? caseItem[casesStore.cases_k.id[0]] : caseItem.id"
+              :class="[
+                'case-item card',
+                {
+                  selected: selectedCaseId === (casesStore.cases_k?.id ? caseItem[casesStore.cases_k.id[0]] : caseItem.id),
+                },
+              ]"
+              @click="selectCase(casesStore.cases_k?.id ? caseItem[casesStore.cases_k.id[0]] : caseItem.id)"
+            >
+              <div class="case-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M9 12L11 14L15 10"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+              <div class="case-details">
+                <div class="case-title">
+                  {{ casesStore.cases_k?.cat_1 ? caseItem[casesStore.cases_k.cat_1[0]] : "Untitled Case" }}
+                </div>
+                <div class="case-meta">
+                  <span class="case-priority">
+                    <span
+                      :class="['priority-dot', (casesStore.cases_k?.priority ? caseItem[casesStore.cases_k.priority[0]] || '' : '').toLowerCase()]"
+                    />
+                    {{ casesStore.cases_k?.priority ? caseItem[casesStore.cases_k.priority[0]] || "Normal" : "Normal" }}
+                    priority
+                  </span>
+                  <span class="case-date">
+                    {{ casesStore.cases_k?.dt ? new Date(
+                      caseItem[casesStore.cases_k.dt[0]] < 10000000000
+                        ? caseItem[casesStore.cases_k.dt[0]] * 1000
+                        : caseItem[casesStore.cases_k.dt[0]] * 3600 * 1000
+                    ).toLocaleString() : "No Date" }}
+                  </span>
+                  <span class="case-assigned">
+                    {{ casesStore.cases_k?.assigned_to && caseItem[casesStore.cases_k.assigned_to[0]]
+                      ? `Assigned: ${caseItem[casesStore.cases_k.assigned_to[0]]}`
+                      : "Unassigned" }}
+                  </span>
+                  <button class="btn btn--secondary btn--sm" @click.stop="openEdit(caseItem)">Edit</button>
+                </div>
+              </div>
+              <div v-if="caseItem.activity && caseItem.activity.length" class="case-activity" style="margin-top:8px; font-size:12px; color:var(--color-muted);">
+                <div v-for="(log, idx) in caseItem.activity.slice(0,3)" :key="idx">
+                  <strong>{{ log.type }}</strong> • {{ new Date(log.at).toLocaleString() }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Enhanced Case Detail Drawer -->
         <div class="case-detail-drawer" v-if="selectedCaseDetails">
           <div class="case-detail-drawer-header">
-            <div class="case-detail-title">{{ selectedCaseDetails.caseTitle || selectedCaseDetails.title }}</div>
-            <div class="case-detail-id">Case ID: {{ selectedCaseDetails.id }}</div>
-            <button class="close-details" @click="selectedCaseId = null">×</button>
+            <div class="case-detail-title">
+              <button class="back-button" @click="closeCaseDetails">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M19 12H5" stroke="currentColor" stroke-width="2"/>
+                  <path d="M12 19L5 12L12 5" stroke="currentColor" stroke-width="2"/>
+                </svg>
+              </button>
+              {{ getCaseTitle(selectedCaseDetails) }}
+            </div>
+            <div class="case-detail-id">
+              Case ID: {{ getCaseId(selectedCaseDetails) }}
+            </div>
+            <button class="close-details" @click="closeCaseDetails">×</button>
           </div>
+
+          <!-- Case Navigation Tabs -->
+          <div class="case-tabs">
+            <button 
+              class="case-tab" 
+              :class="{ active: currentTab === 'details' }"
+              @click="currentTab = 'details'"
+            >
+              Case Details
+            </button>
+            <button 
+              class="case-tab" 
+              :class="{ active: currentTab === 'history' }"
+              @click="currentTab = 'history'"
+            >
+              Case History
+            </button>
+            <button 
+              class="case-tab" 
+              :class="{ active: currentTab === 'update' }"
+              @click="handleUpdateTabClick"
+            >
+              Update
+            </button>
+            <button 
+              class="case-tab" 
+              :class="{ active: currentTab === 'print' }"
+              @click="printCase"
+            >
+              Print
+            </button>
+            <button class="edit-case-btn" @click="handleEditButtonClick">Edit</button>
+          </div>
+
           <div class="case-detail-content">
-            <div class="detail-item">
-              <div class="detail-label">Case Filer</div>
-              <div class="detail-value">{{ selectedCaseDetails.caseFiler || 'N/A' }}</div>
-            </div>
-            
-            <div class="detail-item">
-              <div class="detail-label">Caseer</div>
-              <div class="detail-value">{{ selectedCaseDetails.caseer || 'N/A' }}</div>
-            </div>
-            
-            <div class="detail-item">
-              <div class="detail-label">Case Priority</div>
-              <div :class="['detail-value', selectedCaseDetails.priority.toLowerCase()]">{{ selectedCaseDetails.priority }}</div>
-            </div>
-            
-            <div class="detail-item">
-              <div class="detail-label">Jurisdiction</div>
-              <div class="detail-value">{{ selectedCaseDetails.jurisdiction || 'N/A' }}</div>
-            </div>
-            
-            <div class="detail-item">
-              <div class="detail-label">Disposition</div>
-              <div :class="['detail-value', { abusive: selectedCaseDetails.disposition === 'Abusive Call' }]">
-                {{ selectedCaseDetails.disposition || 'N/A' }}
+            <!-- Case Details Tab Content -->
+            <div v-if="currentTab === 'details'">
+              <!-- Reporter Information -->
+              <div class="detail-section">
+                <h3 class="section-title">Reported By</h3>
+                <div class="reporter-info">
+                  <div class="reporter-details">
+                    <div class="reporter-name">{{ getReporterName(selectedCaseDetails) }}</div>
+                    <div class="reporter-demographics">{{ getReporterDemographics(selectedCaseDetails) }}</div>
+                    <div class="reporter-location">{{ getReporterLocation(selectedCaseDetails) }}</div>
+                    <div class="reporter-contacts">
+                      <button class="contact-btn" @click="callReporter(selectedCaseDetails)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                          <path d="M22 16.92V19C22 20.1046 21.1046 21 20 21C10.6112 21 3 13.3888 3 4C3 2.89543 3.89543 2 5 2H7.08C7.5561 2 7.9582 2.3372 8.0251 2.8075L8.7 7.5C8.7669 7.9704 8.5368 8.4299 8.12 8.67L6.5 9.5C7.84 12.16 11.84 16.16 14.5 17.5L15.33 15.88C15.5701 15.4632 16.0296 15.2331 16.5 15.3L21.1925 16.0249C21.6628 16.0918 22 16.4939 22 16.97V16.92Z" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                      </button>
+                      <button class="contact-btn" @click="emailReporter(selectedCaseDetails)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                          <path d="M4 4H20C21.1 4 22 4.9 22 6V18C22 19.1 21.1 20 20 20H4C2.9 20 2 19.1 2 18V6C2 4.9 2.9 4 4 4Z" stroke="currentColor" stroke-width="2"/>
+                          <polyline points="22,6 12,13 2,6" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                      </button>
               </div>
             </div>
-            
-            <div class="detail-item">
-              <div class="detail-label">Date</div>
-              <div class="detail-value">{{ selectedCaseDetails.date || 'N/A' }}</div>
+              </div>
+            </div>
+
+              <!-- Followup By -->
+              <div class="detail-section">
+                <h3 class="section-title">Followup By</h3>
+                <div class="followup-info">
+                  <div class="followup-contacts">
+                    <button class="contact-btn">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M22 16.92V19C22 20.1046 21.1046 21 20 21C10.6112 21 3 13.3888 3 4C3 2.89543 3.89543 2 5 2H7.08C7.5561 2 7.9582 2.3372 8.0251 2.8075L8.7 7.5C8.7669 7.9704 8.5368 8.4299 8.12 8.67L6.5 9.5C7.84 12.16 11.84 16.16 14.5 17.5L15.33 15.88C15.5701 15.4632 16.0296 15.2331 16.5 15.3L21.1925 16.0249C21.6628 16.0918 22 16.4939 22 16.97V16.92Z" stroke="currentColor" stroke-width="2"/>
+                      </svg>
+                    </button>
+                    <button class="contact-btn">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M4 4H20C21.1 4 22 4.9 22 6V18C22 19.1 21.1 20 20 20H4C2.9 20 2 19.1 2 18V6C2 4.9 2.9 4 4 4Z" stroke="currentColor" stroke-width="2"/>
+                        <polyline points="22,6 12,13 2,6" stroke="currentColor" stroke-width="2"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Clients -->
+              <div class="detail-section">
+                <h3 class="section-title">Clients</h3>
+                <div class="clients-info">
+                  <div class="empty-state">No clients added</div>
+                </div>
+              </div>
+
+              <!-- Perpetrators -->
+              <div class="detail-section">
+                <h3 class="section-title">Perpetrators</h3>
+                <div class="perpetrators-info">
+                  <div v-if="!getCasePerpetrators(selectedCaseDetails).length" class="empty-state">No perpetrators added</div>
+                  <div v-else class="perpetrators-list">
+                    <div v-for="perpetrator in getCasePerpetrators(selectedCaseDetails)" :key="perpetrator.id" class="perpetrator-item">
+                      <div class="perpetrator-name">{{ perpetrator.name }}</div>
+                      <div class="perpetrator-details">{{ perpetrator.age }} {{ perpetrator.sex }} - {{ perpetrator.location }}</div>
+                    </div>
+                  </div>
+                  <button class="btn btn--primary btn--sm" @click="openPerpetratorModal">+ Add a Perpetrator</button>
+                </div>
+              </div>
+
+              <!-- Related Files -->
+              <div class="detail-section">
+                <h3 class="section-title">Related Files</h3>
+                <div class="files-list">
+                  <div class="file-item" v-for="file in getCaseFiles(selectedCaseDetails)" :key="file.name">
+                    <div class="file-name">{{ file.name }}</div>
+                    <div class="file-size">{{ file.size }}</div>
+                    <button class="file-remove" @click="removeFile(file)">×</button>
+                  </div>
+                  <div v-if="!getCaseFiles(selectedCaseDetails).length" class="empty-state">No files attached</div>
+                </div>
+              </div>
+
+              <!-- Services Offered -->
+              <div class="detail-section">
+                <h3 class="section-title">Services Offered</h3>
+                <div class="services-info">
+                  <div class="service-item">Know About 116</div>
+                </div>
+              </div>
+
+              <!-- Case Information -->
+              <div class="detail-section">
+                <h3 class="section-title">Case Information</h3>
+                <div class="case-info-grid">
+                  <div class="info-item">
+                    <div class="info-label">Department</div>
+                    <div class="info-value">{{ getCaseDepartment(selectedCaseDetails) }}</div>
+                  </div>
+                  <div class="info-item">
+                    <div class="info-label">Case Category</div>
+                    <div class="info-value">
+                      <div class="category-tags">
+                        <span class="category-tag">Abuse</span>
+                        <span class="category-tag">Child Exploitation</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="info-item">
+                    <div class="info-label">Is Case GBV Related?</div>
+                    <div class="info-value">
+                      <span class="status-badge status-yes">Yes</span>
+                    </div>
+                  </div>
+                  <div class="info-item">
+                    <div class="info-label">Case Narrative</div>
+                    <div class="info-value">{{ getCaseNarrative(selectedCaseDetails) }}</div>
+                  </div>
+                  <div class="info-item">
+                    <div class="info-label">Case Plan</div>
+                    <div class="info-value">{{ getCasePlan(selectedCaseDetails) }}</div>
+                  </div>
+                  <div class="info-item">
+                    <div class="info-label">State of the Case in the Justice System</div>
+                    <div class="info-value">{{ getJusticeSystemState(selectedCaseDetails) }}</div>
+                  </div>
+                  <div class="info-item">
+                    <div class="info-label">General Case Assessment</div>
+                    <div class="info-value">{{ getGeneralAssessment(selectedCaseDetails) }}</div>
+                  </div>
+                  <div class="info-item">
+                    <div class="info-label">Priority</div>
+                    <div class="info-value">
+                      <span class="priority-badge high">High</span>
+                    </div>
+                  </div>
+                  <div class="info-item">
+                    <div class="info-label">Status</div>
+                    <div class="info-value">
+                      <span class="status-badge status-ongoing">Ongoing</span>
+                    </div>
+                  </div>
+                  <div class="info-item">
+                    <div class="info-label">Escalated To</div>
+                    <div class="info-value">{{ getEscalatedTo(selectedCaseDetails) }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Case History Tab Content -->
+            <div v-if="currentTab === 'history'" class="case-history-content">
+              <div class="history-header">
+                <h3 class="section-title">Case Activity Timeline</h3>
+                <p class="history-subtitle">All changes and updates made to this case</p>
+              </div>
+              
+              <div class="timeline">
+                <div v-if="!getCaseActivity(selectedCaseDetails).length" class="empty-state">
+                  <p>No activity recorded for this case yet.</p>
+                </div>
+                <div v-else>
+                  <div v-for="activity in getCaseActivity(selectedCaseDetails)" :key="activity.id" class="timeline-item">
+                    <div class="timeline-marker">
+                      <div class="timeline-icon" :class="getActivityIconClass(activity.type)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                          <path :d="getActivityIcon(activity.type)" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                      </div>
+                    </div>
+                    <div class="timeline-content">
+                      <div class="timeline-header">
+                        <h4 class="timeline-title">{{ activity.type }}</h4>
+                        <span class="timeline-time">{{ formatActivityTime(activity.at) }}</span>
+                      </div>
+                      <div class="timeline-body">
+                        <p class="timeline-user">By: {{ activity.by }}</p>
+                        <div v-if="activity.changes" class="timeline-changes">
+                          <h5>Changes Made:</h5>
+                          <ul>
+                            <li v-for="(value, key) in activity.changes" :key="key">
+                              <strong>{{ formatFieldName(key) }}:</strong> {{ value }}
+                            </li>
+                          </ul>
+                        </div>
+                        <div v-if="activity.details" class="timeline-details">
+                          <p>{{ activity.details.perpetratorName ? `Perpetrator: ${activity.details.perpetratorName}` : '' }}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Case Update Modal -->
+        <div v-if="updateModalOpen" class="case-update-modal" @click="closeUpdateModal">
+          <div class="modal-content" @click.stop>
+            <div class="modal-header">
+              <h2 class="modal-title">{{ getCaseTitle(selectedCaseDetails) }}</h2>
+              <button class="modal-close" @click="closeUpdateModal">×</button>
             </div>
             
-            <div class="detail-item">
-              <div class="detail-label">Escalated to</div>
-              <div class="detail-value">{{ selectedCaseDetails.escalatedTo || 'N/A' }}</div>
+            <div class="modal-body">
+              <form @submit.prevent="saveCaseUpdate">
+                <div class="form-group">
+                  <label for="case-plan-update">Case Plan Update *</label>
+                  <textarea
+                    v-model="updateForm.casePlan"
+                    id="case-plan-update"
+                    class="form-control"
+                    rows="4"
+                    placeholder="Enter case plan update..."
+                    required
+                  ></textarea>
+                </div>
+
+                <div class="form-group">
+                  <label for="justice-system-state-update">State of the Case in the Justice System</label>
+                  <select
+                    v-model="updateForm.justiceSystemState"
+                    id="justice-system-state-update"
+                    class="form-control"
+                  >
+                    <option value="">Select state...</option>
+                    <option value="Social Worker">Social Worker</option>
+                    <option value="Police Investigation">Police Investigation</option>
+                    <option value="Court Proceedings">Court Proceedings</option>
+                    <option value="Prosecution">Prosecution</option>
+                    <option value="Sentencing">Sentencing</option>
+                    <option value="Closed">Closed</option>
+                  </select>
+              </div>
+
+                <div class="form-group">
+                  <label for="general-assessment-update">General Case Assessment</label>
+                  <select
+                    v-model="updateForm.generalAssessment"
+                    id="general-assessment-update"
+                    class="form-control"
+                  >
+                    <option value="">Select assessment...</option>
+                    <option value="Progressing">Progressing</option>
+                    <option value="Stalled">Stalled</option>
+                    <option value="Resolved">Resolved</option>
+                    <option value="Escalated">Escalated</option>
+                    <option value="Under Review">Under Review</option>
+                  </select>
+            </div>
+
+                <div class="form-group">
+                  <label for="priority-update">Priority *</label>
+                  <select
+                    v-model="updateForm.priority"
+                    id="priority-update"
+                    class="form-control"
+                    required
+                  >
+                    <option value="">Select priority...</option>
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                    <option value="Critical">Critical</option>
+                  </select>
+              </div>
+
+                <div class="form-group">
+                  <label for="status-update">Status *</label>
+                  <select
+                    v-model="updateForm.status"
+                    id="status-update"
+                    class="form-control"
+                    required
+                  >
+                    <option value="">Select status...</option>
+                    <option value="New">New</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Ongoing">Ongoing</option>
+                    <option value="Resolved">Resolved</option>
+                    <option value="Closed">Closed</option>
+                  </select>
+            </div>
+
+                <div class="form-group">
+                  <label for="escalated-to-update">Escalated To</label>
+                  <select
+                    v-model="updateForm.escalatedTo"
+                    id="escalated-to-update"
+                    class="form-control"
+                  >
+                    <option value="">Select escalation level...</option>
+                    <option value="Supervisor">Supervisor</option>
+                    <option value="Manager">Manager</option>
+                    <option value="Director">Director</option>
+                    <option value="External Agency">External Agency</option>
+                    <option value="Law Enforcement">Law Enforcement</option>
+                  </select>
+              </div>
+
+                <!-- File Management Section -->
+                <div class="form-group">
+                  <label>File Management</label>
+                  <div class="file-management">
+                    <div class="current-files">
+                      <h5>Current Files:</h5>
+                      <div v-if="getCaseFiles(selectedCaseDetails).length" class="files-list">
+                        <div v-for="file in getCaseFiles(selectedCaseDetails)" :key="file.name" class="file-item">
+                          <div class="file-info">
+                            <div class="file-name">{{ file.name }}</div>
+                            <div class="file-size">{{ formatFileSize(file.size) }}</div>
+            </div>
+                          <button class="file-remove" @click="removeFileFromUpdate(file)">×</button>
+              </div>
+            </div>
+                      <div v-else class="empty-state">No files attached</div>
+              </div>
+                    
+                    <div class="add-files">
+                      <h5>Add New Files:</h5>
+                      <div class="file-upload-area" 
+                           @dragover.prevent 
+                           @dragleave.prevent 
+                           @drop.prevent="handleFileDrop"
+                           :class="{ 'drag-over': isDragOver }">
+                        <input 
+                          ref="fileInput"
+                          type="file" 
+                          multiple 
+                          @change="handleFileSelect"
+                          style="display: none;"
+                        />
+                        <div class="upload-content">
+                          <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                            <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.89 22 5.99 22H18C19.1 22 20 21.1 20 20V8L14 2Z" stroke="currentColor" stroke-width="2"/>
+                            <polyline points="14,2 14,8 20,8" stroke="currentColor" stroke-width="2"/>
+                            <line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="2"/>
+                            <line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="2"/>
+                            <polyline points="10,9 9,9 8,9" stroke="currentColor" stroke-width="2"/>
+                          </svg>
+                          <p>Drag and drop files here or <button type="button" @click="$refs.fileInput.click()" class="upload-btn">browse</button></p>
+                          <small>Supported formats: PDF, DOC, DOCX, JPG, PNG, MP3, WAV</small>
+            </div>
+              </div>
+                      
+                      <div v-if="newFiles.length" class="new-files-preview">
+                        <h6>Files to be added:</h6>
+                        <div v-for="file in newFiles" :key="file.name" class="new-file-item">
+                          <span class="file-name">{{ file.name }}</span>
+                          <span class="file-size">{{ formatFileSize(file.size) }}</span>
+                          <button type="button" @click="removeNewFile(file)" class="remove-new-file">×</button>
+            </div>
+          </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="modal-actions">
+                  <button type="button" class="btn btn--secondary" @click="closeUpdateModal">Cancel</button>
+                  <button type="submit" class="btn btn--primary">Update</button>
+            </div>
+              </form>
+
+              <!-- Current Values Display -->
+              <div class="current-values">
+                <h4>Current Values</h4>
+                <div class="current-values-grid">
+                  <div class="current-value-item">
+                    <span class="current-label">Justice System State:</span>
+                    <span class="current-value">{{ updateForm.justiceSystemState || "Not set" }}</span>
+              </div>
+                  <div class="current-value-item">
+                    <span class="current-label">General Assessment:</span>
+                    <span class="current-value">{{ updateForm.generalAssessment || "Not set" }}</span>
+            </div>
+                  <div class="current-value-item">
+                    <span class="current-label">Priority:</span>
+                    <span class="current-value">{{ updateForm.priority || "Not set" }}</span>
+              </div>
+                  <div class="current-value-item">
+                    <span class="current-label">Status:</span>
+                    <span class="current-value">{{ updateForm.status || "Not set" }}</span>
+            </div>
+                  <div class="current-value-item">
+                    <span class="current-label">Escalated To:</span>
+                    <span class="current-value">{{ updateForm.escalatedTo || "Not set" }}</span>
+              </div>
+            </div>
+          </div>
             </div>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- New Perpetrator Modal -->
+    <div v-if="perpetratorModalOpen" class="perpetrator-modal">
+      <div class="modal-overlay" @click="closePerpetratorModal"></div>
+      <div class="modal-content perpetrator-modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title">New Perpetrator</h2>
+          <button class="modal-close" @click="closePerpetratorModal">×</button>
+        </div>
+        
+        <div class="modal-body">
+          <form @submit.prevent="savePerpetrator">
+            <div class="form-row">
+              <div class="form-column">
+                <div class="form-group">
+                  <label for="perpetrator-name">Perpetrator's Name *</label>
+                  <input
+                    v-model="perpetratorForm.name"
+                    type="text"
+                    id="perpetrator-name"
+                    class="form-control"
+                    required
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="perpetrator-location">Location</label>
+                  <select
+                    v-model="perpetratorForm.location"
+                    id="perpetrator-location"
+                    class="form-control"
+                  >
+                    <option value="">Select location...</option>
+                    <option value="Nairobi">Nairobi</option>
+                    <option value="Mombasa">Mombasa</option>
+                    <option value="Kisumu">Kisumu</option>
+                    <option value="Nakuru">Nakuru</option>
+                    <option value="Eldoret">Eldoret</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="perpetrator-landmark">Nearest Landmark</label>
+                  <input
+                    v-model="perpetratorForm.landmark"
+                    type="text"
+                    id="perpetrator-landmark"
+                    class="form-control"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="perpetrator-id-type">ID Type</label>
+                  <select
+                    v-model="perpetratorForm.idType"
+                    id="perpetrator-id-type"
+                    class="form-control"
+                  >
+                    <option value="">Select ID type...</option>
+                    <option value="National ID">National ID</option>
+                    <option value="Passport">Passport</option>
+                    <option value="Birth Certificate">Birth Certificate</option>
+                    <option value="Alien Card">Alien Card</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label>Is the Perpetrator a Refugee?</label>
+                  <div class="radio-group">
+                    <label class="radio-label">
+                      <input type="radio" v-model="perpetratorForm.isRefugee" value="Yes" />
+                      Yes
+                    </label>
+                    <label class="radio-label">
+                      <input type="radio" v-model="perpetratorForm.isRefugee" value="No" />
+                      No
+                    </label>
+                    <label class="radio-label">
+                      <input type="radio" v-model="perpetratorForm.isRefugee" value="Unknown" />
+                      Unknown
+                    </label>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="perpetrator-phone">Phone Number</label>
+                  <input
+                    v-model="perpetratorForm.phone"
+                    type="tel"
+                    id="perpetrator-phone"
+                    class="form-control"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="perpetrator-relationship">Relationship with Client?</label>
+                  <select
+                    v-model="perpetratorForm.relationship"
+                    id="perpetrator-relationship"
+                    class="form-control"
+                  >
+                    <option value="">Select relationship...</option>
+                    <option value="Parent">Parent</option>
+                    <option value="Sibling">Sibling</option>
+                    <option value="Relative">Relative</option>
+                    <option value="Friend">Friend</option>
+                    <option value="Stranger">Stranger</option>
+                    <option value="Teacher">Teacher</option>
+                    <option value="Neighbor">Neighbor</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="perpetrator-health">Health Status</label>
+                  <select
+                    v-model="perpetratorForm.healthStatus"
+                    id="perpetrator-health"
+                    class="form-control"
+                  >
+                    <option value="">Select Health Status</option>
+                    <option value="Good">Good</option>
+                    <option value="Fair">Fair</option>
+                    <option value="Poor">Poor</option>
+                    <option value="Unknown">Unknown</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="perpetrator-guardian">Perpetrator's Guardian's Name</label>
+                  <input
+                    v-model="perpetratorForm.guardianName"
+                    type="text"
+                    id="perpetrator-guardian"
+                    class="form-control"
+                  />
+                </div>
+              </div>
+
+              <div class="form-column">
+                <div class="form-group">
+                  <label for="perpetrator-age">Age</label>
+                  <input
+                    v-model="perpetratorForm.age"
+                    type="number"
+                    id="perpetrator-age"
+                    class="form-control"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="perpetrator-dob">DOB</label>
+                  <input
+                    v-model="perpetratorForm.dob"
+                    type="date"
+                    id="perpetrator-dob"
+                    class="form-control"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="perpetrator-age-group">Age Group</label>
+                  <input
+                    v-model="perpetratorForm.ageGroup"
+                    type="text"
+                    id="perpetrator-age-group"
+                    class="form-control"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="perpetrator-sex">Sex</label>
+                  <select
+                    v-model="perpetratorForm.sex"
+                    id="perpetrator-sex"
+                    class="form-control"
+                  >
+                    <option value="">Select sex...</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="perpetrator-nationality">Nationality</label>
+                  <select
+                    v-model="perpetratorForm.nationality"
+                    id="perpetrator-nationality"
+                    class="form-control"
+                  >
+                    <option value="">Select nationality...</option>
+                    <option value="Kenyan">Kenyan</option>
+                    <option value="Ugandan">Ugandan</option>
+                    <option value="Tanzanian">Tanzanian</option>
+                    <option value="Somali">Somali</option>
+                    <option value="Ethiopian">Ethiopian</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="perpetrator-id-number">ID Number</label>
+                  <input
+                    v-model="perpetratorForm.idNumber"
+                    type="text"
+                    id="perpetrator-id-number"
+                    class="form-control"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="perpetrator-language">Language</label>
+                  <select
+                    v-model="perpetratorForm.language"
+                    id="perpetrator-language"
+                    class="form-control"
+                  >
+                    <option value="">Select language...</option>
+                    <option value="English">English</option>
+                    <option value="Kiswahili">Kiswahili</option>
+                    <option value="Luo">Luo</option>
+                    <option value="Kikuyu">Kikuyu</option>
+                    <option value="Kalenjin">Kalenjin</option>
+                    <option value="Luhya">Luhya</option>
+                    <option value="Kamba">Kamba</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="perpetrator-tribe">Tribe</label>
+                  <select
+                    v-model="perpetratorForm.tribe"
+                    id="perpetrator-tribe"
+                    class="form-control"
+                  >
+                    <option value="">Select tribe...</option>
+                    <option value="Kikuyu">Kikuyu</option>
+                    <option value="Luo">Luo</option>
+                    <option value="Kalenjin">Kalenjin</option>
+                    <option value="Luhya">Luhya</option>
+                    <option value="Kamba">Kamba</option>
+                    <option value="Kisii">Kisii</option>
+                    <option value="Meru">Meru</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="perpetrator-alt-phone">Alternative Phone</label>
+                  <input
+                    v-model="perpetratorForm.alternativePhone"
+                    type="tel"
+                    id="perpetrator-alt-phone"
+                    class="form-control"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="perpetrator-email">Email</label>
+                  <input
+                    v-model="perpetratorForm.email"
+                    type="email"
+                    id="perpetrator-email"
+                    class="form-control"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="perpetrator-shares-home">Shares Home with Client?</label>
+                  <select
+                    v-model="perpetratorForm.sharesHome"
+                    id="perpetrator-shares-home"
+                    class="form-control"
+                  >
+                    <option value="">Select...</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                    <option value="Unknown">Unknown</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="perpetrator-profession">Perpetrator's Profession</label>
+                  <select
+                    v-model="perpetratorForm.profession"
+                    id="perpetrator-profession"
+                    class="form-control"
+                  >
+                    <option value="">Select profession...</option>
+                    <option value="Teacher">Teacher</option>
+                    <option value="Doctor">Doctor</option>
+                    <option value="Driver">Driver</option>
+                    <option value="Farmer">Farmer</option>
+                    <option value="Business Owner">Business Owner</option>
+                    <option value="Unemployed">Unemployed</option>
+                    <option value="Student">Student</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="perpetrator-marital-status">Perpetrator's Marital Status</label>
+                  <select
+                    v-model="perpetratorForm.maritalStatus"
+                    id="perpetrator-marital-status"
+                    class="form-control"
+                  >
+                    <option value="">Select marital status...</option>
+                    <option value="Single">Single</option>
+                    <option value="Married">Married</option>
+                    <option value="Divorced">Divorced</option>
+                    <option value="Widowed">Widowed</option>
+                    <option value="Separated">Separated</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="perpetrator-additional-details">Additional Details</label>
+              <textarea
+                v-model="perpetratorForm.additionalDetails"
+                id="perpetrator-additional-details"
+                class="form-control"
+                rows="4"
+                placeholder="Enter any additional information about the perpetrator..."
+              ></textarea>
+            </div>
+
+            <div class="modal-actions">
+              <button type="button" class="btn btn--secondary" @click="closePerpetratorModal">Cancel</button>
+              <button type="submit" class="btn btn--primary">Create</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   </div>
-</div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import SidePanel from '@/components/SidePanel.vue'
+import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import SidePanel from "@/components/SidePanel.vue";
+import { useCaseStore } from "@/stores/cases";
+import CasesHeader from "@/components/CasesHeader.vue";
+import CasesTable from "@/components/CasesTable.vue";
 
-const router = useRouter()
+const casesStore = useCaseStore();
+const router = useRouter();
 
 // Reactive state
-const searchQuery = ref('')
-const activeFilter = ref('all')
-const selectedCaseId = ref('123456') // Default to first case
-const currentTheme = ref(localStorage.getItem('theme') || 'dark')
+const searchQuery = ref("");
+const activeFilter = ref("all");
+const selectedCaseId = ref(null);
+const currentTheme = ref("light");
+const currentView = ref("table"); // Default to table view
+const updateModalOpen = ref(false);
+const currentTab = ref('details');
+const perpetratorModalOpen = ref(false);
+const isDragOver = ref(false);
+const newFiles = ref([]);
+const filesToRemove = ref([]);
+
+// Update form data
+const updateForm = ref({
+  casePlan: '',
+  justiceSystemState: '',
+  generalAssessment: '',
+  priority: '',
+  status: '',
+  escalatedTo: ''
+});
+
+// Perpetrator form data
+const perpetratorForm = ref({
+  name: '',
+  location: '',
+  landmark: '',
+  idType: '',
+  isRefugee: '',
+  phone: '',
+  relationship: '',
+  healthStatus: '',
+  guardianName: '',
+  age: '',
+  dob: '',
+  ageGroup: '',
+  sex: '',
+  nationality: '',
+  idNumber: '',
+  language: '',
+  tribe: '',
+  alternativePhone: '',
+  email: '',
+  sharesHome: '',
+  profession: '',
+  maritalStatus: '',
+  additionalDetails: ''
+});
 
 // SidePanel related state
-const userRole = ref('super-admin')
-const isInQueue = ref(false)
-const isProcessingQueue = ref(false)
-const currentCall = ref(null)
+const userRole = ref("super-admin");
+const isInQueue = ref(false);
+const isProcessingQueue = ref(false);
+const currentCall = ref(null);
 
 // Filter options
 const filters = ref([
-  { id: 'all', name: 'All' },
-  { id: 'open', name: 'Open', status: 'open' },
-  { id: 'pending', name: 'Pending', status: 'pending' },
-  { id: 'assigned', name: 'Assigned' },
-  { id: 'closed', name: 'Closed', status: 'closed' },
-  { id: 'today', name: 'Today' },
-  { id: 'priority', name: 'Priority' }
-])
-
-// Sample cases data
-const cases = ref([
-  {
-    id: '123456',
-    title: 'Case #123456-GBV request',
-    priority: 'High',
-    assignedTo: 'Robert Jackson',
-    caseTitle: 'Emergency call',
-    caseFiler: 'Nelson Adega',
-    caseer: 'Mitch Ngugi',
-    jurisdiction: 'Judge- in Court',
-    disposition: 'Abusive Call',
-    date: '15th Aug 2025',
-    escalatedTo: 'Ntaate Kimani'
-  },
-  {
-    id: '789012',
-    title: 'Case #789012 - Assault',
-    priority: 'Medium',
-    assignedTo: 'Sarah Mitchell',
-    caseTitle: 'Assault Case',
-    caseFiler: 'Jane Doe',
-    caseer: 'John Smith',
-    jurisdiction: 'District Court',
-    disposition: 'Under Investigation',
-    date: '14th Aug 2025',
-    escalatedTo: 'Senior Detective'
-  },
-  {
-    id: '345678-1',
-    title: 'Case #345678-In-transit medical support',
-    priority: 'Low',
-    assignedTo: null,
-    caseTitle: 'Medical Support',
-    caseFiler: 'Medical Team',
-    caseer: 'Emergency Services',
-    jurisdiction: 'Emergency Response',
-    disposition: 'Resolved',
-    date: '13th Aug 2025',
-    escalatedTo: 'Hospital Administration'
-  },
-  {
-    id: '901234-1',
-    title: 'Case #901234-battery coordination',
-    priority: 'High',
-    assignedTo: 'Michael Lee',
-    caseTitle: 'Battery Case',
-    caseFiler: 'Police Department',
-    caseer: 'Detective Brown',
-    jurisdiction: 'Criminal Court',
-    disposition: 'Active Investigation',
-    date: '16th Aug 2025',
-    escalatedTo: 'District Attorney'
-  },
-  {
-    id: '345678-2',
-    title: 'Case #345678-In-transit medical support',
-    priority: 'High',
-    assignedTo: 'Michael Lee',
-    caseTitle: 'Medical Emergency',
-    caseFiler: 'Paramedic Team',
-    caseer: 'Emergency Coordinator',
-    jurisdiction: 'Emergency Response',
-    disposition: 'In Progress',
-    date: '16th Aug 2025',
-    escalatedTo: 'Medical Director'
-  },
-  {
-    id: '901234-2',
-    title: 'Case #901234-Transport coordination',
-    priority: 'High',
-    assignedTo: 'Michael Lee',
-    caseTitle: 'Transport Coordination',
-    caseFiler: 'Transport Authority',
-    caseer: 'Logistics Team',
-    jurisdiction: 'Transport Commission',
-    disposition: 'Pending Review',
-    date: '12th Aug 2025',
-    escalatedTo: 'Operations Manager'
-  },
-  {
-    id: '901234-3',
-    title: 'Case #901234-Transport coordination',
-    priority: 'High',
-    assignedTo: 'Michael Lee',
-    caseTitle: 'Transport Emergency',
-    caseFiler: 'Emergency Services',
-    caseer: 'Transport Coordinator',
-    jurisdiction: 'Emergency Response',
-    disposition: 'Active',
-    date: '16th Aug 2025',
-    escalatedTo: 'Emergency Director'
-  }
-])
+  { id: "all", name: "All" },
+  { id: "open", name: "Open", status: "open" },
+  { id: "pending", name: "Pending", status: "pending" },
+  { id: "assigned", name: "Assigned" },
+  { id: "closed", name: "Closed", status: "closed" },
+  { id: "today", name: "Today" },
+  { id: "priority", name: "Priority" },
+]);
 
 // Computed properties
 const filteredCases = computed(() => {
-  let filtered = cases.value
+  let filtered = casesStore.cases || [];
+ 
+  const normalizeStatus = (value) => {
+    if (!value && value !== 0) return '';
+    const v = String(value).toLowerCase();
+    if (v === '1') return 'open';
+    if (v === '2') return 'closed';
+    if (v === '0') return 'pending';
+    return v; // already a label like 'open', 'closed', 'pending'
+  };
 
-  // Search filter
+  const normalizePriority = (value) => {
+    if (!value && value !== 0) return '';
+    const v = String(value).toLowerCase();
+    if (v === '3') return 'high';
+    if (v === '2') return 'medium';
+    if (v === '1') return 'low';
+    return v; // already a label
+  };
+
   if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    filtered = filtered.filter(c => 
-      c.title.toLowerCase().includes(query) ||
-      (c.assignedTo && c.assignedTo.toLowerCase().includes(query)) ||
-      (c.caseFiler && c.caseFiler.toLowerCase().includes(query))
-    )
+    filtered = casesStore.searchCases(searchQuery.value);
   }
 
-  // Status filter
-  if (activeFilter.value !== 'all') {
-    const filterStatus = filters.value.find(f => f.id === activeFilter.value)?.status
+  if (activeFilter.value !== "all") {
+    const filterStatus = filters.value.find(
+      (f) => f.id === activeFilter.value
+    )?.status;
     if (filterStatus) {
-      filtered = filtered.filter(c => c.status === filterStatus)
-    } else if (activeFilter.value === 'assigned') {
-      filtered = filtered.filter(c => c.assignedTo)
-    } else if (activeFilter.value === 'priority') {
-      filtered = filtered.filter(c => c.priority === 'High')
-    } else if (activeFilter.value === 'today') {
-      // Filter for today's cases (simplified for demo)
-      filtered = filtered.filter(c => c.date && c.date.includes('16th Aug 2025'))
+      filtered = filtered.filter((c) => {
+        const raw = casesStore.cases_k?.status ? c[casesStore.cases_k.status[0]] : '';
+        const status = normalizeStatus(raw);
+        return status && status === filterStatus.toLowerCase();
+      });
+    } else if (activeFilter.value === "assigned") {
+      filtered = filtered.filter((c) => {
+        const assignedTo = casesStore.cases_k?.assigned_to ? c[casesStore.cases_k.assigned_to[0]] : '';
+        return assignedTo && assignedTo.trim() !== '';
+      });
+    } else if (activeFilter.value === "priority") {
+      filtered = filtered.filter((c) => {
+        const raw = casesStore.cases_k?.priority ? c[casesStore.cases_k.priority[0]] : '';
+        const priority = normalizePriority(raw);
+        return priority === 'high';
+      });
+    } else if (activeFilter.value === "today") {
+      // Filter for today's cases
+      const today = new Date().toDateString();
+      filtered = filtered.filter((c) => {
+        if (casesStore.cases_k?.dt && c[casesStore.cases_k.dt[0]]) {
+          const caseDate = new Date(
+            c[casesStore.cases_k.dt[0]] < 10000000000
+              ? c[casesStore.cases_k.dt[0]] * 1000
+              : c[casesStore.cases_k.dt[0]] * 3600 * 1000
+          );
+          return caseDate.toDateString() === today;
+        }
+        return false;
+      });
     }
   }
 
-  return filtered
-})
+  return filtered;
+});
+
+// Edit modal state and helpers
+const editModalOpen = ref(false);
+const editForm = ref({ priority: 'Medium', status: 'Open', assignedTo: '', casePlan: '' });
+let editingCaseRef = null;
+
+const openEdit = (caseItem) => {
+  editingCaseRef = caseItem;
+  editForm.value = {
+    priority: (casesStore.cases_k?.priority ? caseItem[casesStore.cases_k.priority[0]] : '') || 'Medium',
+    status: (casesStore.cases_k?.status ? caseItem[casesStore.cases_k.status[0]] : '') || 'Open',
+    assignedTo: (casesStore.cases_k?.assigned_to ? caseItem[casesStore.cases_k.assigned_to[0]] : '') || '',
+    casePlan: caseItem.casePlan || ''
+  };
+  editModalOpen.value = true;
+};
+
+const closeEdit = () => { editModalOpen.value = false; editingCaseRef = null; };
+
+const saveEdit = () => {
+  if (!editingCaseRef) return;
+  if (casesStore.cases_k?.priority) editingCaseRef[casesStore.cases_k.priority[0]] = editForm.value.priority;
+  if (casesStore.cases_k?.status) editingCaseRef[casesStore.cases_k.status[0]] = editForm.value.status;
+  if (casesStore.cases_k?.assigned_to) editingCaseRef[casesStore.cases_k.assigned_to[0]] = editForm.value.assignedTo;
+  editingCaseRef.casePlan = editForm.value.casePlan;
+  // Log to a simple activity timeline array on the case
+  const now = new Date();
+  editingCaseRef.activity = editingCaseRef.activity || [];
+  editingCaseRef.activity.unshift({
+    type: 'Case Updated',
+    by: 'current user',
+    at: now.toISOString(),
+    changes: { ...editForm.value }
+  });
+  editModalOpen.value = false;
+};
 
 const selectedCaseDetails = computed(() => {
-  return cases.value.find(caseItem => caseItem.id === selectedCaseId.value)
-})
+  if (!casesStore.cases_k?.id) return null;
+  return casesStore.cases.find(
+    (caseItem) => caseItem[casesStore.cases_k.id[0]] === selectedCaseId.value
+  );
+});
+
+const setCurrentView = (view) => {
+  currentView.value = view;
+};
+
+const setActiveFilter = (filterId) => {
+  activeFilter.value = filterId;
+};
 
 // SidePanel event handlers
 const handleQueueToggle = () => {
-  isInQueue.value = !isInQueue.value
-  console.log('Queue toggled:', isInQueue.value)
-}
+  isInQueue.value = !isInQueue.value;
+  console.log("Queue toggled:", isInQueue.value);
+};
 
 const handleLogout = () => {
-  router.push('/')
-}
+  router.push("/");
+};
 
 const handleSidebarToggle = (collapsed) => {
-  console.log('Sidebar toggled:', collapsed)
-}
+  console.log("Sidebar toggled:", collapsed);
+};
 
-// Methods
+// Theme methods (unchanged)
 const applyTheme = (theme) => {
-  const root = document.documentElement
+  const root = document.documentElement;
 
-  if (theme === 'light') {
-    root.style.setProperty('--background-color', '#f5f5f5')
-    root.style.setProperty('--sidebar-bg', '#ffffff')
-    root.style.setProperty('--content-bg', '#ffffff')
-    root.style.setProperty('--text-color', '#333')
-    root.style.setProperty('--text-secondary', '#666')
-    root.style.setProperty('--border-color', '#ddd')
-    root.style.setProperty('--card-bg', '#ffffff')
-    root.style.setProperty('--header-bg', '#f0f0f0')
-    root.style.setProperty('--input-bg', '#f0f0f0')
-    root.setAttribute('data-theme', 'light')
+  if (theme === "light") {
+    root.style.setProperty("--background-color", "#f5f5f5");
+    root.style.setProperty("--sidebar-bg", "#ffffff");
+    root.style.setProperty("--content-bg", "#ffffff");
+    root.style.setProperty("--text-color", "#333");
+    root.style.setProperty("--text-secondary", "#666");
+    root.style.setProperty("--border-color", "#ddd");
+    root.style.setProperty("--card-bg", "#ffffff");
+    root.style.setProperty("--header-bg", "#ffffff");
+    root.style.setProperty("--input-bg", "#f0f0f0");
+    root.setAttribute("data-theme", "light");
   } else {
-    root.style.setProperty('--background-color', '#0a0a0a')
-    root.style.setProperty('--sidebar-bg', '#111')
-    root.style.setProperty('--content-bg', '#222')
-    root.style.setProperty('--text-color', '#fff')
-    root.style.setProperty('--text-secondary', '#aaa')
-    root.style.setProperty('--border-color', '#333')
-    root.style.setProperty('--card-bg', '#222')
-    root.style.setProperty('--header-bg', '#333')
-    root.style.setProperty('--input-bg', '#1a1a1a')
-    root.setAttribute('data-theme', 'dark')
+    root.style.setProperty("--background-color", "#0a0a0a");
+    root.style.setProperty("--sidebar-bg", "#111");
+    root.style.setProperty("--content-bg", "#222");
+    root.style.setProperty("--text-color", "#fff");
+    root.style.setProperty("--text-secondary", "#aaa");
+    root.style.setProperty("--border-color", "#333");
+    root.style.setProperty("--card-bg", "#222");
+    root.style.setProperty("--header-bg", "#333");
+    root.style.setProperty("--input-bg", "#1a1a1a");
+    root.setAttribute("data-theme", "dark");
   }
 
-  // Set common variables
-  root.style.setProperty('--accent-color', '#964B00')
-  root.style.setProperty('--accent-hover', '#b25900')
-  root.style.setProperty('--danger-color', '#ff3b30')
-  root.style.setProperty('--success-color', '#4CAF50')
-  root.style.setProperty('--pending-color', '#FFA500')
-  root.style.setProperty('--unassigned-color', '#808080')
-  root.style.setProperty('--highlight-color', '#ff3b30')
-  root.style.setProperty('--high-priority', '#ff3b30')
-  root.style.setProperty('--medium-priority', '#FFA500')
-  root.style.setProperty('--low-priority', '#4CAF50')
-}
+  // Common variables
+      root.style.setProperty("--accent-color", "#8B4513");
+    root.style.setProperty("--accent-hover", "#A0522D");
+  root.style.setProperty("--danger-color", "#ff3b30");
+  root.style.setProperty("--success-color", "#4CAF50");
+  root.style.setProperty("--pending-color", "#FFA500");
+  root.style.setProperty("--unassigned-color", "#808080");
+  root.style.setProperty("--highlight-color", "#ff3b30");
+  root.style.setProperty("--high-priority", "#ff3b30");
+  root.style.setProperty("--medium-priority", "#FFA500");
+  root.style.setProperty("--low-priority", "#4CAF50");
+};
 
 const toggleTheme = () => {
-  const newTheme = currentTheme.value === 'dark' ? 'light' : 'dark'
-  localStorage.setItem('theme', newTheme)
-  currentTheme.value = newTheme
-  applyTheme(newTheme)
-}
-
-const setActiveFilter = (filterId) => {
-  activeFilter.value = filterId
-}
+  const newTheme = currentTheme.value === "dark" ? "light" : "dark";
+  localStorage.setItem("theme", newTheme);
+  currentTheme.value = newTheme;
+  applyTheme(newTheme);
+};
 
 const selectCase = (caseId) => {
-  selectedCaseId.value = caseId
-}
+  selectedCaseId.value = caseId;
+};
+
+const openUpdateModal = () => {
+  console.log('openUpdateModal called');
+  console.log('selectedCaseDetails:', selectedCaseDetails.value);
+  console.log('updateModalOpen before:', updateModalOpen.value);
+  
+  if (!selectedCaseDetails.value) {
+    console.error('No case selected for update');
+    alert('No case selected for update');
+    return;
+  }
+  
+  // Initialize form with current case data
+  updateForm.value = {
+    casePlan: selectedCaseDetails.value.casePlan || '',
+    justiceSystemState: selectedCaseDetails.value.justiceSystemState || '',
+    generalAssessment: selectedCaseDetails.value.generalAssessment || '',
+    priority: selectedCaseDetails.value.priority || '',
+    status: selectedCaseDetails.value.status || '',
+    escalatedTo: selectedCaseDetails.value.escalatedTo || ''
+  };
+  
+  console.log('updateForm initialized:', updateForm.value);
+  
+  updateModalOpen.value = true;
+  currentTab.value = 'update';
+  
+  console.log('Modal opened, updateModalOpen after:', updateModalOpen.value);
+  console.log('currentTab:', currentTab.value);
+};
+
+const handleUpdateTabClick = () => {
+  console.log('Update tab clicked');
+  openUpdateModal();
+};
+
+const closeUpdateModal = () => {
+  updateModalOpen.value = false;
+  updateForm.value = {
+    casePlan: '',
+    justiceSystemState: '',
+    generalAssessment: '',
+    priority: '',
+    status: '',
+    escalatedTo: ''
+  };
+  resetFileManagement();
+};
+
+const saveCaseUpdate = () => {
+  console.log('saveCaseUpdate called');
+  console.log('selectedCaseDetails:', selectedCaseDetails.value);
+  console.log('updateForm:', updateForm.value);
+  
+  if (!selectedCaseDetails.value) {
+    console.error('No case selected for update');
+    return;
+  }
+
+  // Basic validation
+  if (!updateForm.value.casePlan.trim()) {
+    alert('Please enter a case plan update');
+    return;
+  }
+  
+  if (!updateForm.value.priority) {
+    alert('Please select a priority');
+    return;
+  }
+  
+  if (!updateForm.value.status) {
+    alert('Please select a status');
+    return;
+  }
+
+  // Update the case with new values
+  const caseItem = selectedCaseDetails.value;
+  caseItem.casePlan = updateForm.value.casePlan;
+  caseItem.justiceSystemState = updateForm.value.justiceSystemState;
+  caseItem.generalAssessment = updateForm.value.generalAssessment;
+  caseItem.priority = updateForm.value.priority;
+  caseItem.status = updateForm.value.status;
+  caseItem.escalatedTo = updateForm.value.escalatedTo;
+
+  // Handle file management
+  if (filesToRemove.value.length > 0) {
+    caseItem.files = caseItem.files.filter(file => 
+      !filesToRemove.value.find(removedFile => removedFile.name === file.name)
+    );
+  }
+
+  if (newFiles.value.length > 0) {
+    caseItem.files = caseItem.files || [];
+    newFiles.value.forEach(newFile => {
+      caseItem.files.push({
+        name: newFile.name,
+        size: newFile.size
+      });
+    });
+  }
+
+  // Log the update to activity timeline
+  const now = new Date();
+  caseItem.activity = caseItem.activity || [];
+  
+  // Create activity log for case update
+  const activityLog = {
+    id: Date.now(),
+    type: 'Case Updated',
+    by: 'current user',
+    at: now.toISOString(),
+    changes: { ...updateForm.value }
+  };
+  
+  // Add file activity logs
+  if (filesToRemove.value.length > 0) {
+    filesToRemove.value.forEach(file => {
+      caseItem.activity.unshift({
+        id: Date.now() + Math.random(),
+        type: 'File Removed',
+        by: 'current user',
+        at: now.toISOString(),
+        details: { fileName: file.name }
+      });
+    });
+  }
+  
+  if (newFiles.value.length > 0) {
+    newFiles.value.forEach(file => {
+      caseItem.activity.unshift({
+        id: Date.now() + Math.random(),
+        type: 'File Added',
+        by: 'current user',
+        at: now.toISOString(),
+        details: { fileName: file.name }
+      });
+    });
+  }
+  
+  caseItem.activity.unshift(activityLog);
+
+  closeUpdateModal();
+  console.log('Case updated successfully:', caseItem);
+  
+  // Show success message
+  alert('Case updated successfully!');
+};
+
+const openEditModal = () => {
+  console.log('Opening edit modal for case:', selectedCaseId.value);
+  console.log('selectedCaseDetails:', selectedCaseDetails.value);
+  
+  if (!selectedCaseDetails.value) {
+    console.error('No case selected for edit');
+    alert('No case selected for editing');
+    return;
+  }
+  
+  // For now, open the update modal as edit functionality
+  // In a real application, this would open a different edit modal
+  openUpdateModal();
+};
+
+const handleEditButtonClick = () => {
+  console.log('Edit button clicked');
+  openEditModal();
+};
+
+const printCase = () => {
+  console.log('Printing case:', selectedCaseDetails.value);
+  // In a real application, this would open a print dialog
+  window.print();
+};
+
+// Perpetrator modal methods
+const openPerpetratorModal = () => {
+  console.log('Opening perpetrator modal');
+  perpetratorModalOpen.value = true;
+};
+
+const closePerpetratorModal = () => {
+  perpetratorModalOpen.value = false;
+  // Reset form
+  perpetratorForm.value = {
+    name: '',
+    location: '',
+    landmark: '',
+    idType: '',
+    isRefugee: '',
+    phone: '',
+    relationship: '',
+    healthStatus: '',
+    guardianName: '',
+    age: '',
+    dob: '',
+    ageGroup: '',
+    sex: '',
+    nationality: '',
+    idNumber: '',
+    language: '',
+    tribe: '',
+    alternativePhone: '',
+    email: '',
+    sharesHome: '',
+    profession: '',
+    maritalStatus: '',
+    additionalDetails: ''
+  };
+};
+
+const savePerpetrator = () => {
+  console.log('Saving perpetrator:', perpetratorForm.value);
+  
+  if (!perpetratorForm.value.name.trim()) {
+    alert('Please enter the perpetrator\'s name');
+    return;
+  }
+
+  // Add perpetrator to case
+  if (selectedCaseDetails.value) {
+    const perpetrator = {
+      id: Date.now(), // Simple ID generation
+      ...perpetratorForm.value
+    };
+    
+    selectedCaseDetails.value.perpetrators = selectedCaseDetails.value.perpetrators || [];
+    selectedCaseDetails.value.perpetrators.push(perpetrator);
+    
+    // Log activity
+    const now = new Date();
+    selectedCaseDetails.value.activity = selectedCaseDetails.value.activity || [];
+    selectedCaseDetails.value.activity.unshift({
+      type: 'Perpetrator Added',
+      by: 'current user',
+      at: now.toISOString(),
+      details: { perpetratorName: perpetrator.name }
+    });
+    
+    closePerpetratorModal();
+    alert('Perpetrator added successfully!');
+    console.log('Perpetrator added to case:', selectedCaseDetails.value);
+  }
+};
+
+const getCasePerpetrators = (caseItem) => {
+  return caseItem?.perpetrators || [];
+};
+
+// Case History Methods
+const getCaseActivity = (caseItem) => {
+  return caseItem?.activity || [];
+};
+
+const getActivityIcon = (type) => {
+  const icons = {
+    'Case Updated': 'M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z',
+    'Perpetrator Added': 'M16 21V19C16 17.9391 15.5786 16.9217 14.8284 16.1716C14.0783 15.4214 13.0609 15 12 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21M13 7C13 9.20914 11.2091 11 9 11C6.79086 11 5 9.20914 5 7C5 4.79086 6.79086 3 9 3C11.2091 3 13 4.79086 13 7ZM23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13M16 3.13C16.8604 3.35031 17.623 3.85071 18.1676 4.55232C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89317 18.7122 8.75608 18.1676 9.45768C17.623 10.1593 16.8604 10.6597 16 10.88',
+    'File Added': 'M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.89 22 5.99 22H18C19.1 22 20 21.1 20 20V8L14 2ZM16 18H8V16H16V18ZM16 14H8V12H16V14ZM13 9V3.5L18.5 9H13Z',
+    'File Removed': 'M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12ZM10 10L14 14M14 10L10 14'
+  };
+  return icons[type] || icons['Case Updated'];
+};
+
+const getActivityIconClass = (type) => {
+  const classes = {
+    'Case Updated': 'icon-update',
+    'Perpetrator Added': 'icon-add',
+    'File Added': 'icon-file-add',
+    'File Removed': 'icon-file-remove'
+  };
+  return classes[type] || 'icon-update';
+};
+
+const formatActivityTime = (timestamp) => {
+  const date = new Date(timestamp);
+  return date.toLocaleString();
+};
+
+const formatFieldName = (fieldName) => {
+  const fieldMap = {
+    casePlan: 'Case Plan',
+    justiceSystemState: 'Justice System State',
+    generalAssessment: 'General Assessment',
+    priority: 'Priority',
+    status: 'Status',
+    escalatedTo: 'Escalated To'
+  };
+  return fieldMap[fieldName] || fieldName;
+};
+
+// File Management Methods
+const formatFileSize = (bytes) => {
+  if (!bytes) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+const handleFileDrop = (event) => {
+  isDragOver.value = false;
+  const files = Array.from(event.dataTransfer.files);
+  addFiles(files);
+};
+
+const handleFileSelect = (event) => {
+  const files = Array.from(event.target.files);
+  addFiles(files);
+};
+
+const addFiles = (files) => {
+  files.forEach(file => {
+    if (!newFiles.value.find(f => f.name === file.name)) {
+      newFiles.value.push({
+        name: file.name,
+        size: file.size,
+        file: file
+      });
+    }
+  });
+};
+
+const removeNewFile = (file) => {
+  const index = newFiles.value.findIndex(f => f.name === file.name);
+  if (index > -1) {
+    newFiles.value.splice(index, 1);
+  }
+};
+
+const removeFileFromUpdate = (file) => {
+  filesToRemove.value.push(file);
+};
+
+const resetFileManagement = () => {
+  newFiles.value = [];
+  filesToRemove.value = [];
+  isDragOver.value = false;
+};
+
+// Helper methods for case details
+const getCaseTitle = (caseItem) => {
+  if (casesStore.cases_k?.cat_1 && caseItem[casesStore.cases_k.cat_1[0]]) {
+    return caseItem[casesStore.cases_k.cat_1[0]];
+  }
+  return caseItem.title || caseItem.caseTitle || "Case Details";
+};
+
+const getCaseId = (caseItem) => {
+  if (casesStore.cases_k?.id && caseItem[casesStore.cases_k.id[0]]) {
+    return caseItem[casesStore.cases_k.id[0]];
+  }
+  return caseItem.id || "N/A";
+};
+
+const getReporterName = (caseItem) => {
+  if (casesStore.cases_k?.created_by && caseItem[casesStore.cases_k.created_by[0]]) {
+    return caseItem[casesStore.cases_k.created_by[0]];
+  }
+  return caseItem.reporterName || caseItem.reporter_name || "mark";
+};
+
+const getReporterDemographics = (caseItem) => {
+  const age = caseItem.reporterAge || caseItem.reporter_age || "18-24";
+  const gender = caseItem.reporterGender || caseItem.reporter_gender || "Female";
+  return `${age} ${gender}`;
+};
+
+const getReporterLocation = (caseItem) => {
+  if (casesStore.cases_k?.reporter_location && caseItem[casesStore.cases_k.reporter_location[0]]) {
+    return caseItem[casesStore.cases_k.reporter_location[0]];
+  }
+  return caseItem.reporterLocation || caseItem.reporter_location || "EASTERN > AMURIA > AMURIA";
+};
+
+const getCaseFiles = (caseItem) => {
+  if (caseItem.files && Array.isArray(caseItem.files)) {
+    return caseItem.files;
+  }
+  // Return mock files for demonstration
+  return [
+    { name: "1756073575.0.wav16", size: "1535404" },
+    { name: "WhatsApp Image 2025-09-02 at 8.20.14 AM.jpeg", size: "144935" },
+    { name: "aa.flac", size: "679546" }
+  ];
+};
+
+const closeCaseDetails = () => {
+  selectedCaseId.value = null;
+};
+
+const callReporter = (caseItem) => {
+  const phone = caseItem.reporterPhone || caseItem.reporter_phone;
+  if (phone) {
+    window.open(`tel:${phone}`, '_self');
+  } else {
+    console.log('No phone number available for reporter');
+  }
+};
+
+const emailReporter = (caseItem) => {
+  const email = caseItem.reporterEmail || caseItem.reporter_email;
+  if (email) {
+    window.open(`mailto:${email}`, '_self');
+  } else {
+    console.log('No email address available for reporter');
+  }
+};
+
+const removeFile = (file) => {
+  console.log('Removing file:', file.name);
+  // In a real application, this would remove the file from the case
+};
+
+const getCaseDepartment = (caseItem) => {
+  return caseItem.department || "116";
+};
+
+const getCaseNarrative = (caseItem) => {
+  return caseItem.narrative || caseItem.caseNarrative || "yes";
+};
+
+const getCasePlan = (caseItem) => {
+  return caseItem.casePlan || "yes";
+};
+
+const getJusticeSystemState = (caseItem) => {
+  return caseItem.justiceSystemState || "Social Worker";
+};
+
+const getGeneralAssessment = (caseItem) => {
+  return caseItem.generalAssessment || "Progressing";
+};
+
+const getEscalatedTo = (caseItem) => {
+  return caseItem.escalatedTo || "N/A";
+};
 
 const handleSearch = () => {
-  // The filtering is handled by the computed property 'filteredCases'
-}
+  // Filtering handled by 'filteredCases'
+};
 
 // Lifecycle hooks
 onMounted(() => {
-  // Load saved theme
-  const savedTheme = localStorage.getItem('theme')
-  if (savedTheme) {
-    currentTheme.value = savedTheme
-  }
-
-  // Apply theme immediately
-  applyTheme(currentTheme.value)
-})
+  casesStore.listCases();
+  console.log("Cases loaded:", casesStore.raw);
+  const savedTheme = localStorage.getItem("theme") || "light";
+  currentTheme.value = savedTheme;
+  applyTheme(savedTheme);
+});
 </script>
 
 <style>
-/* Global styles - not scoped */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: 'Inter', sans-serif;
-}
-
-body {
-  background-color: var(--background-color);
-  color: var(--text-color);
-  display: flex;
-  min-height: 100vh;
-  transition: background-color 0.3s, color 0.3s;
-  overflow: hidden;
-}
-
-.main-content {
-  flex: 1;
-  margin-left: var(--sidebar-width, 250px);
-  height: 100vh;
-  background-color: var(--content-bg);
-  transition: margin-left 0.3s ease, background-color 0.3s;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.cases-container {
-  flex: 1;
-  padding: 20px;
-  height: auto;
-  overflow: visible;
-}
-
-.cases-container::-webkit-scrollbar {
-  width: 8px;
-}
-
-.cases-container::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.cases-container::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.3);
-  border-radius: 4px;
-}
-
-.cases-container::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255, 255, 255, 0.5);
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  flex-shrink: 0;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.header h1 {
-  font-size: 24px;
-  font-weight: 600;
-}
-
-.add-new-case-btn {
-  background: var(--accent-color);
-  color: #fff;
-  border: none;
-  border-radius: 20px;
-  padding: 0.6rem 1.4rem;
-  font-weight: 700;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background 0.2s;
-  text-decoration: none;
-  display: inline-block;
-}
-
-.add-new-case-btn:hover {
-  background: var(--accent-hover);
-}
-
-.theme-toggle {
-  background-color: var(--content-bg);
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
-  border-radius: 30px;
-  padding: 8px 15px;
-  font-size: 14px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
-}
-
-.theme-toggle:hover {
-  background-color: var(--border-color);
-}
-
-.theme-toggle svg {
-  width: 16px;
-  height: 16px;
-}
-
-.search-container {
-<<<<<<< HEAD
-  margin-bottom: 20px;
-  flex-shrink: 0;
-=======
-  margin-bottom: 32px;
-  flex-shrink: 0;
-  margin-top: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
-}
-
-.search-input {
-  width: 100%;
-<<<<<<< HEAD
-  padding: 12px 20px;
-=======
-  padding: 12px 20px 12px 44px;
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
-  border-radius: 30px;
-  border: none;
-  background-color: var(--content-bg);
-  color: var(--text-color);
-<<<<<<< HEAD
-  font-size: 14px;
-  transition: border-color 0.3s, box-shadow 0.3s;
-=======
-  font-size: 15px;
-  transition: border-color 0.3s, box-shadow 0.3s;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  position: relative;
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
-}
-
-.search-input::placeholder {
-  color: var(--text-secondary);
-<<<<<<< HEAD
-}
-
-.search-input:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--accent-color);
-=======
-  font-size: 15px;
-  opacity: 1;
-}
-
-.search-icon {
-  position: absolute;
-  left: 22px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-secondary);
-  font-size: 18px;
-  pointer-events: none;
-  z-index: 2;
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
-}
-
-.filter-tabs {
-  display: flex;
-  gap: 10px;
-<<<<<<< HEAD
-  margin-bottom: 20px;
-=======
-  margin-bottom: 28px;
-  margin-top: 18px;
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
-  overflow-x: auto;
-  padding-bottom: 5px;
-  flex-shrink: 0;
-}
-
-.filter-tab {
-  background-color: var(--content-bg);
-  color: var(--text-color);
-  border: none;
-  border-radius: 30px;
-  padding: 8px 15px;
-  font-size: 14px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background-color 0.3s;
-  font-weight: 500;
-}
-
-.filter-tab.active {
-  background-color: var(--accent-color);
-  color: white;
-}
-
-.filter-tab:hover:not(.active) {
-  background-color: rgba(150, 75, 0, 0.1);
-}
-
-.cases-container-inner {
-  display: flex;
-  gap: 20px;
-  flex: 1;
-  height: auto;
-  overflow: visible;
-}
-
-.cases-list {
-<<<<<<< HEAD
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  max-height: calc(100vh - 140px); /* Adjust 140px as needed for header/filter height */
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
-=======
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  /* Make cards stretch to container width */
-  width: 100%;
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
-}
-
-.cases-list::-webkit-scrollbar {
-  width: 8px;
-}
-
-.cases-list::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.cases-list::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.3);
-  border-radius: 4px;
-}
-
-.cases-list::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255, 255, 255, 0.5);
-}
-
-.cases-title {
-  font-size: 18px;
-  font-weight: 600;
-  margin-bottom: 15px;
-}
-
-.case-item {
-  display: flex;
-<<<<<<< HEAD
-  align-items: center;
-  background: var(--content-bg);
-  color: var(--text-color);
-  border-radius: 15px;
-  padding: 15px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  transition: background 0.3s, color 0.3s, border 0.3s;
-  border: 1.5px solid transparent;
-  cursor: pointer;
-  font-size: 15px;
-  margin-bottom: 16px;
-  min-height: 0;
-  gap: 16px;
-  min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
-}
-.case-item.selected {
-  border: 2px solid var(--accent-color);
-  background: rgba(150,75,0,0.07);
-  box-shadow: 0 2px 8px rgba(150,75,0,0.08);
-}
-.case-item:hover {
-  background: rgba(150,75,0,0.04);
-}
-.case-icon {
-  width: 40px;
-  height: 40px;
-  min-width: 40px;
-  min-height: 40px;
-  max-width: 40px;
-  max-height: 40px;
-  background: var(--accent-color, #964B00);
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-shrink: 0;
-  margin-right: 15px;
-  margin-left: 0;
-  border: 2px solid var(--accent-color);
-  box-shadow: none;
-  opacity: 1;
-}
-=======
-  align-items: flex-start;
-  cursor: pointer;
-  padding: 18px 32px;
-  border-radius: 18px;
-  transition: all 0.3s ease;
-  position: relative;
-  background: var(--content-bg);
-  color: var(--text-color);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  border: 1.5px solid transparent;
-  font-size: 15px;
-  margin-bottom: 0;
-  width: 100%;
-  max-width: 900px;
-  min-width: 400px;
-  /* Center cards in container */
-  align-self: center;
-}
-
-.case-item.selected {
-  background-color: rgba(255, 59, 48, 0.1);
-  border: 1.5px solid var(--highlight-color);
-}
-
-.case-item:hover {
-  background-color: rgba(150,75,0,0.04);
-  transform: translateX(5px);
-}
-
-.case-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--accent-color);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-right: 15px;
-  color: #fff;
-  flex-shrink: 0;
-}
-
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
-.case-icon svg {
-  width: 18px;
-  height: 18px;
-  stroke: #fff;
-<<<<<<< HEAD
-  opacity: 1;
-}
-=======
-}
-
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
-.case-details {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-<<<<<<< HEAD
-  gap: 6px;
-  justify-content: center;
-  width: 100%;
-  overflow: hidden;
-  padding-top: 0;
-  word-break: break-word;
-  overflow-wrap: break-word;
-}
-.case-title {
-  font-size: 1rem;
-  font-weight: 700;
-  padding-top: 0;
-  margin-bottom: 2px;
-  letter-spacing: 0.01em;
-=======
-  gap: 4px;
-  justify-content: center;
-  width: 100%;
-  overflow: hidden;
-}
-
-.case-title {
-  font-size: 1.08rem;
-  font-weight: 700;
-  margin-bottom: 2px;
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
-  width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-<<<<<<< HEAD
-.case-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 13px;
-  color: var(--text-secondary);
-  width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  word-break: break-word;
-  overflow-wrap: break-word;
-}
-.case-id {
-  font-size: 0.95rem;
-  color: #bbb;
-  margin-bottom: 8px;
-}
-.case-priority {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 700;
-  margin-bottom: 2px;
-}
-.case-assigned {
-  display: flex;
-  align-items: center;
-  font-weight: 400;
-  color: #888;
-  margin-top: 2px;
-}
-.case-assigned span {
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  font-size: 12px;
-  width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.priority-dot {
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  border: 1.5px solid #fff;
-  box-shadow: 0 0 0 2px rgba(0,0,0,0.08);
-}
-=======
-
-.case-meta {
-  display: flex;
-  gap: 18px;
-  font-size: 14px;
-  color: var(--text-secondary);
-  align-items: center;
-  flex-wrap: wrap;
-  width: 100%;
-  min-height: 28px;
-  padding-top: 2px;
-  padding-bottom: 2px;
-}
-
-.case-priority,
-.case-date,
-.case-assigned {
-  flex: 1 1 0;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  display: inline-block;
-}
-
-.priority-dot {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  border: 2px solid #fff;
-  box-shadow: 0 0 0 2px rgba(0,0,0,0.08);
-  margin-right: 2px;
-  display: inline-block;
-  vertical-align: middle;
-}
-
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
-.priority-dot.high {
-  background-color: var(--high-priority);
-}
-.priority-dot.medium {
-  background-color: var(--medium-priority);
-}
-.priority-dot.low {
-  background-color: var(--low-priority);
-}
-<<<<<<< HEAD
-=======
-
-.case-date {
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.case-assigned {
-  font-size: 12px;
-  color: #888;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.case-id {
-  font-size: 0.95rem;
-  color: #bbb;
-  margin-bottom: 8px;
-}
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
-.case-detail-drawer {
-  position: fixed;
-  top: 0;
-  right: 0;
-  height: 100vh;
-  width: 400px;
-  max-width: 100vw;
-  background: rgba(34,34,34,0.98);
-  box-shadow: -4px 0 24px rgba(0,0,0,0.18);
-  border-top-left-radius: 18px;
-  border-bottom-left-radius: 18px;
-  z-index: 1002;
-  display: flex;
-  flex-direction: column;
-  padding: 0 0 0 0;
-  animation: slideInDrawer 0.25s cubic-bezier(0.4,0,0.2,1);
-}
-@keyframes slideInDrawer {
-  from { right: -400px; opacity: 0; }
-  to { right: 0; opacity: 1; }
-}
-.case-detail-drawer-header {
-  padding: 32px 24px 0 24px;
-  position: relative;
-  min-height: 56px;
-}
-.case-detail-drawer .case-detail-title {
-  font-size: 1.35rem;
-  font-weight: 800;
-  margin-bottom: 2px;
-  color: #fff;
-  letter-spacing: 0.01em;
-}
-.case-detail-drawer .case-detail-id {
-  font-size: 0.95rem;
-  color: #bbb;
-  margin-bottom: 8px;
-}
-.case-detail-drawer .close-details {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  width: 40px;
-  height: 40px;
-  background: rgba(0,0,0,0.06);
-  border: none;
-  color: #222;
-  font-size: 2.1rem;
-  font-weight: bold;
-  border-radius: 50%;
-  cursor: pointer;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s, color 0.2s;
-}
-[data-theme="dark"] .case-detail-drawer .close-details {
-  background: rgba(255,255,255,0.08);
-  color: #fff;
-}
-.case-detail-drawer .case-detail-content {
-  padding: 18px 24px 24px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--accent-color) var(--content-bg);
-  overflow-y: auto;
-  max-height: calc(100vh - 100px);
-}
-.case-detail-drawer .detail-item {
-  background: rgba(255,255,255,0.07);
-  border-radius: 14px;
-  padding: 16px 18px;
-  margin-bottom: 0;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-  border: 1px solid rgba(255,255,255,0.08);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.case-detail-drawer .detail-label {
-  font-size: 1.01rem;
-  color: #bbb;
-  font-weight: 700;
-  margin-bottom: 2px;
-  letter-spacing: 0.01em;
-}
-.case-detail-drawer .detail-value {
-  font-size: 1.13rem;
-  color: #fff;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-}
-.case-detail-drawer .detail-value.high { color: #ff3b30; font-weight: 700; }
-.case-detail-drawer .detail-value.medium { color: #FFA500; font-weight: 700; }
-.case-detail-drawer .detail-value.low { color: #4CAF50; font-weight: 700; }
-.case-detail-drawer .detail-value.abusive { color: #ff3b30; }
-/* Responsive styles */
-@media (max-width: 1024px) {
-  .cases-container-inner {
-    flex-direction: column;
-  }
-  .case-detail-drawer {
-    width: 100vw;
-    border-radius: 0;
-    left: 0;
-    right: 0;
-  }
-}
-@media (max-width: 768px) {
-  .main-content {
-    margin-left: 0;
-    padding: 15px;
-  }
-  
-  .header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 15px;
-  }
-  
-  .header-left {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .header h1 {
-    font-size: 20px;
-  }
-
-  .cases-container {
-    padding: 10px;
-  }
-
-  .case-meta {
-    font-size: 11px;
-  }
-
-  .cases-main-content {
-    padding-top: 4px;
-  }
-}
-.cases-main-content {
-  padding-top: 8px;
-}
-:root {
-  --drawer-bg-dark: rgba(34,34,34,0.98);
-  --drawer-bg-light: #fff;
-  --drawer-card-bg-dark: rgba(255,255,255,0.07);
-  --drawer-card-bg-light: #f5f5f5;
-  --drawer-card-border-dark: 1px solid rgba(255,255,255,0.08);
-  --drawer-card-border-light: 1px solid #e0e0e0;
-  --drawer-title-dark: #fff;
-  --drawer-title-light: #222;
-  --drawer-label-dark: #bbb;
-  --drawer-label-light: #555;
-  --drawer-value-dark: #fff;
-  --drawer-value-light: #222;
-  --drawer-value-high: #ff3b30;
-  --drawer-value-medium: #FFA500;
-  --drawer-value-low: #4CAF50;
-  --priority-dot-border-dark: #fff;
-  --priority-dot-border-light: #fff;
-  --priority-dot-shadow: 0 0 0 2px rgba(0,0,0,0.08);
-}
-[data-theme="light"] .case-detail-drawer {
-  background: var(--drawer-bg-light);
-}
-[data-theme="dark"] .case-detail-drawer {
-  background: var(--drawer-bg-dark);
-}
-[data-theme="light"] .case-detail-drawer .detail-item {
-  background: var(--drawer-card-bg-light);
-  border: var(--drawer-card-border-light);
-}
-[data-theme="dark"] .case-detail-drawer .detail-item {
-  background: var(--drawer-card-bg-dark);
-  border: var(--drawer-card-border-dark);
-}
-[data-theme="light"] .case-detail-drawer .case-detail-title {
-  color: var(--drawer-title-light);
-}
-[data-theme="dark"] .case-detail-drawer .case-detail-title {
-  color: var(--drawer-title-dark);
-}
-[data-theme="light"] .case-detail-drawer .detail-label {
-  color: var(--drawer-label-light);
-}
-[data-theme="dark"] .case-detail-drawer .detail-label {
-  color: var(--drawer-label-dark);
-}
-[data-theme="light"] .case-detail-drawer .detail-value {
-  color: var(--drawer-value-light);
-}
-[data-theme="dark"] .case-detail-drawer .detail-value {
-  color: var(--drawer-value-dark);
-}
-[data-theme="light"] .case-detail-drawer .detail-value.high {
-  color: var(--drawer-value-high);
-}
-[data-theme="light"] .case-detail-drawer .detail-value.medium {
-  color: var(--drawer-value-medium);
-}
-[data-theme="light"] .case-detail-drawer .detail-value.low {
-  color: var(--drawer-value-low);
-}
-[data-theme="dark"] .case-detail-drawer .detail-value.high {
-  color: var(--drawer-value-high);
-}
-[data-theme="dark"] .case-detail-drawer .detail-value.medium {
-  color: var(--drawer-value-medium);
-}
-[data-theme="dark"] .case-detail-drawer .detail-value.low {
-  color: var(--drawer-value-low);
-}
-[data-theme="light"] .priority-dot {
-  border: 1.5px solid var(--priority-dot-border-light);
-  box-shadow: var(--priority-dot-shadow);
-}
-[data-theme="dark"] .priority-dot {
-  border: 1.5px solid var(--priority-dot-border-dark);
-  box-shadow: var(--priority-dot-shadow);
-}
-[data-theme="light"] .case-item.selected {
-  border: 2px solid var(--accent-color);
-  background: #fff8f0;
-}
-[data-theme="dark"] .case-item.selected {
-  border: 2px solid var(--accent-color);
-  background: rgba(150,75,0,0.08);
-}
-body.high-contrast .case-detail-drawer,
-body.high-contrast .case-detail-drawer .detail-item,
-body.high-contrast .case-detail-drawer .case-detail-title,
-body.high-contrast .case-detail-drawer .detail-label,
-body.high-contrast .case-detail-drawer .detail-value,
-body.high-contrast .case-item.selected,
-body.high-contrast .priority-dot {
-  background: #000 !important;
-  color: #fff !important;
-  border-color: #fff !important;
-}
-body.high-contrast .priority-dot.high { background: #ff3b30 !important; }
-body.high-contrast .priority-dot.medium { background: #FFA500 !important; }
-body.high-contrast .priority-dot.low { background: #4CAF50 !important; }
-@media (max-width: 900px) {
-  .case-item {
-<<<<<<< HEAD
-    padding: 20px 18px 22px 18px;
-    gap: 12px;
-  }
-  .case-icon {
-    width: 36px;
-    height: 36px;
-    min-width: 36px;
-    min-height: 36px;
-    max-width: 36px;
-    max-height: 36px;
-    margin-right: 12px;
-  }
-  .case-title {
-    font-size: 1rem;
-  }
-  .case-meta {
-    font-size: 12px;
-=======
-    padding: 14px 10px;
-    max-width: 100vw;
-    min-width: 0;
-  }
-  .case-meta {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
-    white-space: normal;
-  }
-  .case-priority,
-  .case-date,
-  .case-assigned {
-    max-width: 100%;
-    width: 100%;
-    display: block;
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
-  }
-}
-@media (max-width: 600px) {
-  .case-item {
-    padding: 12px 6px 14px 6px;
-    gap: 8px;
-    border-radius: 12px;
-  }
-  .case-icon {
-    width: 28px;
-    height: 28px;
-    min-width: 28px;
-    min-height: 28px;
-    max-width: 28px;
-    max-height: 28px;
-    margin-right: 6px;
-  }
-  .case-title {
-    font-size: 0.95rem;
-  }
-  .case-meta {
-    font-size: 11px;
-  }
-<<<<<<< HEAD
-=======
-  .case-meta {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
-    white-space: normal;
-  }
-  .case-priority,
-  .case-date,
-  .case-assigned {
-    max-width: 100%;
-    width: 100%;
-    display: block;
-  }
->>>>>>> f2457c087bd9919b681a4048be71e6ebd3b765e1
-}
+@import url("@/styles/cases.css");
 </style>

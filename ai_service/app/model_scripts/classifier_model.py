@@ -1,4 +1,3 @@
-# app/models/classifier_model.py (Fixed)
 import logging
 from typing import Dict, List, Optional
 from datetime import datetime
@@ -53,6 +52,7 @@ class ClassifierModel:
     def __init__(self, model_path: str = None):
         from ..config.settings import settings
         
+        self.settings = settings
         self.model_path = model_path or settings.get_model_path("classifier")
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.tokenizer = None
@@ -60,7 +60,12 @@ class ClassifierModel:
         self.loaded = False
         self.load_time = None
         self.error = None
-        self.max_length = 256  # Model's maximum token limit
+        self.max_length = 512
+        
+        # Hugging Face repo configuration (hub-first, no local model loading)
+        from ..config.settings import settings as _settings
+        self.hf_repo_id = os.getenv("CLASSIFIER_HF_REPO_ID") or getattr(settings, "hf_classifier_model", None)
+        # Public models only — no auth token usage
         
         # Category configs - will be loaded in load() method
         self.category_info = {}
@@ -82,11 +87,23 @@ class ClassifierModel:
             configs = {}
             for config_name, filename in config_files.items():
                 config_file_path = os.path.join(self.model_path, filename)
-                if not os.path.exists(config_file_path):
-                    raise FileNotFoundError(f"Config file not found: {config_file_path}")
-                
-                with open(config_file_path) as f:
-                    configs[config_name] = json.load(f)
+                if os.path.exists(config_file_path):
+                    with open(config_file_path) as f:
+                        configs[config_name] = json.load(f)
+                else:
+                    # Attempt to fetch from Hugging Face repo if configured
+                    if not self.hf_repo_id:
+                        raise FileNotFoundError(f"Config file not found: {config_file_path}")
+                    try:
+                        from huggingface_hub import hf_hub_download
+                        download_path = hf_hub_download(
+                            repo_id=self.hf_repo_id,
+                            filename=filename
+                        )
+                        with open(download_path) as f:
+                            configs[config_name] = json.load(f)
+                    except Exception as hf_err:
+                        raise FileNotFoundError(f"Failed to fetch {filename} from HF repo {self.hf_repo_id}: {hf_err}")
             
             # Set the category lists
             self.main_categories = configs["main_categories"]
@@ -101,83 +118,33 @@ class ClassifierModel:
                 "priorities": self.priorities
             }
             
-            logger.info(f"✅ Loaded classifier configs: {len(self.main_categories)} main categories, {len(self.sub_categories)} sub categories")
+            logger.info(f" Loaded classifier configs: {len(self.main_categories)} main categories, {len(self.sub_categories)} sub categories")
             return True
             
         except Exception as e:
-            logger.error(f"❌ Failed to load classifier configs: {e}")
+            logger.error(f" Failed to load classifier configs: {e}")
             self.error = f"Config loading failed: {str(e)}"
             return False
 
-    def load(self) -> bool:
-        """Load model and tokenizer"""
+    def _load_category_configs_from_hf(self, model_id: str) -> bool:
+        """Load category configs from HuggingFace model repository"""
         try:
-            logger.info(f"Loading classifier model: {self.model_path}")
-            start_time = datetime.now()
-            
-            # First load the category configs
-            if not self._load_category_configs():
-                return False
-            
-            # Load tokenizer and model from local path
-            model_files_path = os.path.join(self.model_path, "multitask_distilbert")
-            if not os.path.exists(model_files_path):
-                raise FileNotFoundError(f"Model files not found at: {model_files_path}")
-            
-            self.tokenizer = AutoTokenizer.from_pretrained(
-                model_files_path,
-                local_files_only=True  # Force local loading
-            )
-            
-            self.model = MultiTaskDistilBert.from_pretrained(
-                model_files_path,
-                local_files_only=True,  # Force local loading
-                num_main=len(self.main_categories),
-                num_sub=len(self.sub_categories),
-                num_interv=len(self.interventions),
-                num_priority=len(self.priorities)
-            )
-            self.model = self.model.to(self.device)
-            self.model.eval()
-            
-            self.loaded = True
-            self.load_time = datetime.now()
-            load_duration = (self.load_time - start_time).total_seconds()
-            logger.info(f"✅ Classifier model loaded successfully in {load_duration:.2f}s")
-            return True
-            
-        except Exception as e:
-            self.error = str(e)
-            self.load_time = datetime.now()
-            logger.error(f"❌ Failed to load classifier model: {e}")
-            return False
 
-    def preprocess_text(self, text: str) -> str:
-        """Clean and normalize input text"""
-        text = text.lower().strip()
-        return re.sub(r'[^a-z0-9\s]', '', text)
-
-    def load(self) -> bool:
-        """Load tokenizer, model weights, and category configs from HF Hub or local files"""
-        try:
-            logger.info(f"📦 Initializing classifier model loader")
+            logger.info(f" Initializing classifier model loader")
             start_time = datetime.now()
 
-            # Load category configs first (local or fetch from HF)
-            if not self._load_category_configs():
-                return False
-
-            # HACK: Force the number of main categories to 5 to match the checkpoint
-            num_main = 5
-            num_sub = len(self.sub_categories)
-            num_interv = len(self.interventions)
-            num_priority = len(self.priorities)
-
-            # Require HF repo id for weights
+            
+            config_files = {
+                "main_categories": "main_categories.json",
+                "sub_categories": "sub_categories.json", 
+                "interventions": "interventions.json",
+                "priorities": "priorities.json"
+            }
+            
+            # Hub-first: require HF repo id (public access)
             if not self.hf_repo_id:
-                raise RuntimeError("HF repo id not configured for classifier (CLASSIFIER_HF_REPO_ID or settings.hf_classifier_model)")
-
-            logger.info(f"📦 Loading classifier model from Hugging Face Hub: {self.hf_repo_id} (ignoring local path {self.model_path})")
+                raise RuntimeError("CLASSIFIER_HF_REPO_ID or settings.hf_classifier_model must be set for hub loading")
+            logger.info(f" Loading classifier model from Hugging Face Hub: {self.hf_repo_id} (ignoring local path {self.model_path})")
             
             # Get HF authentication kwargs
             from ..config.settings import settings
@@ -189,30 +156,54 @@ class ClassifierModel:
                 **hf_kwargs
             )
             
-            print(f"DEBUG: Loading model with num_main = {num_main}")
             self.model = MultiTaskDistilBert.from_pretrained(
                 self.hf_repo_id,
-                num_main=num_main,
-                num_sub=num_sub,
-                num_interv=num_interv,
-                num_priority=num_priority,
+                num_main=len(self.main_categories),
+                num_sub=len(self.sub_categories),
+                num_interv=len(self.interventions),
+                num_priority=len(self.priorities),
                 local_files_only=False,
-                ignore_mismatched_sizes=True,
                 **hf_kwargs
             )
             self.model = self.model.to(self.device)
             self.model.eval()
 
+            
             self.loaded = True
             self.load_time = datetime.now()
             load_duration = (self.load_time - start_time).total_seconds()
-            logger.info(f"✅ Classifier model loaded from Hugging Face Hub ({self.hf_repo_id}) in {load_duration:.2f}s on {self.device}")
+            logger.info(f" Classifier model loaded from Hugging Face Hub ({self.hf_repo_id}) in {load_duration:.2f}s on {self.device}")
             return True
             
         except Exception as e:
             self.error = str(e)
             self.load_time = datetime.now()
-            logger.error(f"❌ Failed to load classifier model: {e}")
+            logger.error(f" Failed to load classifier model: {e}")
+            return False
+
+    def preprocess_text(self, text: str) -> str:
+        """Clean and normalize input text"""
+        text = text.lower().strip()
+        return re.sub(r'[^a-z0-9\s]', '', text)
+
+    def load(self) -> bool:
+        """Load tokenizer, model weights, and category configs from HF Hub or local files"""
+        try:
+            # Load category configs first (local or fetch from HF)
+            if not self._load_category_configs():
+                return False
+            # Require HF repo id for weights
+            if not self.hf_repo_id:
+                raise RuntimeError("HF repo id not configured for classifier (CLASSIFIER_HF_REPO_ID or settings.hf_classifier_model)")
+            # Load from hub
+            ok = self._load_category_configs_from_hf(self.hf_repo_id)
+            if not ok:
+                return False
+            self.loaded = True
+            return True
+        except Exception as e:
+            logger.error(f" Failed to load classifier: {e}")
+            self.error = str(e)
             self.loaded = False
             return False
     
@@ -244,7 +235,7 @@ class ClassifierModel:
                 return self._classify_single(clean_text)
             else:
                 # Chunked classification with aggregation
-                logger.info(f"🔄 Text too long ({token_count} tokens), using chunked classification")
+                logger.info(f" Text too long ({token_count} tokens), using chunked classification")
                 return self._classify_chunked(clean_text)
                 
         except Exception as e:
@@ -305,7 +296,7 @@ class ClassifierModel:
         
         # Get chunks optimized for classification
         chunks = text_chunker.chunk_text(text, strategy="classification")
-        logger.info(f"🔄 Processing {len(chunks)} classification chunks")
+        logger.info(f" Processing {len(chunks)} classification chunks")
         
         chunk_results = []
         
@@ -328,10 +319,10 @@ class ClassifierModel:
         
         # Aggregate results from all chunks
         aggregated_result = self._aggregate_classification_results(chunk_results, chunks)
-        logger.info(f"✅ Chunked classification completed with {len(chunk_results)} chunks")
+        logger.info(f" Chunked classification completed with {len(chunk_results)} chunks")
         
         return aggregated_result
-
+    
     def _aggregate_classification_results(self, chunk_results: List[Dict], chunks) -> Dict[str, str]:
         """Aggregate classification results from multiple chunks"""
         if not chunk_results:
@@ -349,6 +340,11 @@ class ClassifierModel:
         total_weight = 0
         confidence_scores = []
         
+        main_confidences = []
+        sub_confidences = []
+        interv_confidences = []
+        priority_confidences = []
+        
         for i, result in enumerate(chunk_results):
             # Weight by chunk size and confidence
             chunk_weight = chunks[i].token_count * result.get("confidence", 0.5)
@@ -360,6 +356,13 @@ class ClassifierModel:
             priority_votes[result["priority"]] += chunk_weight
             
             confidence_scores.append(result.get("confidence", 0.5))
+            
+            # Collect individual confidence scores
+            breakdown = result.get("confidence_breakdown", {})
+            main_confidences.append(breakdown.get("main_category", 0.5))
+            sub_confidences.append(breakdown.get("sub_category", 0.5))
+            interv_confidences.append(breakdown.get("intervention", 0.5))
+            priority_confidences.append(breakdown.get("priority", 0.5))
         
         # Get most common predictions
         final_main = main_votes.most_common(1)[0][0]
@@ -369,16 +372,29 @@ class ClassifierModel:
         
         # Calculate aggregated confidence
         final_confidence = sum(confidence_scores) / len(confidence_scores)
+
+        # Calculate aggregated confidence breakdown
+        avg_main_conf = sum(main_confidences) / len(main_confidences) if main_confidences else 0.5
+        avg_sub_conf = sum(sub_confidences) / len(sub_confidences) if sub_confidences else 0.5
+        avg_interv_conf = sum(interv_confidences) / len(interv_confidences) if interv_confidences else 0.5
+        avg_priority_conf = sum(priority_confidences) / len(priority_confidences) if priority_confidences else 0.5
         
         # Apply business logic for priority escalation
         final_priority = self._apply_priority_escalation(chunk_results, final_priority)
-        
+
+        # Include confidence_breakdown
         return {
             "main_category": final_main,
             "sub_category": final_sub,
             "intervention": final_interv,
             "priority": final_priority,
             "confidence": round(final_confidence, 3),
+            "confidence_breakdown": {  
+                "main_category": round(avg_main_conf, 3),
+                "sub_category": round(avg_sub_conf, 3),
+                "intervention": round(avg_interv_conf, 3),
+                "priority": round(avg_priority_conf, 3)
+            },
             "aggregation_info": {
                 "chunks_processed": len(chunk_results),
                 "aggregation_method": "weighted_voting",
@@ -459,29 +475,38 @@ class ClassifierModel:
             return text_chunker.estimate_processing_time(chunks, "classification")
 
     def get_model_info(self) -> Dict:
+        """Get standardized model information"""
+        
+        # Basic information
         info = {
+            "model_type": "classifier",
             "model_path": self.model_path,
+            "hf_repo_id": self.hf_repo_id,
             "loaded": self.loaded,
             "load_time": self.load_time.isoformat() if self.load_time else None,
             "device": str(self.device),
             "error": self.error,
-            "max_length": self.max_length,
-            "chunking_supported": True,
-            "aggregation_strategy": "weighted_voting",
-            "priority_escalation": True,
-            "num_categories": {
-                "main": len(self.main_categories),
-                "sub": len(self.sub_categories),
-                "intervention": len(self.interventions),
-                "priority": len(self.priorities)
-            }
         }
-        
+
+        # Detailed model-specific information
         if self.loaded and self.model:
-            info.update({
-                "model_type": type(self.model).__name__,
-                "tokenizer": type(self.tokenizer).__name__
-            })
+            details = {
+                "model_class": type(self.model).__name__,
+                "tokenizer_class": type(self.tokenizer).__name__,
+                "max_length": self.max_length,
+                "chunking": {
+                    "supported": True,
+                    "strategy": "weighted_voting",
+                    "priority_escalation": True,
+                },
+                "categories": {
+                    "main": len(self.main_categories),
+                    "sub": len(self.sub_categories),
+                    "intervention": len(self.interventions),
+                    "priority": len(self.priorities),
+                }
+            }
+            info["details"] = details
         
         return info
     

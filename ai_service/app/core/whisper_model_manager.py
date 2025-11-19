@@ -60,26 +60,26 @@
 #                 logger.warning(f"Unknown whisper variant '{variant_str}', defaulting to large_turbo")
 #                 self.current_variant = WhisperVariant.LARGE_TURBO
             
-#             # # Parse translation strategy
-#             # strategy_str = self.settings.translation_strategy.lower()
-#             # if strategy_str == "whisper_builtin":
-#             #     self.current_strategy = TranslationStrategy.WHISPER_BUILTIN
-#             # elif strategy_str == "custom_model":
-#             #     self.current_strategy = TranslationStrategy.CUSTOM_MODEL
-#             # else:
-#             #     logger.warning(f"Unknown translation strategy '{strategy_str}', defaulting to custom_model")
-#             #     self.current_strategy = TranslationStrategy.CUSTOM_MODEL
+            # Parse translation strategy
+            strategy_str = self.settings.translation_strategy.lower()
+            if strategy_str == "whisper_builtin":
+                self.current_strategy = TranslationStrategy.WHISPER_BUILTIN
+            elif strategy_str == "custom_model":
+                self.current_strategy = TranslationStrategy.CUSTOM_MODEL
+            else:
+                logger.warning(f"Unknown translation strategy '{strategy_str}', defaulting to custom_model")
+                self.current_strategy = TranslationStrategy.CUSTOM_MODEL
 
-#             # Respect explicit translator configuration: prefer custom model when available
-#             translation_backend = self.settings.translation_backend(include_translation=True)
-#             if translation_backend == "hf" and self.current_strategy != TranslationStrategy.CUSTOM_MODEL:
-#                 logger.info("🔁 Detected dedicated HF translation model; switching strategy to custom_model")
-#                 self.current_strategy = TranslationStrategy.CUSTOM_MODEL
+            # Respect explicit translator configuration: prefer custom model when available
+            translation_backend = self.settings.translation_backend(include_translation=True)
+            if translation_backend == "hf" and self.current_strategy != TranslationStrategy.CUSTOM_MODEL:
+                logger.info("🔁 Detected dedicated HF translation model; switching strategy to custom_model")
+                self.current_strategy = TranslationStrategy.CUSTOM_MODEL
             
-#             # Auto-upgrade to Large-V3 when whisper_builtin is configured
-#             if self.current_strategy == TranslationStrategy.WHISPER_BUILTIN and self.current_variant != WhisperVariant.LARGE_V3:
-#                 logger.info(f"🎯 Auto-upgrading from {self.current_variant.value} to large_v3 for built-in translation")
-#                 self.current_variant = WhisperVariant.LARGE_V3
+            # Auto-upgrade to Large-V3 when whisper_builtin is configured
+            if self.current_strategy == TranslationStrategy.WHISPER_BUILTIN and self.current_variant != WhisperVariant.LARGE_V3:
+                logger.info(f"🎯 Auto-upgrading from {self.current_variant.value} to large_v3 for built-in translation")
+                self.current_variant = WhisperVariant.LARGE_V3
             
 #             # Validate configuration combination (fallback safety)
 #             if self.current_variant == WhisperVariant.LARGE_TURBO and self.current_strategy == TranslationStrategy.WHISPER_BUILTIN:
@@ -100,34 +100,34 @@
 #         """Check if whisper model is currently loaded"""
 #         return self.whisper_model is not None and getattr(self.whisper_model, 'is_loaded', False)
     
-#     def get_loaded_variant_info(self) -> Dict[str, Any]:
-#         """Get standardized information about currently loaded model variant"""
+    def get_loaded_variant_info(self) -> Dict[str, Any]:
+        """Get standardized information about currently loaded model variant"""
         
-#         info = {
-#             "model_type": "whisper_variant_info",
-#             "loaded": self.is_model_loaded(),
-#             "load_time": None, # Not directly tracked by manager for this level
-#             "device": self.whisper_model.device if self.whisper_model else None,
-#             "error": self.whisper_model.error if self.whisper_model else None,
-#         }
+        info = {
+            "model_type": "whisper_variant_info",
+            "loaded": self.is_model_loaded(),
+            "load_time": None, # Not directly tracked by manager for this level
+            "device": self.whisper_model.device if self.whisper_model else None,
+            "error": self.whisper_model.error if self.whisper_model else None,
+        }
 
-#         details = {
-#             "variant": self.current_variant.value if self.current_variant else None,
-#             "strategy": self.current_strategy.value if self.current_strategy else None,
-#             "model_path": self.get_current_model_path(),
-#             "supports_builtin_translation": self.current_variant == WhisperVariant.LARGE_V3,
-#             # "translation_strategy_active": self.current_strategy.value,
-#         }
+        details = {
+            "variant": self.current_variant.value if self.current_variant else None,
+            "strategy": self.current_strategy.value if self.current_strategy else None,
+            "model_path": self.get_current_model_path(),
+            "supports_builtin_translation": self.current_variant == WhisperVariant.LARGE_V3,
+            "translation_strategy_active": self.current_strategy.value,
+        }
 
-#         if self.is_model_loaded():
-#             details["model_info"] = self.whisper_model.get_model_info()
+        if self.is_model_loaded():
+            details["model_info"] = self.whisper_model.get_model_info()
         
-#         info["details"] = details
-#         return info
+        info["details"] = details
+        return info
     
-#     async def load_whisper_model(self, force_reload: bool = False) -> bool:
-#         """
-#         Load the currently configured whisper model
+    async def load_whisper_model(self, force_reload: bool = False) -> bool:
+        """
+        Load the currently configured whisper model
         
 #         Args:
 #             force_reload: Force reload even if model is already loaded
@@ -385,49 +385,49 @@
 #             logger.error(f"❌ Whisper translation failed: {e}")
 #             raise
     
-#     async def get_model_status(self) -> Dict[str, Any]:
-#         """Get comprehensive status of whisper models and configuration"""
+    async def get_model_status(self) -> Dict[str, Any]:
+        """Get comprehensive status of whisper models and configuration"""
         
-#         info = {
-#             "model_type": "whisper_manager",
-#             "loaded": self.is_model_loaded(),
-#             "load_time": None, # Not directly tracked by manager
-#             "device": self.whisper_model.device if self.whisper_model else None,
-#             "error": self.whisper_model.error if self.whisper_model else None,
-#         }
+        info = {
+            "model_type": "whisper_manager",
+            "loaded": self.is_model_loaded(),
+            "load_time": None, # Not directly tracked by manager
+            "device": self.whisper_model.device if self.whisper_model else None,
+            "error": self.whisper_model.error if self.whisper_model else None,
+        }
 
-#         details = {
-#             "current_configuration": {
-#                 "variant": self.current_variant.value if self.current_variant else None,
-#                 "strategy": self.current_strategy.value if self.current_strategy else None,
-#                 "model_loaded": self.is_model_loaded()
-#             },
-#             "available_variants": [v.value for v in WhisperVariant],
-#             "available_strategies": [s.value for s in TranslationStrategy],
-#             "valid_combinations": self.get_available_combinations(),
-#             "model_paths": {
-#                 "large_v3": os.path.abspath(self.variant_paths[WhisperVariant.LARGE_V3]),
-#                 "large_turbo": os.path.abspath(self.variant_paths[WhisperVariant.LARGE_TURBO]),
-#                 "symlink": os.path.abspath(self.settings.whisper_active_symlink)
-#             },
-#             "model_status": {
-#                 "large_v3_available": os.path.exists(self.variant_paths[WhisperVariant.LARGE_V3]),
-#                 "large_turbo_available": os.path.exists(self.variant_paths[WhisperVariant.LARGE_TURBO]),
-#                 "current_model_path": self.get_current_model_path() if self.current_variant else None
-#             },
-#             "loaded_model_info": self.get_loaded_variant_info(),
-#             "memory_status": {
-#                 "cuda_available": torch.cuda.is_available(),
-#                 "cuda_memory_allocated": torch.cuda.memory_allocated() if torch.cuda.is_available() else 0,
-#                 "cuda_memory_reserved": torch.cuda.memory_reserved() if torch.cuda.is_available() else 0
-#             }
-#         }
-#         info["details"] = details
-#         return info
+        details = {
+            "current_configuration": {
+                "variant": self.current_variant.value if self.current_variant else None,
+                "strategy": self.current_strategy.value if self.current_strategy else None,
+                "model_loaded": self.is_model_loaded()
+            },
+            "available_variants": [v.value for v in WhisperVariant],
+            "available_strategies": [s.value for s in TranslationStrategy],
+            "valid_combinations": self.get_available_combinations(),
+            "model_paths": {
+                "large_v3": os.path.abspath(self.variant_paths[WhisperVariant.LARGE_V3]),
+                "large_turbo": os.path.abspath(self.variant_paths[WhisperVariant.LARGE_TURBO]),
+                "symlink": os.path.abspath(self.settings.whisper_active_symlink)
+            },
+            "model_status": {
+                "large_v3_available": os.path.exists(self.variant_paths[WhisperVariant.LARGE_V3]),
+                "large_turbo_available": os.path.exists(self.variant_paths[WhisperVariant.LARGE_TURBO]),
+                "current_model_path": self.get_current_model_path() if self.current_variant else None
+            },
+            "loaded_model_info": self.get_loaded_variant_info(),
+            "memory_status": {
+                "cuda_available": torch.cuda.is_available(),
+                "cuda_memory_allocated": torch.cuda.memory_allocated() if torch.cuda.is_available() else 0,
+                "cuda_memory_reserved": torch.cuda.memory_reserved() if torch.cuda.is_available() else 0
+            }
+        }
+        info["details"] = details
+        return info
     
-#     async def switch_configuration(self, variant: str, strategy: str) -> Tuple[bool, str]:
-#         """
-#         Switch whisper configuration (variant + translation strategy)
+    async def switch_configuration(self, variant: str, strategy: str) -> Tuple[bool, str]:
+        """
+        Switch whisper configuration (variant + translation strategy)
         
 #         Args:
 #             variant: "large_v3" or "large_turbo"

@@ -32,7 +32,12 @@
               <div class="option-description">Choose between light and dark mode</div>
             </div>
             <div class="toggle-switch">
-              <input id="theme-toggle" type="checkbox" />
+              <input 
+                id="theme-toggle" 
+                type="checkbox" 
+                :checked="currentTheme === 'dark'"
+                @change="toggleTheme"
+              />
               <span class="toggle-slider"></span>
             </div>
           </div>
@@ -42,10 +47,16 @@
               <div class="option-description">Adjust the size of text throughout the application</div>
             </div>
             <div class="select-wrapper">
-              <select class="settings-select" id="font-size">
+              <select 
+                class="settings-select" 
+                id="font-size"
+                :value="currentFontSize"
+                @change="changeFontSize($event.target.value)"
+              >
                 <option value="small">Small</option>
                 <option value="medium">Medium</option>
                 <option value="large">Large</option>
+                <option value="x-large">Extra Large</option>
               </select>
               <div class="select-arrow">
                 <svg fill="none" height="6" viewBox="0 0 12 6" width="12" xmlns="http://www.w3.org/2000/svg">
@@ -60,7 +71,12 @@
               <div class="option-description">Enable high-contrast mode for better visibility</div>
             </div>
             <div class="toggle-switch">
-              <input id="high-contrast-toggle" type="checkbox" />
+              <input 
+                id="high-contrast-toggle" 
+                type="checkbox" 
+                :checked="currentHighContrast"
+                @change="toggleHighContrast"
+              />
               <span class="toggle-slider"></span>
             </div>
           </div>
@@ -69,7 +85,7 @@
               <div class="option-label">Read Aloud</div>
               <div class="option-description">Read this page aloud for accessibility</div>
             </div>
-            <button class="btn btn-secondary" @click="readAloud">{{ isReading ? 'Stop Read Aloud' : 'Read Aloud' }}</button>
+            <button class="btn btn--secondary" disabled>Unavailable</button>
           </div>
         </div>
 
@@ -185,7 +201,7 @@
         </div>
 
         <div class="save-settings">
-          <button class="glass-btn filled">Save</button>
+          <button class="glass-btn filled" @click="saveSettings">Save</button>
         </div>
       </div>
     </div>
@@ -199,167 +215,193 @@ import SidePanel from '../components/SidePanel.vue'
 
 const router = useRouter()
 
-const isSidebarCollapsed = ref(false);
-const mobileOpen = ref(false);
-const isReading = ref(false);
+// SidePanel props and state
+const userRole = ref("admin")
+const isInQueue = ref(false)
+const isProcessingQueue = ref(false)
+const currentCall = ref(null)
 
-const toggleSidebar = () => {
-  isSidebarCollapsed.value = !isSidebarCollapsed.value;
-};
-
-const toggleMobileMenu = () => {
-  mobileOpen.value = !mobileOpen.value;
-};
-
-const mainContentMarginLeft = computed(() => {
-  if (window.innerWidth <= 768) {
-    return '0px';
-  } else if (isSidebarCollapsed.value) {
-    return '80px'; // Collapsed sidebar width
-  } else {
-    return '250px'; // Expanded sidebar width
-  }
-});
-
-function setBodyFontSizeClass(size) {
-  document.body.classList.remove('font-size-small', 'font-size-medium', 'font-size-large');
-  document.body.classList.add('font-size-' + size);
+// SidePanel event handlers
+const handleQueueToggle = () => {
+  isInQueue.value = !isInQueue.value
 }
 
-function setHighContrast(enabled) {
+const handleLogout = () => {
+  console.log("Logout clicked")
+}
+
+const handleSidebarToggle = () => {
+  console.log("Sidebar toggle clicked")
+}
+
+// Settings state
+const isSidebarCollapsed = ref(false)
+const mobileOpen = ref(false)
+const isReading = ref(false)
+const currentTheme = ref('dark')
+const currentFontSize = ref('medium')
+const currentHighContrast = ref(false)
+
+// Font size options
+const fontSizes = [
+  { value: 'small', label: 'Small', size: '14px' },
+  { value: 'medium', label: 'Medium', size: '16px' },
+  { value: 'large', label: 'Large', size: '18px' },
+  { value: 'x-large', label: 'Extra Large', size: '20px' }
+]
+
+// Theme toggle function
+const toggleTheme = () => {
+  const newTheme = currentTheme.value === 'dark' ? 'light' : 'dark'
+  currentTheme.value = newTheme
+  applyTheme(newTheme)
+}
+
+// Font size change function
+const changeFontSize = (size) => {
+  currentFontSize.value = size
+  applyFontSize(size)
+}
+
+// High contrast toggle function
+const toggleHighContrast = () => {
+  currentHighContrast.value = !currentHighContrast.value
+  applyHighContrast(currentHighContrast.value)
+}
+
+// Apply theme to document
+const applyTheme = (theme) => {
+  const html = document.documentElement
+  html.setAttribute('data-theme', theme)
+  localStorage.setItem('theme', theme)
+  document.body.setAttribute('data-theme', theme)
+  
+  // Update CSS variables for light mode header
+  if (theme === 'light') {
+    document.documentElement.style.setProperty('--header-bg', '#ffffff')
+  } else {
+    document.documentElement.style.setProperty('--header-bg', '#333')
+  }
+}
+
+// Apply font size to document
+const applyFontSize = (size) => {
+  const html = document.documentElement
+  const body = document.body
+  
+  // Remove existing font size classes
+  html.classList.remove('font-size-small', 'font-size-medium', 'font-size-large', 'font-size-x-large')
+  body.classList.remove('font-size-small', 'font-size-medium', 'font-size-large', 'font-size-x-large')
+  
+  // Add new font size class
+  html.classList.add(`font-size-${size}`)
+  body.classList.add(`font-size-${size}`)
+  
+  // Set CSS custom property
+  const fontSizeMap = {
+    'small': '14px',
+    'medium': '16px',
+    'large': '18px',
+    'x-large': '20px'
+  }
+  
+  const fontSize = fontSizeMap[size] || '16px'
+  html.style.setProperty('--base-font-size', fontSize)
+  html.style.fontSize = fontSize
+  body.style.fontSize = fontSize
+  
+  localStorage.setItem('font-size', size)
+}
+
+// Apply high contrast to document
+const applyHighContrast = (enabled) => {
+  const html = document.documentElement
+  const body = document.body
+  
   if (enabled) {
-    document.body.classList.add('high-contrast');
-    localStorage.setItem('high-contrast', 'true');
+    html.classList.add('high-contrast')
+    body.classList.add('high-contrast')
+    body.setAttribute('data-contrast', 'high')
+    localStorage.setItem('high-contrast', 'true')
   } else {
-    document.body.classList.remove('high-contrast');
-    localStorage.setItem('high-contrast', 'false');
-  }
-  // Force update for SPA navigation
-  document.body.setAttribute('data-contrast', enabled ? 'high' : 'normal');
-}
-
-function readAloud() {
-  if (!window.speechSynthesis) return;
-  if (isReading.value) {
-    window.speechSynthesis.cancel();
-    isReading.value = false;
-    return;
-  }
-  const content = document.querySelector('.main-content')?.innerText;
-  if (content) {
-    window.speechSynthesis.cancel();
-    const utterance = new window.SpeechSynthesisUtterance(content);
-    utterance.rate = 1;
-    utterance.pitch = 1;
-    utterance.lang = 'en-US';
-    utterance.onend = () => { isReading.value = false; };
-    utterance.onerror = () => { isReading.value = false; };
-    isReading.value = true;
-    window.speechSynthesis.speak(utterance);
+    html.classList.remove('high-contrast')
+    body.classList.remove('high-contrast')
+    body.setAttribute('data-contrast', 'normal')
+    localStorage.setItem('high-contrast', 'false')
   }
 }
 
-onMounted(() => {
-  const sidebar = document.getElementById('sidebar');
-  const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-  const themeToggle = document.getElementById('theme-toggle');
-  const fontSizeSelect = document.getElementById('font-size');
-  const highContrastToggle = document.getElementById('high-contrast-toggle');
-  const saveSettingsBtn = document.getElementById('save-settings');
-  const html = document.documentElement;
-
-  function applyTheme(isDark) {
-    html.setAttribute('data-theme', isDark ? 'dark' : 'light');
-    if (themeToggle) themeToggle.checked = isDark;
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    // Force update for SPA navigation
-    document.body.setAttribute('data-theme', isDark ? 'dark' : 'light');
-  }
-
-  function applyFontSize(size) {
-    let px = '16px';
-    if (size === 'small') px = '14px';
-    else if (size === 'large') px = '18px';
-    html.style.fontSize = px;
-    document.body.style.fontSize = px;
-    setBodyFontSizeClass(size);
-    if (fontSizeSelect) fontSizeSelect.value = size;
-    localStorage.setItem('font-size', size);
-  }
-
-  // Apply saved theme
-  const savedTheme = localStorage.getItem('theme');
-  if (savedTheme) {
-    applyTheme(savedTheme === 'dark');
-  } else {
-    applyTheme(true); // Default to dark
-  }
-
-  // Apply saved font size
-  const savedFontSize = localStorage.getItem('font-size');
-  if (savedFontSize) {
-    applyFontSize(savedFontSize);
-  } else {
-    applyFontSize('medium');
-  }
-
-  // Apply saved high contrast
-  const savedContrast = localStorage.getItem('high-contrast');
-  setHighContrast(savedContrast === 'true');
-  if (highContrastToggle) highContrastToggle.checked = savedContrast === 'true';
-
-  mobileMenuBtn?.addEventListener('click', () => {
-    sidebar?.classList.toggle('mobile-open');
-  });
-
-  document.addEventListener('click', (event) => {
-    const isMobile = window.innerWidth <= 768;
-    if (isMobile && !sidebar?.contains(event.target) && event.target !== mobileMenuBtn) {
-      sidebar?.classList.remove('mobile-open');
-    }
-  });
-
-  window.addEventListener('resize', () => {
-    if (window.innerWidth > 768) {
-      sidebar?.classList.remove('mobile-open');
-    }
-  });
-
-  themeToggle?.addEventListener('change', function () {
-    const isDark = this.checked;
-    applyTheme(isDark);
-  });
-
-  fontSizeSelect?.addEventListener('change', function () {
-    applyFontSize(this.value);
-  });
-
-  highContrastToggle?.addEventListener('change', function () {
-    setHighContrast(this.checked);
-  });
-
-  saveSettingsBtn?.addEventListener('click', () => {
-    // No need to save theme/font-size here, already saved on change
+// Save settings function
+const saveSettings = () => {
     const settings = {
-      theme: themeToggle.checked ? 'dark' : 'light',
-      fontSize: fontSizeSelect?.value,
-      highContrast: highContrastToggle?.checked,
+    theme: currentTheme.value,
+    fontSize: currentFontSize.value,
+    highContrast: currentHighContrast.value,
       emailNotifications: document.getElementById('email-notifications')?.checked,
       desktopNotifications: document.getElementById('desktop-notifications')?.checked,
       soundAlerts: document.getElementById('sound-alerts')?.checked,
       twoFactor: document.getElementById('two-factor')?.checked,
       sessionTimeout: document.getElementById('session-timeout')?.value
-    };
-    console.log('Settings saved:', settings);
-    alert('Settings saved successfully!');
-  });
+  }
+  
+  console.log('Settings saved:', settings)
+  alert('Settings saved successfully!')
+}
 
-  // Listen for theme/contrast changes (for SPA navigation)
+// Initialize settings on mount
+onMounted(() => {
+  // Load saved theme
+  const savedTheme = localStorage.getItem('theme') || 'dark'
+  currentTheme.value = savedTheme
+  applyTheme(savedTheme)
+  
+  // Load saved font size
+  const savedFontSize = localStorage.getItem('font-size') || 'medium'
+  currentFontSize.value = savedFontSize
+  applyFontSize(savedFontSize)
+  
+  // Load saved high contrast
+  const savedContrast = localStorage.getItem('high-contrast') === 'true'
+  currentHighContrast.value = savedContrast
+  applyHighContrast(savedContrast)
+  
+  // Mobile menu functionality
+  const sidebar = document.getElementById('sidebar')
+  const mobileMenuBtn = document.getElementById('mobile-menu-btn')
+  
+  mobileMenuBtn?.addEventListener('click', () => {
+    sidebar?.classList.toggle('mobile-open')
+  })
+  
+  document.addEventListener('click', (event) => {
+    const isMobile = window.innerWidth <= 768
+    if (isMobile && !sidebar?.contains(event.target) && event.target !== mobileMenuBtn) {
+      sidebar?.classList.remove('mobile-open')
+    }
+  })
+  
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 768) {
+      sidebar?.classList.remove('mobile-open')
+    }
+  })
+  
+  // Listen for storage changes (for SPA navigation)
   window.addEventListener('storage', (e) => {
-    if (e.key === 'theme') applyTheme(e.newValue === 'dark');
-    if (e.key === 'high-contrast') setHighContrast(e.newValue === 'true');
-  });
-});
+    if (e.key === 'theme') {
+      currentTheme.value = e.newValue
+      applyTheme(e.newValue)
+    }
+    if (e.key === 'high-contrast') {
+      currentHighContrast.value = e.newValue === 'true'
+      applyHighContrast(e.newValue === 'true')
+    }
+    if (e.key === 'font-size') {
+      currentFontSize.value = e.newValue
+      applyFontSize(e.newValue)
+    }
+  })
+})
 </script>
 
 <style scoped>
@@ -372,8 +414,8 @@ onMounted(() => {
         --text-color: #fff;
         --text-secondary: #aaa;
         --border-color: #333;
-        --accent-color: #964B00;
-        --accent-hover: #b25900;
+        --accent-color: #8B4513;
+        --accent-hover: #A0522D;
         --danger-color: #ff3b30;
         --success-color: #4CAF50;
         --pending-color: #FFA500;
@@ -390,8 +432,8 @@ onMounted(() => {
         --text-color: #333;
         --text-secondary: #666;
         --border-color: #ddd;
-        --accent-color: #964B00;
-        --accent-hover: #b25900;
+        --accent-color: #8B4513;
+        --accent-hover: #A0522D;
         --danger-color: #ff3b30;
         --success-color: #4CAF50;
         --pending-color: #FFA500;
@@ -399,6 +441,50 @@ onMounted(() => {
         --highlight-color: #ff3b30;
         --header-bg: #f0f0f0;
         --input-bg: #f0f0f0;
+    }
+
+    /* Font Size Classes */
+    .font-size-small {
+        --base-font-size: 14px;
+    }
+
+    .font-size-medium {
+        --base-font-size: 16px;
+    }
+
+    .font-size-large {
+        --base-font-size: 18px;
+    }
+
+    .font-size-x-large {
+        --base-font-size: 20px;
+    }
+
+    /* High Contrast Mode */
+    .high-contrast {
+        --text-color: #000000 !important;
+        --text-secondary: #333333 !important;
+        --background-color: #ffffff !important;
+        --content-bg: #ffffff !important;
+        --sidebar-bg: #ffffff !important;
+        --border-color: #000000 !important;
+        --accent-color: #000000 !important;
+        --accent-hover: #333333 !important;
+        --header-bg: #ffffff !important;
+        --input-bg: #ffffff !important;
+    }
+
+    .high-contrast[data-theme="dark"] {
+        --text-color: #ffffff !important;
+        --text-secondary: #cccccc !important;
+        --background-color: #000000 !important;
+        --content-bg: #000000 !important;
+        --sidebar-bg: #000000 !important;
+        --border-color: #ffffff !important;
+        --accent-color: #ffffff !important;
+        --accent-hover: #cccccc !important;
+        --header-bg: #000000 !important;
+        --input-bg: #000000 !important;
     }
     
     * {
@@ -413,7 +499,7 @@ onMounted(() => {
         color: var(--text-color);
         display: flex;
         min-height: 100vh;
-        transition: background-color 0.3s, color 0.3s;
+        transition: background-color 0.3s, color 0.3s, font-size 0.3s;
         font-size: var(--base-font-size);
     }
     

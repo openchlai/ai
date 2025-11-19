@@ -81,7 +81,7 @@ class ModelFeedbackResponse(BaseModel):
     created_at: datetime
 
     class Config:  
-        from_attributes = True
+        orm_mode = True
 
 # Model Feedback Routes
 @router.post("/model-feedback", response_model=ModelFeedbackResponse)

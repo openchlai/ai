@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 from .config.settings import settings
-from .api import health_routes, ner_routes, translator_routes, summarizer_routes, classifier_route, whisper_routes, audio_routes, call_session_routes, qa_route, processing_mode_routes, notification_routes, feedback_routes
+from .api import health_routes, ner_routes, translator_routes, summarizer_routes, classifier_route, whisper_routes, audio_routes, call_session_routes, qa_route, processing_mode_routes, whisper_model_routes, notification_routes, feedback_routes
 from .model_scripts.model_loader import model_loader
 from .core.resource_manager import resource_manager
 from .streaming.tcp_server import AsteriskTCPServer
@@ -72,11 +72,14 @@ async def lifespan(app: FastAPI):
     if os.getenv("ENABLE_ASTERISK_TCP", "true").lower() == "true":
         try:
             logger.info("🎙️ Starting Asterisk TCP listener...")
-            asterisk_server = AsteriskTCPServer()  # Remove model_loader parameter
+            asterisk_server = AsteriskTCPServer(
+                host=settings.streaming_host,
+                port=settings.streaming_port
+            )
             
             # Start TCP listener in background
             asyncio.create_task(asterisk_server.start_server())
-            logger.info("🎙️ Asterisk TCP listener started on port 8300 - waiting for connections")
+            logger.info(f"🎙️ Asterisk TCP listener started on port {settings.streaming_port} - waiting for connections")
             
         except Exception as e:
             logger.error(f"❌ Failed to start Asterisk TCP listener: {e}")
@@ -127,6 +130,7 @@ app.include_router(call_session_routes.router)
 app.include_router(qa_route.router)
 app.include_router(processing_mode_routes.router)
 app.include_router(notification_routes.router)
+app.include_router(feedback_routes.router)
 
 @app.websocket("/audio/stream")
 async def websocket_audio_stream(websocket: WebSocket):
@@ -165,14 +169,17 @@ async def root():
             "quick_audio_analysis": "/audio/analyze",
             "celery_status": "/health/celery/status",
             "asterisk_status": "/asterisk/status",
-            "websocket_audio_stream": "ws://localhost:8123/audio/stream",
+            "websocket_audio_stream": f"ws://localhost:{settings.app_port}/audio/stream",
             "call_sessions": "/api/v1/calls",
             "active_calls": "/api/v1/calls/active",
             "call_stats": "/api/v1/calls/stats",
             "qa_predict": "/qa/predict",
             "notification_status": "/api/v1/notifications/status",
             "notification_configure": "/api/v1/notifications/configure",
-            "notification_statistics": "/api/v1/notifications/statistics"
+            "notification_statistics": "/api/v1/notifications/statistics",
+            "feedback_transcription_rating": "/api/v1/feedback/transcription-rating",
+            "feedback_task_status": "/api/v1/feedback/status/{task_id}",
+            "feedback_health": "/api/v1/feedback/health"
 
         }
     }
@@ -232,21 +239,21 @@ if __name__ == "__main__":
     
     # Log the configuration
     logger.info(f"Configuration - Streaming: {getattr(settings, 'enable_streaming', False)}")
-    
-    # Use different ports for API vs Worker  
-    port = 8123 if not settings.enable_model_loading else 8123
-    
+
+    # Get port from settings (configurable via APP_PORT env var, defaults to 8125)
+    port = settings.app_port
+
     # If streaming is enabled, we need to start both FastAPI and streaming server
     if getattr(settings, 'enable_streaming', False):
-        logger.info("🎙️ Starting with streaming support - FastAPI on 8123, Streaming on 8300")
+        logger.info(f"🎙️ Starting with streaming support - FastAPI on {port}, Streaming on {settings.streaming_port}")
         # For now, just start FastAPI - we'll add streaming server in Task 1.3
         # TODO: Add streaming server startup here in Task 1.3
     else:
-        logger.info("📦 Starting FastAPI only on port 8123")
-    
+        logger.info(f"📦 Starting FastAPI only on port {port}")
+
     uvicorn.run(
         "app.main:app",
-        host="0.0.0.0", 
+        host="0.0.0.0",
         port=port,
         reload=settings.debug,
         log_level=settings.log_level.lower()
