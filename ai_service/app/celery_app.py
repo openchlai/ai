@@ -48,8 +48,7 @@ celery_app.conf.update(
         'app.tasks.audio_tasks.process_audio_task': {'queue': 'audio_processing'},
         'app.tasks.audio_tasks.process_audio_quick_task': {'queue': 'audio_quick'},
         'app.tasks.audio_tasks.process_streaming_audio_task': {'queue': 'audio_streaming'},
-        'app.tasks.audio_tasks.process_feedback_audio_task': {'queue': 'audio_feedback'},
-        
+
         # Individual model tasks - NEW
         'app.tasks.model_tasks.ner_extract_task': {'queue': 'model_processing'},
         'app.tasks.model_tasks.classifier_classify_task': {'queue': 'model_processing'},
