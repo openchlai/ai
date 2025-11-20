@@ -519,178 +519,120 @@ def _process_audio_sync_worker(
     
     # Publish initial start
     publish_update("started", 5, f"Starting audio processing for {filename}")
-    
-    # Determine processing strategy BEFORE any processing
-    from ..core.whisper_model_manager import whisper_model_manager
-    should_use_whisper_translation = whisper_model_manager.should_use_whisper_translation() and include_translation
-    
+
     # Initialize variables
     translation = None
     transcript = None
-    
-    # Step 1: Audio Processing (Transcription OR Direct Translation)
-    if should_use_whisper_translation and not is_pretranscribed:
-        # Use Whisper built-in translation - skip transcription, get English directly
-        task_instance.update_state(
-            state="PROCESSING", 
-            meta={"step": "translation", "progress": 10}
-        )
-        
-        publish_update("translation", 10, "Starting Whisper built-in translation...")
-        logger.info("🌐 Using Whisper built-in translation (no intermediate transcription)")
-        
-        step_start = datetime.now()
-        
+
+    # Step 1: Audio Processing (Transcription ONLY)
+    task_instance.update_state(
+        state="PROCESSING",
+        meta={"step": "transcription", "progress": 10}
+    )
+
+    step_start = datetime.now()
+
+    if is_pretranscribed:
+        # Skip transcription for pre-transcribed text
+        publish_update("transcription", 30, "Using pre-transcribed text...")
+        transcription_duration = 0.01  # Minimal time for pre-transcribed
+        logger.info(f"✅ Using existing transcript: {len(transcript)} characters")
+    else:
+        # Normal audio transcription
+        publish_update("transcription", 10, "Starting audio transcription...")
+
         whisper_model = models.models.get("whisper")
         if not whisper_model:
-            publish_update("translation_error", 10, "Whisper model not available")
+            publish_update("transcription_error", 10, "Whisper model not available")
             raise RuntimeError("Whisper model not available in worker")
-        
-        # Direct translation with task="translate"
-        translation = whisper_model.transcribe_audio_bytes(audio_bytes, language=language, task="translate")
-        transcript = None  # No transcript in translation mode
-        
-        translation_duration = (datetime.now() - step_start).total_seconds()
-        
-        # Publish translation result
-        publish_update(
-            "translation_complete",
-            40,
-            "Whisper built-in translation completed", 
-            partial_result={"translation": translation, "is_final": True},
-            metadata={"duration": translation_duration}
-        )
-        
-        processing_steps["translation"] = {
-            "duration": translation_duration,
-            "status": "completed",
-            "method": "whisper_builtin",
-            "model": whisper_model_manager.current_variant.value,
-            "output_length": len(translation)
-        }
-        
-        # No transcription step in translation mode
-        processing_steps["transcription"] = {
-            "duration": 0,
-            "status": "skipped",
-            "reason": "direct_translation_mode",
-            "output_length": 0
-        }
-        transcription_duration = 0
-        
-    else:
-        # Standard transcription mode
-        task_instance.update_state(
-            state="PROCESSING",
-            meta={"step": "transcription", "progress": 10}
-        )
-        
-        step_start = datetime.now()
-        
-        if is_pretranscribed:
-            # Skip transcription for pre-transcribed text
-            publish_update("transcription", 30, "Using pre-transcribed text...")
-            transcription_duration = 0.01  # Minimal time for pre-transcribed
-            logger.info(f"✅ Using existing transcript: {len(transcript)} characters")
+
+        # Check if model supports streaming transcription
+        if hasattr(whisper_model, 'transcribe_streaming'):
+            # Stream partial transcription results
+            transcript = ""
+            for partial_transcript, progress_pct in whisper_model.transcribe_streaming(audio_bytes, language=language):
+                transcript = partial_transcript
+                stream_progress = 10 + int(progress_pct * 0.2)  # 10-30% range
+                publish_update(
+                    "transcription",
+                    stream_progress,
+                    f"Transcribing... ({progress_pct:.1f}%)",
+                    partial_result={"transcript": transcript, "is_final": False}
+                )
         else:
-            # Normal audio transcription
-            publish_update("transcription", 10, "Starting audio transcription...")
-            
-            whisper_model = models.models.get("whisper")
-            if not whisper_model:
-                publish_update("transcription_error", 10, "Whisper model not available")
-                raise RuntimeError("Whisper model not available in worker")
-            
-            # Check if model supports streaming transcription
-            if hasattr(whisper_model, 'transcribe_streaming'):
-                # Stream partial transcription results
-                transcript = ""
-                for partial_transcript, progress_pct in whisper_model.transcribe_streaming(audio_bytes, language=language):
-                    transcript = partial_transcript
-                    stream_progress = 10 + int(progress_pct * 0.2)  # 10-30% range
-                    publish_update(
-                        "transcription", 
-                        stream_progress, 
-                        f"Transcribing... ({progress_pct:.1f}%)",
-                        partial_result={"transcript": transcript, "is_final": False}
-                    )
-            else:
-                # Fallback to regular transcription with task="transcribe"
-                transcript = whisper_model.transcribe_audio_bytes(audio_bytes, language=language, task="transcribe")
-            
-            # Calculate transcription duration for normal processing
-            transcription_duration = (datetime.now() - step_start).total_seconds()
-        
-        # Publish final transcription
-        publish_update(
-            "transcription_complete", 
-            30, 
-            "Transcription completed",
-            partial_result={"transcript": transcript, "is_final": True},
-            metadata={"duration": transcription_duration}
-        )
-        
-        processing_steps["transcription"] = {
-            "duration": transcription_duration,
-            "status": "completed",
-            "output_length": len(transcript)
-        }
+            # Fallback to regular transcription (no task parameter)
+            transcript = whisper_model.transcribe_audio_bytes(audio_bytes, language=language)
+
+        # Calculate transcription duration for normal processing
+        transcription_duration = (datetime.now() - step_start).total_seconds()
+
+    # Publish final transcription
+    publish_update(
+        "transcription_complete",
+        30,
+        "Transcription completed",
+        partial_result={"transcript": transcript, "is_final": True},
+        metadata={"duration": transcription_duration}
+    )
+
+    processing_steps["transcription"] = {
+        "duration": transcription_duration,
+        "status": "completed",
+        "output_length": len(transcript)
+    }
     
-    # Step 2: Translation (if enabled and not already done by Whisper)
-    if include_translation and not should_use_whisper_translation:
-        # Only do separate translation if we didn't already get it from Whisper
+    # Step 2: Translation (if enabled, always use custom translator)
+    if include_translation:
         task_instance.update_state(
             state="PROCESSING",
             meta={"step": "translation", "progress": 35}
         )
-        
+
         step_start = datetime.now()
-        should_use_custom_translation = whisper_model_manager.should_use_custom_translation()
-        
-        if should_use_custom_translation:
-            # Use custom translation model
-            publish_update("translation", 35, "Starting custom model translation...")
-            
-            try:
-                translator_model = models.models.get("translator")
-                if not translator_model:
-                    publish_update("translation_error", 35, "Translator model not available")
-                    raise RuntimeError("Translator model not available")
-                
-                # Check if model supports streaming translation
-                if hasattr(translator_model, 'translate_streaming'):
-                    # Stream partial translation results
-                    translation = ""
-                    for partial_translation, progress_pct in translator_model.translate_streaming(transcript):
-                        translation = partial_translation
-                        stream_progress = 35 + int(progress_pct * 0.15)  # 35-50% range
-                        publish_update(
-                            "translation", 
-                            stream_progress, 
-                            f"Translating... ({progress_pct:.1f}%)",
-                            partial_result={"translation": translation, "is_final": False}
-                        )
-                else:
-                    # Fallback to regular translation
-                    translation = translator_model.translate(transcript)
-                
-                processing_steps["translation"] = {
-                    "duration": (datetime.now() - step_start).total_seconds(),
-                    "status": "completed", 
-                    "method": "custom_model",
-                    "output_length": len(translation)
-                }
-                
-            except Exception as e:
-                logger.error(f"❌ Custom translation failed: {e}")
-                translation = None
-                processing_steps["translation"] = {
-                    "duration": (datetime.now() - step_start).total_seconds(),
-                    "status": "failed",
-                    "method": "custom_model",
-                    "error": str(e)
-                }
-        
+
+        # Always use custom translation model
+        publish_update("translation", 35, "Starting translation...")
+
+        try:
+            translator_model = models.models.get("translator")
+            if not translator_model:
+                publish_update("translation_error", 35, "Translator model not available")
+                raise RuntimeError("Translator model not available")
+
+            # Check if model supports streaming translation
+            if hasattr(translator_model, 'translate_streaming'):
+                # Stream partial translation results
+                translation = ""
+                for partial_translation, progress_pct in translator_model.translate_streaming(transcript):
+                    translation = partial_translation
+                    stream_progress = 35 + int(progress_pct * 0.15)  # 35-50% range
+                    publish_update(
+                        "translation",
+                        stream_progress,
+                        f"Translating... ({progress_pct:.1f}%)",
+                        partial_result={"translation": translation, "is_final": False}
+                    )
+            else:
+                # Fallback to regular translation
+                translation = translator_model.translate(transcript)
+
+            processing_steps["translation"] = {
+                "duration": (datetime.now() - step_start).total_seconds(),
+                "status": "completed",
+                "method": "custom_model",
+                "output_length": len(translation)
+            }
+
+        except Exception as e:
+            logger.error(f"❌ Translation failed: {e}")
+            translation = None
+            processing_steps["translation"] = {
+                "duration": (datetime.now() - step_start).total_seconds(),
+                "status": "failed",
+                "method": "custom_model",
+                "error": str(e)
+            }
+
         # Publish final translation result (if any translation was successful)
         if translation:
             translation_duration = (datetime.now() - step_start).total_seconds()
@@ -754,10 +696,10 @@ def _process_audio_sync_worker(
                         logger.warning("QA model not available for immediate analysis")
                 except Exception as qa_error:
                     logger.error(f"❌ QA analysis failed after translation: {qa_error}")
-        else:
-            # Translation not requested
-            logger.info("ℹ️ Translation skipped (not requested)")
-            processing_steps["translation"] = {"status": "skipped"}
+    else:
+        # Translation not requested
+        logger.info("ℹ️ Translation skipped (not requested)")
+        processing_steps["translation"] = {"status": "skipped"}
     
     # Step 3: NLP Processing
     task_instance.update_state(
@@ -1196,31 +1138,19 @@ def process_streaming_audio_task(
         
         start_time = datetime.now()
         call_id = connection_id  # connection_id is now actually call_id
-        
-        # Quick processing (transcription OR translation based on strategy)
-        from ..core.whisper_model_manager import whisper_model_manager
-        should_use_whisper_translation = whisper_model_manager.should_use_whisper_translation()
-        
+
+        # Quick processing (transcription only)
         whisper_model = models.models.get("whisper")
-        if whisper_model: 
-            # Choose task based on translation strategy
-            task = "translate" if should_use_whisper_translation else "transcribe"
-            
-            # Use the PCM processing method with appropriate task
-            result = whisper_model.transcribe_pcm_audio(
+        if whisper_model:
+            # Use the PCM processing method for transcription only
+            transcript = whisper_model.transcribe_pcm_audio(
                 audio_bytes,
                 sample_rate=sample_rate,
-                language=language,
-                task=task
+                language=language
             )
-            
-            # Set transcript or translation based on task
-            if should_use_whisper_translation:
-                transcript = None  # No transcript in translation mode
-                translation = result
-            else:
-                transcript = result
-                translation = None
+
+            # No translation in streaming mode
+            translation = None
             
             processing_duration = (datetime.now() - start_time).total_seconds()
             
@@ -1249,18 +1179,16 @@ def process_streaming_audio_task(
                 }
                 
                 # Only add to session if we have actual content (not empty/filtered)
-                content_to_add = translation if should_use_whisper_translation else transcript
-                
-                if content_to_add:  # Only process non-empty content
+                if transcript:  # Only process non-empty content
                     # Run async operation in sync context with retry for race condition
                     updated_session = None
                     for retry in range(3):  # Try up to 3 times
                         try:
                             updated_session = loop.run_until_complete(
                                 call_session_manager.add_transcription(
-                                    call_id, 
-                                    content_to_add,  # Use translation or transcript 
-                                    duration_seconds, 
+                                    call_id,
+                                    transcript,
+                                    duration_seconds,
                                     metadata
                                 )
                             )
@@ -1285,12 +1213,11 @@ def process_streaming_audio_task(
                 
                 # Concise logging for streaming chunks
                 if updated_session:
-                    content_for_log = translation if should_use_whisper_translation else transcript
-                    if content_for_log:  # Only log non-empty content
-                        logger.info(f"📡 {call_id} {updated_session.segment_count}/{updated_session.total_audio_duration:.0f}s: {content_for_log}")
+                    if transcript:  # Only log non-empty content
+                        logger.info(f"📡 {call_id} {updated_session.segment_count}/{updated_session.total_audio_duration:.0f}s: {transcript}")
                     else:
                         logger.debug(f"📡 {call_id} {updated_session.segment_count}: (silent)")
-                elif content_to_add:  # Only warn if we had content but couldn't add to session
+                elif transcript:  # Only warn if we had content but couldn't add to session
                     logger.warning(f"⚠️ Could not add to session {call_id}")
                 # If no content and no session update, that's expected - no warning needed
                 

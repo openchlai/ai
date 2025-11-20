@@ -320,8 +320,8 @@ class EnhancedNotificationService:
         self._log_payload(data, request_body)
         
         # Retry logic
-        retry_attempts = getattr(settings, 'notification_retry_attempts', 3)
-        retry_delay = getattr(settings, 'notification_retry_delay', 2)
+        retry_attempts = settings.notification_max_retries
+        retry_delay = settings.notification_retry_delay
         
         for attempt in range(retry_attempts):
             try:

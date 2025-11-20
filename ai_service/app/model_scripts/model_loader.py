@@ -224,28 +224,25 @@ class ModelLoader:
                 return
             
             if model_name == "whisper":
-                # Use WhisperModelManager for dynamic variant loading
-                from ..core.whisper_model_manager import whisper_model_manager
-                
+                # Load Whisper model directly for transcription
+                from .whisper_model import WhisperModel
+
                 try:
-                    success = await whisper_model_manager.load_whisper_model()
+                    whisper_model = WhisperModel()
+                    success = whisper_model.load()
                     if success:
                         model_status.loaded = True
                         model_status.error = None
-                        model_status.model_info = whisper_model_manager.get_loaded_variant_info()
-                        # Store the actual whisper model instance for backward compatibility
-                        self.models[model_name] = whisper_model_manager.whisper_model
-                        # Unified instance: whisper_translation_model references the same instance
-                        self.models['whisper_translation_model'] = whisper_model_manager.whisper_model
-                        logger.info(f"✅ Whisper model loaded successfully: {whisper_model_manager.current_variant.value}")
-                        logger.info("✅ Unified Whisper instance created for both transcription and translation")
+                        model_status.model_info = whisper_model.get_model_info()
+                        self.models[model_name] = whisper_model
+                        logger.info(f"✅ Whisper model loaded successfully for transcription")
                     else:
-                        model_status.error = "Failed to load Whisper model via WhisperModelManager"
+                        model_status.error = "Failed to load Whisper model"
                         logger.error(f"❌ Whisper model failed to load: {model_status.error}")
                 except Exception as e:
-                    model_status.error = f"WhisperModelManager error: {str(e)}"
-                    logger.error(f"❌ Whisper model manager failed: {model_status.error}")
-                
+                    model_status.error = f"Whisper loading error: {str(e)}"
+                    logger.error(f"❌ Whisper model loading failed: {model_status.error}")
+
                 model_status.load_time = datetime.now()
                 return
             

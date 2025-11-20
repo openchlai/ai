@@ -8,7 +8,7 @@ import asyncio
 import aiohttp
 import os
 
-from ..config.settings import redis_task_client
+from ..config.settings import redis_task_client, settings
 from .progressive_processor import progressive_processor
 from app.core.enhanced_processing_manager import enhanced_processing_manager, EnhancedProcessingMode
 from ..services.enhanced_notification_service import notification_service as enhanced_notification_service, NotificationType
@@ -85,7 +85,7 @@ class CallSessionManager:
         self.redis_client = redis_client or redis_task_client
         self.active_sessions: Dict[str, CallSession] = {}
         self.session_timeout = timedelta(minutes=30)  # Timeout inactive sessions
-        self.cleanup_interval = 300  # Cleanup every 5 minutes
+        self.cleanup_interval = settings.cleanup_interval  # Cleanup interval from settings
         self._cleanup_task = None
         
     async def start_session(self, call_id: str, connection_info: Dict, mode_override: Optional[str] = None) -> CallSession:
