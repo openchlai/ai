@@ -10,11 +10,12 @@ logger = logging.getLogger(__name__)
 
 # Import notification service
 try:
-    from ..services.agent_notification_service import agent_notification_service
+    from ..services.enhanced_notification_service import enhanced_notification_service
+    from ..models.notification_types import NotificationType, ProcessingMode
     NOTIFICATIONS_ENABLED = True
 except ImportError:
     NOTIFICATIONS_ENABLED = False
-    logger.warning("Agent notification service not available")
+    logger.warning("Enhanced notification service not available")
 
 @dataclass
 class ProcessingWindow:
@@ -346,7 +347,17 @@ class ProgressiveProcessor:
             # Send call summary notification to agent if summary was generated
             if NOTIFICATIONS_ENABLED and summary:
                 try:
-                    await agent_notification_service.send_call_summary(call_id, summary, final_report)
+                    # Map to EnhancedNotificationService's streaming summary notification
+                    payload_data = {
+                        "summary": summary,
+                        "final_analysis": final_report
+                    }
+                    await enhanced_notification_service.send_notification(
+                        call_id=call_id,
+                        notification_type=NotificationType.STREAMING_SUMMARY,
+                        processing_mode=ProcessingMode.STREAMING,
+                        payload_data=payload_data
+                    )
                 except Exception as e:
                     logger.error(f"❌ Failed to send call summary notification for {call_id}: {e}")
             
@@ -432,28 +443,28 @@ class ProgressiveProcessor:
             
             # Send translation update if available
             if window.translation:
-                await agent_notification_service.send_translation_update(
+                await enhanced_notification_service.send_streaming_translation(
                     call_id=call_id,
-                    window_id=window.window_id,
-                    translation=window.translation,
-                    cumulative_translation=analysis.cumulative_translation
+                    window_text=window.translation,
+                    cumulative_translation=analysis.cumulative_translation,
+                    window_id=window.window_id
                 )
-            
+
             # Send entity update if available
             if window.entities:
-                await agent_notification_service.send_entity_update(
+                await enhanced_notification_service.send_streaming_entities(
                     call_id=call_id,
-                    window_id=window.window_id,
                     entities=window.entities,
+                    window_id=window.window_id,
                     entity_evolution=analysis.entity_evolution
                 )
-            
+
             # Send classification update if available
             if window.classification:
-                await agent_notification_service.send_classification_update(
+                await enhanced_notification_service.send_streaming_classification(
                     call_id=call_id,
-                    window_id=window.window_id,
                     classification=window.classification,
+                    window_id=window.window_id,
                     classification_evolution=analysis.classification_evolution
                 )
             

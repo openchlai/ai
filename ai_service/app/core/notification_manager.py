@@ -6,11 +6,10 @@ from enum import Enum
 from typing import Dict, Any, Optional
 from datetime import datetime
 
-# Import unified notification types (new standard)
+# Import unified notification types
 from app.models.notification_types import (
-    NotificationType as UnifiedNotificationType,
+    NotificationType,
     NotificationImportance,
-    LEGACY_MANAGER_MAPPING,
     get_notification_importance
 )
 
@@ -18,37 +17,11 @@ logger = logging.getLogger(__name__)
 
 class NotificationMode(Enum):
     """Notification filtering modes"""
-    ALL = "all"                    # Send all notifications (progress, intermediate, results)  
+    ALL = "all"                    # Send all notifications (progress, intermediate, results)
     RESULTS_ONLY = "results_only"  # Only send notifications with actual results
     CRITICAL_ONLY = "critical_only" # Only call start/end and final results
     DISABLED = "disabled"          # No notifications sent
 
-class NotificationType(Enum):
-    """
-    DEPRECATED: Use app.models.notification_types.NotificationType instead.
-
-    This enum is maintained for backward compatibility only.
-    Use LEGACY_MANAGER_MAPPING to migrate to unified NotificationType.
-    """
-    # Progress notifications (frequent, no results)
-    CALL_START = "call_start"
-    TRANSCRIPT_SEGMENT = "transcript_segment"
-    TRANSLATION_PROGRESS = "translation_progress" 
-    PROCESSING_UPDATE = "processing_update"
-    
-    # Result notifications (contain actual results)
-    TRANSLATION_COMPLETE = "translation_complete"
-    ENTITY_RESULTS = "entity_results"
-    CLASSIFICATION_RESULTS = "classification_results"
-    QA_RESULTS = "qa_results"
-    SUMMARY_RESULTS = "summary_results"
-    INSIGHTS_RESULTS = "insights_results"
-    GPT_INSIGHTS_RESULTS = "gpt_insights_results"
-    
-    # Critical notifications (always important)
-    CALL_END = "call_end"
-    PROCESSING_ERROR = "processing_error"
-    UNIFIED_INSIGHT = "unified_insight"
 
 class NotificationManager:
     """
@@ -64,13 +37,13 @@ class NotificationManager:
         
         # Import notification service
         try:
-            from ..services.agent_notification_service import agent_notification_service
-            self.notification_service = agent_notification_service
+            from ..services.enhanced_notification_service import enhanced_notification_service
+            self.notification_service = enhanced_notification_service
             self.service_available = True
         except ImportError:
             self.notification_service = None
             self.service_available = False
-            logger.warning("⚠️ Agent notification service not available")
+            logger.warning("⚠️ Enhanced notification service not available")
         
         # Statistics
         self.stats = {
@@ -142,27 +115,13 @@ class NotificationManager:
     
     def _is_critical_notification(self, notification_type: NotificationType) -> bool:
         """Check if notification type is considered critical"""
-        critical_types = {
-            # NotificationType.CALL_START,  # Disabled - no call start notifications
-            # NotificationType.CALL_END,    # Disabled - no call end notifications  
-            NotificationType.PROCESSING_ERROR,
-            NotificationType.UNIFIED_INSIGHT
-        }
-        return notification_type in critical_types
-    
+        importance = get_notification_importance(notification_type)
+        return importance == NotificationImportance.CRITICAL
+
     def _is_result_notification(self, notification_type: NotificationType) -> bool:
         """Check if notification type typically contains results"""
-        result_types = {
-            NotificationType.TRANSLATION_COMPLETE,
-            NotificationType.ENTITY_RESULTS,
-            NotificationType.CLASSIFICATION_RESULTS,
-            NotificationType.QA_RESULTS,
-            NotificationType.SUMMARY_RESULTS,
-            NotificationType.INSIGHTS_RESULTS,
-            NotificationType.GPT_INSIGHTS_RESULTS,
-            NotificationType.UNIFIED_INSIGHT
-        }
-        return notification_type in result_types
+        importance = get_notification_importance(notification_type)
+        return importance == NotificationImportance.RESULT
     
     def _record_sent(self, notification_type: NotificationType):
         """Record that a notification was sent"""
@@ -290,10 +249,22 @@ class NotificationManager:
                 return await self.notification_service.send_unified_insight(call_id, pipeline_result, audio_info, metadata)
             
             else:
-                # Generic notification dispatch
-                from ..services.agent_notification_service import UpdateType
-                update_type = UpdateType(notification_type.value) if hasattr(UpdateType, notification_type.value.upper()) else UpdateType.ERROR
-                return await self.notification_service._send_notification(call_id, update_type, payload)
+                # Generic notification dispatch using EnhancedNotificationService
+                from app.models.notification_types import ProcessingMode
+                # Determine processing mode from payload or default to STREAMING
+                processing_mode_str = payload.get("processing_mode", "streaming")
+                try:
+                    processing_mode = ProcessingMode(processing_mode_str)
+                except ValueError:
+                    processing_mode = ProcessingMode.STREAMING
+
+                # Use the generic send_notification method
+                return await self.notification_service.send_notification(
+                    call_id=call_id,
+                    notification_type=notification_type,
+                    processing_mode=processing_mode,
+                    payload_data=payload
+                )
         
         except Exception as e:
             logger.error(f"❌ Error dispatching {notification_type.value} notification: {e}")

@@ -622,11 +622,10 @@ class CallSessionManager:
     async def _send_insights_notification(self, call_id: str, insights: dict):
         """Send insights as a structured notification to agent system"""
         try:
-            # Create insights payload similar to other notifications
-            payload = {
-                "update_type": "call_insights",
-                "call_id": call_id,
-                "timestamp": datetime.now().isoformat(),
+            # Create insights payload for EnhancedNotificationService
+            from ..models.notification_types import NotificationType, ProcessingMode
+
+            payload_data = {
                 "insights": insights,
                 "insight_summary": {
                     "case_complexity": insights.get("case_overview", {}).get("case_complexity", "unknown"),
@@ -636,11 +635,15 @@ class CallSessionManager:
                 },
                 "processing_complete": True
             }
-            
-            # Use existing notification infrastructure
-            from ..services.agent_notification_service import UpdateType
-            return await agent_notification_service._send_notification(call_id, UpdateType.CALL_INSIGHTS, payload)
-            
+
+            # Use EnhancedNotificationService
+            return await enhanced_notification_service.send_notification(
+                call_id=call_id,
+                notification_type=NotificationType.STREAMING_INSIGHTS,
+                processing_mode=ProcessingMode.STREAMING,
+                payload_data=payload_data
+            )
+
         except Exception as e:
             logger.error(f"❌ Failed to send insights notification for {call_id}: {e}")
             return False
@@ -1198,11 +1201,10 @@ class CallSessionManager:
     async def _send_enhanced_insights_notification(self, call_id: str, enhanced_insights: dict, audio_quality_info: dict):
         """Send enhanced insights notification to agent system"""
         try:
-            # Create enhanced insights payload
-            payload = {
-                "update_type": "enhanced_audio_insights",
-                "call_id": call_id,
-                "timestamp": datetime.now().isoformat(),
+            # Create enhanced insights payload for EnhancedNotificationService
+            from ..models.notification_types import NotificationType, ProcessingMode
+
+            payload_data = {
                 "insights": enhanced_insights,
                 "audio_quality": audio_quality_info,
                 "insight_summary": {
@@ -1219,11 +1221,15 @@ class CallSessionManager:
                 "processing_complete": True,
                 "supersedes_streaming_insights": True
             }
-            
-            # Use existing notification infrastructure
-            from ..services.agent_notification_service import UpdateType
-            return await agent_notification_service._send_notification(call_id, UpdateType.CALL_INSIGHTS, payload)
-            
+
+            # Use EnhancedNotificationService - POSTCALL_INSIGHTS since it's from audio processing
+            return await enhanced_notification_service.send_notification(
+                call_id=call_id,
+                notification_type=NotificationType.POSTCALL_INSIGHTS,
+                processing_mode=ProcessingMode.POST_CALL,
+                payload_data=payload_data
+            )
+
         except Exception as e:
             logger.error(f"❌ Failed to send enhanced insights notification for {call_id}: {e}")
             return False

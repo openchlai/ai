@@ -12,19 +12,17 @@ import json
 import logging
 import uuid
 from datetime import datetime, timezone, timedelta
-from enum import Enum
-from typing import Any, Dict, Optional, List, Literal
+from typing import Any, Dict, Optional, Literal
 
 from pydantic import BaseModel, Field
 
 from app.config.settings import settings
 
-# Import unified notification types (new standard)
+# Import unified notification types
 from app.models.notification_types import (
-    NotificationType as UnifiedNotificationType,
-    ProcessingMode as UnifiedProcessingMode,
-    NotificationStatus as UnifiedNotificationStatus,
-    LEGACY_ENHANCED_MAPPING
+    NotificationType,
+    ProcessingMode,
+    NotificationStatus
 )
 
 # Suppress SSL warnings for self-signed certificates
@@ -33,56 +31,6 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Configure logging
 logger = logging.getLogger(__name__)
-
-class NotificationType(str, Enum):
-    """
-    DEPRECATED: Use app.models.notification_types.NotificationType instead.
-
-    This enum is maintained for backward compatibility only.
-    New code should use the unified NotificationType from app.models.
-    """
-    # Streaming
-    CALL_START = "call_start"
-    TRANSCRIPTION_UPDATE = "transcription_update"
-    TRANSLATION_UPDATE = "translation_update"
-    ENTITY_UPDATE = "entity_update"
-    CLASSIFICATION_UPDATE = "classification_update"
-    CALL_END_STREAMING = "call_end_streaming"
-
-    # Post-call
-    POST_CALL_START = "post_call_start"
-    POST_CALL_TRANSCRIPTION = "post_call_transcription"
-    POST_CALL_TRANSLATION = "post_call_translation"
-    POST_CALL_ENTITIES = "post_call_entities"
-    POST_CALL_CLASSIFICATION = "post_call_classification"
-    POST_CALL_SUMMARY = "post_call_summary"
-    POST_CALL_QA_SCORING = "post_call_qa_scoring"
-    POST_CALL_COMPLETE = "post_call_complete"
-
-    # Status
-    PROCESSING_PROGRESS = "processing_progress"
-    PROCESSING_ERROR = "processing_error"
-
-class ProcessingMode(str, Enum):
-    """
-    DEPRECATED: Use app.models.notification_types.ProcessingMode instead.
-
-    Maintained for backward compatibility.
-    """
-    STREAMING = "streaming"
-    POST_CALL = "post_call"
-    DUAL = "dual"
-    ADAPTIVE = "adaptive"
-
-class NotificationStatus(str, Enum):
-    """
-    DEPRECATED: Use app.models.notification_types.NotificationStatus instead.
-
-    Maintained for backward compatibility.
-    """
-    SUCCESS = "success"
-    IN_PROGRESS = "in_progress"
-    ERROR = "error"
 
 class UIMetadata(BaseModel):
     """UI-specific metadata to guide frontend rendering."""
@@ -438,7 +386,7 @@ class EnhancedNotificationService:
         
         return await self.send_notification(
             call_id=call_id,
-            notification_type=NotificationType.TRANSCRIPTION_UPDATE,
+            notification_type=NotificationType.STREAMING_TRANSCRIPTION,
             processing_mode=ProcessingMode.STREAMING,
             payload_data=payload_data,
             call_metadata=metadata,
@@ -468,7 +416,7 @@ class EnhancedNotificationService:
         
         return await self.send_notification(
             call_id=call_id,
-            notification_type=NotificationType.TRANSLATION_UPDATE,
+            notification_type=NotificationType.STREAMING_TRANSLATION,
             processing_mode=ProcessingMode.STREAMING,
             payload_data=payload_data,
             call_metadata=metadata,
@@ -495,7 +443,7 @@ class EnhancedNotificationService:
         
         return await self.send_notification(
             call_id=call_id,
-            notification_type=NotificationType.ENTITY_UPDATE,
+            notification_type=NotificationType.STREAMING_ENTITIES,
             processing_mode=ProcessingMode.STREAMING,
             payload_data=payload_data,
             call_metadata=metadata,
@@ -522,7 +470,7 @@ class EnhancedNotificationService:
         
         return await self.send_notification(
             call_id=call_id,
-            notification_type=NotificationType.CLASSIFICATION_UPDATE,
+            notification_type=NotificationType.STREAMING_CLASSIFICATION,
             processing_mode=ProcessingMode.STREAMING,
             payload_data=payload_data,
             call_metadata=metadata,
@@ -567,7 +515,7 @@ class EnhancedNotificationService:
         
         return await self.send_notification(
             call_id=call_id,
-            notification_type=NotificationType.POST_CALL_TRANSCRIPTION,
+            notification_type=NotificationType.POSTCALL_TRANSCRIPTION,
             processing_mode=ProcessingMode.POST_CALL,
             payload_data=payload_data,
             call_metadata=metadata
@@ -595,7 +543,7 @@ class EnhancedNotificationService:
         
         return await self.send_notification(
             call_id=call_id,
-            notification_type=NotificationType.POST_CALL_COMPLETE,
+            notification_type=NotificationType.POSTCALL_COMPLETE,
             processing_mode=ProcessingMode.POST_CALL,
             payload_data=payload_data,
             call_metadata=metadata,
@@ -620,7 +568,7 @@ class EnhancedNotificationService:
         
         return await self.send_notification(
             call_id=call_id,
-            notification_type=NotificationType.PROCESSING_PROGRESS,
+            notification_type=NotificationType.SYSTEM_PROCESSING_PROGRESS,
             processing_mode=mode,
             payload_data=payload_data,
             call_metadata=metadata,
@@ -647,7 +595,7 @@ class EnhancedNotificationService:
         
         return await self.send_notification(
             call_id=call_id,
-            notification_type=NotificationType.PROCESSING_ERROR,
+            notification_type=NotificationType.SYSTEM_PROCESSING_ERROR,
             processing_mode=mode,
             payload_data={},
             call_metadata=metadata,

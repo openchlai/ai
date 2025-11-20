@@ -657,7 +657,7 @@ def _process_audio_sync_worker(
                         
                         # Send QA update notification to agent immediately
                         try:
-                            from ..services.agent_notification_service import agent_notification_service
+                            # QA notifications are now handled by notification manager
                             # Extract call_id from filename or use task_id as fallback
                             call_id = filename.replace('.wav', '').replace('.mp3', '') if filename else task_id
                             processing_info = {
