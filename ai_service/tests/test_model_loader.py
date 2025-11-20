@@ -1,7 +1,6 @@
 # tests/test_model_loader.py
 import pytest
-import asyncio
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import patch, AsyncMock
 from datetime import datetime
 
 from app.model_scripts.model_loader import (
@@ -77,7 +76,7 @@ class TestLibraryAvailability:
 
     def test_available_libraries_have_versions(self):
         """Test that available libraries have version info"""
-        for lib_name, version in AVAILABLE_LIBRARIES.items():
+        for _, version in AVAILABLE_LIBRARIES.items():
             assert isinstance(version, str)
             assert len(version) > 0
 
@@ -237,7 +236,7 @@ class TestGetModelStatus:
         """Test that each model status has required fields"""
         status = model_loader.get_model_status()
 
-        for model_name, model_info in status.items():
+        for _, model_info in status.items():
             assert 'loaded' in model_info
             assert 'error' in model_info
             assert 'load_time' in model_info
@@ -281,7 +280,7 @@ class TestGetSystemCapabilities:
         assert 'numerical_computing' in ml_caps
 
         # All should be boolean
-        for key, value in ml_caps.items():
+        for _, value in ml_caps.items():
             assert isinstance(value, bool)
 
     def test_system_capabilities_counts(self, model_loader):
