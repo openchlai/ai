@@ -395,11 +395,6 @@ class ModelLoader:
         return (model_name in self.model_status and 
                 self.model_status[model_name].dependencies_available)
     
-    def get_ready_models(self) -> List[str]:
-        """Get list of ready models"""
-        return [name for name, status in self.model_status.items() 
-                if status.loaded and status.error is None]
-    
     def get_implementable_models(self) -> List[str]:
         """Get list of models that can be implemented (have dependencies)"""
         return [name for name, status in self.model_status.items() 
@@ -415,11 +410,6 @@ class ModelLoader:
         return {name: status.missing_dependencies 
                 for name, status in self.model_status.items() 
                 if not status.dependencies_available}
-
-    def get_failed_models(self) -> List[str]:
-        """Get list of failed models"""
-        return [name for name, status in self.model_status.items() 
-                if status.error is not None and status.dependencies_available]
 
 # Global model loader instance
 model_loader = ModelLoader()
