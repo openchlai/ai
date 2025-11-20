@@ -11,9 +11,21 @@ import os
 from enum import Enum
 from pathlib import Path
 
+# Import unified notification types (new standard)
+from app.models.notification_types import (
+    NotificationType as UnifiedNotificationType,
+    LEGACY_AGENT_MAPPING
+)
+
 logger = logging.getLogger(__name__)
 
 class UpdateType(Enum):
+    """
+    DEPRECATED: Use app.models.notification_types.NotificationType instead.
+
+    This enum is maintained for backward compatibility only.
+    Use LEGACY_AGENT_MAPPING to migrate to unified NotificationType.
+    """
     CALL_START = "call_start"
     TRANSCRIPT_SEGMENT = "transcript_segment" 
     TRANSLATION_UPDATE = "translation_update"

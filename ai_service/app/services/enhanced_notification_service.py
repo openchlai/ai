@@ -19,6 +19,14 @@ from pydantic import BaseModel, Field
 
 from app.config.settings import settings
 
+# Import unified notification types (new standard)
+from app.models.notification_types import (
+    NotificationType as UnifiedNotificationType,
+    ProcessingMode as UnifiedProcessingMode,
+    NotificationStatus as UnifiedNotificationStatus,
+    LEGACY_ENHANCED_MAPPING
+)
+
 # Suppress SSL warnings for self-signed certificates
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -27,7 +35,12 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 logger = logging.getLogger(__name__)
 
 class NotificationType(str, Enum):
-    """Defines the types of notifications that can be sent."""
+    """
+    DEPRECATED: Use app.models.notification_types.NotificationType instead.
+
+    This enum is maintained for backward compatibility only.
+    New code should use the unified NotificationType from app.models.
+    """
     # Streaming
     CALL_START = "call_start"
     TRANSCRIPTION_UPDATE = "transcription_update"
@@ -51,14 +64,22 @@ class NotificationType(str, Enum):
     PROCESSING_ERROR = "processing_error"
 
 class ProcessingMode(str, Enum):
-    """Defines the processing modes for a call."""
+    """
+    DEPRECATED: Use app.models.notification_types.ProcessingMode instead.
+
+    Maintained for backward compatibility.
+    """
     STREAMING = "streaming"
     POST_CALL = "post_call"
     DUAL = "dual"
     ADAPTIVE = "adaptive"
 
 class NotificationStatus(str, Enum):
-    """Defines the status of the notification payload."""
+    """
+    DEPRECATED: Use app.models.notification_types.NotificationStatus instead.
+
+    Maintained for backward compatibility.
+    """
     SUCCESS = "success"
     IN_PROGRESS = "in_progress"
     ERROR = "error"

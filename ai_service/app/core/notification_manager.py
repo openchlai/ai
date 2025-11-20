@@ -6,6 +6,14 @@ from enum import Enum
 from typing import Dict, Any, Optional
 from datetime import datetime
 
+# Import unified notification types (new standard)
+from app.models.notification_types import (
+    NotificationType as UnifiedNotificationType,
+    NotificationImportance,
+    LEGACY_MANAGER_MAPPING,
+    get_notification_importance
+)
+
 logger = logging.getLogger(__name__)
 
 class NotificationMode(Enum):
@@ -16,7 +24,12 @@ class NotificationMode(Enum):
     DISABLED = "disabled"          # No notifications sent
 
 class NotificationType(Enum):
-    """Types of notifications categorized by importance"""
+    """
+    DEPRECATED: Use app.models.notification_types.NotificationType instead.
+
+    This enum is maintained for backward compatibility only.
+    Use LEGACY_MANAGER_MAPPING to migrate to unified NotificationType.
+    """
     # Progress notifications (frequent, no results)
     CALL_START = "call_start"
     TRANSCRIPT_SEGMENT = "transcript_segment"
