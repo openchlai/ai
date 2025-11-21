@@ -363,6 +363,14 @@ def _send_pipeline_notifications(filename: str, result: Dict[str, Any], task_id:
             )
             logger.info(f"✅ Sent completion notification for {call_id}")
 
+            # 8. Create agent feedback entries for all completed tasks
+            await enhanced_notification_service.create_feedback_entries(
+                call_id=call_id,
+                pipeline_results=result,
+                processing_mode=processing_mode_value
+            )
+            logger.info(f"✅ Created feedback entries for {call_id}")
+
         # Run the async function
         if loop.is_running():
             # If event loop is already running (shouldn't happen in Celery worker)

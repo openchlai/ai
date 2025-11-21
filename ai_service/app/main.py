@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 from .config.settings import settings
-from .api import health_routes, ner_routes, translator_routes, summarizer_routes, classifier_route, whisper_routes, audio_routes, call_session_routes, qa_route, processing_mode_routes, whisper_model_routes, notification_routes
+from .api import health_routes, ner_routes, translator_routes, summarizer_routes, classifier_route, whisper_routes, audio_routes, call_session_routes, qa_route, processing_mode_routes, whisper_model_routes, notification_routes, agent_feedback_routes
 from .model_scripts.model_loader import model_loader
 from .core.resource_manager import resource_manager
 from .streaming.tcp_server import AsteriskTCPServer
@@ -38,6 +38,15 @@ async def lifespan(app: FastAPI):
     # Initialize paths
     settings.initialize_paths()
     
+    # Initialize database tables
+    logger.info("🗄️ Initializing database...")
+    try:
+        from .db.session import init_db
+        init_db()
+        logger.info("✅ Database tables initialized")
+    except Exception as e:
+        logger.error(f"❌ Database initialization error: {e}")
+
     # Initialize Redis connections (needed for both API server and worker modes)
     logger.info("📡 Initializing Redis connections...")
     try:
@@ -131,6 +140,7 @@ app.include_router(qa_route.router)
 app.include_router(processing_mode_routes.router)
 app.include_router(whisper_model_routes.router)
 app.include_router(notification_routes.router)
+app.include_router(agent_feedback_routes.router)
 
 @app.websocket("/audio/stream")
 async def websocket_audio_stream(websocket: WebSocket):
@@ -177,9 +187,10 @@ async def root():
             "notification_status": "/api/v1/notifications/status",
             "notification_configure": "/api/v1/notifications/configure",
             "notification_statistics": "/api/v1/notifications/statistics",
-            "feedback_transcription_rating": "/api/v1/feedback/transcription-rating",
-            "feedback_task_status": "/api/v1/feedback/status/{task_id}",
-            "feedback_health": "/api/v1/feedback/health"
+            "agent_feedback_update": "/api/v1/agent-feedback/update",
+            "agent_feedback_by_call": "/api/v1/agent-feedback/call/{call_id}",
+            "agent_feedback_statistics": "/api/v1/agent-feedback/statistics",
+            "agent_feedback_health": "/api/v1/agent-feedback/health"
 
         }
     }
