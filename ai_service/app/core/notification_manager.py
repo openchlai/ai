@@ -210,38 +210,38 @@ class NotificationManager:
         
         try:
             # Map notification types to service methods
-            if notification_type == NotificationType.CALL_START:
+            if notification_type == NotificationType.STREAMING_CALL_START:
                 connection_info = payload.get("connection_info", {})
                 return await self.notification_service.send_call_start(call_id, connection_info)
-            
-            elif notification_type == NotificationType.CALL_END:
+
+            elif notification_type == NotificationType.STREAMING_CALL_END:
                 reason = payload.get("reason", "completed")
                 stats = payload.get("stats", {})
                 return await self.notification_service.send_call_end(call_id, reason, stats)
-            
-            elif notification_type == NotificationType.TRANSCRIPT_SEGMENT:
+
+            elif notification_type == NotificationType.STREAMING_TRANSCRIPTION_SEGMENT:
                 segment = payload.get("segment", {})
                 cumulative = payload.get("cumulative_transcript", "")
                 return await self.notification_service.send_transcript_segment(call_id, segment, cumulative)
-            
-            elif notification_type == NotificationType.QA_RESULTS:
+
+            elif notification_type == NotificationType.STREAMING_QA:
                 qa_scores = payload.get("qa_scores", {})
                 processing_info = payload.get("processing_info", {})
                 return await self.notification_service.send_qa_update(call_id, qa_scores, processing_info)
-            
-            elif notification_type == NotificationType.SUMMARY_RESULTS:
+
+            elif notification_type == NotificationType.STREAMING_SUMMARY:
                 summary = payload.get("summary", "")
                 analysis = payload.get("analysis", {})
                 return await self.notification_service.send_call_summary(call_id, summary, analysis)
-            
-            elif notification_type == NotificationType.INSIGHTS_RESULTS:
+
+            elif notification_type == NotificationType.STREAMING_INSIGHTS:
                 insights = payload.get("insights", {})
                 return await self.notification_service.send_call_insights(call_id, insights)
-            
-            elif notification_type == NotificationType.GPT_INSIGHTS_RESULTS:
+
+            elif notification_type == NotificationType.POSTCALL_GPT_INSIGHTS:
                 gpt_insights = payload.get("gpt_insights", {})
                 return await self.notification_service.send_gpt_insights(call_id, gpt_insights)
-            
+
             elif notification_type == NotificationType.UNIFIED_INSIGHT:
                 pipeline_result = payload.get("pipeline_result", {})
                 audio_info = payload.get("audio_quality_info", {})
