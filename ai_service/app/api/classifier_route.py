@@ -2,7 +2,6 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import logging
 from datetime import datetime
-from ..utils.text_utils import ClassificationChunker, ClassificationAggregator
 from ..model_scripts.model_loader import model_loader
 from ..utils.mode_detector import is_api_server_mode, get_execution_mode
 from typing import List, Dict, Optional
@@ -145,7 +144,6 @@ async def get_classifier_task_status(task_id: str):
                 timestamp=result['timestamp']
             )
 
-            print("============== results ========== ", classifier_response)
             return ClassifierTaskStatusResponse(
                 task_id=task_id,
                 status="success",

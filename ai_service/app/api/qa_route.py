@@ -7,7 +7,6 @@ from celery.result import AsyncResult
 from ..tasks.model_tasks import qa_evaluate_task
 from ..model_scripts.model_loader import model_loader
 from ..model_scripts.qa_model import qa_model
-from ..utils.text_utils import ClassificationChunker, ClassificationAggregator
 from ..utils.mode_detector import is_api_server_mode
 
 logger = logging.getLogger(__name__)
