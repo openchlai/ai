@@ -1,10 +1,7 @@
 # app/tasks/audio_tasks.py (Updated)
 import json
 import os
-import socket
-from celery import current_task
 from celery.signals import worker_init
-import numpy as np
 from ..celery_app import celery_app
 import logging
 import asyncio
@@ -18,35 +15,6 @@ logger = logging.getLogger(__name__)
 # Global model loader for Celery worker
 worker_model_loader = None
 
-@worker_init.connect
-def debug_worker_init(**kwargs):
-    """Debug worker initialization paths"""
-    logger.info("🔍 DEBUG: Worker initialization starting...")
-    
-    try:
-        # Debug current working directory
-        cwd = os.getcwd()
-        logger.info(f"🔍 Worker CWD: {cwd}")
-        
-        # Debug settings import
-        from ..config.settings import settings
-        logger.info(f"🔍 Worker models_path: {settings.models_path}")
-        logger.info(f"🔍 Worker models exists: {os.path.exists(settings.models_path)}")
-        
-        if os.path.exists(settings.models_path):
-            contents = os.listdir(settings.models_path)
-            logger.info(f"🔍 Worker models contents: {contents}")
-        else:
-            logger.error(f"🔍 Worker models directory NOT FOUND: {settings.models_path}")
-            
-            # Check if we can find it relatively
-            for possible_path in ["./models", "../models", "models"]:
-                if os.path.exists(possible_path):
-                    logger.info(f"🔍 Found models at relative path: {os.path.abspath(possible_path)}")
-                    
-    except Exception as e:
-        logger.error(f"🔍 Debug failed: {e}")
-        
 @worker_init.connect
 def init_worker(**kwargs):
     """Initialize models and connections when Celery worker starts"""
@@ -483,8 +451,6 @@ def _process_audio_sync_worker(
         try:
             # Use synchronous Redis client for Celery worker compatibility
             import redis
-            import json
-            from datetime import datetime
             from ..config.settings import get_redis_url
             
             # Create synchronous Redis client
@@ -522,7 +488,6 @@ def _process_audio_sync_worker(
 
     # Initialize variables
     translation = None
-    transcript = None
 
     # Step 1: Audio Processing (Transcription ONLY)
     task_instance.update_state(
@@ -644,58 +609,6 @@ def _process_audio_sync_worker(
                 metadata={"duration": translation_duration}
             )
             
-            # Run QA analysis immediately after translation since translation is the input for QA
-            if translation and translation.strip():
-                try:
-                    publish_update("qa_analysis", 52, "Running QA analysis on translation...")
-                    qa_start = datetime.now()
-                    
-                    qa_score_model = models.models.get("all_qa_distilbert_v1")
-                    if qa_score_model:
-                        qa_score = qa_score_model.predict(translation, threshold=threshold, return_raw=return_raw)
-                        qa_duration = (datetime.now() - qa_start).total_seconds()
-                        
-                        # Send QA update notification to agent immediately
-                        try:
-                            # QA notifications are now handled by notification manager
-                            # Extract call_id from filename or use task_id as fallback
-                            call_id = filename.replace('.wav', '').replace('.mp3', '') if filename else task_id
-                            processing_info = {
-                                "duration": qa_duration,
-                                "model_used": "all_qa_distilbert_v1",
-                                "threshold": threshold,
-                                "input_source": "translated_text",
-                                "input_length": len(translation)
-                            }
-                            # Run async notification in event loop for Celery worker
-                            try:
-                                loop = asyncio.get_event_loop()
-                                if loop.is_running():
-                                    # Event loop is running, create task
-                                    asyncio.create_task(
-                                        # Commented out to reduce notification noise - handled by notification manager
-                                        # agent_notification_service.send_qa_update(call_id, qa_score, processing_info)
-                                    )
-                                else:
-                                    # No running loop, run directly
-                                    loop.run_until_complete(
-                                        # Commented out to reduce notification noise - handled by notification manager
-                                        # agent_notification_service.send_qa_update(call_id, qa_score, processing_info)
-                                    )
-                            except RuntimeError:
-                                # No event loop exists, create one
-                                asyncio.run(
-                                    # Commented out to reduce notification noise - handled by notification manager
-                                    # agent_notification_service.send_qa_update(call_id, qa_score, processing_info)
-                                )
-                            logger.info(f"📤 Sent QA update notification for call {call_id} after translation")
-                            publish_update("qa_complete", 55, "QA analysis completed and sent to agent")
-                        except Exception as notify_error:
-                            logger.error(f"❌ Failed to send QA notification for call {call_id}: {notify_error}")
-                    else:
-                        logger.warning("QA model not available for immediate analysis")
-                except Exception as qa_error:
-                    logger.error(f"❌ QA analysis failed after translation: {qa_error}")
     else:
         # Translation not requested
         logger.info("ℹ️ Translation skipped (not requested)")
@@ -1239,9 +1152,3 @@ def process_streaming_audio_task(
     except Exception as e:
         logger.error(f"❌ Streaming transcription failed: {e}")
         raise
-
-def handle_task_error(self, error_msg, call_id=None):
-    """Consistent error handling for all Celery tasks"""
-    logger.error(error_msg)
-    # log and re-raise - let Celery handle the state
-    raise RuntimeError(error_msg)
