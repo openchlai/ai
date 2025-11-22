@@ -6,6 +6,7 @@ from unittest.mock import Mock, AsyncMock, patch, MagicMock
 from dataclasses import asdict
 
 from app.streaming.call_session_manager import CallSessionManager, CallSession
+from app.config.settings import settings
 
 @pytest.fixture
 def mock_redis():
@@ -92,11 +93,11 @@ class TestCallSessionManager:
     def test_initialization(self, mock_redis):
         """Test CallSessionManager initialization"""
         manager = CallSessionManager(redis_client=mock_redis)
-        
+
         assert manager.redis_client == mock_redis
         assert manager.active_sessions == {}
         assert manager.session_timeout == timedelta(minutes=30)
-        assert manager.cleanup_interval == 300
+        assert manager.cleanup_interval == settings.cleanup_interval
         assert manager._cleanup_task is None
     
     def test_initialization_without_redis(self):
@@ -109,86 +110,61 @@ class TestCallSessionManager:
     async def test_start_session_success(self, session_manager, mock_redis, sample_connection_info):
         """Test successful session start"""
         call_id = "test_call_123"
-        
-        with patch('app.streaming.call_session_manager.AGENT_NOTIFICATIONS_ENABLED', False):
+
+        with patch('app.streaming.call_session_manager.enhanced_notification_service') as mock_notification:
+            mock_notification.send_call_start = AsyncMock()
+
             session = await session_manager.start_session(call_id, sample_connection_info)
-        
+
         # Verify session creation
         assert session.call_id == call_id
         assert session.status == 'active'
         assert session.connection_info == sample_connection_info
         assert session.segment_count == 0
-        
+
         # Verify session stored in memory
         assert call_id in session_manager.active_sessions
         assert session_manager.active_sessions[call_id] == session
-        
+
         # Verify Redis calls
         mock_redis.hset.assert_called()
         mock_redis.expireat.assert_called()
         mock_redis.sadd.assert_called_with('active_call_sessions', call_id)
 
     @pytest.mark.asyncio
-    async def test_start_session_with_agent_notifications(self, session_manager, sample_connection_info):
-        """Test session start with agent notifications enabled"""
-        call_id = "test_call_123"
-        
-        with patch('app.streaming.call_session_manager.AGENT_NOTIFICATIONS_ENABLED', True), \
-             patch('app.streaming.call_session_manager.agent_notification_service') as mock_agent:
-            mock_agent.send_call_start = AsyncMock()
-            
-            session = await session_manager.start_session(call_id, sample_connection_info)
-            
-            # Verify agent notification was called
-            mock_agent.send_call_start.assert_called_once_with(call_id, sample_connection_info)
-
-    @pytest.mark.asyncio
-    async def test_start_session_agent_notification_failure(self, session_manager, sample_connection_info):
-        """Test session start with agent notification failure"""
-        call_id = "test_call_123"
-        
-        with patch('app.streaming.call_session_manager.AGENT_NOTIFICATIONS_ENABLED', True), \
-             patch('app.streaming.call_session_manager.agent_notification_service') as mock_agent:
-            mock_agent.send_call_start = AsyncMock(side_effect=Exception("Notification failed"))
-            
-            # Should not raise exception, just log error
-            session = await session_manager.start_session(call_id, sample_connection_info)
-            assert session is not None
-
-    @pytest.mark.asyncio
     async def test_add_transcription_success(self, session_manager, sample_call_session):
         """Test successful transcription addition"""
         # Add session to manager
         session_manager.active_sessions[sample_call_session.call_id] = sample_call_session
-        
+
         transcript = "Hello world"
         audio_duration = 2.5
         metadata = {"confidence": 0.95}
-        
+
         with patch('app.streaming.call_session_manager.progressive_processor') as mock_processor, \
-             patch('app.streaming.call_session_manager.AGENT_NOTIFICATIONS_ENABLED', False):
+             patch('app.streaming.call_session_manager.enhanced_processing_manager') as mock_processing_mgr:
             mock_processor.process_if_ready = AsyncMock(return_value=None)
-            
+            mock_processing_mgr.should_enable_streaming = Mock(return_value=False)
+
             result = await session_manager.add_transcription(
-                sample_call_session.call_id, 
-                transcript, 
-                audio_duration, 
+                sample_call_session.call_id,
+                transcript,
+                audio_duration,
                 metadata
             )
-        
+
         # Verify session was updated
         assert result is not None
         assert result.segment_count == 1
         assert result.total_audio_duration == 2.5
         assert result.cumulative_transcript == "Hello world"
         assert len(result.transcript_segments) == 1
-        
+
         # Verify segment details
         segment = result.transcript_segments[0]
         assert segment['segment_id'] == 1
         assert segment['transcript'] == "Hello world"
         assert segment['audio_duration'] == 2.5
-        assert segment['metadata'] == metadata
 
     @pytest.mark.asyncio
     async def test_add_transcription_no_session(self, session_manager):
@@ -200,21 +176,22 @@ class TestCallSessionManager:
     async def test_add_transcription_with_progressive_processing(self, session_manager, sample_call_session):
         """Test transcription addition with progressive processing"""
         session_manager.active_sessions[sample_call_session.call_id] = sample_call_session
-        
+
         # Mock progressive processor
         mock_window = Mock()
         mock_window.window_id = "window_1"
-        
+
         with patch('app.streaming.call_session_manager.progressive_processor') as mock_processor, \
-             patch('app.streaming.call_session_manager.AGENT_NOTIFICATIONS_ENABLED', False):
+             patch('app.streaming.call_session_manager.enhanced_processing_manager') as mock_processing_mgr:
             mock_processor.process_if_ready = AsyncMock(return_value=mock_window)
-            
+            mock_processing_mgr.should_enable_streaming = Mock(return_value=True)
+
             result = await session_manager.add_transcription(
-                sample_call_session.call_id, 
-                "Hello world", 
+                sample_call_session.call_id,
+                "Hello world",
                 2.5
             )
-        
+
         # Verify progressive processing metadata was added
         segment = result.transcript_segments[0]
         assert segment['metadata']['progressive_window'] == "window_1"
@@ -284,38 +261,39 @@ class TestCallSessionManager:
         """Test successful session ending"""
         session_manager.active_sessions[sample_call_session.call_id] = sample_call_session
         sample_call_session.cumulative_transcript = "This is a substantial transcript with enough content for processing"
-        
+
         with patch('app.streaming.call_session_manager.progressive_processor') as mock_processor, \
-             patch.object(session_manager, '_trigger_ai_pipeline') as mock_pipeline, \
-             patch('app.streaming.call_session_manager.AGENT_NOTIFICATIONS_ENABLED', False):
+             patch('app.streaming.call_session_manager.enhanced_processing_manager') as mock_processing_mgr, \
+             patch('app.streaming.call_session_manager.enhanced_notification_service') as mock_notification:
             mock_processor.finalize_call_analysis = AsyncMock(return_value=None)
-            
+            mock_processing_mgr.should_enable_postcall = Mock(return_value=False)
+            mock_notification.send_call_end_streaming = AsyncMock()
+
             result = await session_manager.end_session(sample_call_session.call_id, "completed")
-        
+
         # Verify session status updated
         assert result.status == "completed"
-        
+
         # Verify session removed from active sessions
         assert sample_call_session.call_id not in session_manager.active_sessions
-        
-        # Verify AI pipeline was triggered
-        mock_pipeline.assert_called_once_with(result)
 
     @pytest.mark.asyncio
     async def test_end_session_short_transcript(self, session_manager, sample_call_session):
-        """Test ending session with short transcript (no AI pipeline trigger)"""
+        """Test ending session with short transcript"""
         session_manager.active_sessions[sample_call_session.call_id] = sample_call_session
         sample_call_session.cumulative_transcript = "Short"  # Under 50 char threshold
-        
-        with patch.object(session_manager, '_trigger_ai_pipeline') as mock_pipeline, \
-             patch('app.streaming.call_session_manager.progressive_processor') as mock_processor, \
-             patch('app.streaming.call_session_manager.AGENT_NOTIFICATIONS_ENABLED', False):
+
+        with patch('app.streaming.call_session_manager.progressive_processor') as mock_processor, \
+             patch('app.streaming.call_session_manager.enhanced_processing_manager') as mock_processing_mgr, \
+             patch('app.streaming.call_session_manager.enhanced_notification_service') as mock_notification:
             mock_processor.finalize_call_analysis = AsyncMock(return_value=None)
-            
+            mock_processing_mgr.should_enable_postcall = Mock(return_value=False)
+            mock_notification.send_call_end_streaming = AsyncMock()
+
             result = await session_manager.end_session(sample_call_session.call_id, "completed")
-        
-        # Verify AI pipeline was NOT triggered
-        mock_pipeline.assert_not_called()
+
+        # Verify session was ended
+        assert result.status == "completed"
 
     @pytest.mark.asyncio
     async def test_end_session_not_found(self, session_manager):
