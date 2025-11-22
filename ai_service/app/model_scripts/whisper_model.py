@@ -95,7 +95,7 @@ class WhisperModel:
             
             if self.settings.use_hf_models:
                 # Use HuggingFace Hub models WITHOUT authentication
-                model_id = self.settings.get_active_whisper_path()
+                model_id = self.settings.hf_asr_model
                 logger.info(f"Loading Whisper model from HuggingFace Hub (public): {model_id}")
                 
                 try:

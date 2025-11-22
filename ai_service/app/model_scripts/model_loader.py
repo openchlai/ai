@@ -407,9 +407,19 @@ class ModelLoader:
     
     def get_missing_dependencies_summary(self) -> Dict[str, List[str]]:
         """Get summary of missing dependencies per model"""
-        return {name: status.missing_dependencies 
-                for name, status in self.model_status.items() 
+        return {name: status.missing_dependencies
+                for name, status in self.model_status.items()
                 if not status.dependencies_available}
+
+    def get_ready_models(self) -> List[str]:
+        """Get list of models that are loaded and ready for inference"""
+        return [name for name, status in self.model_status.items()
+                if status.loaded and status.error is None]
+
+    def get_failed_models(self) -> List[str]:
+        """Get list of models that failed to load"""
+        return [name for name, status in self.model_status.items()
+                if status.error is not None and not status.loaded]
 
 # Global model loader instance
 model_loader = ModelLoader()
