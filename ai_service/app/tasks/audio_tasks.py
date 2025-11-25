@@ -272,7 +272,7 @@ def _send_pipeline_notifications(filename: str, result: Dict[str, Any], task_id:
 
             # 1. Send transcription notification
             if result.get('transcript'):
-                await enhanced_notification_service.send_notification(
+                success = await enhanced_notification_service.send_notification(
                     call_id=call_id,
                     notification_type=NotificationType.POST_CALL_TRANSCRIPTION,
                     processing_mode=ProcessingMode(processing_mode_value),
@@ -282,11 +282,14 @@ def _send_pipeline_notifications(filename: str, result: Dict[str, Any], task_id:
                         "transcript_length": len(result['transcript'])
                     }
                 )
-                logger.info(f"✅ Sent transcription notification for {call_id}")
+                if success:
+                    logger.info(f"✅ Sent transcription notification for {call_id}")
+                else:
+                    logger.warning(f"⚠️ Failed to send transcription notification for {call_id}")
 
             # 2. Send translation notification
             if result.get('translation'):
-                await enhanced_notification_service.send_notification(
+                success = await enhanced_notification_service.send_notification(
                     call_id=call_id,
                     notification_type=NotificationType.POST_CALL_TRANSLATION,
                     processing_mode=ProcessingMode(processing_mode_value),
@@ -297,11 +300,14 @@ def _send_pipeline_notifications(filename: str, result: Dict[str, Any], task_id:
                         "translation_length": len(result['translation'])
                     }
                 )
-                logger.info(f"✅ Sent translation notification for {call_id}")
+                if success:
+                    logger.info(f"✅ Sent translation notification for {call_id}")
+                else:
+                    logger.warning(f"⚠️ Failed to send translation notification for {call_id}")
 
             # 3. Send entities notification
             if result.get('entities'):
-                await enhanced_notification_service.send_notification(
+                success = await enhanced_notification_service.send_notification(
                     call_id=call_id,
                     notification_type=NotificationType.POST_CALL_ENTITIES,
                     processing_mode=ProcessingMode(processing_mode_value),
@@ -310,11 +316,14 @@ def _send_pipeline_notifications(filename: str, result: Dict[str, Any], task_id:
                         "entities_count": len(result['entities'])
                     }
                 )
-                logger.info(f"✅ Sent entities notification for {call_id}")
+                if success:
+                    logger.info(f"✅ Sent entities notification for {call_id}")
+                else:
+                    logger.warning(f"⚠️ Failed to send entities notification for {call_id}")
 
             # 4. Send classification notification
             if result.get('classification'):
-                await enhanced_notification_service.send_notification(
+                success = await enhanced_notification_service.send_notification(
                     call_id=call_id,
                     notification_type=NotificationType.POST_CALL_CLASSIFICATION,
                     processing_mode=ProcessingMode(processing_mode_value),
@@ -322,11 +331,14 @@ def _send_pipeline_notifications(filename: str, result: Dict[str, Any], task_id:
                         "classification": result['classification']
                     }
                 )
-                logger.info(f"✅ Sent classification notification for {call_id}")
+                if success:
+                    logger.info(f"✅ Sent classification notification for {call_id}")
+                else:
+                    logger.warning(f"⚠️ Failed to send classification notification for {call_id}")
 
             # 5. Send QA scoring notification
             if result.get('qa_scores'):
-                await enhanced_notification_service.send_notification(
+                success = await enhanced_notification_service.send_notification(
                     call_id=call_id,
                     notification_type=NotificationType.POST_CALL_QA_SCORING,
                     processing_mode=ProcessingMode(processing_mode_value),
@@ -334,11 +346,14 @@ def _send_pipeline_notifications(filename: str, result: Dict[str, Any], task_id:
                         "qa_scores": result['qa_scores']
                     }
                 )
-                logger.info(f"✅ Sent QA scoring notification for {call_id}")
+                if success:
+                    logger.info(f"✅ Sent QA scoring notification for {call_id}")
+                else:
+                    logger.warning(f"⚠️ Failed to send QA scoring notification for {call_id}")
 
             # 6. Send summary notification
             if result.get('summary'):
-                await enhanced_notification_service.send_notification(
+                success = await enhanced_notification_service.send_notification(
                     call_id=call_id,
                     notification_type=NotificationType.POST_CALL_SUMMARY,
                     processing_mode=ProcessingMode(processing_mode_value),
@@ -347,10 +362,13 @@ def _send_pipeline_notifications(filename: str, result: Dict[str, Any], task_id:
                         "insights": result.get('insights')
                     }
                 )
-                logger.info(f"✅ Sent summary notification for {call_id}")
+                if success:
+                    logger.info(f"✅ Sent summary notification for {call_id}")
+                else:
+                    logger.warning(f"⚠️ Failed to send summary notification for {call_id}")
 
             # 7. Send final completion notification
-            await enhanced_notification_service.send_notification(
+            success = await enhanced_notification_service.send_notification(
                 call_id=call_id,
                 notification_type=NotificationType.POST_CALL_COMPLETE,
                 processing_mode=ProcessingMode(processing_mode_value),
@@ -361,7 +379,10 @@ def _send_pipeline_notifications(filename: str, result: Dict[str, Any], task_id:
                 },
                 status=NotificationStatus.SUCCESS
             )
-            logger.info(f"✅ Sent completion notification for {call_id}")
+            if success:
+                logger.info(f"✅ Sent completion notification for {call_id}")
+            else:
+                logger.warning(f"⚠️ Failed to send completion notification for {call_id}")
 
             # 8. Create agent feedback entries for all completed tasks
             await enhanced_notification_service.create_feedback_entries(

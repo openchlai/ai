@@ -213,7 +213,8 @@ class EnhancedNotificationService:
             logger.info(f"🔐 [token] Fetching token from: {self.auth_endpoint_url}")
             logger.info(f"🔐 [token] Headers: Authorization=Basic {self.basic_auth[:20]}..., Content-Type={headers['Content-Type']}")
 
-            response = await self.client.post(
+            # Use GET instead of POST (helpline API expects GET)
+            response = await self.client.get(
                 self.auth_endpoint_url,
                 headers=headers
             )
@@ -225,17 +226,26 @@ class EnhancedNotificationService:
                 data = response.json()
                 logger.info(f"🔐 [token] Response keys: {list(data.keys())}")
 
-                token = data.get("access_token") or data.get("token")
+                # Parse token from helpline API format: data["ss"][0][0]
+                token = None
+                if "ss" in data and isinstance(data["ss"], list) and len(data["ss"]) > 0:
+                    if isinstance(data["ss"][0], list) and len(data["ss"][0]) > 0:
+                        token = data["ss"][0][0]
+
+                # Fallback to standard token fields if not found in ss structure
+                if not token:
+                    token = data.get("access_token") or data.get("token")
 
                 if token:
                     # Set expiration (default 1 hour if not provided)
                     expires_in = data.get("expires_in", 3600)
                     self.token_expires_at = datetime.now() + timedelta(seconds=expires_in)
 
-                    logger.info("✅ Successfully fetched bearer token")
+                    logger.info(f"✅ Successfully fetched bearer token: {token[:8]}...")
                     return token
                 else:
                     logger.error(f"❌ No token found in response. Keys: {list(data.keys())}")
+                    logger.error(f"❌ Response structure: {json.dumps(data, indent=2)[:500]}")
             else:
                 # Log detailed error response
                 try:
