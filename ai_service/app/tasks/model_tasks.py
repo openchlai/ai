@@ -272,6 +272,7 @@ def classifier_classify_task(self, narrative: str) -> Dict[str, Any]:
                 chunk_pred = {
                     'main_category': chunk_classification['main_category'],
                     'sub_category': chunk_classification['sub_category'],
+                    'sub_category_2': chunk_classification.get('sub_category_2'), 
                     'intervention': chunk_classification['intervention'],
                     'priority': chunk_classification['priority'],
                     'confidence_scores': chunk_classification.get('confidence_breakdown', {})

@@ -17,6 +17,7 @@ router = APIRouter(prefix="/classifier", tags=["classifier"])
 class ConfidenceScores(BaseModel):
     main_category: Optional[float] = None
     sub_category: Optional[float] = None
+    sub_category_2: Optional[float] = None 
     intervention: Optional[float] = None
     priority: Optional[float] = None
 
@@ -28,6 +29,7 @@ class ChunkPrediction(BaseModel):
     position_ratio: float
     main_category: str
     sub_category: str
+    sub_category_2: Optional[str] = None  
     intervention: str
     priority: str
     confidence_scores: ConfidenceScores
@@ -40,6 +42,7 @@ class ClassifierRequest(BaseModel):
 class ClassifierResponse(BaseModel):
     main_category: str
     sub_category: str
+    sub_category_2: Optional[str] = None  
     intervention: str
     priority: str
     confidence_scores: ConfidenceScores
@@ -135,6 +138,7 @@ async def get_classifier_task_status(task_id: str):
             classifier_response = ClassifierResponse(
                 main_category=result['main_category'],
                 sub_category=result['sub_category'],
+                sub_category_2=result.get('sub_category_2'), 
                 intervention=result['intervention'],
                 priority=result['priority'],
                 confidence_scores=ConfidenceScores(**result['confidence_scores']),
