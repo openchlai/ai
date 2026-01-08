@@ -1,0 +1,58 @@
+# Prometheus Configuration for AI Service Monitoring
+
+global:
+  scrape_interval: 15s      # Scrape metrics every 15 seconds
+  evaluation_interval: 15s  # Evaluate rules every 15 seconds
+  external_labels:
+    cluster: 'ai-service'
+    environment: 'production'
+
+# Alertmanager configuration (optional)
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+          # - alertmanager:9093
+
+# Load rules once and periodically evaluate them
+rule_files:
+  - "alerts.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # FastAPI Application Metrics
+  - job_name: 'ai-pipeline'
+    static_configs:
+      - targets: ['ai-pipeline:8125']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+
+  # Node Exporter - System Metrics (CPU, Memory, Disk, Network)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 15s
+
+  # Redis Exporter - Redis Metrics
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    scrape_interval: 15s
+
+  # Celery Exporter - Task Queue Metrics
+  - job_name: 'celery'
+    static_configs:
+      - targets: ['celery-exporter:9808']
+    scrape_interval: 15s
+
+  # NVIDIA DCGM Exporter - GPU Metrics
+  - job_name: 'nvidia-gpu'
+    static_configs:
+      - targets: ['dcgm-exporter:9400']
+    scrape_interval: 10s

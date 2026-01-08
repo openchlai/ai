@@ -3,7 +3,7 @@ import logging
 import asyncio
 import os
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Response
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
@@ -15,6 +15,11 @@ from .streaming.tcp_server import AsteriskTCPServer
 from .streaming.websocket_server import websocket_manager
 
 from .config.settings import settings
+
+# Prometheus metrics
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+from prometheus_fastapi_instrumentator import Instrumentator
+from .core.metrics import initialize_metrics
 
 # Only import Celery if we're not the main API server
 if settings.enable_model_loading:
@@ -126,6 +131,27 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Initialize Prometheus metrics
+initialize_metrics(
+    app_name=settings.app_name,
+    version=settings.app_version,
+    site_id=settings.site_id
+)
+
+# Instrument FastAPI with Prometheus
+instrumentator = Instrumentator(
+    should_group_status_codes=False,
+    should_ignore_untemplated=True,
+    should_respect_env_var=True,
+    should_instrument_requests_inprogress=True,
+    excluded_handlers=["/metrics"],
+    env_var_name="ENABLE_METRICS",
+    inprogress_name="fastapi_inprogress",
+    inprogress_labels=True,
+)
+instrumentator.instrument(app)
+instrumentator.expose(app, endpoint="/metrics", include_in_schema=False)
 
 # Include routers
 app.include_router(health_routes.router)
