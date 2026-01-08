@@ -11,13 +11,13 @@ logger = logging.getLogger(__name__)
 class WhisperModel:
     """HuggingFace Whisper model supporting both transcription and translation"""
     
-    def __init__(self, model_path: str = None):
+    def __init__(self, model_path: str = None, enable_translation: bool = False):
         from ..config.settings import settings
-        
+
         self.settings = settings
         self.model_path = model_path or settings.get_model_path("whisper")
-        # self.enable_translation = enable_translation
-        
+        self.enable_translation = enable_translation
+
         if enable_translation:
             # Use configured HF whisper large v3 as fallback (do not reference OpenAI)
             self.fallback_model_id = (

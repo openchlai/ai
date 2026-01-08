@@ -515,9 +515,26 @@ class EnhancedNotificationService:
         processing_config: Dict,
         **metadata
     ) -> bool:
-        """Send call start notification - DISABLED."""
-        logger.debug(f"🔕 call_start notification disabled for call {call_id}")
-        return True  # Return success without sending
+        """Send call start notification."""
+        
+        payload_data = {
+            "connection_info": metadata.get("connection_info", {}),
+            "processing_config": processing_config
+        }
+        
+        ui_metadata = metadata.get("ui_metadata", {
+            "priority": 1,
+            "display_panel": "call_overview"
+        })
+        
+        return await self.send_notification(
+            call_id=call_id,
+            notification_type=NotificationType.CALL_START,
+            processing_mode=processing_mode,
+            payload_data=payload_data,
+            call_metadata=metadata,
+            ui_metadata=ui_metadata
+        )
 
     async def send_call_end_streaming(
         self,
@@ -526,10 +543,27 @@ class EnhancedNotificationService:
         processing_mode: ProcessingMode,
         **metadata
     ) -> bool:
-        """Send call end streaming notification - DISABLED."""
-        logger.debug(f"🔕 call_end_streaming notification disabled for call {call_id}")
-        return True  # Return success without sending
-
+        """Send call end streaming notification."""
+        
+        payload_data = {
+            "cumulative_transcript": cumulative_transcript,
+            "transcript_length": len(cumulative_transcript)
+        }
+        
+        ui_metadata = metadata.get("ui_metadata", {
+            "priority": 3,
+            "display_panel": "call_summary"
+        })
+        
+        return await self.send_notification(
+            call_id=call_id,
+            notification_type=NotificationType.CALL_END_STREAMING,
+            processing_mode=processing_mode,
+            payload_data=payload_data,
+            call_metadata=metadata,
+            ui_metadata=ui_metadata
+        )
+    
     async def send_postcall_transcription(
         self,
         call_id: str,

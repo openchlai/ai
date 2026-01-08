@@ -18,6 +18,185 @@ logger = logging.getLogger(__name__)
 # Global model loader for Celery worker
 worker_model_loader = None
 
+# ============================================================================
+# TEMPORARY DEMO WORKAROUND: Cached spacy model
+# This is a temporary fix for demo purposes - DO NOT COMMIT
+# ============================================================================
+_cached_spacy_nlp = None
+
+# ============================================================================
+# TEMPORARY DEMO WORKAROUND: Ollama API Translation
+# This is a temporary fix for demo purposes - DO NOT COMMIT
+# ============================================================================
+def _translate_via_ollama_api(text: str, timeout: int = 60) -> Optional[str]:
+    """
+    Call Ollama API for translation (TEMPORARY DEMO WORKAROUND)
+
+    Args:
+        text: Swahili text to translate to English
+        timeout: Request timeout in seconds
+
+    Returns:
+        Translated English text, or None if API call fails
+    """
+    try:
+        import requests
+
+        # Ollama API endpoint (local network)
+        api_url = "http://192.168.8.18:11434/api/generate"
+
+        # Prepare the prompt (optimized for accurate dialogue translation)
+        prompt = f"""You are a professional Swahili-to-English translator for child protection services. Translate the following Swahili conversation accurately.
+
+CRITICAL TRANSLATION REQUIREMENTS:
+1. Preserve EXACT meaning - do not change who said what or relationships mentioned
+2. Keep all numbers, ages, names, and locations accurate
+3. Maintain the dialogue structure if present
+4. Translate LITERALLY - do not interpret or summarize
+5. Keep family relationships exact (mume=husband, baba=father, etc.)
+6. Output ONLY the English translation with no notes, labels, or explanations
+
+SWAHILI TEXT:
+{text}
+
+ENGLISH TRANSLATION (direct, accurate, no commentary):"""
+
+        # Prepare the payload
+        payload = {
+            "model": "mistral",
+            "prompt": prompt,
+            "stream": False
+        }
+
+        logger.info(f"🌐 Calling Ollama API for translation (text length: {len(text)} chars)")
+
+        # Make the API call
+        response = requests.post(
+            api_url,
+            headers={"Content-Type": "application/json"},
+            json=payload,
+            timeout=timeout
+        )
+
+        # Check if request was successful
+        response.raise_for_status()
+
+        # Parse the response
+        result = response.json()
+
+        # Extract the translation from the 'response' field
+        translation = result.get("response", "").strip()
+
+        if translation:
+            # Clean up common preambles that Mistral might add
+            preambles_to_remove = [
+                "My translation of the Swahili text is:",
+                "The English translation is:",
+                "English translation:",
+                "Translation:",
+                "Here is the translation:",
+                "Here's the translation:",
+                "The translation is:",
+            ]
+
+            for preamble in preambles_to_remove:
+                if translation.startswith(preamble):
+                    translation = translation[len(preamble):].strip()
+                    logger.info(f"🧹 Removed preamble: '{preamble}'")
+                    break
+
+            # Clean up notes/commentary that Mistral might add at the end
+            note_markers = [
+                "\nNote:",
+                "\n\nNote:",
+                "\nWelcome Note:",
+                "\n\nWelcome Note:",
+                "\nAdditional context:",
+                "\nExplanation:",
+                "\nContext:",
+            ]
+
+            for marker in note_markers:
+                if marker in translation:
+                    # Remove everything from the marker onwards
+                    translation = translation.split(marker)[0].strip()
+                    logger.info(f"🧹 Removed note/commentary starting with: '{marker}'")
+                    break
+
+            logger.info(f"✅ Ollama API translation successful ({len(translation)} chars)")
+            return translation
+        else:
+            logger.warning("⚠️ Ollama API returned empty response")
+            return None
+
+    except requests.exceptions.Timeout:
+        logger.error(f"❌ Ollama API timeout after {timeout}s")
+        return None
+    except requests.exceptions.ConnectionError:
+        logger.error("❌ Ollama API connection error (server unreachable)")
+        return None
+    except requests.exceptions.RequestException as e:
+        logger.error(f"❌ Ollama API request failed: {e}")
+        return None
+    except Exception as e:
+        logger.error(f"❌ Unexpected error calling Ollama API: {e}")
+        return None
+# ============================================================================
+# END TEMPORARY DEMO WORKAROUND
+# ============================================================================
+
+def _extract_entities_via_spacy_lg(text: str, flat: bool = False) -> Dict[str, list]:
+    """
+    Extract named entities using spacy en_core_web_lg model (TEMPORARY DEMO WORKAROUND)
+
+    Args:
+        text: Text to extract entities from
+        flat: If False, returns grouped dict (like original NER model)
+
+    Returns:
+        Dictionary of entity_type -> list of entity texts
+        Format matches the original NER model when flat=False
+    """
+    global _cached_spacy_nlp
+
+    try:
+        import spacy
+
+        # Load the large spacy model (cached)
+        if _cached_spacy_nlp is None:
+            logger.info("🔍 Loading spacy en_core_web_lg for NER (first time)...")
+            _cached_spacy_nlp = spacy.load("en_core_web_lg")
+            logger.info("✅ Spacy model loaded and cached")
+        else:
+            logger.debug("Using cached spacy en_core_web_lg model")
+
+        # Process the text
+        doc = _cached_spacy_nlp(text.strip())
+
+        # Group entities by type (matching original NER model format)
+        entity_dict = {}
+        for ent in doc.ents:
+            if ent.label_ not in entity_dict:
+                entity_dict[ent.label_] = []
+            entity_dict[ent.label_].append(ent.text)
+
+        logger.info(f"✅ Spacy NER extracted {len(entity_dict)} entity types with {sum(len(v) for v in entity_dict.values())} total entities")
+
+        return entity_dict
+
+    except ImportError:
+        logger.error("❌ Spacy not available in environment")
+        return None
+    except OSError as e:
+        logger.error(f"❌ Spacy model en_core_web_lg not found: {e}")
+        return None
+    except Exception as e:
+        logger.error(f"❌ Spacy NER extraction failed: {e}")
+        return None
+# ============================================================================
+# END TEMPORARY DEMO WORKAROUND
+# ============================================================================
+
 @worker_init.connect
 def debug_worker_init(**kwargs):
     """Debug worker initialization paths"""
@@ -657,28 +836,57 @@ def _process_audio_sync_worker(
                     publish_update("translation_error", 35, "Translator model not available")
                     raise RuntimeError("Translator model not available")
                 
-                # Check if model supports streaming translation
-                if hasattr(translator_model, 'translate_streaming'):
-                    # Stream partial translation results
-                    translation = ""
-                    for partial_translation, progress_pct in translator_model.translate_streaming(transcript):
-                        translation = partial_translation
-                        stream_progress = 35 + int(progress_pct * 0.15)  # 35-50% range
-                        publish_update(
-                            "translation", 
-                            stream_progress, 
-                            f"Translating... ({progress_pct:.1f}%)",
-                            partial_result={"translation": translation, "is_final": False}
-                        )
-                else:
-                    # Fallback to regular translation
-                    translation = translator_model.translate(transcript)
-                
+                # ============================================================
+                # TEMPORARY DEMO WORKAROUND: Try Ollama API first
+                # ============================================================
+                translation = None
+                translation_method = "unknown"
+
+                # Attempt 1: Ollama API (DEMO WORKAROUND)
+                try:
+                    publish_update("translation", 37, "Trying Ollama API translation...")
+                    translation = _translate_via_ollama_api(transcript)
+
+                    if translation:
+                        translation_method = "ollama_api"
+                        logger.info(f"✅ Using Ollama API translation ({len(translation)} chars)")
+                    else:
+                        logger.warning("⚠️ Ollama API returned None, falling back to custom translator")
+                except Exception as ollama_error:
+                    logger.warning(f"⚠️ Ollama API error: {ollama_error}, falling back to custom translator")
+
+                # Attempt 2: Fall back to original custom translation model if Ollama failed
+                if translation is None:
+                    logger.info("🔄 Falling back to custom translation model...")
+                    publish_update("translation", 38, "Using custom translation model...")
+
+                    # Check if model supports streaming translation
+                    if hasattr(translator_model, 'translate_streaming'):
+                        # Stream partial translation results
+                        translation = ""
+                        for partial_translation, progress_pct in translator_model.translate_streaming(transcript):
+                            translation = partial_translation
+                            stream_progress = 35 + int(progress_pct * 0.15)  # 35-50% range
+                            publish_update(
+                                "translation",
+                                stream_progress,
+                                f"Translating... ({progress_pct:.1f}%)",
+                                partial_result={"translation": translation, "is_final": False}
+                            )
+                        translation_method = "custom_model_streaming"
+                    else:
+                        # Fallback to regular translation
+                        translation = translator_model.translate(transcript)
+                        translation_method = "custom_model"
+                # ============================================================
+                # END TEMPORARY DEMO WORKAROUND
+                # ============================================================
+
                 processing_steps["translation"] = {
                     "duration": (datetime.now() - step_start).total_seconds(),
-                    "status": "completed", 
-                    "method": "custom_model",
-                    "output_length": len(translation)
+                    "status": "completed",
+                    "method": translation_method,  # Will show "ollama_api" or "custom_model"
+                    "output_length": len(translation) if translation else 0
                 }
                 
             except Exception as e:
@@ -773,25 +981,54 @@ def _process_audio_sync_worker(
     publish_update("ner", 60, "Extracting named entities...")
     step_start = datetime.now()
     try:
-        ner_model = models.models.get("ner")
-        if not ner_model:
-            publish_update("ner_error", 60, "NER model not available")
-            raise RuntimeError("NER model not available")
-        entities = ner_model.extract_entities(nlp_text, flat=False)
-        
+        # ============================================================
+        # TEMPORARY DEMO WORKAROUND: Try Spacy large model first
+        # ============================================================
+        entities = None
+        ner_method = "unknown"
+
+        # Attempt 1: Spacy en_core_web_lg (DEMO WORKAROUND)
+        try:
+            publish_update("ner", 61, "Trying spacy en_core_web_lg for NER...")
+            entities = _extract_entities_via_spacy_lg(nlp_text, flat=False)
+
+            if entities is not None:
+                ner_method = "spacy_lg"
+                logger.info(f"✅ Using spacy NER ({len(entities)} entity types)")
+            else:
+                logger.warning("⚠️ Spacy NER returned None, falling back to original NER model")
+        except Exception as spacy_error:
+            logger.warning(f"⚠️ Spacy NER error: {spacy_error}, falling back to original NER model")
+
+        # Attempt 2: Fall back to original NER model if spacy failed
+        if entities is None:
+            logger.info("🔄 Falling back to original NER model...")
+            publish_update("ner", 62, "Using original NER model...")
+
+            ner_model = models.models.get("ner")
+            if not ner_model:
+                publish_update("ner_error", 60, "NER model not available")
+                raise RuntimeError("NER model not available")
+            entities = ner_model.extract_entities(nlp_text, flat=False)
+            ner_method = "original_ner_model"
+        # ============================================================
+        # END TEMPORARY DEMO WORKAROUND
+        # ============================================================
+
         ner_duration = (datetime.now() - step_start).total_seconds()
         publish_update(
-            "ner_complete", 
-            65, 
+            "ner_complete",
+            65,
             f"Named entity extraction completed - found {len(entities)} entity types",
             partial_result={"entities": entities},
-            metadata={"duration": ner_duration}
+            metadata={"duration": ner_duration, "method": ner_method}
         )
-        
+
         ner_status = {
             "result": entities,
             "duration": ner_duration,
-            "status": "completed"
+            "status": "completed",
+            "method": ner_method  # Track which method was used
         }
     except Exception as e:
         ner_duration = (datetime.now() - step_start).total_seconds()
