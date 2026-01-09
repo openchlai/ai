@@ -159,3 +159,7 @@ models/
 *.weights
 *.ckpt.index
 ai_service/test_audio_workspace/metadata/preprocessing.db
+ai_service/logs/
+ai_service/test_feedback.db
+ai_service/scripts/create_test_feedback.py
+ai_service/tests/test_agent_feedback.py

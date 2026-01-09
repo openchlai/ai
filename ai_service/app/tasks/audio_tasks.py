@@ -228,6 +228,162 @@ def get_worker_status():
             "worker_pid": os.getpid()
         }
 
+def _send_pipeline_notifications(filename: str, result: Dict[str, Any], task_id: str):
+    """
+    Send notifications to the agent system after pipeline processing completes.
+    This runs synchronously in the Celery worker.
+    """
+    try:
+        # Extract call_id from filename (e.g., "call_1763027988.14_20251113_125949.wav16")
+        call_id = None
+        if filename and "call_" in filename:
+            parts = filename.replace("call_", "").split("_")
+            if parts:
+                call_id = parts[0]  # e.g., "1763027988.14"
+
+        if not call_id:
+            logger.warning(f"Could not extract call_id from filename: {filename}")
+            return
+
+        logger.info(f"📤 Sending pipeline notifications for call {call_id}")
+
+        # Import notification service
+        from ..services.enhanced_notification_service import (
+            notification_service as enhanced_notification_service,
+            NotificationType,
+            ProcessingMode,
+            NotificationStatus
+        )
+
+        # Determine processing mode (default to post_call if not specified)
+        processing_mode_value = "post_call"  # Default
+
+        # Create async loop for sending notifications
+        loop = None
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            # No running loop, create a new one
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        async def send_notifications():
+            """Send all post-call notifications"""
+
+            # 1. Send transcription notification
+            if result.get('transcript'):
+                await enhanced_notification_service.send_notification(
+                    call_id=call_id,
+                    notification_type=NotificationType.POST_CALL_TRANSCRIPTION,
+                    processing_mode=ProcessingMode(processing_mode_value),
+                    payload_data={
+                        "transcript": result['transcript'],
+                        "language": result.get('audio_info', {}).get('language_specified', 'sw'),
+                        "transcript_length": len(result['transcript'])
+                    }
+                )
+                logger.info(f"✅ Sent transcription notification for {call_id}")
+
+            # 2. Send translation notification
+            if result.get('translation'):
+                await enhanced_notification_service.send_notification(
+                    call_id=call_id,
+                    notification_type=NotificationType.POST_CALL_TRANSLATION,
+                    processing_mode=ProcessingMode(processing_mode_value),
+                    payload_data={
+                        "translation": result['translation'],
+                        "source_language": "sw",
+                        "target_language": "en",
+                        "translation_length": len(result['translation'])
+                    }
+                )
+                logger.info(f"✅ Sent translation notification for {call_id}")
+
+            # 3. Send entities notification
+            if result.get('entities'):
+                await enhanced_notification_service.send_notification(
+                    call_id=call_id,
+                    notification_type=NotificationType.POST_CALL_ENTITIES,
+                    processing_mode=ProcessingMode(processing_mode_value),
+                    payload_data={
+                        "entities": result['entities'],
+                        "entities_count": len(result['entities'])
+                    }
+                )
+                logger.info(f"✅ Sent entities notification for {call_id}")
+
+            # 4. Send classification notification
+            if result.get('classification'):
+                await enhanced_notification_service.send_notification(
+                    call_id=call_id,
+                    notification_type=NotificationType.POST_CALL_CLASSIFICATION,
+                    processing_mode=ProcessingMode(processing_mode_value),
+                    payload_data={
+                        "classification": result['classification']
+                    }
+                )
+                logger.info(f"✅ Sent classification notification for {call_id}")
+
+            # 5. Send QA scoring notification
+            if result.get('qa_scores'):
+                await enhanced_notification_service.send_notification(
+                    call_id=call_id,
+                    notification_type=NotificationType.POST_CALL_QA_SCORING,
+                    processing_mode=ProcessingMode(processing_mode_value),
+                    payload_data={
+                        "qa_scores": result['qa_scores']
+                    }
+                )
+                logger.info(f"✅ Sent QA scoring notification for {call_id}")
+
+            # 6. Send summary notification
+            if result.get('summary'):
+                await enhanced_notification_service.send_notification(
+                    call_id=call_id,
+                    notification_type=NotificationType.POST_CALL_SUMMARY,
+                    processing_mode=ProcessingMode(processing_mode_value),
+                    payload_data={
+                        "summary": result['summary'],
+                        "insights": result.get('insights')
+                    }
+                )
+                logger.info(f"✅ Sent summary notification for {call_id}")
+
+            # 7. Send final completion notification
+            await enhanced_notification_service.send_notification(
+                call_id=call_id,
+                notification_type=NotificationType.POST_CALL_COMPLETE,
+                processing_mode=ProcessingMode(processing_mode_value),
+                payload_data={
+                    "processing_time": result.get('pipeline_info', {}).get('total_time', 0),
+                    "models_used": result.get('pipeline_info', {}).get('models_used', []),
+                    "status": "completed"
+                },
+                status=NotificationStatus.SUCCESS
+            )
+            logger.info(f"✅ Sent completion notification for {call_id}")
+
+            # 8. Create agent feedback entries for all completed tasks
+            await enhanced_notification_service.create_feedback_entries(
+                call_id=call_id,
+                pipeline_results=result,
+                processing_mode=processing_mode_value
+            )
+            logger.info(f"✅ Created feedback entries for {call_id}")
+
+        # Run the async function
+        if loop.is_running():
+            # If event loop is already running (shouldn't happen in Celery worker)
+            asyncio.create_task(send_notifications())
+        else:
+            # Run until complete
+            loop.run_until_complete(send_notifications())
+
+        logger.info(f"📤 All notifications sent successfully for call {call_id}")
+
+    except Exception as e:
+        logger.error(f"Failed to send pipeline notifications: {e}", exc_info=True)
+
 @celery_app.task(bind=True, name="process_audio_task")
 def process_audio_task(self, audio_bytes, filename, language=None, include_translation=True, include_insights=True, processing_mode=None):
     """Simplified error handling to avoid serialization issues"""
@@ -738,30 +894,44 @@ def _process_audio_sync_worker(
         state="PROCESSING",
         meta={"step": "qa_scoring", "progress": 90}
     )
+    publish_update("qa_scoring", 90, "Running quality assurance evaluation...")
+
     step_start = datetime.now()
     try:
+        # ← FIXED: Import QA model directly (same as standalone QA endpoint)
+        from ..model_scripts.qa_model import qa_model
+        
+        if not qa_model.is_ready():
+            raise RuntimeError("QA model not ready")
+        
+        qa_score = qa_model.predict(nlp_text, threshold=threshold, return_raw=return_raw)
 
-    
-        qa_score_model = models.models.get("all_qa_distilbert_v1")
-        if not qa_score_model:
-            raise RuntimeError("QA model not available")
-        # threshold = 0.5  # Default threshold
-        # return_raw  = False  # Default to not return raw scores
-        qa_score = qa_score_model.predict(nlp_text, threshold=threshold, return_raw=return_raw)
-        print(f"QA Score: {qa_score}")
-        logger.info(f"QA Score: {qa_score}")
-        logger.info(".........................................................................................................")
+        qa_duration = (datetime.now() - step_start).total_seconds()
+        
+        publish_update(
+            "qa_scoring_complete", 
+            92, 
+            "Quality assurance evaluation completed",
+            partial_result={"qa_scores": qa_score},
+            metadata={"duration": qa_duration}
+        )
+        
+        logger.info(f"✅ QA Scoring completed in {qa_duration:.3f}s")
+        
         qa_status = {
             "result": qa_score,
-            "duration": (datetime.now() - step_start).total_seconds(),
+            "duration": qa_duration,
             "status": "completed"
         }
 
-
     except Exception as e:
+        qa_duration = (datetime.now() - step_start).total_seconds()
+        publish_update("qa_scoring_error", 90, f"QA scoring failed: {str(e)}")
+        logger.error(f"❌ QA scoring failed: {e}")
+        
         qa_status = {
             "result": {},
-            "duration": (datetime.now() - step_start).total_seconds(),
+            "duration": qa_duration,
             "status": "failed",
             "error": str(e)
         }
@@ -828,6 +998,12 @@ def _process_audio_sync_worker(
                 "status": classifier_status["status"],
                 "confidence": classifier_status["result"].get("confidence", 0) if classifier_status["result"] else 0
             },
+
+            "qa_scoring": {  
+                "duration": qa_status["duration"],
+                "status": qa_status["status"],
+                "evaluations_count": len(qa_status["result"]) if qa_status["result"] else 0
+            },
             "summarization": {
                 "duration": summary_status["duration"],
                 "status": summary_status["status"],
@@ -845,13 +1021,19 @@ def _process_audio_sync_worker(
     
     # Publish final result
     publish_update(
-        "completed", 
-        100, 
+        "completed",
+        100,
         f"Audio processing completed in {total_processing_time:.2f}s",
         partial_result=result,
         metadata={"total_duration": total_processing_time}
     )
-    
+
+    # Send notifications to agent system
+    try:
+        _send_pipeline_notifications(filename, result, task_id)
+    except Exception as e:
+        logger.error(f"Failed to send pipeline notifications: {e}")
+
     return result
 
 # Add the quick task with similar pattern
@@ -924,7 +1106,7 @@ def process_audio_quick_task(
 
 def _generate_insights(transcript: str, translation: Optional[str], 
                       entities: Dict, classification: Dict, summary: str, qa_scores: Dict) -> Dict[str, Any]:
-    """Generate basic insights from processed data"""
+    """Generate basic insights from processed data including QA evaluation"""
     
     persons = entities.get("PERSON", [])
     locations = entities.get("LOC", []) + entities.get("GPE", [])
@@ -936,6 +1118,29 @@ def _generate_insights(transcript: str, translation: Optional[str],
     # Basic risk assessment
     risk_keywords = ["suicide", "abuse", "violence", "threat", "danger", "crisis", "emergency"]
     risk_score = sum(1 for keyword in risk_keywords if keyword.lower() in primary_text.lower())
+    
+    # Calculate QA summary metrics if QA scores are available
+    qa_summary = None
+    if qa_scores and isinstance(qa_scores, dict):
+        total_metrics = 0
+        passed_metrics = 0
+        
+        for category, metrics in qa_scores.items():
+            if isinstance(metrics, list):
+                for metric in metrics:
+                    total_metrics += 1
+                    if metric.get("prediction", False):
+                        passed_metrics += 1
+        
+        if total_metrics > 0:
+            pass_rate = (passed_metrics / total_metrics) * 100
+            qa_summary = {
+                "total_metrics_evaluated": total_metrics,
+                "metrics_passed": passed_metrics,
+                "metrics_failed": total_metrics - passed_metrics,
+                "pass_rate_percentage": round(pass_rate, 1),
+                "overall_quality": "excellent" if pass_rate >= 80 else "good" if pass_rate >= 60 else "fair" if pass_rate >= 40 else "needs_improvement"
+            }
     
     return {
         "case_overview": {
@@ -964,9 +1169,11 @@ def _generate_insights(transcript: str, translation: Optional[str],
             "persons": persons[:5],
             "locations": locations[:3],
             "organizations": organizations[:3],
-            "key_dates": dates[:3],
-            # "qa_scores": qa_scores if qa_scores else {}
-
+            "key_dates": dates[:3]
+        },
+        "quality_assurance": qa_summary if qa_summary else {
+            "status": "not_evaluated",
+            "message": "QA evaluation not available"
         }
     }
     
@@ -1112,148 +1319,6 @@ def process_streaming_audio_task(
         
     except Exception as e:
         logger.error(f"❌ Streaming transcription failed: {e}")
-        raise
-
-
-@celery_app.task(bind=True)
-def process_feedback_audio_task(self, call_id: str, agent_id: str, feedback_notes: str = ""):
-    """
-    Background task for processing audio based on agent feedback
-    
-    This task:
-    1. Downloads audio file using existing SCP infrastructure
-    2. Runs 2-stage audio preprocessing with quality filtering
-    3. Uploads only high-quality chunks to S3
-    4. Returns S3 URLs for Label Studio integration
-    """
-    
-    logger.info(f"Starting feedback audio processing for call {call_id} (agent: {agent_id})")
-    
-    try:
-        # Update task state
-        self.update_state(
-            state='PROGRESS',
-            meta={
-                'call_id': call_id,
-                'stage': 'downloading',
-                'message': 'Downloading audio file...',
-                'progress': 10
-            }
-        )
-        
-        # Step 1: Download audio file using existing SCP infrastructure
-        from ..utils.scp_audio_downloader import download_audio_via_scp
-        
-        audio_bytes, download_info = asyncio.run(download_audio_via_scp(call_id))
-        
-        if not audio_bytes:
-            error_msg = f"Failed to download audio for call {call_id}: {download_info.get('error', 'Unknown error')}"
-            logger.error(error_msg)
-            # raise Exception(error_msg)
-            raise RuntimeError(error_msg)
-
-        
-        logger.info(f"Downloaded audio file: {download_info.get('file_size_mb', 0):.1f} MB")
-        
-        # Update task state
-        self.update_state(
-            state='PROGRESS',
-            meta={
-                'call_id': call_id,
-                'stage': 'preprocessing',
-                'message': 'Processing audio and filtering quality chunks...',
-                'progress': 30
-            }
-        )
-        
-        # Step 2: Save audio to temporary file for preprocessing
-        import tempfile
-        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_audio:
-            temp_audio.write(audio_bytes)
-            temp_audio_path = temp_audio.name
-        
-        try:
-            # Step 3: Run preprocessing using the service
-            from ..services.audio_preprocessing_service import audio_preprocessing_service
-            
-            result = asyncio.run(audio_preprocessing_service.process_audio_file(
-                audio_file_path=temp_audio_path,
-                call_id=call_id,
-                agent_id=agent_id,
-                feedback_notes=feedback_notes
-            ))
-            
-            # Update task state
-            self.update_state(
-                state='PROGRESS',
-                meta={
-                    'call_id': call_id,
-                    'stage': 'uploading',
-                    'message': f'Uploading {result.quality_chunks} quality chunks to S3...',
-                    'progress': 70
-                }
-            )
-            
-            if not result.success:
-                error_msg = f"Audio preprocessing failed: {result.error_message}"
-                logger.error(error_msg)
-                # raise Exception(error_msg)
-                raise RuntimeError(error_msg)
-            
-            # TODO: Step 4: Create Label Studio tasks (integrate with existing process)
-            # This would typically call your existing Label Studio integration
-            # For now, just log the S3 URLs
-            logger.info(f"Quality chunks uploaded to S3: {len(result.s3_urls)} URLs")
-            for url in result.s3_urls:
-                logger.debug(f"S3 URL: {url}")
-            
-            # Final update
-            self.update_state(
-                state='PROGRESS',
-                meta={
-                    'call_id': call_id,
-                    'stage': 'completed',
-                    'message': 'Audio preprocessing completed successfully',
-                    'progress': 100
-                }
-            )
-            
-            # Return final result
-            return {
-                'success': True,
-                'call_id': call_id,
-                'agent_id': agent_id,
-                'batch_id': result.batch_id,
-                'total_chunks': result.total_chunks,
-                'quality_chunks': result.quality_chunks,
-                's3_urls': result.s3_urls,
-                'processing_time_seconds': result.processing_time_seconds,
-                'download_info': download_info,
-                'message': f'Successfully processed {result.quality_chunks}/{result.total_chunks} quality chunks'
-            }
-            
-        finally:
-            # Clean up temporary file
-            try:
-                os.unlink(temp_audio_path)
-            except:
-                pass
-                
-    except Exception as e:
-        return handle_task_error(self, f"Processing failed for call {call_id}: {e}", call_id)
-    # except Exception as e:
-    #     logger.error(f"Feedback audio processing failed for call {call_id}: {e}")
-        
-        # Update task state to failure
-        # self.update_state(
-        #     state='FAILURE',
-        #     meta={
-        #         'call_id': call_id,
-        #         'error': str(e),
-        #         'message': f'Processing failed: {str(e)}'
-        #     }
-        # )
-        
         raise
 
 def handle_task_error(self, error_msg, call_id=None):

@@ -32,7 +32,7 @@ class QAResponse(BaseModel):
     processing_time: float
     model_info: dict
     timestamp: str
-    chunk_info: Optional[Dict] = None
+    # chunk_info: Optional[Dict] = None
 
 
 class QATaskResponse(BaseModel):
@@ -120,7 +120,7 @@ async def get_qa_task_status(task_id: str):
                 processing_time=result['processing_time'],
                 model_info=result['model_info'],
                 timestamp=result['timestamp'],
-                chunk_info=result.get('chunk_info')
+                # chunk_info=result.get('chunk_info')
             )
             
             return QATaskStatusResponse(

@@ -8,16 +8,17 @@ from ..utils.mode_detector import is_api_server_mode, get_execution_mode
 from typing import List, Dict, Optional
 from celery.result import AsyncResult
 from ..tasks.model_tasks import classifier_classify_task
+from ..celery_app import celery_app
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/classifier", tags=["classifier"])
 
 
 class ConfidenceScores(BaseModel):
-    main_category: float
-    sub_category: float
-    intervention: float
-    priority: float
+    main_category: Optional[float] = None
+    sub_category: Optional[float] = None
+    intervention: Optional[float] = None
+    priority: Optional[float] = None
 
 
 class ChunkPrediction(BaseModel):
@@ -91,6 +92,7 @@ async def classify_narrative(request: ClassifierRequest):
             args=[request.narrative],
             queue='model_processing'
         )
+
         
         logger.info(f"📤 Classification task submitted: {task.id}")
         
@@ -111,7 +113,7 @@ async def classify_narrative(request: ClassifierRequest):
 async def get_classifier_task_status(task_id: str):
     """Get classification task status"""
     try:
-        task_result = AsyncResult(task_id)
+        task_result = AsyncResult(task_id, app=celery_app)
         
         if task_result.state == 'PENDING':
             return ClassifierTaskStatusResponse(
@@ -142,7 +144,8 @@ async def get_classifier_task_status(task_id: str):
                 model_info=result['model_info'],
                 timestamp=result['timestamp']
             )
-            
+
+            print("============== results ========== ", classifier_response)
             return ClassifierTaskStatusResponse(
                 task_id=task_id,
                 status="success",

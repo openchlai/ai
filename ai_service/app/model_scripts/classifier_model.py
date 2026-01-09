@@ -1,4 +1,3 @@
-# app/models/classifier_model.py (Fixed)
 import logging
 from typing import Dict, List, Optional
 from datetime import datetime
@@ -61,7 +60,7 @@ class ClassifierModel:
         self.loaded = False
         self.load_time = None
         self.error = None
-        self.max_length = 256  # Model's maximum token limit
+        self.max_length = 512
         
         # Hugging Face repo configuration (hub-first, no local model loading)
         from ..config.settings import settings as _settings
@@ -119,11 +118,11 @@ class ClassifierModel:
                 "priorities": self.priorities
             }
             
-            logger.info(f"✅ Loaded classifier configs: {len(self.main_categories)} main categories, {len(self.sub_categories)} sub categories")
+            logger.info(f" Loaded classifier configs: {len(self.main_categories)} main categories, {len(self.sub_categories)} sub categories")
             return True
             
         except Exception as e:
-            logger.error(f"❌ Failed to load classifier configs: {e}")
+            logger.error(f" Failed to load classifier configs: {e}")
             self.error = f"Config loading failed: {str(e)}"
             return False
 
@@ -131,7 +130,7 @@ class ClassifierModel:
         """Load category configs from HuggingFace model repository"""
         try:
 
-            logger.info(f"📦 Initializing classifier model loader")
+            logger.info(f" Initializing classifier model loader")
             start_time = datetime.now()
 
             
@@ -145,7 +144,7 @@ class ClassifierModel:
             # Hub-first: require HF repo id (public access)
             if not self.hf_repo_id:
                 raise RuntimeError("CLASSIFIER_HF_REPO_ID or settings.hf_classifier_model must be set for hub loading")
-            logger.info(f"📦 Loading classifier model from Hugging Face Hub: {self.hf_repo_id} (ignoring local path {self.model_path})")
+            logger.info(f" Loading classifier model from Hugging Face Hub: {self.hf_repo_id} (ignoring local path {self.model_path})")
             
             # Get HF authentication kwargs
             from ..config.settings import settings
@@ -173,13 +172,13 @@ class ClassifierModel:
             self.loaded = True
             self.load_time = datetime.now()
             load_duration = (self.load_time - start_time).total_seconds()
-            logger.info(f"✅ Classifier model loaded from Hugging Face Hub ({self.hf_repo_id}) in {load_duration:.2f}s on {self.device}")
+            logger.info(f" Classifier model loaded from Hugging Face Hub ({self.hf_repo_id}) in {load_duration:.2f}s on {self.device}")
             return True
             
         except Exception as e:
             self.error = str(e)
             self.load_time = datetime.now()
-            logger.error(f"❌ Failed to load classifier model: {e}")
+            logger.error(f" Failed to load classifier model: {e}")
             return False
 
     def preprocess_text(self, text: str) -> str:
@@ -203,7 +202,7 @@ class ClassifierModel:
             self.loaded = True
             return True
         except Exception as e:
-            logger.error(f"❌ Failed to load classifier: {e}")
+            logger.error(f" Failed to load classifier: {e}")
             self.error = str(e)
             self.loaded = False
             return False
@@ -236,7 +235,7 @@ class ClassifierModel:
                 return self._classify_single(clean_text)
             else:
                 # Chunked classification with aggregation
-                logger.info(f"🔄 Text too long ({token_count} tokens), using chunked classification")
+                logger.info(f" Text too long ({token_count} tokens), using chunked classification")
                 return self._classify_chunked(clean_text)
                 
         except Exception as e:
@@ -297,7 +296,7 @@ class ClassifierModel:
         
         # Get chunks optimized for classification
         chunks = text_chunker.chunk_text(text, strategy="classification")
-        logger.info(f"🔄 Processing {len(chunks)} classification chunks")
+        logger.info(f" Processing {len(chunks)} classification chunks")
         
         chunk_results = []
         
@@ -320,10 +319,10 @@ class ClassifierModel:
         
         # Aggregate results from all chunks
         aggregated_result = self._aggregate_classification_results(chunk_results, chunks)
-        logger.info(f"✅ Chunked classification completed with {len(chunk_results)} chunks")
+        logger.info(f" Chunked classification completed with {len(chunk_results)} chunks")
         
         return aggregated_result
-
+    
     def _aggregate_classification_results(self, chunk_results: List[Dict], chunks) -> Dict[str, str]:
         """Aggregate classification results from multiple chunks"""
         if not chunk_results:
@@ -341,6 +340,11 @@ class ClassifierModel:
         total_weight = 0
         confidence_scores = []
         
+        main_confidences = []
+        sub_confidences = []
+        interv_confidences = []
+        priority_confidences = []
+        
         for i, result in enumerate(chunk_results):
             # Weight by chunk size and confidence
             chunk_weight = chunks[i].token_count * result.get("confidence", 0.5)
@@ -352,6 +356,13 @@ class ClassifierModel:
             priority_votes[result["priority"]] += chunk_weight
             
             confidence_scores.append(result.get("confidence", 0.5))
+            
+            # Collect individual confidence scores
+            breakdown = result.get("confidence_breakdown", {})
+            main_confidences.append(breakdown.get("main_category", 0.5))
+            sub_confidences.append(breakdown.get("sub_category", 0.5))
+            interv_confidences.append(breakdown.get("intervention", 0.5))
+            priority_confidences.append(breakdown.get("priority", 0.5))
         
         # Get most common predictions
         final_main = main_votes.most_common(1)[0][0]
@@ -361,16 +372,29 @@ class ClassifierModel:
         
         # Calculate aggregated confidence
         final_confidence = sum(confidence_scores) / len(confidence_scores)
+
+        # Calculate aggregated confidence breakdown
+        avg_main_conf = sum(main_confidences) / len(main_confidences) if main_confidences else 0.5
+        avg_sub_conf = sum(sub_confidences) / len(sub_confidences) if sub_confidences else 0.5
+        avg_interv_conf = sum(interv_confidences) / len(interv_confidences) if interv_confidences else 0.5
+        avg_priority_conf = sum(priority_confidences) / len(priority_confidences) if priority_confidences else 0.5
         
         # Apply business logic for priority escalation
         final_priority = self._apply_priority_escalation(chunk_results, final_priority)
-        
+
+        # Include confidence_breakdown
         return {
             "main_category": final_main,
             "sub_category": final_sub,
             "intervention": final_interv,
             "priority": final_priority,
             "confidence": round(final_confidence, 3),
+            "confidence_breakdown": {  
+                "main_category": round(avg_main_conf, 3),
+                "sub_category": round(avg_sub_conf, 3),
+                "intervention": round(avg_interv_conf, 3),
+                "priority": round(avg_priority_conf, 3)
+            },
             "aggregation_info": {
                 "chunks_processed": len(chunk_results),
                 "aggregation_method": "weighted_voting",

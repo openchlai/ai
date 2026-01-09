@@ -66,10 +66,30 @@ class Settings(BaseSettings):
     docker_container: bool = False
     
     # Processing Mode Configuration
-    default_processing_mode: str = "postcall_only"
-    enable_realtime_processing: bool = False
+    default_processing_mode: str = "dual"  # streaming, post_call, dual, adaptive
+    enable_streaming_processing: bool = True
     enable_postcall_processing: bool = True
     enable_scp_audio_download: bool = True
+
+    # Notification Configuration v2.0
+
+    notification_auth_token: str = "default_token"  # Should be from env
+    notification_retry_attempts: int = 3
+    notification_retry_delay: int = 2  # seconds
+    notification_version: str = "2.0"
+    use_base64_encoding: bool = False  # Prefer direct JSON
+    enable_ui_metadata: bool = True
+    notification_batch_size: int = 1  # Future: batch notifications
+
+    # Notification retry settings
+    notification_retry_attempts: int = 3
+    notification_retry_delay: int = 2  # seconds
+    
+    # Streaming Configuration
+    streaming_transcription_interval: int = 5  # seconds
+    streaming_translation_interval: int = 30  # seconds
+    streaming_entity_update_interval: int = 30
+    streaming_classification_update_interval: int = 30
     
     # Real-time Processing Configuration
     realtime_min_window_chars: int = 150
@@ -91,45 +111,19 @@ class Settings(BaseSettings):
     postcall_enable_noise_reduction: bool = True
     postcall_download_timeout_seconds: int = 60
     postcall_convert_to_wav: bool = True
-    postcall_enable_insights_generation: bool = True
+    postcall_enable_insights: bool = True
     postcall_enable_qa_scoring: bool = True
+    postcall_enable_summary: bool = True
+    postcall_processing_timeout: int = 300  # seconds
+    postcall_enable_insights_generation: bool = True
     postcall_enable_summarization: bool = True
     postcall_notify_completion: bool = True
     postcall_send_unified_insights: bool = True
     
-    # Adaptive Processing Rules
-    adaptive_short_call_threshold_seconds: int = 30
-    adaptive_long_call_threshold_seconds: int = 600
-    adaptive_high_priority_keywords: str = "emergency,urgent,critical,suicide,violence,accident,medical,police,fire,ambulance"
-    
-    # Agent Feedback Audio Preprocessing Configuration
-    enable_feedback_preprocessing: bool = True
-    feedback_workspace_dir: str = "feedback_audio_workspace"
-    
-    # Audio Quality Thresholds
-    stage1_speech_ratio_threshold: float = 0.7
-    stage1_vad_snr_threshold: float = 10.0
-    stage2_speech_ratio_threshold: float = 0.9
-    stage2_vad_snr_threshold: float = 25.0
-    
-    # Chunking parameters
-    min_chunk_duration: float = 3.0
-    max_chunk_duration: float = 30.0
-    target_chunk_duration: float = 12.0
-    chunk_tolerance: float = 2.0
-    
-    # AWS S3 Configuration for Audio Chunk Storage
-    aws_access_key_id: str = ""
-    aws_secret_access_key: str = ""
-    aws_region: str = "us-east-1"
-    s3_bucket_name: str = "ai-service-audio-chunks"
-    s3_audio_prefix: str = "feedback-chunks"
-    s3_presigned_url_expiry: int = 3600
-    
-    # Label Studio Integration
-    label_studio_url: str = ""
-    label_studio_api_key: str = ""
-    label_studio_project_id: int = 1
+    # Adaptive Rules
+    adaptive_short_call_threshold: int = 30  # seconds
+    adaptive_long_call_threshold: int = 600  # seconds
+    adaptive_high_priority_keywords: str = "emergency,urgent,critical,suicide,violence,abuse"
     
     # SCP Audio Download Configuration
     scp_user: str = "helpline"
@@ -165,6 +159,10 @@ class Settings(BaseSettings):
     notification_basic_auth: str = "dGVzdDpwQHNzdzByZA=="
     notification_request_timeout: int = 10
     notification_max_retries: int = 3
+
+    # Agent Payload Logging (for UI development)
+    enable_agent_payload_logging: bool = False
+    agent_payload_log_file: str = "./logs/agent_payloads.jsonl"
     
     def get_model_path(self, model_name: str) -> str:
         """Get absolute path for a model"""
@@ -324,6 +322,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = False
+        extra = "allow" # Temporarily allow extra fields to prevent validation errors
 
 settings = Settings()
 

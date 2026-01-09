@@ -26,7 +26,7 @@ worker_model_loader = None
 #     """Initialize models when worker starts"""
 #     global worker_model_loader
     
-#     logger.info("🚀 Initializing model worker for individual model tasks...")
+#     logger.info(" Initializing model worker for individual model tasks...")
     
 #     try:
 #         from ..model_scripts.model_loader import ModelLoader
@@ -59,15 +59,15 @@ worker_model_loader = None
 #             asyncio.run(worker_model_loader.load_all_models())
         
 #         ready_models = worker_model_loader.get_ready_models()
-#         logger.info(f"✅ Model worker initialized with {len(ready_models)} models: {ready_models}")
+#         logger.info(f" Model worker initialized with {len(ready_models)} models: {ready_models}")
         
 #         if len(ready_models) == 0:
-#             logger.error("⚠️ WARNING: No models were loaded successfully!")
+#             logger.error(" WARNING: No models were loaded successfully!")
 #             logger.error(f"Failed models: {worker_model_loader.get_failed_models()}")
 #             logger.error(f"Blocked models: {worker_model_loader.get_blocked_models()}")
         
 #     except Exception as e:
-#         logger.error(f"❌ Failed to initialize model worker: {e}")
+#         logger.error(f" Failed to initialize model worker: {e}")
 #         logger.exception("Full traceback:")
 #         worker_model_loader = None
 
@@ -77,7 +77,7 @@ def initialize_model_worker(**kwargs):
     """Initialize models when worker starts"""
     global worker_model_loader
     
-    logger.info("🚀 Initializing model worker for individual model tasks...")
+    logger.info(" Initializing model worker for individual model tasks...")
     
     try:
         from ..model_scripts.model_loader import ModelLoader
@@ -89,18 +89,18 @@ def initialize_model_worker(**kwargs):
         
         if success:
             ready_models = worker_model_loader.get_ready_models()
-            logger.info(f"✅ Model worker initialized with {len(ready_models)} models: {ready_models}")
+            logger.info(f" Model worker initialized with {len(ready_models)} models: {ready_models}")
             
             if len(ready_models) == 0:
-                logger.error("⚠️ WARNING: No models were loaded successfully!")
+                logger.error(" WARNING: No models were loaded successfully!")
                 logger.error(f"Failed models: {worker_model_loader.get_failed_models()}")
                 logger.error(f"Blocked models: {worker_model_loader.get_blocked_models()}")
         else:
-            logger.error("❌ Model loading failed")
+            logger.error(" Model loading failed")
             worker_model_loader = None
         
     except Exception as e:
-        logger.error(f"❌ Failed to initialize model worker: {e}")
+        logger.error(f" Failed to initialize model worker: {e}")
         logger.exception("Full traceback:")
         worker_model_loader = None
 
@@ -113,9 +113,9 @@ def get_worker_model_loader():
     return worker_model_loader
 
 
-# ============================================================================
+
 # NER TASK
-# ============================================================================
+
 @celery_app.task(bind=True, name="ner_extract_task")
 def ner_extract_task(self, text: str, flat: bool = True) -> Dict[str, Any]:
     """
@@ -155,7 +155,7 @@ def ner_extract_task(self, text: str, flat: bool = True) -> Dict[str, Any]:
         if token_count <= MAX_SOURCE_LENGTH:
             # Direct entity extraction
             entities = ner_model.extract_entities(text, flat=flat)
-            logger.info(f"✅ NER processed {len(text)} chars (no chunking)")
+            logger.info(f" NER processed {len(text)} chars (no chunking)")
         else:
             # Chunking needed
             logger.info(f"📦 Chunking: {token_count} tokens > {MAX_SOURCE_LENGTH}")
@@ -170,7 +170,7 @@ def ner_extract_task(self, text: str, flat: bool = True) -> Dict[str, Any]:
             
             # Reconstruct entities
             entities = chunker.reconstruct_entities(chunk_entities, chunks, flat=flat)
-            logger.info(f"✅ Processed {len(chunks)} chunks, {len(entities)} entities")
+            logger.info(f" Processed {len(chunks)} chunks, {len(entities)} entities")
         
         processing_time = (datetime.now() - start_time).total_seconds()
         model_info = ner_model.get_model_info()
@@ -184,13 +184,13 @@ def ner_extract_task(self, text: str, flat: bool = True) -> Dict[str, Any]:
         }
         
     except Exception as e:
-        logger.error(f"❌ NER task failed: {e}")
+        logger.error(f" NER task failed: {e}")
         raise
 
 
-# ============================================================================
+
 # CLASSIFIER TASK
-# ============================================================================
+
 @celery_app.task(bind=True, name="classifier_classify_task")
 def classifier_classify_task(self, narrative: str) -> Dict[str, Any]:
     """
@@ -228,7 +228,6 @@ def classifier_classify_task(self, narrative: str) -> Dict[str, Any]:
         MAX_SOURCE_LENGTH = 512
         
         logger.info(f"🔍 Classification: {token_count} tokens")
-        
         if token_count <= MAX_SOURCE_LENGTH:
             # Direct classification
             classification = classifier.classify(narrative)
@@ -238,10 +237,12 @@ def classifier_classify_task(self, narrative: str) -> Dict[str, Any]:
                 'sub_category': classification['sub_category'],
                 'intervention': classification['intervention'],
                 'priority': classification['priority'],
-                'confidence_scores': classification.get('confidence_scores', {}),
+                'confidence_scores': classification.get('confidence_breakdown', {}),  # ← FIXED: Use confidence_breakdown
                 'chunks_processed': 1,
                 'chunk_predictions': None
             }
+
+
         else:
             # Chunking needed
             logger.info(f"📦 Chunking: {token_count} tokens > {MAX_SOURCE_LENGTH}")
@@ -250,7 +251,7 @@ def classifier_classify_task(self, narrative: str) -> Dict[str, Any]:
             chunk_predictions = []
             
             for i, chunk_info in enumerate(chunks):
-                logger.info(f"🔄 Processing chunk {i+1}/{len(chunks)}")
+                logger.info(f" Processing chunk {i+1}/{len(chunks)}")
                 chunk_classification = classifier.classify(chunk_info['text'])
                 
                 chunk_pred = {
@@ -258,7 +259,7 @@ def classifier_classify_task(self, narrative: str) -> Dict[str, Any]:
                     'sub_category': chunk_classification['sub_category'],
                     'intervention': chunk_classification['intervention'],
                     'priority': chunk_classification['priority'],
-                    'confidence_scores': chunk_classification.get('confidence_scores', {})
+                    'confidence_scores': chunk_classification.get('confidence_breakdown', {})
                 }
                 chunk_predictions.append(chunk_pred)
             
@@ -283,7 +284,7 @@ def classifier_classify_task(self, narrative: str) -> Dict[str, Any]:
         processing_time = (datetime.now() - start_time).total_seconds()
         model_info = classifier.get_model_info()
         
-        logger.info(f"✅ Classification complete: {processing_time:.3f}s")
+        logger.info(f" Classification complete: {processing_time:.3f}s")
         
         return {
             **aggregated_result,
@@ -294,13 +295,13 @@ def classifier_classify_task(self, narrative: str) -> Dict[str, Any]:
         }
         
     except Exception as e:
-        logger.error(f"❌ Classification task failed: {e}")
+        logger.error(f" Classification task failed: {e}")
         raise
 
 
-# ============================================================================
+
 # TRANSLATION TASK
-# ============================================================================
+
 @celery_app.task(bind=True, name="translation_translate_task")
 def translation_translate_task(self, text: str) -> Dict[str, Any]:
     """
@@ -336,7 +337,7 @@ def translation_translate_task(self, text: str) -> Dict[str, Any]:
         if token_count <= MAX_SOURCE_LENGTH:
             # Direct translation
             translated = translator_model.translate(text)
-            logger.info(f"✅ Translated {len(text)} chars (no chunking)")
+            logger.info(f" Translated {len(text)} chars (no chunking)")
         else:
             # Chunking needed
             logger.info(f"📦 Chunking: {token_count} tokens > {MAX_SOURCE_LENGTH}")
@@ -351,12 +352,12 @@ def translation_translate_task(self, text: str) -> Dict[str, Any]:
             
             # Reconstruct translation
             translated = chunker.reconstruct_translation(translated_chunks)
-            logger.info(f"✅ Processed {len(chunks)} chunks")
+            logger.info(f" Processed {len(chunks)} chunks")
         
         processing_time = (datetime.now() - start_time).total_seconds()
         model_info = translator_model.get_model_info()
         
-        logger.info(f"✅ Translation complete: {processing_time:.3f}s")
+        logger.info(f" Translation complete: {processing_time:.3f}s")
         
         return {
             "translated": translated,
@@ -367,13 +368,13 @@ def translation_translate_task(self, text: str) -> Dict[str, Any]:
         }
         
     except Exception as e:
-        logger.error(f"❌ Translation task failed: {e}")
+        logger.error(f" Translation task failed: {e}")
         raise
 
 
-# ============================================================================
+
 # SUMMARIZATION TASK
-# ============================================================================
+
 @celery_app.task(bind=True, name="summarization_summarize_task")
 def summarization_summarize_task(self, text: str, max_length: int = 256) -> Dict[str, Any]:
     """
@@ -432,12 +433,12 @@ def summarization_summarize_task(self, text: str, max_length: int = 256) -> Dict
             
             # Reconstruct summary
             summary = chunker.reconstruct_summary(chunk_summaries)
-            logger.info(f"✅ Processed {len(chunks)} chunks")
+            logger.info(f" Processed {len(chunks)} chunks")
         
         processing_time = (datetime.now() - start_time).total_seconds()
         model_info = summarizer_model.get_model_info()
         
-        logger.info(f"✅ Summarization complete: {processing_time:.2f}s")
+        logger.info(f" Summarization complete: {processing_time:.2f}s")
         
         return {
             "summary": summary,
@@ -448,13 +449,11 @@ def summarization_summarize_task(self, text: str, max_length: int = 256) -> Dict
         }
         
     except Exception as e:
-        logger.error(f"❌ Summarization task failed: {e}")
+        logger.error(f" Summarization task failed: {e}")
         raise
 
 
-# ============================================================================
 # QA TASK
-# ============================================================================
 @celery_app.task(bind=True, name="qa_evaluate_task")
 def qa_evaluate_task(
     self, 
@@ -497,13 +496,6 @@ def qa_evaluate_task(
         token_count = chunker.count_tokens(transcript)
         MAX_SOURCE_LENGTH = 512
         
-        chunk_info = {
-            "total_chunks": 1,
-            "token_count": token_count,
-            "chunking_applied": False,
-            "chunk_predictions": []
-        }
-        
         if token_count <= MAX_SOURCE_LENGTH:
             # Direct evaluation
             logger.info(f"✅ QA evaluation - no chunking: {token_count} tokens")
@@ -517,15 +509,6 @@ def qa_evaluate_task(
             logger.info(f"📦 QA chunking: {token_count} tokens > {MAX_SOURCE_LENGTH}")
             
             chunks = chunker.chunk_transcript(transcript)
-            chunk_info.update({
-                "total_chunks": len(chunks),
-                "chunking_applied": True,
-                "chunk_details": [{
-                    "chunk_index": chunk['chunk_index'],
-                    "token_count": chunk['token_count'],
-                    "sentence_count": chunk['sentence_count']
-                } for chunk in chunks]
-            })
             
             # Evaluate each chunk
             chunk_predictions = []
@@ -537,13 +520,6 @@ def qa_evaluate_task(
                     threshold=threshold,
                     return_raw=True
                 )
-                
-                chunk_pred_data = {
-                    'chunk_index': i,
-                    'token_count': chunk_item['token_count'],
-                    'predictions': chunk_result
-                }
-                chunk_info['chunk_predictions'].append(chunk_pred_data)
                 chunk_predictions.append(chunk_result)
             
             # Aggregate results
@@ -553,33 +529,28 @@ def qa_evaluate_task(
             
             if aggregated_result and aggregated_result['success']:
                 evaluation_result = aggregated_result['predictions']
-                chunk_info['aggregation_success'] = True
-                chunk_info['aggregation_method'] = 'confidence_weighted_voting'
             else:
                 # Fallback aggregation
                 logger.error("QA aggregation failed, using fallback")
                 evaluation_result = _fallback_qa_aggregation(chunk_predictions)
-                chunk_info['aggregation_success'] = False
-                chunk_info['aggregation_method'] = 'fallback_majority_voting'
         
         processing_time = (datetime.now() - start_time).total_seconds()
         model_info = qa_model.get_model_info()
         
         logger.info(f"✅ QA evaluation complete: {processing_time:.3f}s")
         
+        # ← CLEAN RESPONSE: No chunk_info at all
         return {
             "evaluations": evaluation_result,
             "processing_time": processing_time,
             "model_info": model_info,
             "timestamp": datetime.now().isoformat(),
-            "chunk_info": chunk_info,
             "task_id": self.request.id
         }
         
     except Exception as e:
         logger.error(f"❌ QA task failed: {e}")
         raise
-
 
 def _fallback_qa_aggregation(chunk_predictions):
     """Fallback aggregation for QA if primary method fails"""
@@ -622,9 +593,9 @@ def _fallback_qa_aggregation(chunk_predictions):
     return aggregated_result
 
 
-# ============================================================================
+
 # WHISPER TASK (for audio transcription)
-# ============================================================================
+
 @celery_app.task(bind=True, name="whisper_transcribe_task")
 def whisper_transcribe_task(
     self, 
@@ -683,5 +654,5 @@ def whisper_transcribe_task(
         }
         
     except Exception as e:
-        logger.error(f"❌ Whisper task failed: {e}")
+        logger.error(f" Whisper task failed: {e}")
         raise
