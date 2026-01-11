@@ -9,6 +9,19 @@
     <div class="chart-container" v-if="!loading && !error">
       <div class="chart-scroll">
         <svg :width="svgWidth" :height="svgHeight">
+          <defs>
+            <filter id="barShadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur in="SourceAlpha" stdDeviation="2" />
+              <feOffset dx="0" dy="2" result="offsetblur" />
+              <feComponentTransfer>
+                <feFuncA type="linear" slope="0.2" />
+              </feComponentTransfer>
+              <feMerge>
+                <feMergeNode />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
           <!-- Horizontal gridlines -->
           <g v-for="tick in yTicks" :key="'grid-' + tick">
             <line
@@ -16,8 +29,9 @@
               :x2="svgWidth - margin.right"
               :y1="yScale(tick)"
               :y2="yScale(tick)"
-              stroke="#e5e7eb"
-              stroke-width="1"
+              stroke="#cbd5e1"
+              stroke-width="0.5"
+              stroke-dasharray="2,2"
             />
           </g>
 
@@ -32,6 +46,10 @@
               :width="barWidth"
               :height="segment.height"
               :fill="segment.color"
+              rx="4"
+              ry="4"
+              filter="url(#barShadow)"
+              class="chart-bar"
             />
             
             <!-- X-axis labels (hours) -->
@@ -106,7 +124,7 @@ export default {
   name: 'QueueActivityGraph',
   props: {
     axiosInstance: {
-      type: Object,
+      type: [Object, Function],
       required: true
     }
   },
@@ -119,16 +137,16 @@ export default {
     const margin = { top: 20, right: 20, bottom: 40, left: 50 }
     const barWidth = 35
     const barSpacing = 8
-    const svgHeight = 350
+    const svgHeight = 280 // Reduced from 450 to ensure 100vh fit
     
     // Status types with colors
     const statusTypes = ref([
-      { name: 'answered', label: 'Answered', color: '#22c55e' },
-      { name: 'abandoned', label: 'Abandoned', color: '#f59e0b' },
-      { name: 'ivr', label: 'IVR', color: '#3b82f6' },
-      { name: 'missed', label: 'Missed', color: '#ef4444' },
+      { name: 'answered', label: 'Answered', color: 'var(--success-color)' },
+      { name: 'abandoned', label: 'Abandoned', color: 'var(--warning-color)' },
+      { name: 'ivr', label: 'IVR', color: '#10b981' },
+      { name: 'missed', label: 'Missed', color: 'var(--danger-color)' },
       { name: 'noanswer', label: 'No Answer', color: '#8b5cf6' },
-      { name: 'dump', label: 'Dump', color: '#6b7280' },
+      { name: 'dump', label: 'Dump', color: 'var(--dark-gray)' },
       { name: 'voicemail', label: 'Voicemail', color: '#06b6d4' }
     ])
 
@@ -174,128 +192,69 @@ export default {
       
       const calls = rawData.value.calls
       const hours = rawData.value.calls_y[0]
-      
-      // Create hour labels and data structure
       const hourData = {}
       
-      // Initialize hours with proper formatting
+      // First pass: aggregate data and find max total
       hours.forEach(hourSeconds => {
         const hourSecondsNum = parseInt(hourSeconds)
         const hour = Math.floor(hourSecondsNum / 3600)
-        const hourLabel = `${hour.toString().padStart(2, '0')}:00`
-        
         hourData[hourSecondsNum] = {
-          label: hourLabel,
-          hourSeconds: hourSecondsNum,
+          label: `${hour.toString().padStart(2, '0')}:00`,
           statusCounts: {},
           total: 0
         }
-        
-        // Initialize all status counts to 0
-        statusTypes.value.forEach(status => {
-          hourData[hourSecondsNum].statusCounts[status.name] = 0
-        })
+        statusTypes.value.forEach(s => hourData[hourSecondsNum].statusCounts[s.name] = 0)
       })
       
-      // Fill in actual data - accumulate counts for same status/hour
       calls.forEach(([status, hourSeconds, count]) => {
-        const hourSecondsNum = parseInt(hourSeconds)
-        const countNum = parseInt(count) || 0
-        
-        if (hourData[hourSecondsNum] && statusTypes.value.find(s => s.name === status)) {
-          // Add to existing count (in case there are multiple entries)
-          hourData[hourSecondsNum].statusCounts[status] += countNum
-          hourData[hourSecondsNum].total += countNum
+        const hSec = parseInt(hourSeconds)
+        const cNum = parseInt(count) || 0
+        if (hourData[hSec] && statusTypes.value.find(s => s.name === status)) {
+          hourData[hSec].statusCounts[status] += cNum
+          hourData[hSec].total += cNum
         }
       })
+
+      const sorted = Object.values(hourData).sort((a, b) => a.hourSeconds - b.hourSeconds)
+      const maxTotal = Math.max(...sorted.map(h => h.total), 1)
       
-      // Sort by hour chronologically (0:00 to 23:00)
-      const sortedHours = Object.values(hourData).sort((a, b) => a.hourSeconds - b.hourSeconds)
-      
-      // Display processed data
-      console.log('Processed hour data:', sortedHours.map(h => ({ 
-        label: h.label, 
-        total: h.total, 
-        counts: h.statusCounts 
-      })))
-      
-      return sortedHours.map(hourInfo => {
+      // Second pass: scale heights based on maxTotal
+      return sorted.map(h => {
         const segments = []
         let currentY = svgHeight - margin.bottom
-        const availableHeight = svgHeight - margin.top - margin.bottom
+        const availH = svgHeight - margin.top - margin.bottom
         
-        // Debug: Log the data for one specific hour to see what's happening
-        if (hourInfo.label === '10:00') {
-          console.log(`DEBUG 10:00 hour data:`, hourInfo.statusCounts)
-          console.log(`DEBUG 10:00 total:`, hourInfo.total)
-          console.log(`DEBUG maxValue:`, maxValue.value)
-        }
-        
-        // Calculate segments from bottom to top in consistent order
-        statusTypes.value.forEach(status => {
-          const count = hourInfo.statusCounts[status.name] || 0
+        statusTypes.value.forEach(s => {
+          const count = h.statusCounts[s.name] || 0
           if (count > 0) {
-            const segmentHeight = (count / maxValue.value) * availableHeight
-            segments.push({
-              color: status.color,
-              height: segmentHeight,
-              y: currentY - segmentHeight,
-              value: count,
-              status: status.label
-            })
-            
-            // Debug: Log segment details for 10:00 hour
-            if (hourInfo.label === '10:00') {
-              console.log(`DEBUG 10:00 ${status.name}: count=${count}, height=${segmentHeight}, y=${currentY - segmentHeight}, color=${status.color}`)
-            }
-            
-            currentY -= segmentHeight
+            const segH = (count / maxTotal) * availH
+            segments.push({ color: s.color, height: segH, y: currentY - segH, value: count, status: s.label })
+            currentY -= segH
           }
         })
-        
-        // Debug: Log final segments for 10:00 hour
-        if (hourInfo.label === '10:00') {
-          console.log(`DEBUG 10:00 final segments:`, segments)
-        }
-        
-        return {
-          label: hourInfo.label,
-          segments: segments,
-          total: hourInfo.total
-        }
+        return { label: h.label, segments, total: h.total }
       })
     })
     
+    // Y scale function helper for labels
+    const yScale = (value) => {
+      const totals = chartBars.value.map(d => d.total)
+      const maxTotal = Math.max(...totals, 1)
+      return svgHeight - margin.bottom - (value / maxTotal) * (svgHeight - margin.top - margin.bottom)
+    }
+    // Generate Y-axis ticks
+    const yTicks = computed(() => {
+      const totals = chartBars.value.map(d => d.total)
+      const maxTotal = Math.max(...totals, 1)
+      const steps = 5
+      const stepValue = Math.ceil(maxTotal / steps)
+      return Array.from({ length: steps + 1 }, (_, i) => i * stepValue)
+    })
+
     // Dynamic width based on data count
     const svgWidth = computed(() =>
       Math.max(chartBars.value.length * (barWidth + barSpacing) + margin.left + margin.right, 600)
     )
-    
-    // Calculate max value for scaling
-    const maxValue = computed(() => {
-      if (chartBars.value.length === 0) {
-        console.log('DEBUG maxValue: chartBars is empty')
-        return 1
-      }
-      
-      const totals = chartBars.value.map(d => d.total)
-      console.log('DEBUG maxValue: All totals:', totals)
-      
-      const maxTotal = Math.max(...totals, 1)
-      console.log('Chart max value:', maxTotal)
-      return maxTotal
-    })
-    
-    // Y scale function
-    const yScale = (value) =>
-      svgHeight - margin.bottom - (value / maxValue.value) * (svgHeight - margin.top - margin.bottom)
-    
-    // Generate Y-axis ticks
-    const yTicks = computed(() => {
-      const steps = 5
-      const stepValue = Math.ceil(maxValue.value / steps)
-      return Array.from({ length: steps + 1 }, (_, i) => i * stepValue)
-    })
 
     // Lifecycle
     onMounted(() => {
@@ -328,33 +287,25 @@ export default {
 
 <style scoped>
 .analytics-card {
-  background: #ffffff;
-  border-radius: 12px;
+  background: white;
+  border-radius: var(--border-radius-lg);
   padding: 20px;
-  margin: 20px 0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.dark-mode .analytics-card {
-  background: #2d3748;
-  color: #e2e8f0;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
 }
 
 .card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   margin-bottom: 20px;
 }
 
 .section-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.dark-mode .section-title {
-  color: #f9fafb;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #1e293b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .loading-indicator, .error-indicator {

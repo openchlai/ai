@@ -1,27 +1,42 @@
 <template>
-  <div class="calls-cards-section">
+  <div class="calls-stats-section">
     <div class="section-header">
-      <h2 class="section-title">Today's Call Status</h2>
+      <h2 class="section-title">TODAY'S CALL STATUS</h2>
     </div>
-    <div class="calls-cards-grid">
-      <div v-if="loading" class="loading-message">
-        Loading call status data...
-      </div>
-      <div v-else-if="error" class="error-message">
-        Error loading call status: {{ error }}
-      </div>
-      <div v-else-if="cards.length === 0" class="no-data-message">
-        No call status data available
-      </div>
+    
+    <div v-if="loading" class="loading-state">
+      <div class="skeleton-ring" v-for="i in 6" :key="i"></div>
+    </div>
+    
+    <div v-else-if="error" class="error-state">
+      <p>Error loading call statistics: {{ error }}</p>
+    </div>
+    
+    <div 
+      v-else
+      class="calls-cards-grid"
+    >
       <div 
-        v-else
         v-for="card in cards" 
         :key="card.id"
-        :class="['call-status-card', `card-${card.variant}`]"
+        :class="['call-status-infographic', `card-${card.variant}`]"
       >
-        <div class="card-content">
-          <div class="card-count">{{ card.count }}</div>
-          <div class="card-label">{{ card.label }}</div>
+        <div class="infographic-container">
+          <svg viewBox="0 0 100 100" class="progress-ring">
+            <circle class="ring-track" cx="50" cy="50" r="45"></circle>
+            <circle 
+              class="ring-fill" 
+              cx="50" cy="50" r="45"
+              :style="{ 
+                strokeDashoffset: calculateOffset(card.count),
+                stroke: getVariantColor(card.variant) 
+              }"
+            ></circle>
+          </svg>
+          <div class="infographic-content">
+            <div class="card-count" :style="{ color: getVariantColor(card.variant) }">{{ card.count }}</div>
+            <div class="card-label">{{ card.label }}</div>
+          </div>
         </div>
       </div>
     </div>
@@ -45,239 +60,147 @@ export default {
       required: true,
       default: () => []
     }
+  },
+  setup() {
+    const calculateOffset = (count) => {
+      // Normalize count for visualization (max 500 for full ring for better visual impact)
+      const circumference = 2 * Math.PI * 45
+      const percentage = Math.min(count / 500, 1)
+      return circumference * (1 - percentage)
+    }
+
+    const getVariantColor = (variant) => {
+      const colors = {
+        'success': 'var(--success-color)',
+        'warning': 'var(--warning-color)',
+        'danger': 'var(--danger-color)',
+        'info': '#06b6d4',
+        'primary': 'var(--primary-color)',
+        'secondary': 'var(--dark-gray)'
+      }
+      return colors[variant] || 'var(--primary-color)'
+    }
+
+    return { calculateOffset, getVariantColor }
   }
 }
 </script>
 
 <style scoped>
-.calls-cards-section {
-  margin: 20px 0;
+.calls-stats-section {
+  width: 100%;
 }
 
 .section-header {
-  margin-bottom: 15px;
+  margin-bottom: var(--spacing-sm);
 }
 
 .section-title {
   font-size: 1.25rem;
-  font-weight: 600;
-  color: #1f2937;
+  font-weight: 800;
+  color: var(--primary-color);
   margin: 0;
-}
-
-.dark-mode .section-title {
-  color: #f9fafb;
 }
 
 .calls-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 15px;
-  margin-top: 15px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-sm);
 }
 
-.call-status-card {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 20px;
-  transition: transform 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+.call-status-infographic {
+  background: var(--card-bg);
+  border-radius: var(--border-radius-lg);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+  transition: var(--transition-smooth);
   position: relative;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.call-status-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+.infographic-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
 }
 
-.dark-mode .call-status-card {
-  background: #2d3748;
+.progress-ring {
+  width: 100%;
+  height: 100%;
 }
 
-.card-content {
+.ring-track {
+  fill: none;
+  stroke: var(--light-blue);
+  stroke-width: 8;
+}
+
+.ring-fill {
+  fill: none;
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke-dasharray: 282.7; /* 2 * PI * 45 */
+  transition: stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.infographic-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   text-align: center;
-  position: relative;
-  z-index: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .card-count {
-  font-size: 2.5rem;
-  font-weight: 700;
+  font-size: 2rem;
+  font-weight: 800;
   line-height: 1;
-  margin-bottom: 8px;
+  margin-bottom: 2px;
 }
 
 .card-label {
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: 0.7rem;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  opacity: 0.8;
+  color: var(--text-secondary);
+  max-width: 80px;
 }
 
-/* Card variants with enhanced visual styling */
-.card-success {
-  border-left: 4px solid #10b981;
+.loading-state {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--spacing-md);
 }
 
-.card-success .card-count {
-  color: #10b981;
+.skeleton-ring {
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  background: var(--soft-gray);
+  animation: pulse 1.5s infinite;
 }
 
-.card-warning {
-  border-left: 4px solid #f59e0b;
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
 }
 
-.card-warning .card-count {
-  color: #f59e0b;
-}
-
-.card-danger {
-  border-left: 4px solid #ef4444;
-}
-
-.card-danger .card-count {
-  color: #ef4444;
-}
-
-.card-info {
-  border-left: 4px solid #3b82f6;
-}
-
-.card-info .card-count {
-  color: #3b82f6;
-}
-
-.card-primary {
-  border-left: 4px solid #8b5cf6;
-}
-
-.card-primary .card-count {
-  color: #8b5cf6;
-}
-
-.card-secondary {
-  border-left: 4px solid #6b7280;
-}
-
-.card-secondary .card-count {
-  color: #6b7280;
-}
-
-/* Background gradient effects for cards */
-.card-success::after {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), transparent);
-}
-
-.card-warning::after {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), transparent);
-}
-
-.card-danger::after {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), transparent);
-}
-
-.card-info::after {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), transparent);
-}
-
-.card-primary::after {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.05), transparent);
-}
-
-.card-secondary::after {
-  background: linear-gradient(135deg, rgba(107, 114, 128, 0.05), transparent);
-}
-
-.call-status-card::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-  border-radius: 12px;
-}
-
-.loading-message, .error-message, .no-data-message {
-  grid-column: 1 / -1;
-  text-align: center;
-  padding: 20px;
-  border-radius: 8px;
-  background: #f8f9fa;
-  color: #6c757d;
-  font-weight: 500;
-}
-
-.error-message {
-  background: #fee;
-  color: #dc3545;
-}
-
-.dark-mode .loading-message,
-.dark-mode .no-data-message {
-  background: #374151;
-  color: #9ca3af;
-}
-
-.dark-mode .error-message {
-  background: #450a0a;
-  color: #f87171;
-}
-
-/* Pulse animation for active cards */
-.card-success:hover,
-.card-info:hover {
-  animation: subtle-glow 0.3s ease-in-out;
-}
-
-@keyframes subtle-glow {
-  0% {
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  }
-  100% {
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  }
-}
-
-/* Responsive design */
-@media (max-width: 768px) {
-  .calls-cards-grid {
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 12px;
-  }
-  
-  .call-status-card {
-    padding: 16px;
-  }
-  
+/* TV Optimization */
+@media screen and (min-width: 1920px) {
   .card-count {
-    font-size: 2rem;
+    font-size: 2.5rem;
   }
-  
   .card-label {
-    font-size: 0.8rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .calls-cards-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-  }
-  
-  .call-status-card {
-    padding: 14px;
-  }
-  
-  .card-count {
-    font-size: 1.8rem;
-  }
-  
-  .card-label {
-    font-size: 0.75rem;
+    font-size: 0.85rem;
   }
 }
 </style>

@@ -4,10 +4,7 @@ const username = "test";
 const password = "p@ssw0rd";
 
 const axiosInstance = axios.create({
-    baseURL:
-        import.meta.env.MODE === "development"
-            ? "/api-proxy"
-            : "https://helpline.sematanzania.org/helpline/",
+    baseURL: __APP_API_BASE_URL__,
     timeout: 10000,
     auth: { username, password },
     headers: {
@@ -31,12 +28,12 @@ export async function fetchCasesData() {
     try {
         const { data } = await axiosInstance.get("/api/wallonly/rpt", {
             params: {
-                
-              dash_period: "today",  // ← Add this back
+
+                dash_period: "today",  // ← Add this back
                 type: "bar",
                 stacked: "stacked",
                 xaxis: "hangup_status_txt",
-                yaxis: "-",  
+                yaxis: "-",
                 vector: 1,
                 rpt: "call_count",
                 metrics: "call_count",
@@ -65,9 +62,9 @@ export async function fetchCallsReportData() {
                 metrics: "call_count",
             },
         });
-        
+
         return data;
-        
+
     } catch (err) {
         console.error("Error fetching calls report data:", err.message);
         console.error("Full error:", err);
