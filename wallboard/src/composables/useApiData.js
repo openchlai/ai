@@ -6,24 +6,26 @@ export function useApiData(axiosInstance) {
   const apiData = ref(null)
   const apiError = ref(null)
   const apiLoading = ref(false)
-  
+
   // Calls report data state
   const callsReportData = ref(null)
   const callsReportError = ref(null)
   const callsReportLoading = ref(false)
 
-  // Fetch calls report data using the new function from axios.js
   const fetchCallsReportDataComposable = async () => {
-    callsReportLoading.value = true
+    // Only show loading if we don't have data yet
+    if (!callsReportData.value) {
+      callsReportLoading.value = true
+    }
     callsReportError.value = null
-    
+
     try {
       const data = await fetchCallsReportData()
-      
+
       if (data) {
         callsReportData.value = data
       } else {
-        throw new Error('No calls report data returned from API')
+        console.warn('API returned success but data was null/undefined')
       }
     } catch (error) {
       callsReportError.value = error.message
@@ -34,17 +36,21 @@ export function useApiData(axiosInstance) {
 
   // Fetch cases data using the corrected function from axios.js
   const fetchCasesDataComposable = async () => {
-    apiLoading.value = true
+    if (!apiData.value) {
+      apiLoading.value = true
+    }
     apiError.value = null
-    
+
     try {
       const data = await fetchFromApi()
-      
-      console.log('Fetched cases data:', data) 
-      if (data) {
+
+      // Validation: Check for presence of stats or reporting keys
+      const hasStats = data && (data.stats || data.calls_fmt || data.calls)
+
+      if (hasStats) {
         apiData.value = data
-      } else {
-        throw new Error('No data returned from API')
+      } else if (data) {
+        console.warn('API returned success but no case/stat metrics found:', data)
       }
     } catch (error) {
       apiError.value = error.message
@@ -59,7 +65,7 @@ export function useApiData(axiosInstance) {
     apiError,
     apiLoading,
     fetchCasesData: fetchCasesDataComposable,
-    
+
     // Calls report data  
     callsReportData,
     callsReportError,

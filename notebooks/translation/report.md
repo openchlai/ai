@@ -7,7 +7,11 @@ geometry: a4paper, margin=2cm
 
 # Comprehensive Translation Model Evaluation — Fine-Tuned vs. Base and General Models 
 
+<<<<<<< HEAD
 ## Table of Contents
+=======
+
+>>>>>>> 8bea044b8cd38cdbe201c1ef890b2fba052893ea
 
 
 - [Metric Definitions](#section-1-metric-definitions)
