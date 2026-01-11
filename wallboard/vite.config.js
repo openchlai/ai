@@ -7,12 +7,12 @@ import path from 'path'
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd(), '')
-    const apiTarget = env.VITE_API_TARGET || 'https://192.168.10.3'
-    const wsTarget = env.VITE_WS_TARGET || 'https://192.168.10.3:8384'
+    const apiTarget = env.VITE_API_TARGET || 'http://192.168.10.3'
+    const wsTarget = env.VITE_WS_TARGET || 'wss://192.168.10.3:8384'
     const prodWsUrl = env.VITE_PROD_WS_URL || 'wss://helpline.sematanzania.org/ami/sync?c=-2'
-    const agentStatusTarget = env.VITE_AGENT_STATUS_TARGET || 'http://192.168.8.201:8383'
-    const appBaseUrl = mode === 'development' ? '/api-proxy' : prodApiUrl
-    const agentStatusUrl = mode === 'development' ? '/agent-proxy' : agentStatusTarget
+    const agentStatusTarget = env.VITE_AGENT_STATUS_TARGET || 'http://192.168.10.3:8383'
+    const appBaseUrl = mode === 'development' ? '/api-proxy' : '/wallboard'
+    const agentStatusUrl = mode === 'development' ? '/agent-proxy' : '/ami'
 
     // Determine WS URL based on environment
     const appWsUrl = mode === 'development'
@@ -36,7 +36,7 @@ export default defineConfig(({ mode }) => {
                     target: apiTarget,
                     changeOrigin: true,
                     secure: false,
-                    rewrite: (path) => path.replace(/^\/api-proxy/, '/helpline'),
+                    rewrite: (path) => path.replace(/^\/api-proxy/, '/helpline/api/wallonly'),
                     configure: (proxy, options) => {
                         proxy.on('proxyReq', (_proxyReq, req) => {
                             console.log(`[proxy] ${req.method} ${req.url} -> ${proxy.target}${req.url}`);

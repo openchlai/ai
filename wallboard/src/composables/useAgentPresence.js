@@ -89,6 +89,9 @@ export function useAgentPresence() {
             console.log('Agent Presence API Response:', response.data)
 
             if (response.data) {
+                if (response.data.channels && Object.values(response.data.channels).length > 0) {
+                    console.log('Raw Channel Array Sample:', Object.values(response.data.channels)[0])
+                }
                 agentPresenceChannels.value = parseAmiData(response.data)
             }
         } catch (err) {

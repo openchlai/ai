@@ -1,37 +1,21 @@
 <template>
   <div class="analytics-card">
-    <div class="card-header">
-      <div class="section-title">Queue Activity - Today</div>
-      <div v-if="loading" class="loading-indicator">Loading...</div>
-      <div v-if="error" class="error-indicator">{{ error }}</div>
-    </div>
+    <div v-if="loading" class="loading-indicator">Updating live trends...</div>
+    <div v-if="error" class="error-indicator">{{ error }}</div>
 
-    <div class="chart-container" v-if="!loading && !error">
+    <div class="chart-container" v-if="rawData || (!loading && !error)">
       <div class="chart-scroll">
-        <svg :width="svgWidth" :height="svgHeight">
-          <defs>
-            <filter id="barShadow" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur in="SourceAlpha" stdDeviation="2" />
-              <feOffset dx="0" dy="2" result="offsetblur" />
-              <feComponentTransfer>
-                <feFuncA type="linear" slope="0.2" />
-              </feComponentTransfer>
-              <feMerge>
-                <feMergeNode />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
+        <svg width="100%" height="100%" :viewBox="`0 0 ${viewWidth} ${logicalHeight}`" preserveAspectRatio="xMinYMid meet">
           <!-- Horizontal gridlines -->
           <g v-for="tick in yTicks" :key="'grid-' + tick">
             <line
               :x1="margin.left"
-              :x2="svgWidth - margin.right"
+              :x2="viewWidth - margin.right"
               :y1="yScale(tick)"
               :y2="yScale(tick)"
-              stroke="#cbd5e1"
-              stroke-width="0.5"
-              stroke-dasharray="2,2"
+              stroke="#e2e8f0"
+              stroke-width="1"
+              stroke-dasharray="4,4"
             />
           </g>
 
@@ -46,19 +30,19 @@
               :width="barWidth"
               :height="segment.height"
               :fill="segment.color"
-              rx="4"
-              ry="4"
-              filter="url(#barShadow)"
+              rx="2"
+              ry="2"
               class="chart-bar"
             />
             
             <!-- X-axis labels (hours) -->
             <text
               :x="margin.left + hourIndex * (barWidth + barSpacing) + barWidth / 2"
-              :y="svgHeight - margin.bottom + 15"
+              :y="logicalHeight - margin.bottom + 20"
               text-anchor="middle"
-              font-size="10"
-              fill="#6b7280"
+              font-size="12"
+              font-weight="600"
+              fill="#64748b"
             >
               {{ hourData.label }}
             </text>
@@ -67,11 +51,12 @@
           <!-- Y-axis labels -->
           <g v-for="tick in yTicks" :key="'ylabel-' + tick">
             <text
-              :x="margin.left - 5"
-              :y="yScale(tick) + 3"
+              :x="margin.left - 10"
+              :y="yScale(tick) + 4"
               text-anchor="end"
-              font-size="10"
-              fill="#6b7280"
+              font-size="11"
+              font-weight="600"
+              fill="#64748b"
             >
               {{ tick }}
             </text>
@@ -80,11 +65,11 @@
           <!-- X-axis line -->
           <line
             :x1="margin.left"
-            :x2="svgWidth - margin.right"
-            :y1="svgHeight - margin.bottom"
-            :y2="svgHeight - margin.bottom"
-            stroke="#374151"
-            stroke-width="1.2"
+            :x2="viewWidth - margin.right"
+            :y1="logicalHeight - margin.bottom"
+            :y2="logicalHeight - margin.bottom"
+            stroke="#94a3b8"
+            stroke-width="2"
           />
 
           <!-- Y-axis line -->
@@ -92,30 +77,29 @@
             :x1="margin.left"
             :x2="margin.left"
             :y1="margin.top"
-            :y2="svgHeight - margin.bottom"
-            stroke="#374151"
-            stroke-width="1.2"
+            :y2="logicalHeight - margin.bottom"
+            stroke="#94a3b8"
+            stroke-width="2"
           />
         </svg>
       </div>
     </div>
 
-    <!-- Legend -->
-    <div class="chart-legend" v-if="!loading && !error">
+    <!-- Dynamic Multi-Signal Legend -->
+    <div class="chart-legend">
       <div 
         v-for="status in statusTypes" 
         :key="status.name"
         class="legend-item"
       >
-        <span 
-          class="legend-color" 
-          :style="{ backgroundColor: status.color }"
-        ></span>
+        <span class="legend-indicator" :style="{ backgroundColor: status.color }"></span>
         <span class="legend-label">{{ status.label }}</span>
       </div>
     </div>
   </div>
 </template>
+
+
 
 <script>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
@@ -133,30 +117,28 @@ export default {
     const error = ref(null)
     const rawData = ref(null)
     
-    // Chart dimensions & spacing
-    const margin = { top: 20, right: 20, bottom: 40, left: 50 }
-    const barWidth = 35
-    const barSpacing = 8
-    const svgHeight = 280 // Reduced from 450 to ensure 100vh fit
+    // Logical Dimensions (Coordinate System) - Scales via CSS
+    const margin = { top: 20, right: 20, bottom: 50, left: 50 }
+    const barWidth = 40
+    const barSpacing = 12
+    const logicalHeight = 400 // Canvas height for clearer resolution
     
-    // Status types with colors
+    // Vibrant Data Signals
     const statusTypes = ref([
-      { name: 'answered', label: 'Answered', color: 'var(--success-color)' },
-      { name: 'abandoned', label: 'Abandoned', color: 'var(--warning-color)' },
-      { name: 'ivr', label: 'IVR', color: '#10b981' },
-      { name: 'missed', label: 'Missed', color: 'var(--danger-color)' },
-      { name: 'noanswer', label: 'No Answer', color: '#8b5cf6' },
-      { name: 'dump', label: 'Dump', color: 'var(--dark-gray)' },
-      { name: 'voicemail', label: 'Voicemail', color: '#06b6d4' }
+      { name: 'answered', label: 'Answered', color: '#0E7337', aliases: ['answered'] },
+      { name: 'abandoned', label: 'Abandoned', color: '#D35400', aliases: ['abandoned'] },
+      { name: 'ivr', label: 'IVR', color: '#1D3E8A', aliases: ['ivr'] },
+      { name: 'missed', label: 'Missed', color: '#C0392B', aliases: ['missed'] },
+      { name: 'noanswer', label: 'No Answer', color: '#E11D48', aliases: ['noanswer'] },
+      { name: 'dump', label: 'Hangup', color: '#991B1B', aliases: ['dump', 'hangup', 'disconnect'] },
+      { name: 'voicemail', label: 'Voicemail', color: '#10B981', aliases: ['voicemail'] }
     ])
 
-    // Fetch graph data
     const fetchGraphData = async () => {
       loading.value = true
       error.value = null
-      
       try {
-        const response = await props.axiosInstance.get('api/wallonly/rpt', {
+        const response = await props.axiosInstance.get('/rpt', {
           params: {
             dash_period: 'today',
             type: 'bar',
@@ -168,49 +150,45 @@ export default {
             metrics: 'call_count'
           }
         })
-        
-        // Display received data
-        console.log('SVG Graph API Response:', response.data)
-        console.log('Calls array:', response.data?.calls || [])
-        console.log('Hours array (calls_y):', response.data?.calls_y?.[0] || [])
-        
         rawData.value = response.data
-        
       } catch (err) {
-        console.error('Error fetching SVG graph data:', err)
+        console.error('Error fetching graph data:', err)
         error.value = err.message
       } finally {
         loading.value = false
       }
     }
 
-    // Process data into chart format
     const chartBars = computed(() => {
-      if (!rawData.value?.calls || !rawData.value?.calls_y?.[0]) {
-        return []
-      }
+      if (!rawData.value?.calls || !rawData.value?.calls_y?.[0]) return []
       
       const calls = rawData.value.calls
       const hours = rawData.value.calls_y[0]
       const hourData = {}
       
-      // First pass: aggregate data and find max total
+      // Initialize hours
       hours.forEach(hourSeconds => {
-        const hourSecondsNum = parseInt(hourSeconds)
-        const hour = Math.floor(hourSecondsNum / 3600)
-        hourData[hourSecondsNum] = {
+        const hSec = parseInt(hourSeconds)
+        const hour = Math.floor(hSec / 3600)
+        hourData[hSec] = {
           label: `${hour.toString().padStart(2, '0')}:00`,
           statusCounts: {},
           total: 0
         }
-        statusTypes.value.forEach(s => hourData[hourSecondsNum].statusCounts[s.name] = 0)
+        statusTypes.value.forEach(s => hourData[hSec].statusCounts[s.name] = 0)
       })
       
+      // Aggregate Data with Alias Support
       calls.forEach(([status, hourSeconds, count]) => {
         const hSec = parseInt(hourSeconds)
         const cNum = parseInt(count) || 0
-        if (hourData[hSec] && statusTypes.value.find(s => s.name === status)) {
-          hourData[hSec].statusCounts[status] += cNum
+        const sStr = String(status).toLowerCase()
+        
+        // Find matching status config by alias
+        const config = statusTypes.value.find(type => type.aliases.some(alias => sStr.includes(alias)))
+        
+        if (hourData[hSec] && config) {
+          hourData[hSec].statusCounts[config.name] += cNum
           hourData[hSec].total += cNum
         }
       })
@@ -218,68 +196,59 @@ export default {
       const sorted = Object.values(hourData).sort((a, b) => a.hourSeconds - b.hourSeconds)
       const maxTotal = Math.max(...sorted.map(h => h.total), 1)
       
-      // Second pass: scale heights based on maxTotal
-      return sorted.map(h => {
+      // Generate Segments
+      return sorted.map((h, i) => {
         const segments = []
-        let currentY = svgHeight - margin.bottom
-        const availH = svgHeight - margin.top - margin.bottom
+        let currentY = logicalHeight - margin.bottom
+        const availH = logicalHeight - margin.top - margin.bottom
         
         statusTypes.value.forEach(s => {
           const count = h.statusCounts[s.name] || 0
           if (count > 0) {
             const segH = (count / maxTotal) * availH
-            segments.push({ color: s.color, height: segH, y: currentY - segH, value: count, status: s.label })
+            segments.push({
+              color: s.color,
+              height: segH,
+              y: currentY - segH,
+              value: count,
+              status: s.label
+            })
             currentY -= segH
           }
         })
-        return { label: h.label, segments, total: h.total }
+        return { label: h.label, segments, total: h.total, index: i }
       })
     })
-    
-    // Y scale function helper for labels
+
     const yScale = (value) => {
       const totals = chartBars.value.map(d => d.total)
-      const maxTotal = Math.max(...totals, 1)
-      return svgHeight - margin.bottom - (value / maxTotal) * (svgHeight - margin.top - margin.bottom)
+      const maxTotal = Math.max(...totals, 5) // Ensure at least 5 lines
+      const availH = logicalHeight - margin.top - margin.bottom
+      return (logicalHeight - margin.bottom) - (value / maxTotal) * availH
     }
-    // Generate Y-axis ticks
+
     const yTicks = computed(() => {
       const totals = chartBars.value.map(d => d.total)
-      const maxTotal = Math.max(...totals, 1)
+      const maxTotal = Math.max(...totals, 5)
       const steps = 5
       const stepValue = Math.ceil(maxTotal / steps)
-      return Array.from({ length: steps + 1 }, (_, i) => i * stepValue)
+      return Array.from({ length: steps + 1 }, (_, i) => i * stepValue).filter(v => v <= maxTotal)
     })
 
-    // Dynamic width based on data count
-    const svgWidth = computed(() =>
+    const viewWidth = computed(() => 
       Math.max(chartBars.value.length * (barWidth + barSpacing) + margin.left + margin.right, 600)
     )
 
-    // Lifecycle
     onMounted(() => {
       fetchGraphData()
-      
-      // Auto-refresh every 5 minutes
-      const refreshInterval = setInterval(fetchGraphData, 300000)
-      
-      onBeforeUnmount(() => {
-        clearInterval(refreshInterval)
-      })
+      const interval = setInterval(fetchGraphData, 300000)
+      onBeforeUnmount(() => clearInterval(interval))
     })
 
     return {
-      loading,
-      error,
-      chartBars,
-      statusTypes,
-      margin,
-      barWidth,
-      barSpacing,
-      svgWidth,
-      svgHeight,
-      yScale,
-      yTicks
+      loading, error, chartBars, statusTypes, margin,
+      barWidth, barSpacing, viewWidth, logicalHeight,
+      yScale, yTicks
     }
   }
 }
@@ -287,106 +256,75 @@ export default {
 
 <style scoped>
 .analytics-card {
-  background: white;
-  border-radius: var(--border-radius-lg);
-  padding: 20px;
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--border-color);
+  flex: 1;
   display: flex;
   flex-direction: column;
-}
-
-.card-header {
-  margin-bottom: 20px;
-}
-
-.section-title {
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: #1e293b;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.loading-indicator, .error-indicator {
-  font-size: 0.875rem;
-  padding: 8px 12px;
-  border-radius: 6px;
-}
-
-.loading-indicator {
-  color: #6b7280;
-  background: #f3f4f6;
-}
-
-.error-indicator {
-  color: #dc2626;
-  background: #fef2f2;
+  padding: 24px;
+  background: white;
 }
 
 .chart-container {
-  overflow-x: auto;
-  margin-bottom: 20px;
+  flex: 1;
+  width: 100%;
+  position: relative;
+  min-height: 0;
 }
 
 .chart-scroll {
-  display: inline-block;
-  min-width: 100%;
+  width: 100%;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
+/* Institutional Axis & Grid */
+.grid-line {
+  stroke: var(--status-neutral);
+  stroke-width: 1;
+}
+
+/* Institutional Legend Styling */
 .chart-legend {
   display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
   justify-content: center;
-  border-top: 1px solid #e5e7eb;
-  padding-top: 16px;
-}
-
-.dark-mode .chart-legend {
-  border-top-color: #4b5563;
+  flex-wrap: wrap;
+  gap: 20px 30px;
+  padding: 20px 0;
+  border-top: 1px solid var(--border-color, #e2e8f0);
+  margin-top: auto;
 }
 
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
-.legend-color {
+.legend-indicator {
+  display: inline-block;
   width: 12px;
   height: 12px;
   border-radius: 2px;
 }
 
 .legend-label {
-  font-size: 0.875rem;
-  color: #6b7280;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-main);
 }
 
-.dark-mode .legend-label {
-  color: #9ca3af;
+.loading-indicator, .error-indicator {
+  padding: 40px;
+  text-align: center;
+  font-weight: 900;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 2px;
 }
 
-/* Dark mode styles */
-.dark-mode .loading-indicator {
-  background: #374151;
-  color: #9ca3af;
-}
-
-.dark-mode .error-indicator {
-  background: #450a0a;
-  color: #f87171;
-}
-
-/* Responsive design */
-@media (max-width: 768px) {
-  .chart-legend {
-    gap: 12px;
-  }
-  
-  .legend-item {
-    font-size: 0.75rem;
-  }
+@media screen and (min-width: 1920px) {
+  .legend-label { font-size: 1rem; }
 }
 </style>

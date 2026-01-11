@@ -1,29 +1,34 @@
 <template>
-  <div class="callers-section">
-    <div class="minimal-section-header">
-      <h2 class="title-red">Calls in Queue</h2>
-      <div class="count-circle-red">{{ onlineCount }}</div>
-    </div>
-    <div class="callers-table minimal-table">
-      <!-- Minimalist view: headers removed to match screenshot -->
-      <div class="table-body" ref="tableContainer">
-        <div v-if="callers.length === 0" class="no-callers-row">
-          <div class="no-callers-text">No callers currently in queue</div>
-        </div>
-        <div 
+  <div class="table-v-wrapper">
+    <table class="caller-table">
+      <thead>
+        <tr>
+          <th class="th-agent">AGENT</th>
+          <th class="th-num">CALLER ID</th>
+          <th class="th-status">STATUS</th>
+          <th class="th-time">WAIT TIME</th>
+        </tr>
+      </thead>
+      <tbody class="scrollable-tbody" ref="tableContainer">
+        <tr v-if="callers.length === 0">
+          <td colspan="4" class="no-callers">No active calls in queue</td>
+        </tr>
+        <tr 
           v-for="caller in callers" 
           :key="caller.id"
-          :class="['minimal-row', { 
-            'is-queueing': caller.queueStatus === 'In Queue',
-            'is-connected': caller.queueStatus === 'On Call'
-          }]"
+          class="caller-row"
         >
-          <div class="minimal-col-num">{{ formatNumber(caller.callerNumber) }}</div>
-          <div class="minimal-col-status">{{ caller.queueStatus }}</div>
-          <div class="minimal-col-time">{{ caller.waitTime }}</div>
-        </div>
-      </div>
-    </div>
+          <td class="td-agent">{{ caller.agentExtension || '-' }}</td>
+          <td class="td-num">{{ formatNumber(caller.callerNumber) }}</td>
+          <td class="td-status">
+            <span :class="['status-pill', getStatusClass(caller.queueStatus)]">
+              {{ caller.queueStatus }}
+            </span>
+          </td>
+          <td class="td-time">{{ caller.waitTime }}</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </template>
 
@@ -42,6 +47,10 @@ export default {
       type: Number,
       required: true,
       default: 0
+    },
+    queuedCount: {
+      type: Number,
+      default: 0
     }
   },
   setup(props) {
@@ -50,8 +59,21 @@ export default {
 
     const formatNumber = (num) => {
       if (!num || num === '--') return '--'
-      // Basic formatting for visibility
-      return num.replace(/(\d{3})(\d{3})(\d+)/, '$1-$2-$3')
+      
+      const countryCode = import.meta.env.VITE_COUNTRY_CODE || '255'
+      
+      // Remove all non-digit characters
+      let clean = num.toString().replace(/\D/g, '')
+      
+      // Normalize specific patterns to International format
+      if (clean.startsWith('0')) {
+        clean = countryCode + clean.substring(1)
+      } else if (!clean.startsWith(countryCode)) {
+        clean = countryCode + clean
+      }
+      
+      // Return with plus prefix: +255723456789
+      return '+' + clean
     }
 
     const setupAutoScroll = (container, scrollSpeed = 0.8, pauseDuration = 2500) => {
@@ -106,6 +128,12 @@ export default {
 
     return { tableContainer, formatNumber }
   },
+  computed: {
+    // Helper to find connected agent for UI display
+    getConnectedAgent(caller) {
+      return caller.agentExtension || '--'
+    }
+  },
   methods: {
     getStatusClass(status) {
       const s = (status || 'queue').toString().toLowerCase()
@@ -119,90 +147,98 @@ export default {
 </script>
 
 <style scoped>
-.minimal-section-header {
+.table-v-wrapper {
+  flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 5px 10px 5px;
-  border-bottom: 2px solid #eee;
-  margin-bottom: 5px;
+  flex-direction: column;
+  min-height: 0;
+  overflow-x: auto;
 }
 
-.title-red {
-  color: #e11d48;
-  font-size: 1.5rem;
-  font-weight: 800;
-  margin: 0;
-}
-
-.count-circle-red {
-  background: #e11d48;
-  color: white;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+.caller-table {
+  width: 100%;
+  border-collapse: collapse;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 900;
-  font-size: 1.1rem;
+  flex-direction: column;
+  height: 100%;
 }
 
-.minimal-table {
-  background: transparent !important;
-  box-shadow: none !important;
-  border: none !important;
+.caller-table thead, .caller-table tbody tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
 }
 
-.minimal-row {
-  display: grid;
-  grid-template-columns: 1.5fr 1fr 100px;
-  padding: 14px 10px;
-  border-bottom: 1px solid #efefef;
-  align-items: center;
-  font-weight: 700;
-  color: #334155;
-  font-size: 1.1rem;
+.caller-table tbody {
+  display: block;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
 }
 
-.is-queueing {
-  color: #e11d48 !important;
-}
-
-.is-connected {
-  color: #10b981 !important; /* Green for connected calls */
-}
-
-.minimal-col-num {
+.caller-table thead th {
+  background: var(--bg-color);
+  color: var(--text-muted);
+  padding: 10px 12px;
   text-align: left;
-}
-
-.minimal-col-status {
-  text-align: right;
-  padding-right: 20px;
-}
-
-.minimal-col-time {
-  text-align: right;
+  font-size: 0.75rem;
   font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid var(--border-color);
 }
 
-.no-callers-row {
-  padding: 40px;
-  text-align: center;
+.caller-row td {
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
 }
 
-.no-callers-text {
-  color: #94a3b8;
-  font-style: italic;
+.td-agent {
+  font-weight: 800;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.td-num {
+  font-weight: 900;
+  color: var(--text-main);
+  font-size: 1.1rem;
+  letter-spacing: -0.02em;
+}
+
+.status-pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+/* Status Pill Colors - Brand Aligned */
+.status-inqueue { background: #FFEBEE; color: #C0392B; border: 1px solid #FFCDD2; }
+.status-ringing { background: #FFEBEE; color: #C0392B; border: 1px solid #FFCDD2; }
+.status-oncall { background: #E8F5E9; color: #0E7337; border: 1px solid #A5D6A7; }
+.status-neutral { background: var(--bg-color); color: var(--text-muted); border: 1px solid var(--border-color); }
+
+.td-time {
+  font-weight: 800;
+  color: var(--text-main);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
   font-size: 1rem;
 }
 
-/* TV Optimization */
-@media screen and (min-width: 1920px) {
-  .callers-grid {
-    padding: 16px 24px;
-    grid-template-columns: 1.5fr 1fr 120px 160px;
-  }
+.no-callers {
+  padding: 40px;
+  text-align: center;
+  color: var(--text-muted);
+  font-style: italic;
 }
+
+.dark-mode .caller-table thead th { background: var(--card-bg); color: var(--text-muted); }
+.dark-mode .caller-row td { border-bottom-color: var(--border-color); }
+.dark-mode .td-num, .dark-mode .td-time { color: white; }
 </style>

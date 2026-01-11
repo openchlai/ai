@@ -12,18 +12,20 @@ export function useCounsellorData(axiosInstance) {
   const fetchCounsellorStats = async (extension) => {
     if (!extension || extension === '--') return
 
-    // Don't fetch if already loading or cached
-    if (statsLoadingStates[extension] || counsellorStats[extension]) return
+    // Don't fetch if already loading
+    if (statsLoadingStates[extension]) return
 
     try {
       statsLoadingStates[extension] = true
 
-      const response = await axiosInstance.get('/api/wallonly/', {
+      const response = await axiosInstance.get('/rpt', {
         params: {
           exten: extension,
           stats: 1
         }
       })
+
+      console.log(`Stats Response for ${extension}:`, response.data)
 
       if (response.data && response.data.stats && response.data.stats.length > 0) {
         const statsData = response.data.stats[0]
@@ -52,13 +54,14 @@ export function useCounsellorData(axiosInstance) {
   const fetchCounsellorName = async (extension) => {
     if (!extension || extension === '--') return
 
-    // Don't fetch if already loading or cached
-    if (nameLoadingStates[extension] || counsellorNames[extension]) return
+    // Don't fetch if already loading OR if we already have a valid name (not 'Unknown')
+    const currentName = counsellorNames[extension]
+    if (nameLoadingStates[extension] || (currentName && currentName !== 'Unknown')) return
 
     try {
       nameLoadingStates[extension] = true
 
-      const response = await axiosInstance.get('/api/wallonly/', {
+      const response = await axiosInstance.get('/rpt', {
         params: {
           exten: extension,
           _c: 1

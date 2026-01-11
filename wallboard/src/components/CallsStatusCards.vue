@@ -1,14 +1,10 @@
 <template>
   <div class="calls-stats-section">
-    <div class="section-header">
-      <h2 class="section-title">TODAY'S CALL STATUS</h2>
+    <div v-if="loading && cards.length === 0" class="loading-state">
+      <div class="skeleton-card" v-for="i in 8" :key="i"></div>
     </div>
     
-    <div v-if="loading" class="loading-state">
-      <div class="skeleton-ring" v-for="i in 6" :key="i"></div>
-    </div>
-    
-    <div v-else-if="error" class="error-state">
+    <div v-else-if="error && cards.length === 0" class="error-state">
       <p>Error loading call statistics: {{ error }}</p>
     </div>
     
@@ -19,24 +15,14 @@
       <div 
         v-for="card in cards" 
         :key="card.id"
-        :class="['call-status-infographic', `card-${card.variant}`]"
+        class="status-card-horizontal"
       >
-        <div class="infographic-container">
-          <svg viewBox="0 0 100 100" class="progress-ring">
-            <circle class="ring-track" cx="50" cy="50" r="45"></circle>
-            <circle 
-              class="ring-fill" 
-              cx="50" cy="50" r="45"
-              :style="{ 
-                strokeDashoffset: calculateOffset(card.count),
-                stroke: getVariantColor(card.variant) 
-              }"
-            ></circle>
-          </svg>
-          <div class="infographic-content">
-            <div class="card-count" :style="{ color: getVariantColor(card.variant) }">{{ card.count }}</div>
-            <div class="card-label">{{ card.label }}</div>
-          </div>
+        <div class="card-icon-side" :style="{ backgroundColor: card.color }">
+          <div class="status-icon" v-html="getIcon(card.status)"></div>
+        </div>
+        <div class="card-content-side">
+          <div class="card-label">{{ card.label }}</div>
+          <div class="card-count">{{ card.count }}</div>
         </div>
       </div>
     </div>
@@ -47,41 +33,26 @@
 export default {
   name: 'CallsStatusCards',
   props: {
-    loading: {
-      type: Boolean,
-      default: false
-    },
-    error: {
-      type: String,
-      default: null
-    },
-    cards: {
-      type: Array,
-      required: true,
-      default: () => []
-    }
+    loading: { type: Boolean, default: false },
+    error: { type: String, default: null },
+    cards: { type: Array, required: true, default: () => [] }
   },
   setup() {
-    const calculateOffset = (count) => {
-      // Normalize count for visualization (max 500 for full ring for better visual impact)
-      const circumference = 2 * Math.PI * 45
-      const percentage = Math.min(count / 500, 1)
-      return circumference * (1 - percentage)
-    }
-
-    const getVariantColor = (variant) => {
-      const colors = {
-        'success': 'var(--success-color)',
-        'warning': 'var(--warning-color)',
-        'danger': 'var(--danger-color)',
-        'info': '#06b6d4',
-        'primary': 'var(--primary-color)',
-        'secondary': 'var(--dark-gray)'
+    const getIcon = (status) => {
+      const s = String(status).toUpperCase()
+      const icons = {
+        'ANSWERED': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 11l3 3L22 4m-2 16H4a2 2 0 01-2-2V4a2 2 0 012-2h9l-3 3H4v14h14v-7l3-3v10a2 2 0 01-2 2z"></path></svg>`,
+        'ABANDONED': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 8l-4 4m0 0l-4 4m4-4l4 4m-4-4l-4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`,
+        'DUMP': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18.36 6.64a9 9 0 11-12.73 0M12 2v10"></path></svg>`,
+        'IVR': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>`,
+        'MISSED': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`,
+        'NOANSWER': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`,
+        'VOICEMAIL': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>`,
+        'TOTAL': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>`
       }
-      return colors[variant] || 'var(--primary-color)'
+      return icons[s] || `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>` // Fallback phone
     }
-
-    return { calculateOffset, getVariantColor }
+    return { getIcon }
   }
 }
 </script>
@@ -91,100 +62,88 @@ export default {
   width: 100%;
 }
 
-.section-header {
-  margin-bottom: var(--spacing-sm);
-}
-
-.section-title {
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: var(--primary-color);
-  margin: 0;
-}
-
 .calls-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: var(--spacing-md);
-  margin-top: var(--spacing-sm);
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
 }
 
-.call-status-infographic {
+.status-card-horizontal {
+  display: flex;
   background: var(--card-bg);
-  border-radius: var(--border-radius-lg);
-  padding: 16px;
+  border-radius: var(--border-radius-sm);
+  overflow: hidden;
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--border-color);
-  transition: var(--transition-smooth);
-  position: relative;
+  height: 60px;
+  transition: transform 0.2s ease;
+}
+
+.status-card-horizontal:hover {
+  transform: translateY(-1px);
+}
+
+.card-icon-side {
+  width: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.phone-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.card-content-side {
+  flex-grow: 1;
+  padding: 8px 12px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-}
-
-.infographic-container {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1 / 1;
-}
-
-.progress-ring {
-  width: 100%;
-  height: 100%;
-}
-
-.ring-track {
-  fill: none;
-  stroke: var(--light-blue);
-  stroke-width: 8;
-}
-
-.ring-fill {
-  fill: none;
-  stroke-width: 8;
-  stroke-linecap: round;
-  stroke-dasharray: 282.7; /* 2 * PI * 45 */
-  transition: stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.infographic-content {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.card-count {
-  font-size: 2rem;
-  font-weight: 800;
-  line-height: 1;
-  margin-bottom: 2px;
+  justify-content: center;
 }
 
 .card-label {
-  font-size: 0.7rem;
-  font-weight: 700;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-secondary);
-  max-width: 80px;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+
+.card-count {
+  font-size: clamp(1rem, 2.5vw, 1.8rem);
+  font-weight: 900;
+  color: var(--text-main);
+  line-height: 1;
+}
+
+@media screen and (min-width: 1440px) {
+  .calls-cards-grid {
+    grid-template-columns: repeat(7, 1fr);
+  }
+}
+
+@media screen and (min-width: 1920px) {
+  .status-card-horizontal { height: clamp(60px, 6vh, 80px); }
+  .card-icon-side { width: clamp(42px, 5vw, 60px); }
+  .phone-icon { width: clamp(18px, 2vw, 24px); height: clamp(18px, 2vw, 24px); }
 }
 
 .loading-state {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: var(--spacing-md);
+  grid-template-columns: repeat(7, 1fr);
+  gap: 12px;
 }
 
-.skeleton-ring {
-  aspect-ratio: 1 / 1;
-  border-radius: 50%;
-  background: var(--soft-gray);
+.skeleton-card {
+  height: 60px;
+  background: var(--border-color);
+  opacity: 0.2;
+  border-radius: var(--border-radius-sm);
   animation: pulse 1.5s infinite;
 }
 
@@ -192,15 +151,5 @@ export default {
   0% { opacity: 0.6; }
   50% { opacity: 1; }
   100% { opacity: 0.6; }
-}
-
-/* TV Optimization */
-@media screen and (min-width: 1920px) {
-  .card-count {
-    font-size: 2.5rem;
-  }
-  .card-label {
-    font-size: 0.85rem;
-  }
 }
 </style>

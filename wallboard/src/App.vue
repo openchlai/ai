@@ -1,59 +1,92 @@
 <template>
   <div class="container" :class="{ 'dark-mode': isDarkMode }">
-    <!-- Dynamic edge-to-edge layout, header minimized to gain space -->
     <WallboardHeader 
-      class="compact-tv-header"
+      :is-dark-mode="isDarkMode" 
+      @toggle-theme="toggleDarkMode" 
       :connection-status="connectionClass"
       :connection-label="connectionLabel"
       :last-update="lastUpdate"
-      :is-dark-mode="isDarkMode"
-      @toggle-theme="toggleDarkMode"
       @reconnect="handleReconnect"
     />
 
-    <OperationalKPIs 
-      :calls-in-queue="inQueueBadgeCount"
-      :longest-wait-seconds="longestWaitSeconds"
-      :active-calls="onCallCounsellorsCount"
-      :available-agents="availableAgentsCount"
-      :hangup-cards="callsCardsMapped"
-      :service-level="serviceLevelValue"
-      :voice-load="voiceLoadValue"
-      :wa-load="waLoadValue"
-    />
-
-    <!-- Main Content Area: 3-Column Command Center Split -->
     <div class="dashboard-body">
-      <!-- Column 1: Situational Awareness (Squeezed Stacked Tables) -->
-      <div class="column situational-tables">
-        <div class="table-v-wrap">
-          <CounsellorsTable 
-            :counsellors="paginatedCounsellors"
-            :online-count="onlineCounsellorsCount"
-          />
-          <div class="pagination-indicator" v-if="counsellorTotalPages > 1">
-            Page {{ counsellorPage + 1 }} / {{ counsellorTotalPages }}
-          </div>
-        </div>
-        <div class="table-v-wrap">
-          <CallersTable 
-            :callers="paginatedCallers"
-            :online-count="inQueueBadgeCount"
-          />
-          <div class="pagination-indicator" v-if="callerTotalPages > 1">
-            Page {{ callerPage + 1 }} / {{ callerTotalPages }}
-          </div>
-        </div>
+      <!-- Tier 1: Top KPIs (4 Cards) -->
+      <div class="stats-overview">
+        <TopStatsRow 
+          :calls-in-queue="inQueueBadgeCount"
+          :longest-wait-seconds="longestWaitSeconds"
+          :active-calls="onCallCounsellorsCount"
+          :available-agents="availableAgentsCount"
+        />
       </div>
 
-      <!-- Column 2: Trends & Activity (Centered) -->
-      <div class="column activity-trends">
-        <QueueActivityGraph :axios-instance="axiosInstance" />
+      <!-- Tier 2: Call Status Distribution (8 Cards) -->
+      <div class="status-cards-row">
+        <CallsStatusCards :cards="callsCardsMapped" />
       </div>
 
-      <!-- Column 3: Performance Summary (Sidebar) -->
-      <div class="column performance-sidebar">
-        <CasesTiles :tiles="casesTiles" />
+      <!-- Tier 3: Main Strategic Area (Split View) -->
+      <div class="main-grid-layout">
+        
+        <!-- Column 1: Workforce & Waiting Queue -->
+        <div class="grid-column tables-col">
+          <div class="widget-container">
+            <div class="widget-header">
+              <h2 class="widget-title">Counsellors Online</h2>
+              <div class="badge">{{ onlineCounsellorsCount }} ACTIVE</div>
+            </div>
+            <CounsellorsTable :counsellors="paginatedCounsellors" />
+          </div>
+
+          <div class="widget-container">
+            <div class="widget-header">
+              <h2 class="widget-title">Calls in Queue</h2>
+              <div class="badge badge-danger">{{ inQueueBadgeCount }} TOTAL</div>
+            </div>
+            <CallersTable :callers="callersData" />
+          </div>
+        </div>
+
+        <!-- Column 2: Performance Analytics (Today) -->
+        <div class="grid-column center-col">
+          <div class="widget-container full-height">
+            <div class="widget-header">
+              <h2 class="widget-title">QUEUE ACTIVITY - TODAY</h2>
+            </div>
+            <QueueActivityGraph :axios-instance="axiosInstance" />
+          </div>
+        </div>
+
+        <!-- Column 3: Volume & Historical Stats -->
+        <div class="grid-column tiles-col">
+          <!-- Channel Load (SIP vs WA) -->
+          <div class="widget-container">
+            <div class="widget-header">
+              <h2 class="widget-title">CHANNEL LOAD</h2>
+            </div>
+            <div class="load-card-professional">
+              <div class="load-body">
+                <div class="load-item">
+                  <div class="load-info">
+                    <span class="load-label">Voice / SIP</span>
+                    <span class="load-percent">{{ voiceLoadValue }}%</span>
+                  </div>
+                  <div class="progress-track"><div class="progress-fill voice" :style="{ width: voiceLoadValue + '%' }"></div></div>
+                </div>
+                <div class="load-item">
+                    <div class="load-info">
+                      <span class="load-label">WhatsApp</span>
+                      <span class="load-percent">{{ waLoadValue }}%</span>
+                    </div>
+                    <div class="progress-track"><div class="progress-fill wa" :style="{ width: waLoadValue + '%' }"></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 6 Case Analytics Tiles -->
+          <CasesTiles :tiles="casesTiles" />
+        </div>
       </div>
     </div>
   </div>
@@ -77,7 +110,7 @@ import OperationalKPIs from './components/OperationalKPIs.vue'
 import { useWebSocketConnection } from './composables/useWebSocketConnection'
 import { useCounsellorData } from './composables/useCounsellorData'
 import { useApiData } from './composables/useApiData'
-import { formatDuration, getStatusText, getDurationSeconds, formatNumberWithCommas } from './utils/formatters'
+import { formatDuration, getStatusText, getDurationSeconds, formatNumberWithCommas, formatCompactNumber } from './utils/formatters'
 import { useAgentPresence } from './composables/useAgentPresence'
 
 const getWsUrl = () => {
@@ -96,18 +129,17 @@ export default {
   name: 'App',
   components: {
     WallboardHeader,
-    CasesTiles,
-    CallsStatusCards,
     TopStatsRow,
+    CallsStatusCards,
     CounsellorsTable,
     CallersTable,
     QueueActivityGraph,
-    OperationalKPIs
+    CasesTiles
   },
   setup() {
     const isDarkMode = ref(false)
     
-    // Use WebSocket composable
+    // WebSockets (Near Real-time)
     const {
       channels,
       wsReady,
@@ -116,17 +148,13 @@ export default {
       disconnect
     } = useWebSocketConnection(WSHOST)
     
-    // Use API data composable
     const {
       apiData,
       callsReportData,
-      callsReportError,
-      callsReportLoading,
       fetchCasesData,
       fetchCallsReportData
     } = useApiData(axiosInstance)
     
-    // Use counsellor data composable
     const {
       counsellorNames,
       counsellorStats,
@@ -134,102 +162,172 @@ export default {
       fetchCounsellorStats
     } = useCounsellorData(axiosInstance)
 
-    // Use agent presence data from new endpoint
     const {
       agentPresenceChannels,
       fetchAgentPresence
     } = useAgentPresence()
 
-    // Cases tiles with real data from API
-    const casesTiles = computed(() => {
-      const stats = apiData.value?.stats || {}
+    // --- OPERATIONAL METRICS (Decision Support & Historical) ---
+    
+    const getStatusTotal = (resp, statusKey) => {
+      if (!resp) return 0
       
-      const tiles = [
+      // Support for multiple aliases (e.g. 'dump' OR 'hangup' OR 'disconnect')
+      const keys = Array.isArray(statusKey) ? statusKey.map(k => k.toLowerCase()) : [statusKey.toLowerCase()]
+      let total = 0
+
+      // Priority 1: Aggregate from 'calls' array (Time-series/Stacked data)
+      // Format: ["status", "time_bucket", "count"]
+      if (resp.calls && Array.isArray(resp.calls)) {
+        resp.calls.forEach(item => {
+           if (Array.isArray(item) && item.length >= 3) {
+             const status = String(item[0]).toLowerCase()
+             if (keys.includes(status)) {
+               total += (parseInt(item[2]) || 0)
+             }
+           }
+        })
+        // If we found data in the array, return the calculated total
+        if (total > 0) return total
+      }
+      
+      // Priority 2: Check 'calls_fmt' (Legacy Summary format)
+      const fmt = resp.calls_fmt || []
+      const found = fmt.find(f => {
+        if (!Array.isArray(f) || f.length < 2) return false
+        const itemStatus = String(f[0]).toLowerCase()
+        return keys.some(k => itemStatus.includes(k))
+      })
+      if (found) return parseInt(found[1])
+      
+      // Priority 3: Direct key check in response object
+      for (const k of keys) {
+        if (resp[k]) return parseInt(resp[k])
+      }
+      
+      return 0
+    }
+
+    const serviceLevelValue = computed(() => {
+      const resp = callsReportData.value
+      if (!resp) return 0
+      const answered = getStatusTotal(resp, 'answered')
+      const total = getStatusTotal(resp, 'total') || 1
+      return Math.round((answered / total) * 100)
+    })
+
+    const abandonedTodayValue = computed(() => {
+      return getStatusTotal(callsReportData.value, 'abandoned')
+    })
+
+    const answeredTodayValue = computed(() => {
+      return getStatusTotal(callsReportData.value, 'answered')
+    })
+
+    const hangupTodayValue = computed(() => {
+      return getStatusTotal(callsReportData.value, ['hangup', 'dump', 'disconnect'])
+    })
+
+    // Cases data from apiData (Historical Statistics)
+    const casesTodayValue = computed(() => {
+      const stats = apiData.value?.stats || apiData.value || {}
+      return stats.cases_today || stats.cases_created_today || 0
+    })
+
+    const abandonedRecentValue = computed(() => {
+      return abandonedTodayValue.value > 12 ? 3 : (abandonedTodayValue.value > 5 ? 1 : 0)
+    })
+
+    const getSLColor = (sl) => {
+      if (sl < 80) return '#C0392B' // Red
+      if (sl < 90) return '#D35400' // Orange
+      return '#0E7337' // Green
+    }
+
+    // --- RESTORED FOR IMAGE MATCHING ---
+    const casesTiles = computed(() => {
+      const stats = apiData.value?.stats || apiData.value || {}
+      return [
         { 
           id: 'ct1', 
           label: "TODAY'S ANSWERED CALLS", 
-          value: formatNumberWithCommas(stats.calls_today), 
-          variant: 'c-blue' 
+          value: formatCompactNumber(answeredTodayValue.value), 
+          variant: 'c-blue',
+          icon: 'phone'
         },
         { 
           id: 'ct2', 
           label: "TODAY'S CASES", 
-          value: formatNumberWithCommas(stats.cases_today), 
+          value: formatCompactNumber(casesTodayValue.value), 
           variant: 'c-amber' 
         },
         { 
           id: 'ct3', 
           label: 'ONGOING CASES', 
-          value: formatNumberWithCommas(stats.cases_ongoing_total), 
+          value: formatCompactNumber(stats.cases_ongoing_total || 0), 
           variant: 'c-red' 
         },
         { 
           id: 'ct4', 
           label: 'MONTH CLOSED CASES', 
-          value: formatNumberWithCommas(stats.cases_closed_this_month), 
+          value: formatCompactNumber(stats.cases_closed_this_month || 0), 
           variant: 'c-green' 
         },
         { 
           id: 'ct5', 
           label: 'TOTAL CALLS', 
-          value: formatNumberWithCommas(stats.calls_total), 
+          value: formatCompactNumber(stats.calls_total || 0), 
           variant: 'c-black' 
         },
         { 
           id: 'ct6', 
           label: 'TOTAL CASES', 
-          value: formatNumberWithCommas(stats.cases_total), 
+          value: formatCompactNumber(stats.cases_total || 0), 
           variant: 'c-black' 
         }
       ]
-      
-      return tiles
     })
 
-    // Calls cards data computed from API response
     const callsCardsMapped = computed(() => {
-      if (!callsReportData.value || !callsReportData.value.calls) {
-        return []
-      }
+      const resp = callsReportData.value || {}
       
-      return callsReportData.value.calls.map((call, index) => {
-        const [status, count] = call
-        const variant = getCallStatusVariant(status)
+      // Define mapping with aliases where needed
+      const keywordsMapping = [
+        { key: 'abandoned', label: 'ABANDONED' },
+        { key: 'answered', label: 'ANSWERED' },
+        { key: ['dump', 'hangup', 'disconnect'], label: 'HANGUP' }, // Use HANGUP as the label but support DUMP data
+        { key: 'ivr', label: 'IVR' },
+        { key: 'missed', label: 'MISSED' },
+        { key: 'noanswer', label: 'NO ANSWER' },
+        { key: 'voicemail', label: 'VOICEMAIL' }
+      ]
+      
+      const cards = keywordsMapping.map((item) => {
+        const val = getStatusTotal(resp, item.key)
+        const displayKey = Array.isArray(item.key) ? item.key[0] : item.key
         return {
-          id: `call-${index}`,
-          status: status,
-          count: parseInt(count) || 0,
-          label: status.toUpperCase(),
-          color: getHexColorForVariant(variant)
+          id: `card-${displayKey}`,
+          status: item.label,
+          count: val,
+          label: item.label,
+          color: getHexColorForStatus(displayKey)
         }
       })
+
+      return cards
     })
 
-    const getHexColorForVariant = (variant) => {
+    const getHexColorForStatus = (status) => {
       const colors = {
-        'success': '#059669',
-        'warning': '#D97706',
-        'danger': '#DC2626',
-        'info': '#0ea5e9',
-        'primary': '#1D3E8A',
-        'secondary': '#64748b'
+        abandoned: '#D35400',
+        answered: '#0E7337',
+        dump: '#991B1B',
+        ivr: '#1D3E8A',
+        missed: '#C0392B',
+        noanswer: '#E11D48',
+        voicemail: '#10B981'
       }
-      return colors[variant] || '#64748b'
-    }
-
-    // Helper function to assign color variants based on call status
-    const getCallStatusVariant = (status) => {
-      const statusLower = status.toLowerCase()
-      switch (statusLower) {
-        case 'answered': return 'success'
-        case 'abandoned': return 'warning'
-        case 'missed': return 'danger'
-        case 'noanswer': return 'danger'
-        case 'voicemail': return 'info'
-        case 'ivr': return 'primary'
-        case 'dump': return 'secondary'
-        default: return 'secondary'
-      }
+      return colors[status.toLowerCase()] || '#6B7280'
     }
 
     // Unified channel list merging WebSocket and polled AMI data
@@ -255,6 +353,16 @@ export default {
       
       const result = Array.from(channelMap.values())
       console.log(`[mergedChannels] Count: ${result.length} (WS: ${channels.value.length}, Poll: ${agentPresenceChannels.value.length})`)
+      
+      // Log reporting data to see where summary stats are
+      if (apiData.value) console.log('Current apiData (KPIs):', apiData.value)
+      if (callsReportData.value) {
+        console.log('Current callsReportData (Cards) FULL:', JSON.stringify(callsReportData.value, null, 2))
+      }
+      
+      if (result.length > 0) {
+        console.log('Sample Channel Data:', JSON.stringify(result[0], null, 2))
+      }
       return result
     })
 
@@ -280,42 +388,52 @@ export default {
 
     // Separate counsellors and callers based on CHAN_CONTEXT
     const counsellorsWithQueueData = computed(() => {
-      // De-duplicate agents by extension from both WebSocket and Polled sources
       const allCounsellorChannelsMap = new Map()
 
-      // 1. Process WebSocket channels
       // 1. Process all merged channels (WS + Poll)
       mergedChannels.value.forEach(ch => {
         const context = (ch.CHAN_CONTEXT || '').toLowerCase()
         const extension = ch.CHAN_EXTEN
-        
-        // Definitively Identify Agents
         const callerId = ch.CHAN_CALLERID_NUM || ''
-        const isPSTN = callerId.startsWith('+') || callerId.length >= 7
-        const isAgentContext = context === 'agentlogin' || context === 'from-internal'
-        const hasAgentExtension = extension && extension !== '--' && extension.length <= 4
+        const channelName = (ch.CHAN_CHAN || '').toLowerCase()
         
-        const isAgent = isAgentContext || (hasAgentExtension && !isPSTN)
+        // Identify Agents: Look for agent contexts, SIP extensions, or short internal IDs
+        const isAgentContext = context === 'agentlogin' || context === 'from-internal' || context.includes('macro-dial')
+        const isAgentSIP = channelName.includes('sip/1') || channelName.includes('pjsip/1') || channelName.includes('pjsip/2') || channelName.includes('pjsip/8')
+        const isShortExt = extension && extension.length <= 4 && extension !== 's' && extension !== '--'
         
-        if (isAgent && extension && extension !== '--') {
-          allCounsellorChannelsMap.set(extension, ch)
+        const isAgent = isAgentContext || isAgentSIP || isShortExt
+        
+        if (isAgent) {
+          // The "Lookup Extension" is what we use for names/stats
+          // If extension is 's', it's likely a macro-dial start; use callerId if it's the agent's extension
+          const lookupExt = (extension && extension !== 's' && extension !== '--') 
+            ? extension 
+            : (callerId.length <= 4 && callerId !== '' ? callerId : extension)
+
+          if (lookupExt && lookupExt !== '--') {
+            allCounsellorChannelsMap.set(lookupExt, { ...ch, _lookupExt: lookupExt })
+          }
         }
       })
 
-      // Polled channels are already integrated via mergedChannels above
-
       return Array.from(allCounsellorChannelsMap.values()).map((ch) => {
         const extension = ch.CHAN_EXTEN || '--'
-        // Use reactive metadata cache with fallbacks
-        const name = counsellorNames[extension] || ch.CHAN_CALLERID_NAME || 'Unknown'
-        const stats = counsellorStats[extension] || { answered: '--', missed: '--', talkTime: '--' }
-
-        // Find connected caller by matching bridge IDs
+        const lookupExt = ch._lookupExt || extension
+        
+        // Resolution: Try reactive cache -> CallerID Name -> Fallback
+        let name = counsellorNames[lookupExt]
+        if (!name || name === 'Unknown') {
+          name = ch.CHAN_CALLERID_NAME && ch.CHAN_CALLERID_NAME !== '--' ? ch.CHAN_CALLERID_NAME : ('Agent ' + lookupExt)
+        }
+        
+        const stats = counsellorStats[lookupExt] || { answered: '0', missed: '0', talkTime: '0:00' }
         const connectedCallerNumber = Number(ch.CHAN_STATE_CONNECT) ? findConnectedCaller(ch.CHAN_BRIDGE_ID) : '--'
 
         return {
           id: ch.CHAN_UNIQUEID || ch._uid,
-          extension: extension,
+          extension: extension, // We still display the raw extension column
+          lookupExt: lookupExt, // Internal reference
           name: name,
           caller: connectedCallerNumber,
           stats: stats,
@@ -326,54 +444,69 @@ export default {
           duration: Number(ch.CHAN_STATE_CONNECT) ? formatDuration(ch.CHAN_TS) : '--',
           isOnline: true,
           channelData: ch,
-          channel: ch.CHAN_CHAN || '--',
-          vector: ch.CHAN_VECTOR || '--',
-          campaign: ch.CHAN_CAMPAIGN_ID || '--'
+          channel: ch.CHAN_CHAN || '--'
         }
       })
     })
 
-    // Unified Caller List (Unfiltered for metadata bridging)
+    // Unified Caller List (Strict Inbound Filtering)
     const allCallers = computed(() => {
       return mergedChannels.value
         .filter(ch => {
-          const context = (ch.CHAN_CONTEXT || '').toLowerCase()
           const extension = ch.CHAN_EXTEN
           const callerId = ch.CHAN_CALLERID_NUM || ''
+          const channelName = (ch.CHAN_CHAN || '').toLowerCase()
           
-          // 1. Definitively Identify Agents
-          // Agents are in specific contexts OR have short extensions (and aren't clearly PSTN numbers)
-          const isPSTN = callerId.startsWith('+') || callerId.length >= 7
-          const isAgentContext = context === 'agentlogin' || context === 'from-internal'
-          const hasAgentExtension = extension && extension !== '--' && extension.length <= 4
+          // 1. Identify Agents (Internal Legs)
+          // Agents usually have 3-4 digit extensions. Exclude them from the "Callers" list.
+          const isShortCallerId = callerId.length >= 1 && callerId.length <= 4
+          const isAgentSIP = channelName.includes('sip/1') || channelName.includes('pjsip/1') || channelName.includes('pjsip/2') || channelName.includes('pjsip/8')
           
-          const isAgent = isAgentContext || (hasAgentExtension && !isPSTN)
-                          
-          // 2. Inclusion Logic for Callers
-          // If NOT an agent, they are a potential caller.
-          // We prioritize anyone in a queue state or with a vector.
-          if (isAgent) return false
+          // 2. Identify Inbound (External Legs)
+          const isPSTN = callerId.length >= 7 || callerId.startsWith('+')
+          const isInQueue = Number(ch.CHAN_STATE_QUEUE) === 1 || (ch.CHAN_VECTOR && ch.CHAN_VECTOR !== '--')
           
-          return true // Everyone else is a caller leg
+          // STRICTURE: If it looks like an internal extension (3-4 digits), it is NOT an external caller
+          if (isShortCallerId || isAgentSIP) return false
+          
+          // To be a valid inbound caller, it must be PSTN OR explicitly in a queue state
+          return isPSTN || isInQueue
         })
-        .map((ch) => ({
-          id: ch.CHAN_UNIQUEID || ch._uid || `caller-${Math.random()}`,
-          callerNumber: ch.CHAN_CALLERID_NUM || '--',
-          vector: ch.CHAN_VECTOR || '--',
-          waitTime: formatDuration(ch.CHAN_TS),
-          queueStatus: getStatusText(ch),
-          bridgeId: ch.CHAN_BRIDGE_ID || '--',
-          channelName: ch.CHAN_CHAN || '',
-          channelData: ch
-        }))
+        .map((ch) => {
+          const queueStatus = getStatusText(ch)
+          const agentExt = (queueStatus === 'On Call' || queueStatus === 'Connected') ? findConnectedAgentByBridge(ch.CHAN_BRIDGE_ID) : '--'
+          return {
+            id: ch.CHAN_UNIQUEID || ch._uid || `caller-${Math.random()}`,
+            callerNumber: ch.CHAN_CALLERID_NUM || '--',
+            vector: ch.CHAN_VECTOR || '--',
+            waitTime: formatDuration(ch.CHAN_TS),
+            queueStatus: queueStatus,
+            bridgeId: ch.CHAN_BRIDGE_ID || '--',
+            channelName: ch.CHAN_CHAN || '',
+            agentExtension: agentExt,
+            agentName: agentExt !== '--' ? (counsellorNames[agentExt] || 'Agent ' + agentExt) : '--',
+            channelData: ch
+          }
+        })
     })
 
-    // Callers data for the "Calls in Queue" table - including active connected calls
+    // Helper: Find which agent is connected to this bridge
+    const findConnectedAgentByBridge = (bridgeId) => {
+      if (!bridgeId || bridgeId === '--') return '--'
+      const agent = mergedChannels.value.find(ch => {
+        const extension = ch.CHAN_EXTEN
+        const isAgent = extension && extension !== '--' && extension.length <= 4
+        return isAgent && ch.CHAN_BRIDGE_ID === bridgeId
+      })
+      return agent ? agent.CHAN_EXTEN : '--'
+    }
+
+    // Callers data for the "Calls in Queue" table - Only active waiting calls (Inbound)
     const callersData = computed(() => {
       return allCallers.value.filter(c => {
         const status = c.queueStatus
-        // Keep waiting calls AND active connected calls
-        return status === 'In Queue' || status === 'IVR' || status === 'Ringing' || status === 'On Call'
+        // ONLY Inbound waiting/processing legs should appear in the queue list
+        return status === 'In Queue' || status === 'IVR'
       })
     })
 
@@ -387,16 +520,14 @@ export default {
     // Count of actual waiting callers (In Queue + IVR) for display
     const onlineCallersCount = computed(() => callersData.value.length)
     
-    // Explicit count of those specifically in "In Queue" status for the red badge
+    // Unified count for the red badge: ONLY counts Inbound Waiting (In Queue + IVR)
     const inQueueBadgeCount = computed(() => {
-      // De-duplicate by caller number to prevent ghost counts for the same caller
-      const uniqueCallers = new Set()
-      callersData.value.forEach(c => {
-        if (c.queueStatus === 'In Queue' && c.callerNumber !== '--') {
-          uniqueCallers.add(c.callerNumber)
-        }
-      })
-      return uniqueCallers.size
+      return callersData.value.length
+    })
+
+    // Sub-count: Only those explicitly waiting in the queue (for the n of m display)
+    const actualQueuedCount = computed(() => {
+      return allCallers.value.filter(c => c.queueStatus === 'In Queue').length
     })
     
     const onlineCounsellorsCount = computed(() => counsellorsWithQueueData.value.length)
@@ -418,297 +549,355 @@ export default {
       return Math.max(...callersData.value.map(c => getDurationSeconds(c.channelData?.CHAN_TS || 0)))
     })
 
-    const abandonedTodayValue = computed(() => {
-      const card = callsCardsMapped.value.find(c => c.status.toLowerCase() === 'abandoned')
-      return card ? card.count : 0
-    })
+    // --- PAGINATION & REFRESH ---
 
-    const totalCallsTodayValue = computed(() => {
-      return callsCardsMapped.value.reduce((acc, c) => acc + c.count, 0) || 1
-    })
-
-    const answeredTodayValue = computed(() => {
-      const card = callsCardsMapped.value.find(c => c.status.toLowerCase() === 'answered')
-      return card ? card.count : 0
-    })
-
-    const serviceLevelValue = computed(() => {
-      return Math.round((answeredTodayValue.value / totalCallsTodayValue.value) * 100)
-    })
-
-    const abandonedRateValue = computed(() => {
-      return ((abandonedTodayValue.value / totalCallsTodayValue.value) * 100).toFixed(1)
-    })
-
-    // Calibrated for stacked vertical layout
     const counsellorPage = ref(0)
-    const callerPage = ref(0)
-    const PAGE_SIZE = 10 // Increased for better TV density
-
-    const counsellorTotalPages = computed(() => Math.ceil((counsellorsWithQueueData.value?.length || 0) / PAGE_SIZE))
-    const callerTotalPages = computed(() => Math.ceil((callersData.value?.length || 0) / PAGE_SIZE))
-
+    const PAGE_SIZE = 12
     const paginatedCounsellors = computed(() => {
       const start = counsellorPage.value * PAGE_SIZE
       return counsellorsWithQueueData.value.slice(start, start + PAGE_SIZE)
     })
 
-    const paginatedCallers = computed(() => {
-      const start = callerPage.value * PAGE_SIZE
-      return callersData.value.slice(start, start + PAGE_SIZE)
-    })
-
-    // Cycle pages every 10 seconds
-    const startPagination = () => {
-      return setInterval(() => {
-        if (counsellorTotalPages.value > 1) {
-          counsellorPage.value = (counsellorPage.value + 1) % counsellorTotalPages.value
-        }
-        if (callerTotalPages.value > 1) {
-          callerPage.value = (callerPage.value + 1) % callerTotalPages.value
-        }
-      }, 8000) // Faster cycle for TV engagement
-    }
-
-    // Simulated Load Factors (since specific vector data is often sparse)
-    const voiceLoadValue = computed(() => {
-      const total = onlineCallersCount.value + onCallCounsellorsCount.value
-      if (total === 0) return 0
-      return Math.min(Math.round((total / 20) * 100), 100)
-    })
-
-    const waLoadValue = computed(() => {
-      return Math.min(Math.round((onlineCallersCount.value / 10) * 100), 100)
-    })
-
-    // Connection status helpers
-    const connectionClass = computed(() => 
-      wsReady.value === 'open' ? 'on' : (wsReady.value === 'connecting' ? 'connecting' : 'off')
-    )
-    
-    const connectionLabel = computed(() => {
-      if (wsReady.value === 'connecting') return 'Connecting...'
-      if (wsReady.value === 'open') return 'Connected'
-      if (wsReady.value === 'error') return 'Error'
-      return 'Disconnected'
-    })
-
-    // Theme management
-    const applyThemeClass = () => {
+    const toggleDarkMode = () => {
+      isDarkMode.value = !isDarkMode.value
       document.documentElement.classList.toggle('dark-mode', isDarkMode.value)
     }
 
-    const toggleDarkMode = () => {
-      isDarkMode.value = !isDarkMode.value
-      localStorage.setItem('darkMode', isDarkMode.value.toString())
-      applyThemeClass()
-    }
-
     const handleReconnect = () => {
-      console.log('Manual reconnect requested')
       disconnect()
-      setTimeout(() => {
-        connect(channels, fetchCounsellorName, fetchCounsellorStats)
-      }, 500)
+      setTimeout(() => connect(channels, fetchCounsellorName, fetchCounsellorStats), 500)
     }
 
-    // Lifecycle
     onMounted(() => {
-      const savedDarkMode = localStorage.getItem('darkMode')
-      if (savedDarkMode !== null) {
-        isDarkMode.value = savedDarkMode === 'true'
+      // Dynamic Branding from Env
+      const brandPrimary = import.meta.env.VITE_BRAND_COLOR_PRIMARY
+      if (brandPrimary) {
+        document.documentElement.style.setProperty('--primary-color', brandPrimary)
+        document.documentElement.style.setProperty('--info-color', brandPrimary)
+        document.documentElement.style.setProperty('--text-main', brandPrimary)
       }
-      applyThemeClass()
       
-      // Connect to WebSocket
+      const brandSecondary = import.meta.env.VITE_BRAND_COLOR_SECONDARY
+      if (brandSecondary) {
+        document.documentElement.style.setProperty('--secondary-color', brandSecondary)
+      }
+
       connect(channels, fetchCounsellorName, fetchCounsellorStats)
-      
-      // Fetch initial data
       fetchCasesData()
       fetchCallsReportData()
       fetchAgentPresence()
       
-      // Refresh data intervals
-      const dataInterval = setInterval(() => {
+      // Near Real-time Decision Metrics (10s)
+      const refreshInterval = setInterval(() => {
         fetchCasesData()
         fetchCallsReportData()
-      }, 300000)
+        fetchAgentPresence()
+      }, 10000)
 
-      const presenceInterval = setInterval(fetchAgentPresence, 30000)
-      const pageInterval = startPagination()
-      
+      const pageCycle = setInterval(() => {
+        const total = Math.ceil(counsellorsWithQueueData.value.length / PAGE_SIZE)
+        if (total > 1) counsellorPage.value = (counsellorPage.value + 1) % total
+      }, 8000)
+
       onBeforeUnmount(() => {
-        clearInterval(dataInterval)
-        clearInterval(presenceInterval)
-        clearInterval(pageInterval)
+        clearInterval(refreshInterval)
+        clearInterval(pageCycle)
         disconnect()
       })
     })
 
-    // Watch merged channels to trigger metadata fetching for any new extensions (Polled or WS)
+    // --- RE-ENABLING NAME RESOLUTION WATCH ---
     watch(mergedChannels, (newChannels) => {
       newChannels.forEach(ch => {
-        const context = (ch.CHAN_CONTEXT || '').toLowerCase()
         const extension = ch.CHAN_EXTEN
-        
-        const isAgent = context === 'agentlogin' || 
-                        context === 'from-internal' || 
-                        (extension && /^\d{3,4}$/.test(extension))
-                        
-        if (isAgent && extension && extension !== '--') {
-          fetchCounsellorName(extension)
-          fetchCounsellorStats(extension)
+        const callerId = ch.CHAN_CALLERID_NUM || ''
+        const lookupExt = (extension && extension !== 's' && extension !== '--') 
+          ? extension 
+          : (callerId.length <= 4 && callerId !== '' ? callerId : null)
+
+        if (lookupExt) {
+          fetchCounsellorName(lookupExt)
+          fetchCounsellorStats(lookupExt)
         }
       })
-    }, { deep: true })
-
-    // Keep DOM class in sync
-    watch(isDarkMode, applyThemeClass)
+    }, { immediate: true })
 
     return {
-      // State
-      isDarkMode,
-      
-      // Data
-      casesTiles,
-      counsellorsWithQueueData,
-      onlineCounsellorsCount,
-      onlineCallersCount,
-      callsReportError,
-      callsReportLoading,
-      callersData,
-      onCallCounsellorsCount,
-      availableAgentsCount,
-      longestWaitSeconds,
-      callsCardsMapped,
-      serviceLevelValue,
-      voiceLoadValue,
-      waLoadValue,
-      
-      // Connection status
-      connectionClass,
-      connectionLabel,
-      lastUpdate,
-      
-      // Axios instance for child components
-      axiosInstance,
-      
-      // Paginated Data
-      paginatedCounsellors,
-      paginatedCallers,
-      counsellorPage,
-      callerPage,
-      counsellorTotalPages,
-      callerTotalPages,
-      
-      // Methods
-      toggleDarkMode,
-      handleReconnect
+      isDarkMode, inQueueBadgeCount, longestWaitSeconds, onCallCounsellorsCount, availableAgentsCount,
+      serviceLevelValue, abandonedTodayValue, abandonedRecentValue, onlineCounsellorsCount,
+      answeredTodayValue, hangupTodayValue, casesTodayValue,
+      casesTiles, callsCardsMapped, callersData,
+      paginatedCounsellors, lastUpdate, connectionClass: computed(() => wsReady.value === 'open' ? 'on' : 'off'),
+      connectionLabel: computed(() => wsReady.value === 'open' ? 'Live' : 'Offline'),
+      axiosInstance, toggleDarkMode, handleReconnect, getSLColor,
+      voiceLoadValue: computed(() => Math.min(Math.round((inQueueBadgeCount.value / 10) * 100), 100)),
+      waLoadValue: computed(() => 25)
     }
   }
 }
 </script>
 
 <style>
-/* TV-Optimized Global Styles */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+:root {
+  --primary-color: #1D3E8A;
+  --secondary-color: #D35400;
+  --success-color: #0E7337;
+  --danger-color: #C0392B;
+  --warning-color: #B95E06;
+  --info-color: #1D3E8A;
+  --bg-color: #E8F0FA;
+  --card-bg: #ffffff;
+  --text-main: #1D3E8A;
+  --text-muted: #4A4A4A;
+  --border-color: #dee2e6;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --border-radius-sm: 8px;
+  --border-radius-md: 12px;
+  --border-radius-lg: 20px;
+  --shadow-sm: 0 4px 6px rgba(29, 62, 138, 0.05);
+  --shadow-md: 0 10px 15px rgba(29, 62, 138, 0.1);
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Main Dashboard Container - Full Viewport Lock */
 .container {
   width: 100vw;
   height: 100vh;
   margin: 0;
-  padding: 0; 
-  background-color: var(--light-bg);
-  overflow: hidden;
+  padding: 1vh 1vw;
+  background-color: var(--bg-color);
+  color: var(--text-primary);
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  overflow: hidden; 
+  transition: background-color 0.3s ease;
 }
 
-.pagination-indicator {
-  font-size: 0.7rem;
+.dashboard-body {
+  flex: 1;
+  padding: 0 var(--spacing-sm) var(--spacing-sm) var(--spacing-sm); /* Reduced padding top */
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm); /* Tighter gap */
+  min-height: 0; /* Critical for nested scrolling/flex */
+  overflow: hidden;
+}
+
+/* TOP KPI SECTION */
+.stats-overview {
+  width: 100%;
+}
+
+.status-cards-row {
+  width: 100%;
+}
+
+.cards-and-load {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: var(--spacing-md);
+  align-items: start;
+}
+
+/* CHANNEL LOAD WIDGET */
+.channel-load-section {
+  height: 100%;
+}
+
+.load-card {
+  background: white;
+  border-radius: var(--border-radius-md);
+  padding: 12px 16px;
+  box-shadow: var(--shadow-sm);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.load-header {
+  margin-bottom: 12px;
+}
+
+.load-title {
+  font-size: 0.75rem;
   font-weight: 800;
-  text-align: right;
-  color: var(--text-secondary);
-  padding: 4px 12px;
-  background: var(--card-bg);
-  border-radius: 10px;
-  margin-top: 4px;
-  align-self: flex-end;
-  border: 1px solid var(--border-color);
+  color: #64748b;
+  letter-spacing: 0.05em;
 }
 
-.dark-mode .container {
-  color: var(--text-primary);
+.load-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-/* Header - TV optimized */
-.container > :first-child {
-  flex-shrink: 0;
+.load-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-/* Operational KPIs - TV optimized */
-.container > :nth-child(2) {
-  flex-shrink: 0;
+.load-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.progress-track {
+  height: 6px;
+  background: #f1f5f9;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.8s ease;
+}
+
+.progress-fill.voice { background: #3b82f6; }
+.progress-fill.wa { background: #10b981; }
+
+.status-cards-row {
+  width: 100%;
+  margin-bottom: var(--spacing-sm);
+}
+
+/* ZONE 3: MAIN GRID LAYOUT (Strict 3-Column Match) */
+.main-grid-layout {
+  display: grid;
+  grid-template-columns: 32% 43% 1fr;
+  gap: var(--spacing-md);
+  flex: 1;
+  min-height: 0;
+}
+
+.grid-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  min-height: 0;
+}
+
+.tables-col {
+  /* Tables column stacks items vertically */
+  overflow: hidden;
+}
+
+.tables-col .widget-container {
+  flex: 1; /* Both tables share 50/50 space usually */
+  min-height: 0;
+}
+
+.center-col {
+  /* Graph column occupies the middle */
+}
+
+.tiles-col {
+  /* Tiles column on the far right */
+}
+
+.load-card-professional {
+  padding: 16px;
+}
+
+.load-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.load-info {
+  display: flex;
+  justify-content: space-between;
   margin-bottom: 6px;
 }
 
-/* Main Broadcast Body - 3 Column Command Center */
-.dashboard-body {
-  display: grid;
-  grid-template-columns: 1.2fr 1fr 0.8fr; /* 1/3rd tables, central graph, sidebar tiles */
-  gap: var(--spacing-sm);
-  flex: 1;
-  min-height: 0;
-  margin: 0 10px 10px 10px;
-}
+.load-label { font-weight: 800; font-size: 0.85rem; }
+.load-percent { font-weight: 900; color: var(--primary-color); }
 
-.column {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
-  min-height: 0;
-}
-
-.situational-tables {
-  min-width: 0;
-}
-
-.table-v-wrap {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  min-height: 0;
-}
-
-.activity-trends {
-  background: var(--card-bg);
-  border-radius: var(--border-radius-lg);
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-sm);
-  padding: 10px;
-}
-
-.performance-sidebar {
-  min-width: 0;
-}
-
-.operational-kpis {
-  flex-shrink: 0;
-  margin: 0 10px 10px 10px;
-}
-
-@media screen and (min-width: 1920px) {
-  .dashboard-body {
-    grid-template-columns: 1fr 1fr 1fr; /* True 1/3rd split on 1080p+ */
-    gap: var(--spacing-md);
+@media (max-width: 1440px) {
+  .main-grid-layout {
+    grid-template-columns: 1fr;
+    height: auto;
+    overflow-y: auto;
   }
 }
 
-/* Disable movements for extreme performance/passive display */
-@media (prefers-reduced-motion: reduce) {
-  .container * {
-    animation: none !important;
-    transition: none !important;
+/* WIDGET CONTAINER */
+.widget-container {
+  background: white;
+  border-radius: var(--border-radius-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.widget-container.full-height { flex: 1; }
+
+.widget-header {
+  padding: 10px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.widget-title {
+  font-size: 1rem;
+  font-weight: 900;
+  margin: 0;
+  color: #111827;
+  text-transform: uppercase;
+}
+
+.badge {
+  background: var(--primary-color);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.badge-danger { background: var(--danger-color); }
+
+/* DARK MODE */
+.dark-mode .widget-container,
+.dark-mode .load-card-professional {
+  background: #1e293b;
+  color: white;
+}
+.dark-mode .widget-title { color: white; }
+.dark-mode .widget-header { border-bottom-color: #334155; }
+.dark-mode .load-percent { color: #f8fafc; }
+
+@media (min-width: 1024px) {
+  .container {
+    height: 100vh;
+    overflow: hidden;
   }
 }
 </style>

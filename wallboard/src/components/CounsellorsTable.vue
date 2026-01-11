@@ -1,50 +1,49 @@
 <template>
-  <div class="counsellors-section">
-    <div class="minimal-section-header">
-      <h2 class="title-slate">Counsellors Online</h2>
-      <div class="count-circle-slate">{{ onlineCount }}</div>
-    </div>
-    <div class="counsellors-table">
-      <div class="table-header">
-        <div class="col-ext">EXT</div>
-        <div class="col-name">NAME</div>
-        <div class="col-icon"></div>
-        <div class="col-caller">ACTIVE CALLER</div>
-        <div class="col-stats">ANS</div>
-        <div class="col-stats">MISSED</div>
-        <div class="col-stats">TALK</div>
-        <div class="col-status">STATUS</div>
-        <div class="col-duration">TIME</div>
-      </div>
-      <div class="table-body" ref="tableContainer">
-        <div v-if="counsellors.length === 0" class="no-counsellors-row">
-          <div class="no-counsellors-text">No counsellors currently online</div>
-        </div>
-        <div 
+  <div class="table-wrapper">
+    <table class="agent-table">
+      <thead>
+        <tr>
+          <th class="th-ext">EXT</th>
+          <th class="th-agent">AGENT NAME</th>
+          <th class="th-stat">ANS</th>
+          <th class="th-stat">MISS</th>
+          <th class="th-stat">TALK</th>
+          <th class="th-status">STATUS</th>
+          <th class="th-time">TIME</th>
+        </tr>
+      </thead>
+      <tbody class="scrollable-tbody" ref="tableContainer">
+        <tr v-if="counsellors.length === 0">
+          <td colspan="7" class="no-agents">No agents currently online</td>
+        </tr>
+        <tr 
           v-for="counsellor in counsellors" 
           :key="counsellor.id"
-          :class="['table-row', getStatusClass(counsellor.queueStatus)]"
+          class="agent-row"
         >
-          <div class="col-ext">{{ counsellor.extension }}</div>
-          <div class="col-name agent-name-text">{{ counsellor.name }}</div>
-          <div class="col-icon">
-            <svg v-if="counsellor.caller !== '--'" class="caller-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-              <path d="M19 12H5M5 12L12 19M5 12L12 5"/>
-            </svg>
-          </div>
-          <div class="col-caller highlight">{{ counsellor.caller }}</div>
-          <div class="col-stats ans-val">{{ formatNumberWithCommas(counsellor.answered) }}</div>
-          <div class="col-stats missed-val">{{ formatNumberWithCommas(counsellor.missed) }}</div>
-          <div class="col-stats">{{ counsellor.talkTime }}</div>
-          <div class="col-status">
-            <span :class="['status-text', getStatusClass(counsellor.queueStatus)]">
+          <td class="td-ext">#{{ counsellor.extension }}</td>
+          <td class="td-agent">
+            <div class="agent-info">
+              <div class="agent-avatar" :style="{ backgroundColor: getAvatarColor(counsellor.name) }">
+                {{ getInitials(counsellor.name) }}
+              </div>
+              <div class="agent-meta">
+                <span class="agent-name">{{ counsellor.name }}</span>
+              </div>
+            </div>
+          </td>
+          <td class="td-stat">{{ counsellor.answered || 0 }}</td>
+          <td class="td-stat">{{ counsellor.missed || 0 }}</td>
+          <td class="td-stat">{{ counsellor.talkTime || '0:00' }}</td>
+          <td class="td-status">
+            <span :class="['status-pill', getStatusClass(counsellor.queueStatus)]">
               {{ counsellor.queueStatus }}
             </span>
-          </div>
-          <div :class="['col-duration', getStatusClass(counsellor.queueStatus)]">{{ counsellor.duration }}</div>
-        </div>
-      </div>
-    </div>
+          </td>
+          <td class="td-time">{{ counsellor.duration }}</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </template>
 
@@ -63,6 +62,10 @@ export default {
     onlineCount: {
       type: Number,
       required: true,
+      default: 0
+    },
+    availableCount: {
+      type: Number,
       default: 0
     }
   },
@@ -165,151 +168,132 @@ export default {
 </script>
 
 <style scoped>
-.counsellors-section {
+.table-wrapper {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  min-height: 0;
+  overflow-x: auto;
+}
+
+.agent-table {
+  width: 100%;
+  border-collapse: collapse;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.agent-table thead, .agent-table tbody tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+
+.agent-table tbody {
+  display: block;
+  flex: 1;
+  overflow-y: auto;
   min-height: 0;
 }
 
-.minimal-section-header {
+.agent-table thead th {
+  background: var(--bg-color);
+  color: var(--text-muted);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.agent-row td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+
+.th-ext, .td-ext { width: 60px; }
+.th-stat, .td-stat { width: 45px; text-align: center !important; }
+.th-status, .td-status { width: 100px; }
+.th-time, .td-time { width: 70px; text-align: right !important; }
+
+.td-ext {
+  font-weight: 800;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.agent-info {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 5px 10px 5px;
-  border-bottom: 2px solid #eee;
-  margin-bottom: 5px;
+  gap: 10px;
 }
 
-.title-slate {
-  color: #1e293b;
-  font-size: 1.5rem;
-  font-weight: 800;
-  margin: 0;
-}
-
-.count-circle-slate {
-  background: #1e293b;
-  color: white;
+.agent-avatar {
   width: 32px;
   height: 32px;
-  border-radius: 50%;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: white;
   font-weight: 900;
-  font-size: 1.1rem;
-}
-
-.counsellors-table {
-  background: white;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-}
-
-.table-header {
-  display: grid;
-  grid-template-columns: 50px 140px 30px 1.2fr 60px 60px 70px 100px 70px;
-  gap: 8px;
-  padding: 12px 15px;
-  background: #0f172a; /* Premium dark navy */
-  font-weight: 800;
-  font-size: 0.7rem;
-  color: #94a3b8;
-  text-transform: uppercase;
+  font-size: 0.75rem;
   flex-shrink: 0;
 }
 
-.table-body {
-  flex: 1;
-  overflow-y: auto;
-  scroll-behavior: smooth;
-  background: white;
-}
-
-.table-row {
-  display: grid;
-  grid-template-columns: 50px 140px 30px 1.2fr 60px 60px 70px 100px 70px;
-  gap: 8px;
-  padding: 12px 15px;
-  border-bottom: 1px solid #e2e8f0;
-  align-items: center;
-  transition: all 0.2s ease;
-  font-size: 0.95rem;
-  font-weight: 600;
-}
-
-.col-ext { font-weight: 700; color: #64748b; }
-.agent-name-text { font-weight: 800; color: #1e293b; text-transform: uppercase; }
-
-.caller-arrow {
-  width: 14px;
-  height: 14px;
-  color: #10b981;
-}
-
-.highlight {
-  color: #10b981;
-  font-weight: 700;
-}
-
-.ans-val { color: #64748b; }
-.missed-val { color: #ef4444; }
-
-.status-text {
+.agent-name {
   font-weight: 800;
-  font-size: 0.75rem;
+  color: var(--text-main);
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
 }
 
-.status-oncall { color: #10b981; }
-.status-ringing { color: #f59e0b; }
-.status-wrapup { color: #f59e0b; }
-.status-waiting { color: #3b82f6; }
-.status-available { color: #3b82f6; }
-
-.col-duration {
-  font-weight: 900;
-  text-align: right;
-  color: #1e293b;
-}
-
-.col-duration.status-wrapup,
-.col-duration.status-ringing {
-  color: #f59e0b;
-}
-
-.col-duration.status-oncall {
-  color: #10b981;
-}
-
-@keyframes blink {
-  50% { opacity: 0.5; }
-}
-
-@keyframes pulse {
-  50% { opacity: 0.6; }
-}
-
-.no-counsellors-row {
-  padding: 40px;
-  text-align: center;
-}
-
-.no-counsellors-text {
-  color: var(--text-secondary);
-  font-style: italic;
+.td-stat {
+  font-weight: 700;
+  color: var(--text-main);
   font-size: 0.9rem;
 }
 
-/* TV Optimization */
-@media screen and (min-width: 1920px) {
-  .table-header, .table-row {
-    grid-template-columns: 1fr 150px 80px 80px 80px 120px;
-    padding: 16px 24px;
-  }
+.status-pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
+
+/* Status Pill Colors - Brand Aligned */
+.status-available { background: #E8F5E9; color: #0E7337; border: 1px solid #A5D6A7; }
+.status-oncall { background: #FFF3E0; color: #D35400; border: 1px solid #FFCC80; }
+.status-ringing { background: #FFEBEE; color: #C0392B; border: 1px solid #FFCDD2; }
+.status-wrapup { background: #FFFDE7; color: #FBC02D; border: 1px solid #FFF59D; }
+.status-offline { background: var(--bg-color); color: var(--text-muted); border: 1px solid var(--border-color); }
+
+.td-time {
+  font-weight: 800;
+  color: var(--text-main);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.95rem;
+}
+
+.no-agents {
+  padding: 40px;
+  text-align: center;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.dark-mode .agent-table thead th { background: var(--card-bg); color: var(--text-muted); }
+.dark-mode .agent-row td { border-bottom-color: var(--border-color); }
+.dark-mode .agent-name, .dark-mode .td-stat, .dark-mode .td-time { color: white; }
 </style>

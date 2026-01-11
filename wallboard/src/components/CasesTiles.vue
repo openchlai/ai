@@ -1,16 +1,14 @@
 <template>
-  <div class="cases-container">
-    <div class="cases-grid">
-      <div
-        v-for="tile in tiles"
-        :key="tile.id"
-        :class="['case-card', tile.variant]"
-      >
-        <div class="case-icon-wrapper" v-html="getIcon(tile.id)"></div>
-        <div class="case-inner">
-          <div v-if="tile.value" class="case-value">{{ tile.value }}</div>
-          <div class="case-label">{{ tile.label }}</div>
-        </div>
+  <div class="cases-tiles-grid">
+    <div
+      v-for="tile in tiles"
+      :key="tile.id"
+      :class="['case-tile', tile.variant]"
+    >
+      <div class="tile-icon" v-html="getIcon(tile.id)"></div>
+      <div class="tile-content">
+        <div class="tile-value">{{ tile.value }}</div>
+        <div class="tile-label">{{ tile.label }}</div>
       </div>
     </div>
   </div>
@@ -45,238 +43,89 @@ export default {
 </script>
 
 <style scoped>
-.cases-container {
-  height: 100%;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
-}
-
-.cases-grid {
+.cases-tiles-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(3, 1fr);
-  gap: 12px;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-rows: 1fr;
+  gap: 16px;
   height: 100%;
-  width: 100%;
-  max-width: 100%;
 }
 
-.case-card {
-  background: var(--card-bg);
+.case-tile {
   border-radius: var(--border-radius-lg);
-  padding: 20px;
-  box-shadow: var(--shadow-md);
-  transition: var(--transition-smooth);
-  position: relative;
-  overflow: hidden;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 0;
-  border: 1px solid var(--border-color);
-  gap: 12px;
-}
-
-.case-icon-wrapper {
-  width: 44px;
-  height: 44px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  margin-bottom: 4px;
-}
-
-.case-icon-wrapper svg {
-  width: 24px;
-  height: 24px;
-}
-
-.case-inner {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
   text-align: center;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
+  color: white;
+  box-shadow: var(--shadow-md);
+  transition: transform 0.2s ease;
 }
 
-.case-value {
-  font-size: 3.5rem; /* Increased from 2.5rem */
+.case-tile:hover {
+  transform: translateY(-2px);
+}
+
+.tile-icon {
+  margin-bottom: 8px;
+  opacity: 0.9;
+}
+
+.tile-icon :deep(svg) {
+  width: 32px;
+  height: 32px;
+}
+
+.tile-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tile-value {
+  font-size: clamp(1.2rem, 2.5vw, 3rem);
   font-weight: 900;
   line-height: 1;
-  color: #ffffff; 
 }
 
-.case-label {
-  font-size: 1.1rem; /* Increased from 0.95rem */
+.tile-label {
+  font-size: clamp(0.55rem, 1vw, 0.85rem);
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
-  line-height: 1.2;
+  letter-spacing: 0.05em;
+  opacity: 0.9;
+}
+
+/* Fluid Scaling for TV & Varying Viewports */
+.tile-icon :deep(svg) {
+  width: clamp(24px, 4vw, 48px);
+  height: clamp(24px, 4vw, 48px);
+}
+
+.case-tile {
+  padding: clamp(12px, 2vw, 24px);
+  border-radius: var(--border-radius-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
-  color: rgba(255, 255, 255, 0.9);
+  color: white;
+  box-shadow: var(--shadow-md);
+  transition: transform 0.2s ease;
+  min-height: 0;
 }
 
-/* Base white text for all variant-accented cards */
-.case-card .case-value,
-.case-card .case-label {
-  color: #ffffff;
-}
+/* Variant Backgrounds - Restoring Brand Gradients */
+.case-tile.c-blue { background: linear-gradient(135deg, #1D3E8A, #2a52be); }
+.case-tile.c-amber { background: linear-gradient(135deg, #D35400, #f47c20); }
+.case-tile.c-red { background: linear-gradient(135deg, #C0392B, #ef4444); }
+.case-tile.c-green { background: linear-gradient(135deg, #0E7337, #10b981); }
+.case-tile.c-black { background: linear-gradient(135deg, #4A4A4A, #333333); }
 
-.case-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-}
-
-.case-card.c-blue::before { background: #1D3E8A; }
-.case-card.c-amber::before { background: #F47C20; }
-.case-card.c-red::before { background: #dc2626; }
-.case-card.c-green::before { background: #15803d; }
-.case-card.c-black::before { background: #4A4A4A; }
-
-/* TV Screen optimizations */
-@media screen and (min-width: 1920px) {
-  .cases-container {
-    padding: 15px;
-  }
-  
-  .cases-grid {
-    gap: 15px;
-  }
-  
-  .case-card {
-    padding: 20px 16px;
-    border-radius: 10px;
-  }
-  
-  .case-value {
-    font-size: 2.25rem;
-  }
-  
-  .case-label {
-    font-size: 0.8rem;
-  }
-}
-
-/* 4K TV optimization */
-@media screen and (min-width: 3840px) {
-  .cases-container {
-    padding: 20px;
-  }
-  
-  .cases-grid {
-    gap: 20px;
-  }
-  
-  .case-card {
-    padding: 25px 20px;
-    border-radius: 12px;
-  }
-  
-  .case-inner {
-    gap: 6px;
-  }
-  
-  .case-value {
-    font-size: 3rem;
-    margin-bottom: 6px;
-  }
-  
-  .case-label {
-    font-size: 1rem;
-    letter-spacing: 0.5px;
-  }
-  
-  .case-card::before {
-    height: 4px;
-  }
-}
-
-/* Smaller TV screens */
-@media screen and (max-width: 1600px) {
-  .cases-container {
-    padding: 10px;
-  }
-  
-  .cases-grid {
-    gap: 10px;
-  }
-  
-  .case-card {
-    padding: 14px 10px;
-  }
-  
-  .case-value {
-    font-size: 1.5rem;
-  }
-  
-  .case-label {
-    font-size: 0.65rem;
-  }
-}
-
-/* Very small screens */
-@media screen and (max-width: 1200px) {
-  .case-card {
-    padding: 12px 8px;
-  }
-  
-  .case-value {
-    font-size: 1.3rem;
-  }
-  
-  .case-label {
-    font-size: 0.6rem;
-  }
-}
-
-/* Mobile fallback - stack vertically */
-@media screen and (max-width: 768px) {
-  .cases-grid {
-    grid-template-columns: 1fr;
-    grid-template-rows: repeat(6, 1fr);
-    gap: 8px;
-  }
-  
-  .case-card {
-    padding: 12px 8px;
-  }
-  
-  .case-value {
-    font-size: 1.4rem;
-  }
-  
-  .case-label {
-    font-size: 0.65rem;
-  }
-}
-
-/* Animation for smooth tile updates - reduced for TV */
-@keyframes tileUpdate {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.01);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-.case-card {
-  /* animation removed for stability */
+.dark-mode .case-tile {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
 }
 </style>

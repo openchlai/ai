@@ -2,7 +2,7 @@
   <div class="header">
     <div class="logo-section">
       <div class="logos-wrapper">
-        <img src="../assets/sema_logo.png" alt="C-Sema Tanzania" class="brand-logo-img">
+        <img :src="logoUrl" alt="C-Sema Tanzania" class="brand-logo-img">
         <div class="logo-divider"></div>
         <img src="../assets/116_logo.png" alt="116 Child Helpline" class="helpline-logo-img">
       </div>
@@ -36,6 +36,8 @@
 </template>
 
 <script>
+import defaultLogo from '../assets/sema_logo.png'
+
 export default {
   name: 'WallboardHeader',
   props: {
@@ -56,7 +58,12 @@ export default {
       required: true
     }
   },
-  emits: ['toggle-theme', 'reconnect']
+  emits: ['toggle-theme', 'reconnect'],
+  data() {
+    return {
+      logoUrl: import.meta.env.VITE_LOGO_URL || defaultLogo
+    }
+  }
 }
 </script>
 
@@ -65,10 +72,8 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 0;
-  margin: 0 10px;
+  padding: 12px 20px;
   border-bottom: 2px solid var(--border-color);
-  width: 100%;
   flex-shrink: 0;
 }
 
@@ -101,7 +106,7 @@ export default {
 .logo-divider {
   width: 1px;
   height: 24px;
-  background: #e2e8f0;
+  background: var(--border-color);
 }
 
 .helpline-logo-img {
@@ -111,7 +116,7 @@ export default {
 }
 
 .title-section h1 {
-  font-size: 1.75rem;
+  font-size: clamp(1.2rem, 3vw, 2.2rem);
   font-weight: 800;
   color: var(--primary-color);
   margin: 0;
@@ -122,13 +127,13 @@ export default {
 .title-section p {
   color: var(--text-secondary);
   margin: 0;
-  font-size: 0.9rem;
+  font-size: clamp(0.7rem, 1.2vw, 1rem);
   line-height: 1.2;
   font-weight: 500;
 }
 
 .dark-mode .title-section h1 {
-  color: var(--text-primary);
+  color: white;
 }
 
 .dark-mode .title-section p {
@@ -262,14 +267,6 @@ export default {
     padding: 10px 0 8px 0;
   }
   
-  .title-section h1 {
-    font-size: 1.75rem;
-  }
-  
-  .title-section p {
-    font-size: 0.85rem;
-  }
-  
   .connection-status {
     font-size: 0.8rem;
     padding: 6px 10px;
@@ -278,11 +275,11 @@ export default {
   }
   
   .brand-logo-img {
-    height: 44px;
+    height: clamp(38px, 5vh, 44px);
   }
   
   .helpline-logo-img {
-    height: 50px;
+    height: clamp(42px, 6vh, 50px);
   }
   
   .logos-wrapper {
@@ -296,14 +293,6 @@ export default {
   .header {
     height: 80px;
     padding: 15px 0 12px 0;
-  }
-  
-  .title-section h1 {
-    font-size: 2.5rem;
-  }
-  
-  .title-section p {
-    font-size: 1.1rem;
   }
   
   .header-controls {
@@ -356,14 +345,6 @@ export default {
   .header {
     height: 45px;
     padding: 6px 0 4px 0;
-  }
-  
-  .title-section h1 {
-    font-size: 1.25rem;
-  }
-  
-  .title-section p {
-    font-size: 0.7rem;
   }
   
   .connection-status {
