@@ -67,7 +67,7 @@ body {
 .container {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 0.5rem 1rem;
   transition: all 0.3s ease;
 }
 
