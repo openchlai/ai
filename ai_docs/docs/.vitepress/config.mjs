@@ -163,28 +163,7 @@ export default defineConfig({
                             { text: 'Whisper Model', link: '/ai-services/features/whisper_model.md' }
                         ]
                     },
-                    {
-                        text: 'Speech-to-Text',
-                        items: [
-                            { text: 'How it Works', link: '/ai-services/speech-to-text/how-it-works' },
-                            { text: 'Accuracy & Language Support', link: '/ai-services/speech-to-text/accuracy-language-support' }
-                        ]
-                    },
-                    {
-                        text: 'Translation',
-                        items: [
-                            { text: 'Supported Languages', link: '/ai-services/translation/supported-languages' },
-                            { text: 'Usage & Limitations', link: '/ai-services/translation/usage-limitations' }
-                        ]
-                    },
-                    {
-                        text: 'NLP',
-                        items: [
-                            { text: 'Named Entity Recognition', link: '/ai-services/nlp/named-entity-recognition' },
-                            { text: 'Case Classification & Prediction', link: '/ai-services/nlp/case-classification-prediction' },
-                            { text: 'Summarization & Insights', link: '/ai-services/nlp/summarization-insights' }
-                        ]
-                    }
+                    
                 ]
             }
         ],

@@ -680,6 +680,10 @@ If you use this model, cite:
 
 For bugs, improvements, or domain expansions, contact BITZ IT Consulting.
 
+
+### Contributing
+For dataset contributions, model improvements, or bug reports, please contact the BITZ AI Team at info@bitz-itc.com.
+
 ***
 
 ## 8. License
@@ -687,5 +691,3 @@ For bugs, improvements, or domain expansions, contact BITZ IT Consulting.
 **Apache 2.0 License**—free for commercial/non-commercial use with proper attribution.
 
 ***
-
-*Documentation last updated: October 17, 2025*

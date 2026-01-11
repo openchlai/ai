@@ -1,21 +1,20 @@
 ---
 title: Classification Model Evaluation — Comparative Performance Across Datasets
-author: Gemini CLI
+author: Peter Rogendo
 date: November 10, 2025
 geometry: "a4paper, margin=2cm"
 ---
 
-\newpage
+# Classification Model Evaluation — Comparative Performance Across Datasets
 
-# Table of Contents
+## Table of Contents
 - [Metric Definitions](#metric-definitions)
 - [Dataset Overview and Comparative Tables](#dataset-overview-and-comparative-tables)
 - [Visual Analysis](#visual-analysis)
 - [Analytical Summary](#analytical-summary)
 
-\newpage
 
-# SECTION 1 — Metric Definitions {#metric-definitions}
+## SECTION 1 — Metric Definitions 
 
 | Metric | Description | Interpretation | Ideal Range |
 |---|---|---|---|
@@ -26,9 +25,8 @@ geometry: "a4paper, margin=2cm"
 
 These metrics jointly assess model completeness, correctness, and balance. A high accuracy indicates overall correctness, while precision and recall provide a more nuanced view of the model's performance, especially in cases of class imbalance. The F1-score provides a single metric that balances both precision and recall.
 
-\newpage
 
-# SECTION 2 — Dataset Overview and Comparative Tables {#dataset-overview-and-comparative-tables}
+## SECTION 2 — Dataset Overview and Comparative Tables 
 
 This section presents a side-by-side comparison of the models for each dataset. The highest value for each metric and task is **bolded**. Models are ranked by their average F1-Score, with the top-ranked model marked with a (Winner) icon.
 
@@ -74,25 +72,24 @@ On this dataset, models demonstrate varying stability across classification subt
 
 On this dataset, models demonstrate varying stability across classification subtasks. F1-Score and Recall provide insights into generalization to domain-specific linguistic variations.
 
-\newpage
 
-# SECTION 3 — Visual Analysis {#visual-analysis}
+## SECTION 3 — Visual Analysis 
 
-## F1-Score for Main Category
+### F1-Score for Main Category
 ![F1-Score for Main Category](./assets/f1_score_main_category.png)
 
-## F1-Score for Sub Category
+### F1-Score for Sub Category
 ![F1-Score for Sub Category](./assets/f1_score_sub_category.png)
 
-## F1-Score for Intervention
+### F1-Score for Intervention
 ![F1-Score for Intervention](./assets/f1_score_intervention.png)
 
-## F1-Score for Priority
+### F1-Score for Priority
 ![F1-Score for Priority](./assets/f1_score_priority.png)
 
-\newpage
 
-## Radar Charts
+
+### Radar Charts
 
 ![Performance Profile on Helpline Data (Agents Case Narratives)](./assets/radar_chart_helpline_data_(agents_case_narratives).png)
 
@@ -100,15 +97,13 @@ On this dataset, models demonstrate varying stability across classification subt
 
 ![Performance Profile on Helpline Data ( Audio Transcripts)](./assets/radar_chart_helpline_data_(_audio_transcripts).png)
 
-\newpage
 
-## Heatmap of Average Metric Scores
+### Heatmap of Average Metric Scores
 
 ![Heatmap of Average Metric Scores](./assets/heatmap.png)
 
-\newpage
 
-# SECTION 4 — Analytical Summary {#analytical-summary}
+## SECTION 4 — Analytical Summary
 
 The evaluation of the two models across the three datasets reveals significant performance differences. F1-Scores across tasks range from 0.001 to 0.685, indicating a wide variance in model performance depending on the task and dataset. Both models show improved performance on the synthetic data compared to the raw audio transcripts, suggesting that the structured nature of the synthetic data is easier for the models to learn.
 

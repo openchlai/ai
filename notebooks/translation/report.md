@@ -1,22 +1,22 @@
-
 ---
-title: "Comprehensive Translation Model Evaluation — Fine-Tuned vs. Base and General Models"
-author: "Gemini CLI"
-date: "2025-11-10"
-geometry: "a4paper, margin=2cm"
+title: Comprehensive Translation Model Evaluation — Fine-Tuned vs. Base and General Models
+author: Brenda Ogutu
+date: 2025-11-10
+geometry: a4paper, margin=2cm
 ---
 
-# Comprehensive Translation Model Evaluation — Fine-Tuned vs. Base and General Models
+# Comprehensive Translation Model Evaluation — Fine-Tuned vs. Base and General Models 
 
-\subsection{Table of Contents}\label{table-of-contents}
+## Table of Contents
 
-- [Section 1: Metric Definitions](#section-1-metric-definitions)
 
-- [Section 2: Comparative Summary Tables](#section-2-comparative-summary-tables)
+- [Metric Definitions](#section-1-metric-definitions)
 
-- [Section 3: Visual Analysis](#section-3-visual-analysis)
+- [Comparative Summary Tables](#section-2-comparative-summary-tables)
 
-- [Section 4: Analytical Summary](#section-4-analytical-summary)
+- [Visual Analysis](#section-3-visual-analysis)
+
+- [Analytical Summary](#section-4-analytical-summary)
 
 ## Section 1: Metric Definitions
 
