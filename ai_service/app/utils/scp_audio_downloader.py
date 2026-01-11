@@ -69,7 +69,7 @@ async def download_audio_via_scp(call_id: str, scp_config: Dict[str, Any] = None
     file_extension = remote_path.split('.')[-1] if '.' in remote_path else 'dat'
     with tempfile.NamedTemporaryFile(suffix=f'.{file_extension}', delete=False) as temp_file:
         temp_path = temp_file.name
-    
+
     try:
         # Use sshpass + scp for password authentication
         scp_cmd = [

@@ -1,0 +1,376 @@
+{
+  "uid": "ai-service-model-processing",
+  "title": "AI Service - Model Processing",
+  "tags": [
+    "ai-service",
+    "models",
+    "ai"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 16,
+  "version": 2,
+  "refresh": "10s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Task Processing Time by Task Type",
+      "type": "graph",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(celery_task_runtime_sum[5m])) by (name) / sum(rate(celery_task_runtime_count[5m])) by (name)",
+          "legendFormat": "{{name}}"
+        }
+      ],
+      "yaxes": [
+        {
+          "format": "s",
+          "label": "Avg Processing Time"
+        },
+        {
+          "format": "short"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Whisper Transcription Time (Percentiles)",
+      "type": "graph",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(celery_task_runtime_bucket{name=\"whisper_transcribe_task\"}[5m])) by (le))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.90, sum(rate(celery_task_runtime_bucket{name=\"whisper_transcribe_task\"}[5m])) by (le))",
+          "legendFormat": "p90"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(celery_task_runtime_bucket{name=\"whisper_transcribe_task\"}[5m])) by (le))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(celery_task_runtime_bucket{name=\"whisper_transcribe_task\"}[5m])) by (le))",
+          "legendFormat": "p99"
+        }
+      ],
+      "yaxes": [
+        {
+          "format": "s",
+          "label": "Duration"
+        },
+        {
+          "format": "short"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Translation Task Time",
+      "type": "graph",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(celery_task_runtime_bucket{name=\"translation_translate_task\"}[5m])) by (le))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(celery_task_runtime_bucket{name=\"translation_translate_task\"}[5m])) by (le))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(celery_task_runtime_bucket{name=\"translation_translate_task\"}[5m])) by (le))",
+          "legendFormat": "p99"
+        }
+      ],
+      "yaxes": [
+        {
+          "format": "s",
+          "label": "Duration"
+        },
+        {
+          "format": "short"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "NER Task Processing Time",
+      "type": "graph",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(celery_task_runtime_bucket{name=\"ner_extract_task\"}[5m])) by (le))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(celery_task_runtime_bucket{name=\"ner_extract_task\"}[5m])) by (le))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(celery_task_runtime_bucket{name=\"ner_extract_task\"}[5m])) by (le))",
+          "legendFormat": "p99"
+        }
+      ],
+      "yaxes": [
+        {
+          "format": "s",
+          "label": "Duration"
+        },
+        {
+          "format": "short"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Classification Task Time",
+      "type": "graph",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 16
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(celery_task_runtime_bucket{name=\"classifier_classify_task\"}[5m])) by (le))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(celery_task_runtime_bucket{name=\"classifier_classify_task\"}[5m])) by (le))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(celery_task_runtime_bucket{name=\"classifier_classify_task\"}[5m])) by (le))",
+          "legendFormat": "p99"
+        }
+      ],
+      "yaxes": [
+        {
+          "format": "s",
+          "label": "Duration"
+        },
+        {
+          "format": "short"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Task Success Rate",
+      "type": "graph",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 24
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(celery_task_succeeded_total[5m])) by (name) / (sum(rate(celery_task_succeeded_total[5m])) by (name) + sum(rate(celery_task_failed_total[5m])) by (name)) * 100",
+          "legendFormat": "{{name}}"
+        }
+      ],
+      "yaxes": [
+        {
+          "format": "percent",
+          "label": "Success Rate",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "format": "short"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Task Operations (Success vs Failure)",
+      "type": "graph",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 24
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(celery_task_succeeded_total[5m])) by (name)",
+          "legendFormat": "{{name}} Success"
+        },
+        {
+          "expr": "sum(rate(celery_task_failed_total[5m])) by (name)",
+          "legendFormat": "{{name}} Failure"
+        }
+      ],
+      "yaxes": [
+        {
+          "format": "ops",
+          "label": "Operations/sec"
+        },
+        {
+          "format": "short"
+        }
+      ],
+      "seriesOverrides": [
+        {
+          "alias": "/.* Failure/",
+          "color": "#C4162A"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Active Celery Workers",
+      "type": "stat",
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 0,
+        "y": 32
+      },
+      "targets": [
+        {
+          "expr": "celery_active_worker_count",
+          "legendFormat": "Workers"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": 0,
+                "color": "red"
+              },
+              {
+                "value": 1,
+                "color": "green"
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 9,
+      "title": "Average Processing Time by Task",
+      "type": "bargauge",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 32
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(celery_task_runtime_sum[5m])) by (name) / sum(rate(celery_task_runtime_count[5m])) by (name)",
+          "legendFormat": "{{name}}"
+        }
+      ],
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": 0,
+                "color": "green"
+              },
+              {
+                "value": 5,
+                "color": "yellow"
+              },
+              {
+                "value": 10,
+                "color": "red"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 10,
+      "title": "Total Tasks Completed",
+      "type": "stat",
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 0,
+        "y": 36
+      },
+      "targets": [
+        {
+          "expr": "sum(celery_task_succeeded_total) by (name)",
+          "legendFormat": "{{name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0
+        }
+      }
+    },
+    {
+      "id": 11,
+      "title": "Queue Length by Task Type",
+      "type": "graph",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 40
+      },
+      "targets": [
+        {
+          "expr": "celery_queue_length",
+          "legendFormat": "{{queue_name}}"
+        }
+      ],
+      "yaxes": [
+        {
+          "format": "short",
+          "label": "Queue Length"
+        },
+        {
+          "format": "short"
+        }
+      ]
+    }
+  ]
+}

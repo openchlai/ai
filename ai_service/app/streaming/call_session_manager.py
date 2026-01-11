@@ -29,23 +29,42 @@ class CallSession:
     processing_plan: Optional[Dict] = None  # Detailed processing plan
     
     def to_dict(self) -> Dict:
-        """Convert to dictionary for JSON serialization"""
+        """Convert to dictionary for JSON serialization with sensitive data removed"""
         data = asdict(self)
         data['start_time'] = self.start_time.isoformat()
         data['last_activity'] = self.last_activity.isoformat()
-        
+
         # Handle processing_plan serialization (convert enums to strings)
         if self.processing_plan:
+            import json
+            import copy
             try:
                 # Test if it's JSON serializable, if not convert enums to strings
                 json.dumps(self.processing_plan)
-                data['processing_plan'] = self.processing_plan
+                serializable_plan = self.processing_plan
             except TypeError:
                 # Convert enum objects to their string values
                 serializable_plan = self._make_json_serializable(self.processing_plan)
-                data['processing_plan'] = serializable_plan
-        
+
+            # Sanitize sensitive data from processing_plan before exposing
+            data['processing_plan'] = self._sanitize_sensitive_data(serializable_plan)
+
         return data
+
+    def _sanitize_sensitive_data(self, data: Dict) -> Dict:
+        """Remove sensitive information from data structures for external exposure"""
+        import copy
+        sanitized = copy.deepcopy(data)
+
+        # Recursively sanitize password fields
+        if isinstance(sanitized, dict):
+            for key, value in sanitized.items():
+                if isinstance(value, dict):
+                    sanitized[key] = self._sanitize_sensitive_data(value)
+                elif key.lower() in ['password', 'passwd', 'pwd', 'secret', 'token', 'api_key']:
+                    sanitized[key] = '***REDACTED***'
+
+        return sanitized
     
     def _make_json_serializable(self, obj):
         """Recursively convert non-serializable objects to serializable form"""

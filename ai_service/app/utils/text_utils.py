@@ -408,18 +408,38 @@ class ClassificationAggregator:
         """
         Aggregate case category classification results
         Uses confidence-weighted voting
+        Returns top 2 subcategories instead of just 1
         """
         if not chunk_predictions:
             return None
         
         if len(chunk_predictions) == 1:
-            return chunk_predictions[0]
+            # Single chunk - get top 2 subcategories
+            pred = chunk_predictions[0]
+            subcategories = ClassificationAggregator._get_top_2_subcategories_single(pred)
+            
+            return {
+                'main_category': pred['main_category'],
+                'sub_category': subcategories['sub_category'],
+                'sub_category_2': subcategories['sub_category_2'],
+                'intervention': pred['intervention'],
+                'priority': pred['priority'],
+                'confidence_scores': {
+                    'main_category': pred['confidence_scores']['main_category'],
+                    'sub_category': subcategories['sub_category_confidence'],
+                    'sub_category_2': subcategories['sub_category_2_confidence'],
+                    'intervention': pred['confidence_scores']['intervention'],
+                    'priority': pred['confidence_scores']['priority']
+                },
+                'num_chunks': 1
+            }
         
-        # Aggregate each field using confidence scores
-        fields = ['main_category', 'sub_category', 'intervention', 'priority']
+        # Multiple chunks - aggregate with weighted voting
+        fields = ['main_category', 'intervention', 'priority']
         aggregated = {}
         aggregated_confidences = {}
         
+        # Standard aggregation for main_category, intervention, priority
         for field in fields:
             votes = {}
             
@@ -441,11 +461,110 @@ class ClassificationAggregator:
             aggregated[field] = best_prediction
             aggregated_confidences[field] = float(avg_confidence)
         
+        # Special handling for subcategories - get top 2
+        subcategories = ClassificationAggregator._get_top_2_subcategories_multi(chunk_predictions)
+        
+        aggregated['sub_category'] = subcategories['sub_category']
+        aggregated['sub_category_2'] = subcategories['sub_category_2']
+        aggregated_confidences['sub_category'] = subcategories['sub_category_confidence']
+        aggregated_confidences['sub_category_2'] = subcategories['sub_category_2_confidence']
+        
         aggregated['confidence_scores'] = aggregated_confidences
         aggregated['num_chunks'] = len(chunk_predictions)
         
         return aggregated
     
+    @staticmethod
+    def _get_top_2_subcategories_single(prediction: Dict) -> Dict[str, Any]:
+        """
+        Extract top 2 subcategories from a single prediction
+        Assumes the model returns raw scores/logits for all subcategory classes
+        
+        If your model only returns the top class, you'll need to modify your model
+        to return scores for all classes or at least top-k classes
+        """
+        # This assumes you have access to all subcategory scores
+        # You may need to modify your model's predict method to return this
+        
+        sub_category = prediction['sub_category']
+        sub_category_confidence = prediction['confidence_scores']['sub_category']
+        
+        # Placeholder for second subcategory
+        # You'll need to get this from your model's raw output
+        # For now, returning None as we don't have access to the second-best prediction
+        
+        return {
+            'sub_category': sub_category,
+            'sub_category_confidence': sub_category_confidence,
+            'sub_category_2': None,  # Will need model modification
+            'sub_category_2_confidence': 0.0
+        }
+    
+    @staticmethod
+    def _get_top_2_subcategories_multi(chunk_predictions: List[Dict]) -> Dict[str, Any]:
+        """
+        Get top 2 subcategories from multiple chunk predictions
+        Uses weighted voting across all chunks
+        NOW COLLECTS BOTH sub_category AND sub_category_2 from each chunk
+        """
+        # Collect all subcategory votes with their confidence scores
+        subcategory_votes = {}
+        
+        for pred in chunk_predictions:
+            # Get top-1 subcategory
+            sub_cat_1 = pred.get('sub_category')
+            confidence_1 = pred['confidence_scores'].get('sub_category', 0.0)
+            
+            if sub_cat_1:
+                if sub_cat_1 not in subcategory_votes:
+                    subcategory_votes[sub_cat_1] = []
+                subcategory_votes[sub_cat_1].append(confidence_1)
+            
+            # Get top-2 subcategory (NEW!)
+            sub_cat_2 = pred.get('sub_category_2')
+            confidence_2 = pred['confidence_scores'].get('sub_category_2', 0.0)
+            
+            if sub_cat_2:  # Only add if not None
+                if sub_cat_2 not in subcategory_votes:
+                    subcategory_votes[sub_cat_2] = []
+                subcategory_votes[sub_cat_2].append(confidence_2)
+        
+        # Calculate weighted scores (sum of confidences)
+        vote_scores = {k: sum(v) for k, v in subcategory_votes.items()}
+        
+        # Sort by score to get top 2
+        sorted_subcategories = sorted(vote_scores.items(), key=lambda x: x[1], reverse=True)
+        
+        if len(sorted_subcategories) >= 2:
+            top_1 = sorted_subcategories[0]
+            top_2 = sorted_subcategories[1]
+            
+            return {
+                'sub_category': top_1[0],
+                'sub_category_confidence': float(np.mean(subcategory_votes[top_1[0]])),
+                'sub_category_2': top_2[0],
+                'sub_category_2_confidence': float(np.mean(subcategory_votes[top_2[0]]))
+            }
+        elif len(sorted_subcategories) == 1:
+            # Only one subcategory found across all chunks
+            top_1 = sorted_subcategories[0]
+            
+            return {
+                'sub_category': top_1[0],
+                'sub_category_confidence': float(np.mean(subcategory_votes[top_1[0]])),
+                'sub_category_2': None,
+                'sub_category_2_confidence': 0.0
+            }
+        else:
+            # No subcategories (shouldn't happen)
+            return {
+                'sub_category': None,
+                'sub_category_confidence': 0.0,
+                'sub_category_2': None,
+                'sub_category_2_confidence': 0.0
+            }
+    
+            
     @staticmethod
     def aggregate_qa_scoring(chunk_predictions: List[Dict]) -> Dict[str, Any]:
         """

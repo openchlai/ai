@@ -29,6 +29,10 @@ from app.models.notification_types import (
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+# Add these imports with the existing imports
+from ..db.session import SessionLocal
+from ..db.repositories.feedback_repository import FeedbackRepository
+
 # Configure logging
 logger = logging.getLogger(__name__)
 
@@ -178,7 +182,8 @@ class EnhancedNotificationService:
             logger.info(f"🔐 [token] Fetching token from: {self.auth_endpoint_url}")
             logger.info(f"🔐 [token] Headers: Authorization=Basic {self.basic_auth[:20]}..., Content-Type={headers['Content-Type']}")
 
-            response = await self.client.post(
+            # Use GET instead of POST (helpline API expects GET)
+            response = await self.client.get(
                 self.auth_endpoint_url,
                 headers=headers
             )
@@ -190,17 +195,26 @@ class EnhancedNotificationService:
                 data = response.json()
                 logger.info(f"🔐 [token] Response keys: {list(data.keys())}")
 
-                token = data.get("access_token") or data.get("token")
+                # Parse token from helpline API format: data["ss"][0][0]
+                token = None
+                if "ss" in data and isinstance(data["ss"], list) and len(data["ss"]) > 0:
+                    if isinstance(data["ss"][0], list) and len(data["ss"][0]) > 0:
+                        token = data["ss"][0][0]
+
+                # Fallback to standard token fields if not found in ss structure
+                if not token:
+                    token = data.get("access_token") or data.get("token")
 
                 if token:
                     # Set expiration (default 1 hour if not provided)
                     expires_in = data.get("expires_in", 3600)
                     self.token_expires_at = datetime.now() + timedelta(seconds=expires_in)
 
-                    logger.info("✅ Successfully fetched bearer token")
+                    logger.info(f"✅ Successfully fetched bearer token: {token[:8]}...")
                     return token
                 else:
                     logger.error(f"❌ No token found in response. Keys: {list(data.keys())}")
+                    logger.error(f"❌ Response structure: {json.dumps(data, indent=2)[:500]}")
             else:
                 # Log detailed error response
                 try:
@@ -529,18 +543,23 @@ class EnhancedNotificationService:
         **metadata
     ) -> bool:
         """Send post-call complete notification."""
-        
+    
+        # ✨ ADD THIS: Create feedback entries for all completed tasks
+        processing_mode = metadata.get('processing_mode', 'post_call')
+        await self.create_feedback_entries(call_id, pipeline_results, processing_mode)
+    
+        # Existing notification logic continues below
         payload_data = {
             "unified_insights": unified_insights,
             "pipeline_results": pipeline_results
         }
-        
+    
         ui_metadata = {
             "priority": 1,
             "display_panel": "insights",
             "requires_action": True
         }
-        
+    
         return await self.send_notification(
             call_id=call_id,
             notification_type=NotificationType.POSTCALL_COMPLETE,
@@ -549,7 +568,6 @@ class EnhancedNotificationService:
             call_metadata=metadata,
             ui_metadata=ui_metadata
         )
-
     async def send_progress_update(
         self,
         call_id: str,
@@ -603,6 +621,58 @@ class EnhancedNotificationService:
             error_info=error_info
         )
 
+    async def create_feedback_entries(self, call_id: str, pipeline_results: Dict[str, Any], processing_mode: str = None):
+        """
+        Create initial feedback entries for all tasks when processing completes.
+        Called automatically when sending notifications.
+    
+        Args:
+            call_id: Unique call identifier
+            pipeline_results: Complete pipeline results containing all task outputs
+            processing_mode: Processing mode used
+        """
+        try:
+            db = SessionLocal()
+
+            # Map of task names to their results in pipeline output
+            task_mapping = {
+                'transcription': pipeline_results.get('transcript'),
+                'classification': pipeline_results.get('classification'),
+                'ner': pipeline_results.get('entities'),
+                'summarization': pipeline_results.get('summary'),
+                'translation': pipeline_results.get('translation'),
+                'qa': pipeline_results.get('qa_analysis') or pipeline_results.get('qa_scores'),
+            }
+
+            created_count = 0
+            for task, prediction in task_mapping.items():
+                # Create feedback entry if task was attempted (even if result is empty)
+                # Skip only if prediction is explicitly None (task was skipped)
+                if prediction is not None:
+                    # Ensure we have a valid prediction object (convert empty to appropriate type)
+                    if prediction == {} or prediction == "" or prediction == []:
+                        # Keep empty results as-is for feedback
+                        pass
+
+                    feedback = FeedbackRepository.create_initial_feedback(
+                        db=db,
+                        call_id=call_id,
+                        task=task,
+                        prediction=prediction if prediction else {},  # Use empty dict if falsy
+                        processing_mode=processing_mode,
+                        model_version=None  # Can be enhanced to track versions
+                    )
+                    if feedback:
+                        created_count += 1
+
+            db.close()
+            logger.info(f"✅ Created {created_count} feedback entries for call {call_id}")
+
+        except Exception as e:
+            logger.error(f"❌ Failed to create feedback entries: {e}")
+
+    
+  
 # Singleton instance
 notification_service = EnhancedNotificationService()
 enhanced_notification_service = notification_service  # Alias for backward compatibility

@@ -63,3 +63,12 @@ ai/ai_service/ai_service.db
 *.onnx
 *.pt
 *.pth
+# Load test results
+load_test_*.html
+load_test_*.txt
+load_test_results_*/
+LOAD_TEST_SUMMARY.md
+
+# Monitoring data
+monitoring/grafana/data/
+monitoring/prometheus/data/

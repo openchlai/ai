@@ -3,18 +3,23 @@ import logging
 import asyncio
 import os
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Response
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 from .config.settings import settings
-from .api import health_routes, ner_routes, translator_routes, summarizer_routes, classifier_route, whisper_routes, audio_routes, call_session_routes, qa_route, processing_mode_routes, notification_routes
+from .api import health_routes, ner_routes, translator_routes, summarizer_routes, classifier_route, whisper_routes, audio_routes, call_session_routes, qa_route, processing_mode_routes, whisper_model_routes, notification_routes, agent_feedback_routes
 from .model_scripts.model_loader import model_loader
 from .core.resource_manager import resource_manager
 from .streaming.tcp_server import AsteriskTCPServer
 from .streaming.websocket_server import websocket_manager
 
 from .config.settings import settings
+
+# Prometheus metrics
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+from prometheus_fastapi_instrumentator import Instrumentator
+from .core.metrics import initialize_metrics
 
 # Only import Celery if we're not the main API server
 if settings.enable_model_loading:
@@ -38,6 +43,15 @@ async def lifespan(app: FastAPI):
     # Initialize paths
     settings.initialize_paths()
     
+    # Initialize database tables
+    logger.info("🗄️ Initializing database...")
+    try:
+        from .db.session import init_db
+        init_db()
+        logger.info("✅ Database tables initialized")
+    except Exception as e:
+        logger.error(f"❌ Database initialization error: {e}")
+
     # Initialize Redis connections (needed for both API server and worker modes)
     logger.info("📡 Initializing Redis connections...")
     try:
@@ -118,6 +132,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Initialize Prometheus metrics
+initialize_metrics(
+    app_name=settings.app_name,
+    version=settings.app_version,
+    site_id=settings.site_id
+)
+
+# Instrument FastAPI with Prometheus
+instrumentator = Instrumentator(
+    should_group_status_codes=False,
+    should_ignore_untemplated=True,
+    should_respect_env_var=True,
+    should_instrument_requests_inprogress=True,
+    excluded_handlers=["/metrics"],
+    env_var_name="ENABLE_METRICS",
+    inprogress_name="fastapi_inprogress",
+    inprogress_labels=True,
+)
+instrumentator.instrument(app)
+instrumentator.expose(app, endpoint="/metrics", include_in_schema=False)
+
 # Include routers
 app.include_router(health_routes.router)
 app.include_router(ner_routes.router)
@@ -130,6 +165,7 @@ app.include_router(call_session_routes.router)
 app.include_router(qa_route.router)
 app.include_router(processing_mode_routes.router)
 app.include_router(notification_routes.router)
+app.include_router(agent_feedback_routes.router)
 
 @app.websocket("/audio/stream")
 async def websocket_audio_stream(websocket: WebSocket):
@@ -176,9 +212,10 @@ async def root():
             "notification_status": "/api/v1/notifications/status",
             "notification_configure": "/api/v1/notifications/configure",
             "notification_statistics": "/api/v1/notifications/statistics",
-            "feedback_transcription_rating": "/api/v1/feedback/transcription-rating",
-            "feedback_task_status": "/api/v1/feedback/status/{task_id}",
-            "feedback_health": "/api/v1/feedback/health"
+            "agent_feedback_update": "/api/v1/agent-feedback/update",
+            "agent_feedback_by_call": "/api/v1/agent-feedback/call/{call_id}",
+            "agent_feedback_statistics": "/api/v1/agent-feedback/statistics",
+            "agent_feedback_health": "/api/v1/agent-feedback/health"
 
         }
     }

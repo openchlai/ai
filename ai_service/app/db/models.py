@@ -1,29 +1,34 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text, Float, Boolean, JSON, Index, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, Text, Float, Boolean, JSON, Index, UniqueConstraint
 from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
 from .session import Base
 
 
-class PipelineTask(Base):
+class AgentFeedback(Base):
     """
-    Stores information about pipeline processing tasks.
-    Each task represents one audio processing job through the AI pipeline.
+    Stores agent feedback on AI model predictions per call and task.
+    Allows tracking of model performance from real-world agent perspective.
     """
-    __tablename__ = "pipeline_tasks"
+    __tablename__ = "agent_feedback"
     
     id = Column(Integer, primary_key=True, index=True)
-    task_id = Column(String, unique=True, index=True, nullable=False)
-    call_id = Column(String, index=True)
-    agent_id = Column(String, index=True)
-    status = Column(String, default="pending", nullable=False)
-    input_data = Column(JSON)
-    output_data = Column(JSON)
+    call_id = Column(String(100), nullable=False, index=True)
+    task = Column(String(50), nullable=False, index=True)
+    prediction = Column(JSON, nullable=False)
+    feedback = Column(Integer, nullable=True)
+    reason = Column(Text, nullable=True)
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    # Additional indexes for common queries
+    processing_mode = Column(String(20))
+    model_version = Column(String(50))
+
     __table_args__ = (
-        Index('idx_task_status_created', 'status', 'created_at'),
-        Index('idx_call_agent', 'call_id', 'agent_id'),
+        UniqueConstraint('call_id', 'task', name='uix_call_task'),
+        Index('idx_call_task', 'call_id', 'task'),
+        Index('idx_task_feedback', 'task', 'feedback'),
+        Index('idx_created_at', 'created_at'),
     )
 
+    def __repr__(self):
+        return f"<AgentFeedback(call_id={self.call_id}, task={self.task}, feedback={self.feedback})>"

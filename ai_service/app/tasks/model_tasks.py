@@ -7,11 +7,17 @@ import os
 from ..celery_app import celery_app
 from ..model_scripts.model_loader import model_loader
 from ..utils.text_utils import (
-    NERChunker, 
-    ClassificationChunker, 
+    NERChunker,
+    ClassificationChunker,
     ClassificationAggregator,
     SummarizationChunker,
     TranslationChunker
+)
+from ..core.metrics import (
+    track_model_time,
+    model_processing_seconds,
+    model_operations_total,
+    update_model_status
 )
 
 logger = logging.getLogger(__name__)
@@ -68,28 +74,29 @@ def get_worker_model_loader():
 def ner_extract_task(self, text: str, flat: bool = True) -> Dict[str, Any]:
     """
     Extract named entities from text using Celery task
-    
+
     Args:
         text: Input text for NER
         flat: Return flat list (True) or grouped by label (False)
-        
+
     Returns:
         Dictionary with entities, processing time, and model info
     """
+    start_time = datetime.now()
     try:
-        start_time = datetime.now()
-        
         # Update task state
         self.update_state(state='PROCESSING', meta={'status': 'Extracting entities...'})
-        
+
         # Get model loader
         loader = get_worker_model_loader()
-        
+
         if not loader.is_model_ready("ner"):
+            model_operations_total.labels(model="ner", operation="extract", status="failure").inc()
             raise RuntimeError("NER model not ready")
-        
+
         ner_model = loader.models.get("ner")
         if not ner_model:
+            model_operations_total.labels(model="ner", operation="extract", status="failure").inc()
             raise RuntimeError("NER model not available")
         
         # Initialize chunker
@@ -122,7 +129,11 @@ def ner_extract_task(self, text: str, flat: bool = True) -> Dict[str, Any]:
         
         processing_time = (datetime.now() - start_time).total_seconds()
         model_info = ner_model.get_model_info()
-        
+
+        # Track metrics
+        model_processing_seconds.labels(model="ner", operation="extract").observe(processing_time)
+        model_operations_total.labels(model="ner", operation="extract", status="success").inc()
+
         return {
             "entities": entities,
             "processing_time": processing_time,
@@ -130,8 +141,11 @@ def ner_extract_task(self, text: str, flat: bool = True) -> Dict[str, Any]:
             "timestamp": datetime.now().isoformat(),
             "task_id": self.request.id
         }
-        
+
     except Exception as e:
+        processing_time = (datetime.now() - start_time).total_seconds()
+        model_processing_seconds.labels(model="ner", operation="extract").observe(processing_time)
+        model_operations_total.labels(model="ner", operation="extract", status="failure").inc()
         logger.error(f" NER task failed: {e}")
         raise
 
@@ -143,25 +157,26 @@ def ner_extract_task(self, text: str, flat: bool = True) -> Dict[str, Any]:
 def classifier_classify_task(self, narrative: str) -> Dict[str, Any]:
     """
     Classify case narrative using Celery task
-    
+
     Args:
         narrative: Case narrative text
-        
+
     Returns:
         Dictionary with classification results
     """
+    start_time = datetime.now()
     try:
-        start_time = datetime.now()
-        
         self.update_state(state='PROCESSING', meta={'status': 'Classifying narrative...'})
-        
+
         loader = get_worker_model_loader()
-        
+
         if not loader.is_model_ready("classifier_model"):
+            model_operations_total.labels(model="classifier", operation="classify", status="failure").inc()
             raise RuntimeError("Classifier model not ready")
-        
+
         classifier = loader.models.get("classifier_model")
         if not classifier:
+            model_operations_total.labels(model="classifier", operation="classify", status="failure").inc()
             raise RuntimeError("Classifier model not available")
         
         # Initialize chunker
@@ -205,6 +220,7 @@ def classifier_classify_task(self, narrative: str) -> Dict[str, Any]:
                 chunk_pred = {
                     'main_category': chunk_classification['main_category'],
                     'sub_category': chunk_classification['sub_category'],
+                    'sub_category_2': chunk_classification.get('sub_category_2'), 
                     'intervention': chunk_classification['intervention'],
                     'priority': chunk_classification['priority'],
                     'confidence_scores': chunk_classification.get('confidence_breakdown', {})
@@ -231,9 +247,13 @@ def classifier_classify_task(self, narrative: str) -> Dict[str, Any]:
         
         processing_time = (datetime.now() - start_time).total_seconds()
         model_info = classifier.get_model_info()
-        
+
+        # Track metrics
+        model_processing_seconds.labels(model="classifier", operation="classify").observe(processing_time)
+        model_operations_total.labels(model="classifier", operation="classify", status="success").inc()
+
         logger.info(f" Classification complete: {processing_time:.3f}s")
-        
+
         return {
             **aggregated_result,
             "processing_time": processing_time,
@@ -241,8 +261,11 @@ def classifier_classify_task(self, narrative: str) -> Dict[str, Any]:
             "timestamp": datetime.now().isoformat(),
             "task_id": self.request.id
         }
-        
+
     except Exception as e:
+        processing_time = (datetime.now() - start_time).total_seconds()
+        model_processing_seconds.labels(model="classifier", operation="classify").observe(processing_time)
+        model_operations_total.labels(model="classifier", operation="classify", status="failure").inc()
         logger.error(f" Classification task failed: {e}")
         raise
 
@@ -254,25 +277,26 @@ def classifier_classify_task(self, narrative: str) -> Dict[str, Any]:
 def translation_translate_task(self, text: str) -> Dict[str, Any]:
     """
     Translate text using Celery task
-    
+
     Args:
         text: Text to translate
-        
+
     Returns:
         Dictionary with translation results
     """
+    start_time = datetime.now()
     try:
-        start_time = datetime.now()
-        
         self.update_state(state='PROCESSING', meta={'status': 'Translating text...'})
-        
+
         loader = get_worker_model_loader()
-        
+
         if not loader.is_model_ready("translator"):
+            model_operations_total.labels(model="translator", operation="translate", status="failure").inc()
             raise RuntimeError("Translation model not ready")
-        
+
         translator_model = loader.models.get("translator")
         if not translator_model:
+            model_operations_total.labels(model="translator", operation="translate", status="failure").inc()
             raise RuntimeError("Translator model not available")
         
         # Initialize chunker
@@ -304,9 +328,13 @@ def translation_translate_task(self, text: str) -> Dict[str, Any]:
         
         processing_time = (datetime.now() - start_time).total_seconds()
         model_info = translator_model.get_model_info()
-        
+
+        # Track metrics
+        model_processing_seconds.labels(model="translator", operation="translate").observe(processing_time)
+        model_operations_total.labels(model="translator", operation="translate", status="success").inc()
+
         logger.info(f" Translation complete: {processing_time:.3f}s")
-        
+
         return {
             "translated": translated,
             "processing_time": processing_time,
@@ -314,8 +342,11 @@ def translation_translate_task(self, text: str) -> Dict[str, Any]:
             "timestamp": datetime.now().isoformat(),
             "task_id": self.request.id
         }
-        
+
     except Exception as e:
+        processing_time = (datetime.now() - start_time).total_seconds()
+        model_processing_seconds.labels(model="translator", operation="translate").observe(processing_time)
+        model_operations_total.labels(model="translator", operation="translate", status="failure").inc()
         logger.error(f" Translation task failed: {e}")
         raise
 
@@ -327,26 +358,27 @@ def translation_translate_task(self, text: str) -> Dict[str, Any]:
 def summarization_summarize_task(self, text: str, max_length: int = 256) -> Dict[str, Any]:
     """
     Summarize text using Celery task
-    
+
     Args:
         text: Text to summarize
         max_length: Maximum summary length
-        
+
     Returns:
         Dictionary with summary results
     """
+    start_time = datetime.now()
     try:
-        start_time = datetime.now()
-        
         self.update_state(state='PROCESSING', meta={'status': 'Summarizing text...'})
-        
+
         loader = get_worker_model_loader()
-        
+
         if not loader.is_model_ready("summarizer"):
+            model_operations_total.labels(model="summarizer", operation="summarize", status="failure").inc()
             raise RuntimeError("Summarizer model not ready")
-        
+
         summarizer_model = loader.models.get("summarizer")
         if not summarizer_model:
+            model_operations_total.labels(model="summarizer", operation="summarize", status="failure").inc()
             raise RuntimeError("Summarizer model not available")
         
         # Initialize chunker
@@ -385,9 +417,13 @@ def summarization_summarize_task(self, text: str, max_length: int = 256) -> Dict
         
         processing_time = (datetime.now() - start_time).total_seconds()
         model_info = summarizer_model.get_model_info()
-        
+
+        # Track metrics
+        model_processing_seconds.labels(model="summarizer", operation="summarize").observe(processing_time)
+        model_operations_total.labels(model="summarizer", operation="summarize", status="success").inc()
+
         logger.info(f" Summarization complete: {processing_time:.2f}s")
-        
+
         return {
             "summary": summary,
             "processing_time": processing_time,
@@ -395,8 +431,11 @@ def summarization_summarize_task(self, text: str, max_length: int = 256) -> Dict
             "timestamp": datetime.now().isoformat(),
             "task_id": self.request.id
         }
-        
+
     except Exception as e:
+        processing_time = (datetime.now() - start_time).total_seconds()
+        model_processing_seconds.labels(model="summarizer", operation="summarize").observe(processing_time)
+        model_operations_total.labels(model="summarizer", operation="summarize", status="failure").inc()
         logger.error(f" Summarization task failed: {e}")
         raise
 
@@ -404,33 +443,33 @@ def summarization_summarize_task(self, text: str, max_length: int = 256) -> Dict
 # QA TASK
 @celery_app.task(bind=True, name="qa_evaluate_task")
 def qa_evaluate_task(
-    self, 
-    transcript: str, 
+    self,
+    transcript: str,
     threshold: Optional[float] = None,
     return_raw: bool = False
 ) -> Dict[str, Any]:
     """
     Evaluate transcript for quality assurance using Celery task
-    
+
     Args:
         transcript: Call transcript to evaluate
         threshold: Classification threshold
         return_raw: Include raw probabilities
-        
+
     Returns:
         Dictionary with QA evaluation results
     """
+    start_time = datetime.now()
     try:
-        start_time = datetime.now()
-        
         self.update_state(state='PROCESSING', meta={'status': 'Evaluating transcript...'})
-        
+
         loader = get_worker_model_loader()
-        
+
         # Import QA model
         from ..model_scripts.qa_model import qa_model
-        
+
         if not qa_model.is_ready():
+            model_operations_total.labels(model="qa", operation="evaluate", status="failure").inc()
             raise RuntimeError("QA model not ready")
         
         # Initialize chunker
@@ -484,10 +523,13 @@ def qa_evaluate_task(
         
         processing_time = (datetime.now() - start_time).total_seconds()
         model_info = qa_model.get_model_info()
-        
+
+        # Track metrics
+        model_processing_seconds.labels(model="qa", operation="evaluate").observe(processing_time)
+        model_operations_total.labels(model="qa", operation="evaluate", status="success").inc()
+
         logger.info(f"✅ QA evaluation complete: {processing_time:.3f}s")
-        
-        # ← CLEAN RESPONSE: No chunk_info at all
+
         return {
             "evaluations": evaluation_result,
             "processing_time": processing_time,
@@ -495,8 +537,11 @@ def qa_evaluate_task(
             "timestamp": datetime.now().isoformat(),
             "task_id": self.request.id
         }
-        
+
     except Exception as e:
+        processing_time = (datetime.now() - start_time).total_seconds()
+        model_processing_seconds.labels(model="qa", operation="evaluate").observe(processing_time)
+        model_operations_total.labels(model="qa", operation="evaluate", status="failure").inc()
         logger.error(f"❌ QA task failed: {e}")
         raise
 
@@ -546,34 +591,35 @@ def _fallback_qa_aggregation(chunk_predictions):
 
 @celery_app.task(bind=True, name="whisper_transcribe_task")
 def whisper_transcribe_task(
-    self, 
-    audio_bytes: bytes, 
+    self,
+    audio_bytes: bytes,
     filename: str,
     language: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Transcribe audio using Celery task
-    
+
     Args:
         audio_bytes: Audio file bytes
         filename: Original filename
         language: Language code or 'auto'
-        
+
     Returns:
         Dictionary with transcription results
     """
+    start_time = datetime.now()
     try:
-        start_time = datetime.now()
-        
         self.update_state(state='PROCESSING', meta={'status': 'Transcribing audio...'})
-        
+
         loader = get_worker_model_loader()
-        
+
         if not loader.is_model_ready("whisper"):
+            model_operations_total.labels(model="whisper", operation="transcribe", status="failure").inc()
             raise RuntimeError("Whisper model not ready")
-        
+
         whisper_model = loader.models.get("whisper")
         if not whisper_model:
+            model_operations_total.labels(model="whisper", operation="transcribe", status="failure").inc()
             raise RuntimeError("Whisper model not available")
         
         # Transcribe audio
@@ -581,16 +627,20 @@ def whisper_transcribe_task(
         
         processing_time = (datetime.now() - start_time).total_seconds()
         model_info = whisper_model.get_model_info()
-        
+
         # Audio info
         audio_info = {
             "filename": filename,
             "file_size_mb": round(len(audio_bytes) / (1024 * 1024), 2),
             "format": os.path.splitext(filename)[1].lower()
         }
-        
+
+        # Track metrics
+        model_processing_seconds.labels(model="whisper", operation="transcribe").observe(processing_time)
+        model_operations_total.labels(model="whisper", operation="transcribe", status="success").inc()
+
         logger.info(f"🎙️ Transcribed {filename} in {processing_time:.2f}s")
-        
+
         return {
             "transcript": transcript,
             "language": language,
@@ -600,7 +650,10 @@ def whisper_transcribe_task(
             "audio_info": audio_info,
             "task_id": self.request.id
         }
-        
+
     except Exception as e:
+        processing_time = (datetime.now() - start_time).total_seconds()
+        model_processing_seconds.labels(model="whisper", operation="transcribe").observe(processing_time)
+        model_operations_total.labels(model="whisper", operation="transcribe", status="failure").inc()
         logger.error(f" Whisper task failed: {e}")
         raise

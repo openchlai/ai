@@ -8,6 +8,11 @@ import asyncio
 from typing import Dict, Any, Optional
 from datetime import datetime
 from ..config.settings import redis_task_client
+from ..core.metrics import (
+    celery_task_duration_seconds,
+    celery_tasks_total,
+    record_upload_size
+)
 
 
 logger = logging.getLogger(__name__)
@@ -240,7 +245,7 @@ def _send_pipeline_notifications(filename: str, result: Dict[str, Any], task_id:
 
             # 1. Send transcription notification
             if result.get('transcript'):
-                await enhanced_notification_service.send_notification(
+                success = await enhanced_notification_service.send_notification(
                     call_id=call_id,
                     notification_type=NotificationType.POST_CALL_TRANSCRIPTION,
                     processing_mode=ProcessingMode(processing_mode_value),
@@ -250,11 +255,14 @@ def _send_pipeline_notifications(filename: str, result: Dict[str, Any], task_id:
                         "transcript_length": len(result['transcript'])
                     }
                 )
-                logger.info(f"✅ Sent transcription notification for {call_id}")
+                if success:
+                    logger.info(f"✅ Sent transcription notification for {call_id}")
+                else:
+                    logger.warning(f"⚠️ Failed to send transcription notification for {call_id}")
 
             # 2. Send translation notification
             if result.get('translation'):
-                await enhanced_notification_service.send_notification(
+                success = await enhanced_notification_service.send_notification(
                     call_id=call_id,
                     notification_type=NotificationType.POST_CALL_TRANSLATION,
                     processing_mode=ProcessingMode(processing_mode_value),
@@ -265,11 +273,14 @@ def _send_pipeline_notifications(filename: str, result: Dict[str, Any], task_id:
                         "translation_length": len(result['translation'])
                     }
                 )
-                logger.info(f"✅ Sent translation notification for {call_id}")
+                if success:
+                    logger.info(f"✅ Sent translation notification for {call_id}")
+                else:
+                    logger.warning(f"⚠️ Failed to send translation notification for {call_id}")
 
             # 3. Send entities notification
             if result.get('entities'):
-                await enhanced_notification_service.send_notification(
+                success = await enhanced_notification_service.send_notification(
                     call_id=call_id,
                     notification_type=NotificationType.POST_CALL_ENTITIES,
                     processing_mode=ProcessingMode(processing_mode_value),
@@ -278,11 +289,14 @@ def _send_pipeline_notifications(filename: str, result: Dict[str, Any], task_id:
                         "entities_count": len(result['entities'])
                     }
                 )
-                logger.info(f"✅ Sent entities notification for {call_id}")
+                if success:
+                    logger.info(f"✅ Sent entities notification for {call_id}")
+                else:
+                    logger.warning(f"⚠️ Failed to send entities notification for {call_id}")
 
             # 4. Send classification notification
             if result.get('classification'):
-                await enhanced_notification_service.send_notification(
+                success = await enhanced_notification_service.send_notification(
                     call_id=call_id,
                     notification_type=NotificationType.POST_CALL_CLASSIFICATION,
                     processing_mode=ProcessingMode(processing_mode_value),
@@ -290,11 +304,14 @@ def _send_pipeline_notifications(filename: str, result: Dict[str, Any], task_id:
                         "classification": result['classification']
                     }
                 )
-                logger.info(f"✅ Sent classification notification for {call_id}")
+                if success:
+                    logger.info(f"✅ Sent classification notification for {call_id}")
+                else:
+                    logger.warning(f"⚠️ Failed to send classification notification for {call_id}")
 
             # 5. Send QA scoring notification
             if result.get('qa_scores'):
-                await enhanced_notification_service.send_notification(
+                success = await enhanced_notification_service.send_notification(
                     call_id=call_id,
                     notification_type=NotificationType.POST_CALL_QA_SCORING,
                     processing_mode=ProcessingMode(processing_mode_value),
@@ -302,11 +319,14 @@ def _send_pipeline_notifications(filename: str, result: Dict[str, Any], task_id:
                         "qa_scores": result['qa_scores']
                     }
                 )
-                logger.info(f"✅ Sent QA scoring notification for {call_id}")
+                if success:
+                    logger.info(f"✅ Sent QA scoring notification for {call_id}")
+                else:
+                    logger.warning(f"⚠️ Failed to send QA scoring notification for {call_id}")
 
             # 6. Send summary notification
             if result.get('summary'):
-                await enhanced_notification_service.send_notification(
+                success = await enhanced_notification_service.send_notification(
                     call_id=call_id,
                     notification_type=NotificationType.POST_CALL_SUMMARY,
                     processing_mode=ProcessingMode(processing_mode_value),
@@ -315,10 +335,13 @@ def _send_pipeline_notifications(filename: str, result: Dict[str, Any], task_id:
                         "insights": result.get('insights')
                     }
                 )
-                logger.info(f"✅ Sent summary notification for {call_id}")
+                if success:
+                    logger.info(f"✅ Sent summary notification for {call_id}")
+                else:
+                    logger.warning(f"⚠️ Failed to send summary notification for {call_id}")
 
             # 7. Send final completion notification
-            await enhanced_notification_service.send_notification(
+            success = await enhanced_notification_service.send_notification(
                 call_id=call_id,
                 notification_type=NotificationType.POST_CALL_COMPLETE,
                 processing_mode=ProcessingMode(processing_mode_value),
@@ -329,7 +352,18 @@ def _send_pipeline_notifications(filename: str, result: Dict[str, Any], task_id:
                 },
                 status=NotificationStatus.SUCCESS
             )
-            logger.info(f"✅ Sent completion notification for {call_id}")
+            if success:
+                logger.info(f"✅ Sent completion notification for {call_id}")
+            else:
+                logger.warning(f"⚠️ Failed to send completion notification for {call_id}")
+
+            # 8. Create agent feedback entries for all completed tasks
+            await enhanced_notification_service.create_feedback_entries(
+                call_id=call_id,
+                pipeline_results=result,
+                processing_mode=processing_mode_value
+            )
+            logger.info(f"✅ Created feedback entries for {call_id}")
 
         # Run the async function
         if loop.is_running():
@@ -347,20 +381,28 @@ def _send_pipeline_notifications(filename: str, result: Dict[str, Any], task_id:
 @celery_app.task(bind=True, name="process_audio_task")
 def process_audio_task(self, audio_bytes, filename, language=None, include_translation=True, include_insights=True, processing_mode=None):
     """Simplified error handling to avoid serialization issues"""
-    
+
+    start_time = datetime.now()
+
+    # Track upload size
+    try:
+        record_upload_size("/audio/process", len(audio_bytes))
+    except Exception:
+        pass
+
     # Store basic task info in Redis (not complex objects)
     task_info = {
         "task_id": self.request.id,
         "filename": filename,
-        "started": datetime.now().isoformat(),
+        "started": start_time.isoformat(),
         "status": "processing"
     }
-    
+
     try:
         redis_task_client.hset("active_audio_tasks", self.request.id, json.dumps(task_info))
     except Exception:
         pass  # Don't fail if Redis logging fails
-    
+
     try:
         # MINIMAL state updates - only basic progress
         self.update_state(state="PROCESSING", meta={"progress": 10, "step": "starting"})
@@ -382,26 +424,36 @@ def process_audio_task(self, audio_bytes, filename, language=None, include_trans
             redis_task_client.hdel("active_audio_tasks", self.request.id)
         except Exception:
             pass
-        
+
+        # Track metrics
+        task_duration = (datetime.now() - start_time).total_seconds()
+        celery_task_duration_seconds.labels(task="process_audio", state="SUCCESS").observe(task_duration)
+        celery_tasks_total.labels(task="process_audio", state="SUCCESS").inc()
+
         # Return simple result - no complex nested objects
         return {
             "status": "completed",
             "filename": filename,
             "result": result  # Make sure this is JSON-serializable
         }
-        
+
     except Exception as e:
         logger.error(f"Audio processing failed: {e}")
-        
+
+        # Track metrics
+        task_duration = (datetime.now() - start_time).total_seconds()
+        celery_task_duration_seconds.labels(task="process_audio", state="FAILURE").observe(task_duration)
+        celery_tasks_total.labels(task="process_audio", state="FAILURE").inc()
+
         # Clean up Redis
         try:
             redis_task_client.hdel("active_audio_tasks", self.request.id)
         except Exception:
             pass
-        
+
         # SIMPLE error handling - no complex state updates
         error_msg = str(e)[:500]  # Limit error message length
-        
+
         # Let Celery handle the failure automatically
         raise RuntimeError(error_msg)
 
@@ -1152,3 +1204,9 @@ def process_streaming_audio_task(
     except Exception as e:
         logger.error(f"❌ Streaming transcription failed: {e}")
         raise
+
+def handle_task_error(self, error_msg, call_id=None):
+    """Consistent error handling for all Celery tasks"""
+    logger.error(error_msg)
+    # log and re-raise - let Celery handle the state
+    raise RuntimeError(error_msg)

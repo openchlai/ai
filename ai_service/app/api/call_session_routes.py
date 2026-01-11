@@ -353,8 +353,8 @@ async def test_agent_auth():
             "message": "Successfully fetched auth token" if token_valid else "Failed to fetch auth token"
         }
     except Exception as e:
-        logger.error(f"Failed to test enhanced auth: {e}")
-        raise HTTPException(status_code=500, detail=f"Auth test failed: {str(e)}")
+        logger.error(f"Failed to test agent auth: {e}")
+        raise HTTPException(status_code=500, detail="Auth test failed")
 
 @router.post("/agent-service/test-notification", response_model=Dict[str, Any])
 async def test_agent_notification(call_id: str = "test_call_123"):
@@ -387,8 +387,8 @@ async def test_agent_notification(call_id: str = "test_call_123"):
             "message": "Test notification sent successfully" if success else "Failed to send test notification"
         }
     except Exception as e:
-        logger.error(f"Failed to test enhanced notification: {e}")
-        raise HTTPException(status_code=500, detail=f"Notification test failed: {str(e)}")
+        logger.error(f"Failed to test agent notification: {e}")
+        raise HTTPException(status_code=500, detail="Notification test failed")
 
 
 # Progressive Processing Endpoints
