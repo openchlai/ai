@@ -340,7 +340,7 @@ async def test_agent_auth():
         }
     except Exception as e:
         logger.error(f"Failed to test agent auth: {e}")
-        raise HTTPException(status_code=500, detail=f"Auth test failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Auth test failed")
 
 @router.post("/agent-service/test-notification", response_model=Dict[str, Any])
 async def test_agent_notification(call_id: str = "test_call_123"):
@@ -366,7 +366,7 @@ async def test_agent_notification(call_id: str = "test_call_123"):
         }
     except Exception as e:
         logger.error(f"Failed to test agent notification: {e}")
-        raise HTTPException(status_code=500, detail=f"Notification test failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Notification test failed")
 
 
 # Progressive Processing Endpoints

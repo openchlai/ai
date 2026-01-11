@@ -35,7 +35,7 @@ async def get_whisper_status():
         }
     except Exception as e:
         logger.error(f"❌ Failed to get Whisper status: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to get status: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to get Whisper status")
 
 @router.get("/configurations")
 async def get_available_configurations():
@@ -54,7 +54,7 @@ async def get_available_configurations():
         }
     except Exception as e:
         logger.error(f"❌ Failed to get configurations: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to get configurations: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to get configurations")
 
 @router.post("/switch")
 async def switch_whisper_configuration(request: WhisperSwitchRequest):
@@ -82,7 +82,7 @@ async def switch_whisper_configuration(request: WhisperSwitchRequest):
         raise
     except Exception as e:
         logger.error(f"❌ Failed to switch Whisper configuration: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to switch configuration: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to switch configuration")
 
 @router.post("/reload")
 async def reload_whisper_model():
@@ -106,7 +106,7 @@ async def reload_whisper_model():
         raise
     except Exception as e:
         logger.error(f"❌ Failed to reload Whisper model: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to reload model: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to reload model")
 
 @router.get("/translation-strategy")
 async def get_translation_strategy():
@@ -129,7 +129,7 @@ async def get_translation_strategy():
         
     except Exception as e:
         logger.error(f"❌ Failed to get translation strategy: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to get strategy: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to get translation strategy")
 
 @router.post("/test-transcription")
 async def test_current_configuration(language: str = "sw"):
@@ -171,9 +171,11 @@ async def test_current_configuration(language: str = "sw"):
             "timestamp": datetime.now().isoformat()
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"❌ Transcription test failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Transcription test failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Transcription test failed")
 
 @router.get("/memory-usage")
 async def get_whisper_memory_usage():
@@ -210,7 +212,7 @@ async def get_whisper_memory_usage():
         
     except Exception as e:
         logger.error(f"❌ Failed to get memory usage: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to get memory info: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to get memory info")
 
 # Include import for datetime at the top
 from datetime import datetime

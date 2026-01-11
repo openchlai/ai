@@ -89,7 +89,7 @@ async def evaluate_transcript(request: QARequest):
         
     except Exception as e:
         logger.error(f"Failed to submit QA task: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to submit task: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to submit task")
 
 
 @router.get("/task/{task_id}", response_model=QATaskStatusResponse)
@@ -144,7 +144,7 @@ async def get_qa_task_status(task_id: str):
             )
             
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error checking task: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error checking task")
 
 @router.get("/info")
 async def get_qa_info():

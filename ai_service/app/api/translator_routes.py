@@ -76,7 +76,7 @@ async def translate_text(request: TranslationRequest):
         
     except Exception as e:
         logger.error(f"Failed to submit translation task: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to submit task: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to submit task")
 
 
 @router.get("/task/{task_id}", response_model=TranslationTaskStatusResponse)
@@ -130,7 +130,7 @@ async def get_translation_task_status(task_id: str):
             )
             
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error checking task: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error checking task")
 
 @router.get("/info")
 async def get_translation_info():

@@ -148,7 +148,7 @@ async def quick_audio_analysis(
             
     except Exception as e:
         logger.error(f"❌ Quick analysis failed for {audio.filename}: {e}")
-        raise HTTPException(status_code=500, detail=f"Quick analysis failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Quick analysis failed")
 
 @router.get("/task/{task_id}")
 async def get_task_status(task_id: str):
