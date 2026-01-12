@@ -20,6 +20,7 @@ export default defineConfig(({ mode }) => {
         : prodWsUrl
 
     return {
+        base: './',
         define: {
             __APP_API_BASE_URL__: JSON.stringify(appBaseUrl),
             __APP_WS_URL__: JSON.stringify(appWsUrl),
