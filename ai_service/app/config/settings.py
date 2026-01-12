@@ -634,6 +634,35 @@ class Settings(BaseSettings):
     )
 
     # ============================================================================
+    # MOCK/DEBUG AUDIO SETTINGS
+    # ============================================================================
+
+    mock_enabled: bool = Field(
+        default=False,
+        description="Enable mock mode for local testing without Asterisk server"
+    )
+
+    mock_audio_folder: str = Field(
+        default="./test_audio",
+        description="Path to folder containing test audio files for mock mode"
+    )
+
+    mock_use_folder_files: bool = Field(
+        default=True,
+        description="When call_id file not found, use any available file from folder"
+    )
+
+    mock_skip_scp_download: bool = Field(
+        default=True,
+        description="Skip SCP download and use local files when mock_enabled is True"
+    )
+
+    mock_notifications_folder: str = Field(
+        default="./mock_notifications",
+        description="Folder for mock notification markdown files"
+    )
+
+    # ============================================================================
     # HELPER METHODS
     # ============================================================================
 

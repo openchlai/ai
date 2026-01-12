@@ -980,13 +980,21 @@ class CallSessionManager:
     async def _download_and_process_audio_with_mode(self, session: CallSession):
         """Download complete audio file using configured method based on processing mode"""
         try:
+            from ..config.settings import settings
+
             call_id = session.call_id
             postcall_config = session.processing_plan.get("postcall_processing", {}).get("config", {})
             download_config = session.processing_plan.get("postcall_processing", {}).get("audio_download", {})
-            
+
             download_method = download_config.get("method", "scp")
-            
-            logger.info(f"📥 [download] Starting audio download for call {call_id} using method: {download_method}")
+
+            # Check for mock mode - use local files instead of SCP
+            if settings.mock_enabled and settings.mock_skip_scp_download:
+                logger.info(f"[mock] Mock mode active - using local audio files for call {call_id}")
+                logger.info(f"[mock] Mock audio folder: {settings.mock_audio_folder}")
+                download_method = "mock"  # Override to use mock downloader
+
+            logger.info(f"[download] Starting audio download for call {call_id} using method: {download_method}")
 
             # Download audio using configured method
             # Pass None if config is empty so downloader uses settings

@@ -247,7 +247,7 @@ def _send_pipeline_notifications(filename: str, result: Dict[str, Any], task_id:
             if result.get('transcript'):
                 success = await enhanced_notification_service.send_notification(
                     call_id=call_id,
-                    notification_type=NotificationType.POST_CALL_TRANSCRIPTION,
+                    notification_type=NotificationType.POSTCALL_TRANSCRIPTION,
                     processing_mode=ProcessingMode(processing_mode_value),
                     payload_data={
                         "transcript": result['transcript'],
@@ -264,7 +264,7 @@ def _send_pipeline_notifications(filename: str, result: Dict[str, Any], task_id:
             if result.get('translation'):
                 success = await enhanced_notification_service.send_notification(
                     call_id=call_id,
-                    notification_type=NotificationType.POST_CALL_TRANSLATION,
+                    notification_type=NotificationType.POSTCALL_TRANSLATION,
                     processing_mode=ProcessingMode(processing_mode_value),
                     payload_data={
                         "translation": result['translation'],
@@ -282,7 +282,7 @@ def _send_pipeline_notifications(filename: str, result: Dict[str, Any], task_id:
             if result.get('entities'):
                 success = await enhanced_notification_service.send_notification(
                     call_id=call_id,
-                    notification_type=NotificationType.POST_CALL_ENTITIES,
+                    notification_type=NotificationType.POSTCALL_ENTITIES,
                     processing_mode=ProcessingMode(processing_mode_value),
                     payload_data={
                         "entities": result['entities'],
@@ -298,7 +298,7 @@ def _send_pipeline_notifications(filename: str, result: Dict[str, Any], task_id:
             if result.get('classification'):
                 success = await enhanced_notification_service.send_notification(
                     call_id=call_id,
-                    notification_type=NotificationType.POST_CALL_CLASSIFICATION,
+                    notification_type=NotificationType.POSTCALL_CLASSIFICATION,
                     processing_mode=ProcessingMode(processing_mode_value),
                     payload_data={
                         "classification": result['classification']
@@ -313,7 +313,7 @@ def _send_pipeline_notifications(filename: str, result: Dict[str, Any], task_id:
             if result.get('qa_scores'):
                 success = await enhanced_notification_service.send_notification(
                     call_id=call_id,
-                    notification_type=NotificationType.POST_CALL_QA_SCORING,
+                    notification_type=NotificationType.POSTCALL_QA_SCORING,
                     processing_mode=ProcessingMode(processing_mode_value),
                     payload_data={
                         "qa_scores": result['qa_scores']
@@ -328,7 +328,7 @@ def _send_pipeline_notifications(filename: str, result: Dict[str, Any], task_id:
             if result.get('summary'):
                 success = await enhanced_notification_service.send_notification(
                     call_id=call_id,
-                    notification_type=NotificationType.POST_CALL_SUMMARY,
+                    notification_type=NotificationType.POSTCALL_SUMMARY,
                     processing_mode=ProcessingMode(processing_mode_value),
                     payload_data={
                         "summary": result['summary'],
@@ -343,7 +343,7 @@ def _send_pipeline_notifications(filename: str, result: Dict[str, Any], task_id:
             # 7. Send final completion notification
             success = await enhanced_notification_service.send_notification(
                 call_id=call_id,
-                notification_type=NotificationType.POST_CALL_COMPLETE,
+                notification_type=NotificationType.POSTCALL_COMPLETE,
                 processing_mode=ProcessingMode(processing_mode_value),
                 payload_data={
                     "processing_time": result.get('pipeline_info', {}).get('total_time', 0),

@@ -72,3 +72,8 @@ LOAD_TEST_SUMMARY.md
 # Monitoring data
 monitoring/grafana/data/
 monitoring/prometheus/data/
+
+# Mock testing folders
+mock_notifications/
+test_audio/
+ai_service.db

@@ -10,6 +10,7 @@ import base64
 import httpx
 import json
 import logging
+import os
 import uuid
 from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, Optional, Literal
@@ -145,6 +146,192 @@ class EnhancedNotificationService:
 
         except Exception as e:
             logger.error(f"❌ Failed to log payload: {e}")
+
+    def _extract_notification_summary(self, notification_type: str, payload_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Extract key fields from notification payload for markdown summary.
+
+        Args:
+            notification_type: Type of notification (e.g., 'postcall_transcription')
+            payload_data: The 'payload' section of the notification
+
+        Returns:
+            Dictionary with extracted summary fields
+        """
+        summary = {}
+
+        try:
+            if notification_type == "postcall_transcription":
+                transcript = payload_data.get("transcript", "")
+                summary = {
+                    "length": len(transcript),
+                    "text": transcript
+                }
+
+            elif notification_type == "postcall_translation":
+                translation = payload_data.get("translation", "")
+                summary = {
+                    "length": len(translation),
+                    "text": translation
+                }
+
+            elif notification_type == "postcall_classification":
+                summary = {
+                    "main_category": payload_data.get("main_category", "N/A"),
+                    "sub_category": payload_data.get("sub_category", "N/A"),
+                    "sub_category_2": payload_data.get("sub_category_2", "N/A"),
+                    "intervention": payload_data.get("intervention", "N/A"),
+                    "priority": payload_data.get("priority", "N/A"),
+                    "confidence": payload_data.get("confidence", 0) * 100  # Convert to percentage
+                }
+
+            elif notification_type == "postcall_entities":
+                entities = payload_data.get("entities", {})
+                counts = {}
+                entity_lists = {}
+
+                for entity_type, entity_list in entities.items():
+                    counts[entity_type] = len(entity_list) if isinstance(entity_list, list) else 0
+                    entity_lists[entity_type] = entity_list if isinstance(entity_list, list) else []
+
+                summary = {
+                    "counts": counts,
+                    "entities": entity_lists
+                }
+
+            elif notification_type == "postcall_qa_scoring":
+                qa_results = payload_data.get("qa_results", {})
+                summary = {
+                    "total_metrics": qa_results.get("total_metrics_evaluated", 0),
+                    "pass_rate": qa_results.get("pass_rate_percentage", 0),
+                    "overall_quality": qa_results.get("overall_quality", "N/A")
+                }
+
+            elif notification_type == "postcall_summary":
+                summary = {
+                    "summary": payload_data.get("summary", "N/A")
+                }
+
+            elif notification_type == "postcall_complete":
+                summary = {
+                    "status": payload_data.get("status", "N/A"),
+                    "processing_time": payload_data.get("processing_time_seconds", 0)
+                }
+
+            else:
+                # For unknown types, just return the payload as-is
+                summary = {"data": payload_data}
+
+        except Exception as e:
+            logger.error(f"Error extracting summary for {notification_type}: {e}")
+            summary = {"error": str(e)}
+
+        return summary
+
+    async def _write_mock_notification(self, notification_data: Dict[str, Any]):
+        """
+        Write notification to markdown file for mock mode.
+
+        Args:
+            notification_data: Complete notification payload (v2.0 format)
+        """
+        try:
+            # Get call_id and create folder
+            call_id = notification_data.get("call_metadata", {}).get("call_id", "unknown")
+            mock_folder = settings.mock_notifications_folder
+            os.makedirs(mock_folder, exist_ok=True)
+
+            # File path
+            file_path = os.path.join(mock_folder, f"{call_id}.md")
+
+            # Extract key info
+            notification_type = notification_data.get("notification_type", "unknown")
+            timestamp = notification_data.get("timestamp", datetime.now().isoformat())
+            processing_mode = notification_data.get("processing_mode", "N/A")
+            payload_data = notification_data.get("payload", {})
+
+            # Extract summary
+            summary = self._extract_notification_summary(notification_type, payload_data)
+
+            # Check if file exists (to add header for new files)
+            is_new_file = not os.path.exists(file_path)
+
+            # Open file in append mode
+            with open(file_path, 'a') as f:
+                # Add header for new files
+                if is_new_file:
+                    f.write(f"# Call Notifications: {call_id}\n\n")
+                    f.write(f"**Processing Mode**: {processing_mode}\n")
+                    f.write(f"**Started**: {timestamp}\n\n")
+                    f.write("---\n\n")
+
+                # Write notification section
+                f.write(f"## {notification_type.upper()}\n\n")
+                f.write(f"**Time**: {timestamp}\n")
+                f.write(f"**Type**: {notification_type}\n\n")
+
+                # Write type-specific content
+                if notification_type == "postcall_transcription":
+                    f.write(f"**Length**: {summary.get('length', 0)} characters\n\n")
+                    f.write("**Full Transcript**:\n```\n")
+                    f.write(summary.get('text', 'N/A'))
+                    f.write("\n```\n\n")
+
+                elif notification_type == "postcall_translation":
+                    f.write(f"**Length**: {summary.get('length', 0)} characters\n\n")
+                    f.write("**Full Translation**:\n```\n")
+                    f.write(summary.get('text', 'N/A'))
+                    f.write("\n```\n\n")
+
+                elif notification_type == "postcall_classification":
+                    f.write(f"**Category**: {summary.get('main_category')} → {summary.get('sub_category')}\n")
+                    if summary.get('sub_category_2') and summary.get('sub_category_2') != 'N/A':
+                        f.write(f"**Sub-Category 2**: {summary.get('sub_category_2')}\n")
+                    f.write(f"**Intervention**: {summary.get('intervention')}\n")
+                    f.write(f"**Priority**: {summary.get('priority')}\n")
+                    f.write(f"**Confidence**: {summary.get('confidence', 0):.1f}%\n\n")
+
+                elif notification_type == "postcall_entities":
+                    counts = summary.get('counts', {})
+                    entities = summary.get('entities', {})
+
+                    f.write("**Counts**:\n")
+                    for entity_type, count in counts.items():
+                        f.write(f"- {entity_type.title()}: {count}\n")
+                    f.write("\n")
+
+                    f.write("**Extracted Entities**:\n")
+                    for entity_type, entity_list in entities.items():
+                        if entity_list:
+                            f.write(f"- **{entity_type.title()}**: {', '.join(entity_list)}\n")
+                        else:
+                            f.write(f"- **{entity_type.title()}**: None\n")
+                    f.write("\n")
+
+                elif notification_type == "postcall_qa_scoring":
+                    f.write(f"**Metrics Evaluated**: {summary.get('total_metrics', 0)}\n")
+                    f.write(f"**Pass Rate**: {summary.get('pass_rate', 0):.1f}%\n")
+                    f.write(f"**Overall Quality**: {summary.get('overall_quality', 'N/A')}\n\n")
+
+                elif notification_type == "postcall_summary":
+                    f.write("**Summary**:\n")
+                    f.write(f"{summary.get('summary', 'N/A')}\n\n")
+
+                elif notification_type == "postcall_complete":
+                    f.write(f"**Status**: {summary.get('status', 'N/A')}\n")
+                    f.write(f"**Total Processing Time**: {summary.get('processing_time', 0):.2f}s\n\n")
+
+                else:
+                    # Unknown type - just dump the data
+                    f.write(f"**Data**: {json.dumps(summary, indent=2)}\n\n")
+
+                # Add separator
+                f.write("---\n\n")
+
+            logger.info(f"[mock] Wrote {notification_type} to {file_path}")
+
+        except Exception as e:
+            logger.error(f"[mock] Failed to write notification to file: {e}")
 
     async def _ensure_valid_token(self) -> bool:
         """Ensure we have a valid bearer token."""
@@ -301,7 +488,13 @@ class EnhancedNotificationService:
 
         # Log payload for UI development
         self._log_payload(data, request_body)
-        
+
+        # Check for mock mode - skip HTTP and write to markdown instead
+        if settings.mock_enabled:
+            logger.info(f"[mock] Skipping HTTP send - writing to mock notification file")
+            await self._write_mock_notification(data)
+            return True  # Pretend send succeeded
+
         # Retry logic
         retry_attempts = settings.notification_max_retries
         retry_delay = settings.notification_retry_delay
