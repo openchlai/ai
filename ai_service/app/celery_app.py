@@ -42,14 +42,15 @@ celery_app.conf.update(
     result_backend_max_retries=3,
     result_compression='gzip',
     
-    # Task routing - UPDATED with model tasks
+    # Task routing - All tasks route to model_processing queue
+    # Worker must be started with: -Q model_processing,celery
     task_routes={
-        # Audio processing tasks
-        'app.tasks.audio_tasks.process_audio_task': {'queue': 'audio_processing'},
-        'app.tasks.audio_tasks.process_audio_quick_task': {'queue': 'audio_quick'},
-        'app.tasks.audio_tasks.process_streaming_audio_task': {'queue': 'audio_streaming'},
+        # Audio processing tasks - route to model_processing for single worker setup
+        'app.tasks.audio_tasks.process_audio_task': {'queue': 'model_processing'},
+        'app.tasks.audio_tasks.process_audio_quick_task': {'queue': 'model_processing'},
+        'app.tasks.audio_tasks.process_streaming_audio_task': {'queue': 'model_processing'},
 
-        # Individual model tasks - NEW
+        # Individual model tasks
         'app.tasks.model_tasks.ner_extract_task': {'queue': 'model_processing'},
         'app.tasks.model_tasks.classifier_classify_task': {'queue': 'model_processing'},
         'app.tasks.model_tasks.translation_translate_task': {'queue': 'model_processing'},
@@ -57,6 +58,9 @@ celery_app.conf.update(
         'app.tasks.model_tasks.qa_evaluate_task': {'queue': 'model_processing'},
         'app.tasks.model_tasks.whisper_transcribe_task': {'queue': 'model_processing'},
     },
+
+    # Default queue for unrouted tasks
+    task_default_queue='model_processing',
     
     # Error handling
     task_reject_on_worker_lost=True,

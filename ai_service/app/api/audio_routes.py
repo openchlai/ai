@@ -37,8 +37,21 @@ async def process_audio_complete(
 ):
     """
     Complete audio-to-insights pipeline with Celery
+
+    Args:
+        audio: Audio file to process
+        language: Language code (e.g., 'sw' for Swahili, 'en' for English).
+                  Defaults to 'sw' if not specified. Use 'auto' for auto-detection.
+        include_translation: Include translation to English
+        include_insights: Include NER, classification, and other insights
+        background: Process in background (async) or synchronously
     """
-    
+
+    # Default language to Swahili if not specified 
+    if language is None or language.strip() == "":
+        language = "sw"
+        logger.info(f" No language specified, defaulting to 'sw' (Swahili)")
+
     # Validate audio file
     if not audio.filename:
         raise HTTPException(status_code=400, detail="No audio file provided")
@@ -105,8 +118,17 @@ async def quick_audio_analysis(
 ):
     """
     Quick audio analysis with Celery
+
+    Args:
+        audio: Audio file to analyze
+        language: Language code (defaults to 'sw' for Swahili if not specified)
+        background: Process asynchronously
     """
-    
+
+    # Default language to Swahili if not specified
+    if language is None or language.strip() == "":
+        language = "sw"
+
     if not audio.filename:
         raise HTTPException(status_code=400, detail="No audio file provided")
     
