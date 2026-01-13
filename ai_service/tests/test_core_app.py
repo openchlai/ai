@@ -195,8 +195,9 @@ class TestAudioTasks:
             result = _save_audio_bytes_to_temp_file(b"fake_audio", 16000)
             assert isinstance(result, str)
 
+@pytest.mark.skip(reason="AgentNotificationService has been deprecated and replaced with EnhancedNotificationService")
 class TestAgentNotificationService:
-    """Test agent notification service"""
+    """Test agent notification service (DEPRECATED)"""
 
     def test_agent_service_import(self):
         """Test that agent service can be imported"""

@@ -7,7 +7,6 @@ from celery.result import AsyncResult
 from ..tasks.model_tasks import qa_evaluate_task
 from ..model_scripts.model_loader import model_loader
 from ..model_scripts.qa_model import qa_model
-from ..utils.text_utils import ClassificationChunker, ClassificationAggregator
 from ..utils.mode_detector import is_api_server_mode
 
 logger = logging.getLogger(__name__)
@@ -89,7 +88,7 @@ async def evaluate_transcript(request: QARequest):
         
     except Exception as e:
         logger.error(f"Failed to submit QA task: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to submit task: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to submit task")
 
 
 @router.get("/task/{task_id}", response_model=QATaskStatusResponse)
@@ -144,7 +143,7 @@ async def get_qa_task_status(task_id: str):
             )
             
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error checking task: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error checking task")
 
 @router.get("/info")
 async def get_qa_info():

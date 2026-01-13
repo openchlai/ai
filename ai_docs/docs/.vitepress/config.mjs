@@ -114,8 +114,6 @@ export default defineConfig({
                             { text: 'AI Service API Endpoints', link: '/developer-documentation/api-reference/ai-service-api-endpoints' },
                             { text: 'API Rate Limiting & Throttling', link: '/developer-documentation/api-reference/api-rate-limiting-throttling' },
                             { text: 'Overview', link: '/developer-documentation/api-reference/overview' },
-                            { text: 'AI Service', link: '/developer-documentation/api-reference/ai-service.md' },
-                            { text: 'Helpline Service', link: '/developer-documentation/api-reference/helpline-service.md' },
                             { text: 'Testing Strategy', link: '/developer-documentation/api-reference/testing-strategy.md' }
                         ]
                     },
@@ -165,28 +163,7 @@ export default defineConfig({
                             { text: 'Whisper Model', link: '/ai-services/features/whisper_model.md' }
                         ]
                     },
-                    {
-                        text: 'Speech-to-Text',
-                        items: [
-                            { text: 'How it Works', link: '/ai-services/speech-to-text/how-it-works' },
-                            { text: 'Accuracy & Language Support', link: '/ai-services/speech-to-text/accuracy-language-support' }
-                        ]
-                    },
-                    {
-                        text: 'Translation',
-                        items: [
-                            { text: 'Supported Languages', link: '/ai-services/translation/supported-languages' },
-                            { text: 'Usage & Limitations', link: '/ai-services/translation/usage-limitations' }
-                        ]
-                    },
-                    {
-                        text: 'NLP',
-                        items: [
-                            { text: 'Named Entity Recognition', link: '/ai-services/nlp/named-entity-recognition' },
-                            { text: 'Case Classification & Prediction', link: '/ai-services/nlp/case-classification-prediction' },
-                            { text: 'Summarization & Insights', link: '/ai-services/nlp/summarization-insights' }
-                        ]
-                    }
+                    
                 ]
             }
         ],
@@ -226,6 +203,7 @@ export default defineConfig({
                     { text: 'Training Materials', link: '/resources/training-materials' },
                     { text: 'Community Forum', link: '/resources/community-forum' },
                     { text: 'Overview', link: '/resources/overview.md' }
+                    // Note: training-materials.md removed - content consolidated in user-guides
                 ]
             }
         ]

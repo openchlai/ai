@@ -13,7 +13,8 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Test categories
-CORE_TESTS="tests/test_agent_notification_service.py tests/test_classifier_model.py tests/test_ner_model.py tests/test_summarizer_model.py"
+# Note: test_agent_notification_service.py removed - service deprecated in favor of EnhancedNotificationService
+CORE_TESTS="tests/test_classifier_model.py tests/test_ner_model.py tests/test_summarizer_model.py"
 API_TESTS="tests/test_api_audio_routes.py"
 CALL_TESTS="tests/test_api_call_session_routes.py"
 

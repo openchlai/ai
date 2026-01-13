@@ -1,5 +1,4 @@
 from fastapi import APIRouter, HTTPException
-from typing import Dict, Any
 import logging
 from datetime import datetime
 
@@ -8,7 +7,6 @@ from app.core.celery_monitor import celery_monitor
 
 from ..core.resource_manager import resource_manager
 from ..model_scripts.model_loader import model_loader
-from ..core.resource_manager import unified_resource_manager
 from ..config.settings import settings
 from ..utils.mode_detector import is_api_server_mode, get_execution_mode
 

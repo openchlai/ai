@@ -260,9 +260,45 @@ class ProcessingStrategyManager:
         
         logger.info(f"📋 [strategy] Created processing plan for {call_id}: {processing_mode.value}")
         logger.debug(f"📋 [strategy] Plan details: realtime={realtime_enabled}, postcall={postcall_enabled}, download={download_method}")
-        
+
         return processing_plan
-    
+
+    def _sanitize_sensitive_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Remove sensitive information from data structures for logging/API responses
+
+        Args:
+            data: Dictionary that may contain sensitive data
+
+        Returns:
+            Sanitized copy of the dictionary
+        """
+        import copy
+        sanitized = copy.deepcopy(data)
+
+        # Sanitize password fields
+        if isinstance(sanitized, dict):
+            for key, value in sanitized.items():
+                if isinstance(value, dict):
+                    sanitized[key] = self._sanitize_sensitive_data(value)
+                elif key.lower() in ['password', 'passwd', 'pwd', 'secret', 'token', 'api_key']:
+                    sanitized[key] = '***REDACTED***'
+
+        return sanitized
+
+    def get_sanitized_processing_plan(self, call_context: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Create a processing plan with sensitive data removed for API responses/logging
+
+        Args:
+            call_context: Dictionary containing call information
+
+        Returns:
+            Sanitized processing plan safe for external exposure
+        """
+        plan = self.create_call_processing_plan(call_context)
+        return self._sanitize_sensitive_data(plan)
+
     def get_system_capabilities(self) -> Dict[str, Any]:
         """Get current system processing capabilities"""
         return {

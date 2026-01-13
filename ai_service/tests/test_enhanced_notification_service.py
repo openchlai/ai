@@ -152,7 +152,7 @@ async def test_send_postcall_complete(notification_service):
         mock_send.assert_called_once()
         args, kwargs = mock_send.call_args
         payload = args[0]
-        assert payload["notification_type"] == NotificationType.POST_CALL_COMPLETE.value
+        assert payload["notification_type"] == NotificationType.POSTCALL_COMPLETE.value
         assert payload["payload"]["unified_insights"] == unified_insights
         assert payload["ui_metadata"]["alert"] == "critical"
 

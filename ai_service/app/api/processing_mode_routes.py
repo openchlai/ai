@@ -38,7 +38,7 @@ async def get_processing_status():
         }
     except Exception as e:
         logger.error(f"❌ Failed to get processing status: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to get processing status: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to get processing status")
 
 @router.get("/modes")
 async def get_available_modes():
@@ -56,7 +56,7 @@ async def get_available_modes():
         }
     except Exception as e:
         logger.error(f"❌ Failed to get available modes: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to get available modes: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to get available modes")
 
 @router.post("/configure")
 async def update_processing_configuration(request: ProcessingModeUpdateRequest):
@@ -89,7 +89,7 @@ async def update_processing_configuration(request: ProcessingModeUpdateRequest):
             
     except Exception as e:
         logger.error(f"❌ Failed to update processing configuration: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to update configuration: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to update configuration")
 
 @router.post("/plan")
 async def create_call_processing_plan(request: CallProcessingRequest):
@@ -100,24 +100,24 @@ async def create_call_processing_plan(request: CallProcessingRequest):
             "call_id": request.call_id,
             **(request.call_context or {})
         }
-        
+
         # Add mode override if provided
         if request.mode_override:
             call_context["mode_override"] = request.mode_override
-        
-        # Create processing plan
-        processing_plan = processing_strategy_manager.create_call_processing_plan(call_context)
-        
+
+        # Create processing plan with sensitive data removed
+        processing_plan = processing_strategy_manager.get_sanitized_processing_plan(call_context)
+
         logger.info(f"📋 Created processing plan for call {request.call_id}: {processing_plan['processing_mode']}")
-        
+
         return {
             "success": True,
             "processing_plan": processing_plan
         }
-        
+
     except Exception as e:
         logger.error(f"❌ Failed to create processing plan for {request.call_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to create processing plan: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to create processing plan")
 
 @router.get("/statistics")
 async def get_processing_statistics():
@@ -141,7 +141,7 @@ async def get_processing_statistics():
         
     except Exception as e:
         logger.error(f"❌ Failed to get processing statistics: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to get statistics: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to get statistics")
 
 @router.post("/test-mode/{mode}")
 async def test_processing_mode(mode: str, call_id: Optional[str] = None):
@@ -163,13 +163,13 @@ async def test_processing_mode(mode: str, call_id: Optional[str] = None):
             "test_mode": True
         }
         
-        # Create processing plan
-        processing_plan = processing_strategy_manager.create_call_processing_plan(test_context)
-        
+        # Create processing plan with sensitive data removed
+        processing_plan = processing_strategy_manager.get_sanitized_processing_plan(test_context)
+
         # Validate the plan matches the requested mode
         if processing_plan["processing_mode"] != mode:
             logger.warning(f"⚠️ Mode override may have been adjusted by adaptive rules")
-        
+
         return {
             "success": True,
             "test_call_id": test_call_id,
@@ -178,10 +178,12 @@ async def test_processing_mode(mode: str, call_id: Optional[str] = None):
             "processing_plan": processing_plan,
             "test_completed": True
         }
-        
+
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"❌ Failed to test processing mode {mode}: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to test mode: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to test mode")
 
 def _get_mode_description(mode: CallProcessingMode) -> str:
     """Get human-readable description for processing modes"""
