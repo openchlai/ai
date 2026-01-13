@@ -1,11 +1,10 @@
 # app/api/audio_routes.py (Updated for Celery)
 import asyncio
 import json
-from socket import socket
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict
 import logging
 from datetime import datetime
 import os

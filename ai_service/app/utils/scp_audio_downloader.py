@@ -312,15 +312,85 @@ async def download_audio_via_http(call_id: str, http_config: Dict[str, Any]) -> 
     return None, download_info
 
 
+def _detect_audio_format(file_path: str) -> str:
+    """Detect audio format from file extension"""
+    ext = os.path.splitext(file_path)[1].lower()
+    format_map = {
+        '.wav': 'wav',
+        '.wav16': 'wav16',
+        '.gsm': 'gsm',
+        '.mp3': 'mp3',
+        '.ogg': 'ogg',
+        '.flac': 'flac',
+    }
+    return format_map.get(ext, 'unknown')
+
+
+def _find_audio_file_in_folder(folder: str, call_id: str) -> Optional[str]:
+    """
+    Find an audio file in folder, trying call_id match first then any available file.
+
+    Search order:
+    1. Exact match: {call_id}.wav, {call_id}.gsm, etc.
+    2. Contains call_id: *{call_id}*.wav, etc.
+    3. Any available audio file in folder
+    """
+    import glob
+
+    supported_extensions = ['wav', 'WAV', 'gsm', 'GSM', 'mp3', 'MP3', 'ogg', 'flac']
+
+    # Try exact match first
+    for ext in supported_extensions:
+        exact_path = os.path.join(folder, f"{call_id}.{ext}")
+        if os.path.exists(exact_path):
+            return exact_path
+
+    # Try partial match (contains call_id)
+    for ext in supported_extensions:
+        pattern = os.path.join(folder, f"*{call_id}*.{ext}")
+        matches = glob.glob(pattern)
+        if matches:
+            return matches[0]
+
+    # Fallback: return any audio file in folder
+    for ext in supported_extensions:
+        pattern = os.path.join(folder, f"*.{ext}")
+        matches = glob.glob(pattern)
+        if matches:
+            logger.info(f"[mock] No file matching call_id={call_id}, using: {matches[0]}")
+            return matches[0]
+
+    return None
+
+
 async def download_audio_local(call_id: str, local_config: Dict[str, Any]) -> Tuple[Optional[bytes], Dict[str, Any]]:
     """
-    Access audio file from local filesystem (for same-server deployments)
+    Access audio file from local filesystem (for same-server deployments or mock mode)
+
+    Supports two modes:
+    1. Template mode: Uses local_path_template with {call_id} placeholder
+    2. Folder mode: Searches mock_audio_folder for matching or any available file
     """
     try:
-        # Default local path configuration
-        local_path_template = local_config.get("local_path_template", "/var/spool/asterisk/calls/{call_id}.gsm")
-        file_path = local_path_template.format(call_id=call_id)
-        
+        # Check for mock folder mode first
+        mock_audio_folder = local_config.get("mock_audio_folder")
+        use_folder_files = local_config.get("use_folder_files", True)
+
+        if mock_audio_folder and os.path.isdir(mock_audio_folder):
+            # Mock folder mode - search for files
+            file_path = _find_audio_file_in_folder(mock_audio_folder, call_id)
+
+            if not file_path and not use_folder_files:
+                # Strict mode - only use exact match
+                file_path = None
+        else:
+            # Template mode - use path template
+            local_path_template = local_config.get("local_path_template", "/var/spool/asterisk/calls/{call_id}.gsm")
+            file_path = local_path_template.format(call_id=call_id)
+
+        # Detect format from actual file path
+        file_format = _detect_audio_format(file_path) if file_path else "unknown"
+
         download_info = {
             "call_id": call_id,
             "method": "local",
@@ -329,58 +399,109 @@ async def download_audio_local(call_id: str, local_config: Dict[str, Any]) -> Tu
             "file_size_bytes": 0,
             "file_size_mb": 0.0,
             "error": None,
-            "format": "gsm"
+            "format": file_format,
+            "mock_mode": mock_audio_folder is not None
         }
-        
-        logger.info(f"📁 [local] Accessing local audio file: {file_path}")
-        
+
+        if not file_path:
+            error_msg = f"No audio file found for call {call_id} in {mock_audio_folder or 'configured path'}"
+            download_info["error"] = error_msg
+            logger.error(f"[local] {error_msg}")
+            return None, download_info
+
+        logger.info(f"[local] Accessing local audio file: {file_path}")
+
         if os.path.exists(file_path):
             file_size_bytes = os.path.getsize(file_path)
-            
+
             with open(file_path, 'rb') as f:
                 audio_bytes = f.read()
-            
+
             download_info.update({
                 "success": True,
                 "file_size_bytes": file_size_bytes,
-                "file_size_mb": round(file_size_bytes / (1024 * 1024), 2)
+                "file_size_mb": round(file_size_bytes / (1024 * 1024), 2),
+                "format": file_format
             })
-            
-            logger.info(f"✅ [local] Loaded {download_info['file_size_mb']:.2f}MB local audio file: {call_id}")
+
+            logger.info(f"[local] Loaded {download_info['file_size_mb']:.2f}MB audio file ({file_format}): {os.path.basename(file_path)}")
             return audio_bytes, download_info
         else:
             error_msg = f"Local audio file not found: {file_path}"
             download_info["error"] = error_msg
-            logger.error(f"❌ [local] {error_msg}")
+            logger.error(f"[local] {error_msg}")
             return None, download_info
-            
+
     except Exception as e:
         error_msg = f"Local file access error: {str(e)}"
-        download_info["error"] = error_msg
-        logger.error(f"❌ [local] {error_msg}")
+        if 'download_info' not in locals():
+            download_info = {
+                "call_id": call_id,
+                "method": "local",
+                "success": False,
+                "error": error_msg
+            }
+        else:
+            download_info["error"] = error_msg
+        logger.error(f"[local] {error_msg}")
         return None, download_info
+
+
+async def download_audio_for_mock(call_id: str) -> Tuple[Optional[bytes], Dict[str, Any]]:
+    """
+    Convenience function for mock mode - uses settings to get mock folder.
+    Called when mock_enabled=True and mock_skip_scp_download=True.
+    """
+    from ..config.settings import settings
+
+    if not settings.mock_enabled:
+        return None, {
+            "call_id": call_id,
+            "method": "mock",
+            "success": False,
+            "error": "Mock mode not enabled"
+        }
+
+    local_config = {
+        "mock_audio_folder": settings.mock_audio_folder,
+        "use_folder_files": settings.mock_use_folder_files
+    }
+
+    logger.info(f"[mock] Loading audio for call {call_id} from mock folder: {settings.mock_audio_folder}")
+
+    audio_bytes, download_info = await download_audio_local(call_id, local_config)
+    download_info["method"] = "mock"
+
+    return audio_bytes, download_info
 
 
 # Unified download function with method selection
 async def download_audio_by_method(call_id: str, method: str, config: Dict[str, Any] = None) -> Tuple[Optional[bytes], Dict[str, Any]]:
     """
     Unified audio download function supporting multiple methods
-    
+
     Args:
         call_id: The unique call ID
-        method: Download method ("scp", "http", "local", "disabled")
+        method: Download method ("scp", "http", "local", "mock", "disabled")
         config: Method-specific configuration
-        
+
     Returns:
         Tuple of (audio_bytes, download_info)
     """
-    
+    # Check for mock mode override first
+    from ..config.settings import settings
+    if settings.mock_enabled and settings.mock_skip_scp_download and method.lower() == "scp":
+        logger.info(f"[mock] Mock mode enabled - using local files instead of SCP for {call_id}")
+        return await download_audio_for_mock(call_id)
+
     if method.lower() == "scp":
         return await download_audio_via_scp(call_id, config)
     elif method.lower() == "http":
         return await download_audio_via_http(call_id, config or {})
     elif method.lower() == "local":
         return await download_audio_local(call_id, config or {})
+    elif method.lower() == "mock":
+        return await download_audio_for_mock(call_id)
     elif method.lower() == "disabled":
         download_info = {
             "call_id": call_id,
@@ -388,7 +509,7 @@ async def download_audio_by_method(call_id: str, method: str, config: Dict[str, 
             "success": False,
             "error": "Audio download disabled by configuration"
         }
-        logger.info(f"ℹ️ [disabled] Audio download disabled for {call_id}")
+        logger.info(f"[disabled] Audio download disabled for {call_id}")
         return None, download_info
     else:
         download_info = {
@@ -397,7 +518,7 @@ async def download_audio_by_method(call_id: str, method: str, config: Dict[str, 
             "success": False,
             "error": f"Unsupported download method: {method}"
         }
-        logger.error(f"❌ [unknown] Unsupported audio download method '{method}' for {call_id}")
+        logger.error(f"[unknown] Unsupported audio download method '{method}' for {call_id}")
         return None, download_info
 
 

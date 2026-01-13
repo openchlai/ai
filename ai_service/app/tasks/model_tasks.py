@@ -1,7 +1,6 @@
 import logging
 from datetime import datetime
 from typing import Dict, Any, Optional
-from celery import current_task
 from celery.signals import worker_init
 import os
 
@@ -25,57 +24,6 @@ logger = logging.getLogger(__name__)
 
 # Global model loader for Celery worker
 worker_model_loader = None
-
-
-# @worker_init.connect
-# def initialize_model_worker(**kwargs):
-#     """Initialize models when worker starts"""
-#     global worker_model_loader
-    
-#     logger.info(" Initializing model worker for individual model tasks...")
-    
-#     try:
-#         from ..model_scripts.model_loader import ModelLoader
-#         import asyncio
-        
-#         worker_model_loader = ModelLoader()
-        
-#         # Run async load_all_models in sync context
-#         try:
-#             # Try to get existing event loop
-#             loop = asyncio.get_event_loop()
-#             if loop.is_running():
-#                 # If loop is already running, create a new thread
-#                 import threading
-#                 result = []
-#                 def load_models():
-#                     new_loop = asyncio.new_event_loop()
-#                     asyncio.set_event_loop(new_loop)
-#                     result.append(new_loop.run_until_complete(worker_model_loader.load_all_models()))
-#                     new_loop.close()
-                
-#                 thread = threading.Thread(target=load_models)
-#                 thread.start()
-#                 thread.join()
-#             else:
-#                 # Use existing loop
-#                 loop.run_until_complete(worker_model_loader.load_all_models())
-#         except RuntimeError:
-#             # No event loop exists, create one
-#             asyncio.run(worker_model_loader.load_all_models())
-        
-#         ready_models = worker_model_loader.get_ready_models()
-#         logger.info(f" Model worker initialized with {len(ready_models)} models: {ready_models}")
-        
-#         if len(ready_models) == 0:
-#             logger.error(" WARNING: No models were loaded successfully!")
-#             logger.error(f"Failed models: {worker_model_loader.get_failed_models()}")
-#             logger.error(f"Blocked models: {worker_model_loader.get_blocked_models()}")
-        
-#     except Exception as e:
-#         logger.error(f" Failed to initialize model worker: {e}")
-#         logger.exception("Full traceback:")
-#         worker_model_loader = None
 
 
 @worker_init.connect

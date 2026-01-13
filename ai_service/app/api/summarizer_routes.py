@@ -161,7 +161,7 @@ async def get_summarizer_info():
         }
 
 
-@router.post("/demo", response_model=SummarizationResponse)
+@router.post("/demo", response_model=SummarizationTaskResponse)
 async def summarizer_demo():
     """Demo endpoint with sample text"""
     demo_text = (

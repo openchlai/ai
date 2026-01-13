@@ -2,7 +2,6 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from datetime import datetime
 from ..model_scripts.model_loader import model_loader
-from ..utils.text_utils import TranslationChunker
 from ..utils.mode_detector import is_api_server_mode
 
 from typing import Dict, Optional

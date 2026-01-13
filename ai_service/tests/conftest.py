@@ -217,8 +217,9 @@ def mock_progressive_processor():
 
 @pytest.fixture
 def mock_agent_notification_service():
-    """Global fixture for mocked agent notification service"""
+    """Global fixture for mocked notification service (supports both old and new interface)"""
     service = AsyncMock()
+    # Old interface methods (for backward compatibility with existing tests)
     service.get_health_status = AsyncMock(return_value={
         "status": "healthy",
         "notifications_sent": 0,
@@ -229,4 +230,13 @@ def mock_agent_notification_service():
     service._ensure_valid_token = AsyncMock(return_value=True)
     service.bearer_token = "mock_token_12345"
     service.token_expires_at = datetime.now()
+    # New interface methods (EnhancedNotificationService)
+    service.send_notification = AsyncMock(return_value=True)
+    service.send_streaming_translation = AsyncMock(return_value=True)
+    service.send_streaming_entities = AsyncMock(return_value=True)
+    service.send_streaming_classification = AsyncMock(return_value=True)
+    service.endpoint_url = "http://mock.endpoint.com"
+    service.auth_endpoint_url = "http://mock.auth.com"
+    service.use_base64 = True
+    service.site_id = "mock_site"
     return service

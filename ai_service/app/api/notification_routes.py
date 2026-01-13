@@ -209,25 +209,25 @@ async def get_notification_types():
         
         # Categorize notification types
         progress_types = [
-            NotificationType.CALL_START,
-            NotificationType.TRANSCRIPT_SEGMENT, 
-            NotificationType.TRANSLATION_PROGRESS,
-            NotificationType.PROCESSING_UPDATE
+            NotificationType.STREAMING_CALL_START,
+            NotificationType.STREAMING_TRANSCRIPTION_SEGMENT,
+            NotificationType.STREAMING_TRANSLATION_PROGRESS,
+            NotificationType.STREAMING_PROCESSING_UPDATE
         ]
-        
+
         result_types = [
-            NotificationType.TRANSLATION_COMPLETE,
-            NotificationType.ENTITY_RESULTS,
-            NotificationType.CLASSIFICATION_RESULTS,
-            NotificationType.QA_RESULTS,
-            NotificationType.SUMMARY_RESULTS,
-            NotificationType.INSIGHTS_RESULTS,
-            NotificationType.GPT_INSIGHTS_RESULTS
+            NotificationType.STREAMING_TRANSLATION,
+            NotificationType.STREAMING_ENTITIES,
+            NotificationType.STREAMING_CLASSIFICATION,
+            NotificationType.STREAMING_QA,
+            NotificationType.STREAMING_SUMMARY,
+            NotificationType.STREAMING_INSIGHTS,
+            NotificationType.POSTCALL_GPT_INSIGHTS
         ]
-        
+
         critical_types = [
-            NotificationType.CALL_END,
-            NotificationType.PROCESSING_ERROR,
+            NotificationType.STREAMING_CALL_END,
+            NotificationType.SYSTEM_PROCESSING_ERROR,
             NotificationType.UNIFIED_INSIGHT
         ]
         
