@@ -23,6 +23,7 @@ import argparse
 import asyncio
 import logging
 import os
+import random
 import socket
 import struct
 import sys
@@ -269,9 +270,12 @@ class AsteriskMockClient:
 
     @staticmethod
     def generate_call_id(sequence: int = 0) -> str:
-        """Generate Asterisk-style call ID: {timestamp}.{sequence}"""
-        timestamp = int(time.time())
-        return f"{timestamp}.{sequence}"
+        """Generate Asterisk-style call ID: {timestamp}.{sequence} with random offsets"""
+        # Add random offset to timestamp to simulate different call start times
+        timestamp = int(time.time()) + random.randint(0, 9999)
+        # Add random offset to sequence to ensure uniqueness
+        sequence_with_offset = sequence + random.randint(0, 999)
+        return f"{timestamp}.{sequence_with_offset}"
 
     async def connect(self) -> bool:
         """Connect to TCP server"""
