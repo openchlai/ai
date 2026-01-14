@@ -1,11 +1,24 @@
 <template>
   <div class="header">
-    <div class="title-section">
-      <h1>Helpline Wallboard</h1>
-      <p>Real-time counselling and support</p>
+    <div class="logo-section">
+      <div class="logos-wrapper">
+        <img :src="logoUrl" alt="C-Sema Tanzania" class="brand-logo-img">
+        <div class="logo-divider"></div>
+        <img src="../assets/116_logo.png" alt="116 Child Helpline" class="helpline-logo-img">
+      </div>
+      <div class="title-section">
+        <h1>C-Sema Tanzania</h1>
+        <p>Child Protection & Helpline Wallboard</p>
+      </div>
     </div>
     <div class="header-controls">
-      <div class="connection-status">
+      <div 
+        class="connection-status" 
+        @click="$emit('reconnect')" 
+        style="cursor: pointer;"
+        role="button"
+        title="Click to reconnect"
+      >
         <span :class="['dot', connectionStatus]"></span>
         <span class="status-text">{{ connectionLabel }}</span>
         <small v-if="lastUpdate" class="last-update">{{ lastUpdate }}</small>
@@ -13,15 +26,18 @@
       <button 
         class="theme-toggle" 
         @click="$emit('toggle-theme')" 
+        :aria-label="isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
         :title="isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
       >
-        <span class="theme-icon">{{ isDarkMode ? '☀️' : '🌙' }}</span>
+        <span class="theme-icon" aria-hidden="true">{{ isDarkMode ? '☀️' : '🌙' }}</span>
       </button>
     </div>
   </div>
 </template>
 
 <script>
+import defaultLogo from '../assets/sema_logo.png'
+
 export default {
   name: 'WallboardHeader',
   props: {
@@ -42,7 +58,12 @@ export default {
       required: true
     }
   },
-  emits: ['toggle-theme']
+  emits: ['toggle-theme', 'reconnect'],
+  data() {
+    return {
+      logoUrl: import.meta.env.VITE_LOGO_URL || defaultLogo
+    }
+  }
 }
 </script>
 
@@ -51,10 +72,8 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 0 6px 0;
-  border-bottom: 1px solid #e5e7eb;
-  width: 100%;
-  height: 50px;
+  padding: 12px 20px;
+  border-bottom: 2px solid var(--border-color);
   flex-shrink: 0;
 }
 
@@ -62,34 +81,63 @@ export default {
   border-bottom-color: #4b5563;
 }
 
-.title-section {
-  flex: 1;
-  min-width: 0;
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logos-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: white;
+  padding: 6px 14px;
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.brand-logo-img {
+  height: 38px;
+  width: auto;
+  object-fit: contain;
+}
+
+.logo-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--border-color);
+}
+
+.helpline-logo-img {
+  height: 42px;
+  width: auto;
+  object-fit: contain;
 }
 
 .title-section h1 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #1f2937;
-  margin: 0 0 2px 0;
+  font-size: clamp(1.2rem, 3vw, 2.2rem);
+  font-weight: 800;
+  color: var(--primary-color);
+  margin: 0;
   line-height: 1.1;
   letter-spacing: -0.02em;
 }
 
 .title-section p {
-  color: #6b7280;
+  color: var(--text-secondary);
   margin: 0;
-  font-size: 0.75rem;
+  font-size: clamp(0.7rem, 1.2vw, 1rem);
   line-height: 1.2;
-  font-weight: 400;
+  font-weight: 500;
 }
 
 .dark-mode .title-section h1 {
-  color: #f9fafb;
+  color: white;
 }
 
 .dark-mode .title-section p {
-  color: #9ca3af;
+  color: var(--text-secondary);
 }
 
 .header-controls {
@@ -102,19 +150,18 @@ export default {
 .connection-status {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.75rem;
-  color: #374151;
-  padding: 4px 8px;
-  background: rgba(249, 250, 251, 0.8);
-  border-radius: 8px;
-  min-width: 120px;
-  height: 28px;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  padding: 6px 12px;
+  background: var(--light-blue);
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--border-color);
 }
 
 .dark-mode .connection-status {
-  color: #e5e7eb;
-  background: rgba(55, 65, 81, 0.8);
+  color: var(--text-primary);
+  background: var(--card-bg);
 }
 
 .dot {
@@ -220,14 +267,6 @@ export default {
     padding: 10px 0 8px 0;
   }
   
-  .title-section h1 {
-    font-size: 1.75rem;
-  }
-  
-  .title-section p {
-    font-size: 0.85rem;
-  }
-  
   .connection-status {
     font-size: 0.8rem;
     padding: 6px 10px;
@@ -235,9 +274,17 @@ export default {
     height: 32px;
   }
   
-  .theme-toggle {
-    width: 36px;
-    height: 36px;
+  .brand-logo-img {
+    height: clamp(38px, 5vh, 44px);
+  }
+  
+  .helpline-logo-img {
+    height: clamp(42px, 6vh, 50px);
+  }
+  
+  .logos-wrapper {
+    gap: 20px;
+    padding: 8px 18px;
   }
 }
 
@@ -246,14 +293,6 @@ export default {
   .header {
     height: 80px;
     padding: 15px 0 12px 0;
-  }
-  
-  .title-section h1 {
-    font-size: 2.5rem;
-  }
-  
-  .title-section p {
-    font-size: 1.1rem;
   }
   
   .header-controls {
@@ -279,6 +318,23 @@ export default {
     padding: 10px;
   }
   
+  .brand-logo-img {
+    height: 60px;
+  }
+  
+  .helpline-logo-img {
+    height: 70px;
+  }
+  
+  .logos-wrapper {
+    gap: 30px;
+    padding: 12px 25px;
+  }
+  
+  .logo-divider {
+    height: 40px;
+  }
+
   .theme-icon {
     font-size: 1.2rem;
   }
@@ -289,14 +345,6 @@ export default {
   .header {
     height: 45px;
     padding: 6px 0 4px 0;
-  }
-  
-  .title-section h1 {
-    font-size: 1.25rem;
-  }
-  
-  .title-section p {
-    font-size: 0.7rem;
   }
   
   .connection-status {

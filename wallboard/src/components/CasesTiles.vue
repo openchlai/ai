@@ -1,15 +1,14 @@
 <template>
-  <div class="cases-container">
-    <div class="cases-grid">
-      <div
-        v-for="tile in tiles"
-        :key="tile.id"
-        :class="['case-card', tile.variant]"
-      >
-        <div class="case-inner">
-          <div v-if="tile.value" class="case-value">{{ tile.value }}</div>
-          <div class="case-label">{{ tile.label }}</div>
-        </div>
+  <div class="cases-tiles-grid">
+    <div
+      v-for="tile in tiles"
+      :key="tile.id"
+      :class="['case-tile', tile.variant]"
+    >
+      <div class="tile-icon" v-html="getIcon(tile.id)"></div>
+      <div class="tile-content">
+        <div class="tile-value">{{ tile.value }}</div>
+        <div class="tile-label">{{ tile.label }}</div>
       </div>
     </div>
   </div>
@@ -24,269 +23,109 @@ export default {
       required: true,
       default: () => []
     }
+  },
+  setup() {
+    const getIcon = (id) => {
+      const icons = {
+        'ct1': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l2.11-2.12a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>`,
+        'ct2': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`,
+        'ct3': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`,
+        'ct4': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`,
+        'ct5': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg>`,
+        'ct6': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>`
+      }
+      return icons[id] || icons['ct1']
+    }
+
+    return { getIcon }
   }
 }
 </script>
 
 <style scoped>
-.cases-container {
-  height: 100%;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
-}
-
-.cases-grid {
+.cases-tiles-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(3, 1fr);
-  gap: 12px;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-rows: 1fr;
+  gap: 16px;
   height: 100%;
-  width: 100%;
-  max-width: 100%;
 }
 
-.case-card {
-  background: #ffffff;
-  border-radius: 8px;
-  padding: 16px 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: all 0.2s ease;
-  position: relative;
-  overflow: hidden;
+.case-tile {
+  border-radius: var(--border-radius-lg);
+  padding: 16px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 0;
+  text-align: center;
+  color: white;
+  box-shadow: var(--shadow-md);
+  transition: transform 0.2s ease;
 }
 
-.dark-mode .case-card {
-  background: #2d3748;
-  color: #e2e8f0;
+.case-tile:hover {
+  transform: translateY(-2px);
 }
 
-.case-inner {
+.tile-icon {
+  margin-bottom: 8px;
+  opacity: 0.9;
+}
+
+.tile-icon :deep(svg) {
+  width: 32px;
+  height: 32px;
+}
+
+.tile-content {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  text-align: center;
+}
+
+.tile-value {
+  font-size: clamp(1.2rem, 2.5vw, 3rem);
+  font-weight: 900;
+  line-height: 1;
+}
+
+.tile-label {
+  font-size: clamp(0.55rem, 1vw, 0.85rem);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.9;
+}
+
+/* Fluid Scaling for TV & Varying Viewports */
+.tile-icon :deep(svg) {
+  width: clamp(24px, 4vw, 48px);
+  height: clamp(24px, 4vw, 48px);
+}
+
+.case-tile {
+  padding: clamp(12px, 2vw, 24px);
+  border-radius: var(--border-radius-lg);
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 100%;
-}
-
-.case-value {
-  font-size: 1.75rem;
-  font-weight: 700;
-  line-height: 1;
-  margin-bottom: 4px;
-  color: #ffffff !important;
-}
-
-.case-label {
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  opacity: 0.9;
-  line-height: 1.2;
   text-align: center;
-  word-wrap: break-word;
-  hyphens: auto;
-  max-width: 100%;
-  color: #ffffff !important;
+  color: white;
+  box-shadow: var(--shadow-md);
+  transition: transform 0.2s ease;
+  min-height: 0;
 }
 
-/* Variant colors */
-.case-card.c-blue .case-value {
-  color: #3b82f6;
-}
+/* Variant Backgrounds - Restoring Brand Gradients */
+.case-tile.c-blue { background: linear-gradient(135deg, #1D3E8A, #2a52be); }
+.case-tile.c-amber { background: linear-gradient(135deg, #D35400, #f47c20); }
+.case-tile.c-red { background: linear-gradient(135deg, #C0392B, #ef4444); }
+.case-tile.c-green { background: linear-gradient(135deg, #0E7337, #10b981); }
+.case-tile.c-black { background: linear-gradient(135deg, #4A4A4A, #333333); }
 
-.case-card.c-amber .case-value {
-  color: #f59e0b;
-}
-
-.case-card.c-red .case-value {
-  color: #ef4444;
-}
-
-.case-card.c-green .case-value {
-  color: #10b981;
-}
-
-.case-card.c-black .case-value {
-  color: #1f2937;
-}
-
-.dark-mode .case-card.c-black .case-value {
-  color: #f9fafb;
-}
-
-/* Variant background accents */
-.case-card.c-blue::before {
-  background: linear-gradient(45deg, #3b82f6, #60a5fa);
-}
-
-.case-card.c-amber::before {
-  background: linear-gradient(45deg, #f59e0b, #fbbf24);
-}
-
-.case-card.c-red::before {
-  background: linear-gradient(45deg, #ef4444, #f87171);
-}
-
-.case-card.c-green::before {
-  background: linear-gradient(45deg, #10b981, #34d399);
-}
-
-.case-card.c-black::before {
-  background: linear-gradient(45deg, #1f2937, #374151);
-}
-
-.case-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  opacity: 0.8;
-}
-
-/* TV Screen optimizations */
-@media screen and (min-width: 1920px) {
-  .cases-container {
-    padding: 15px;
-  }
-  
-  .cases-grid {
-    gap: 15px;
-  }
-  
-  .case-card {
-    padding: 20px 16px;
-    border-radius: 10px;
-  }
-  
-  .case-value {
-    font-size: 2.25rem;
-  }
-  
-  .case-label {
-    font-size: 0.8rem;
-  }
-}
-
-/* 4K TV optimization */
-@media screen and (min-width: 3840px) {
-  .cases-container {
-    padding: 20px;
-  }
-  
-  .cases-grid {
-    gap: 20px;
-  }
-  
-  .case-card {
-    padding: 25px 20px;
-    border-radius: 12px;
-  }
-  
-  .case-inner {
-    gap: 6px;
-  }
-  
-  .case-value {
-    font-size: 3rem;
-    margin-bottom: 6px;
-  }
-  
-  .case-label {
-    font-size: 1rem;
-    letter-spacing: 0.5px;
-  }
-  
-  .case-card::before {
-    height: 4px;
-  }
-}
-
-/* Smaller TV screens */
-@media screen and (max-width: 1600px) {
-  .cases-container {
-    padding: 10px;
-  }
-  
-  .cases-grid {
-    gap: 10px;
-  }
-  
-  .case-card {
-    padding: 14px 10px;
-  }
-  
-  .case-value {
-    font-size: 1.5rem;
-  }
-  
-  .case-label {
-    font-size: 0.65rem;
-  }
-}
-
-/* Very small screens */
-@media screen and (max-width: 1200px) {
-  .case-card {
-    padding: 12px 8px;
-  }
-  
-  .case-value {
-    font-size: 1.3rem;
-  }
-  
-  .case-label {
-    font-size: 0.6rem;
-  }
-}
-
-/* Mobile fallback - stack vertically */
-@media screen and (max-width: 768px) {
-  .cases-grid {
-    grid-template-columns: 1fr;
-    grid-template-rows: repeat(6, 1fr);
-    gap: 8px;
-  }
-  
-  .case-card {
-    padding: 12px 8px;
-  }
-  
-  .case-value {
-    font-size: 1.4rem;
-  }
-  
-  .case-label {
-    font-size: 0.65rem;
-  }
-}
-
-/* Animation for smooth tile updates - reduced for TV */
-@keyframes tileUpdate {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.01);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-.case-card {
-  animation: tileUpdate 0.2s ease-in-out;
+.dark-mode .case-tile {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
 }
 </style>

@@ -1,27 +1,28 @@
 <template>
-  <div class="calls-cards-section">
-    <div class="section-header">
-      <h2 class="section-title">Today's Call Status</h2>
+  <div class="calls-stats-section">
+    <div v-if="loading && cards.length === 0" class="loading-state">
+      <div class="skeleton-card" v-for="i in 8" :key="i"></div>
     </div>
-    <div class="calls-cards-grid">
-      <div v-if="loading" class="loading-message">
-        Loading call status data...
-      </div>
-      <div v-else-if="error" class="error-message">
-        Error loading call status: {{ error }}
-      </div>
-      <div v-else-if="cards.length === 0" class="no-data-message">
-        No call status data available
-      </div>
+    
+    <div v-else-if="error && cards.length === 0" class="error-state">
+      <p>Error loading call statistics: {{ error }}</p>
+    </div>
+    
+    <div 
+      v-else
+      class="calls-cards-grid"
+    >
       <div 
-        v-else
         v-for="card in cards" 
         :key="card.id"
-        :class="['call-status-card', `card-${card.variant}`]"
+        class="status-card-horizontal"
       >
-        <div class="card-content">
-          <div class="card-count">{{ card.count }}</div>
+        <div class="card-icon-side" :style="{ backgroundColor: card.color }">
+          <div class="status-icon" v-html="getIcon(card.status)"></div>
+        </div>
+        <div class="card-content-side">
           <div class="card-label">{{ card.label }}</div>
+          <div class="card-count">{{ card.count }}</div>
         </div>
       </div>
     </div>
@@ -32,252 +33,123 @@
 export default {
   name: 'CallsStatusCards',
   props: {
-    loading: {
-      type: Boolean,
-      default: false
-    },
-    error: {
-      type: String,
-      default: null
-    },
-    cards: {
-      type: Array,
-      required: true,
-      default: () => []
+    loading: { type: Boolean, default: false },
+    error: { type: String, default: null },
+    cards: { type: Array, required: true, default: () => [] }
+  },
+  setup() {
+    const getIcon = (status) => {
+      const s = String(status).toUpperCase()
+      const icons = {
+        'ANSWERED': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 11l3 3L22 4m-2 16H4a2 2 0 01-2-2V4a2 2 0 012-2h9l-3 3H4v14h14v-7l3-3v10a2 2 0 01-2 2z"></path></svg>`,
+        'ABANDONED': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 8l-4 4m0 0l-4 4m4-4l4 4m-4-4l-4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`,
+        'DUMP': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18.36 6.64a9 9 0 11-12.73 0M12 2v10"></path></svg>`,
+        'IVR': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>`,
+        'MISSED': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`,
+        'NOANSWER': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`,
+        'VOICEMAIL': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>`,
+        'TOTAL': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>`
+      }
+      return icons[s] || `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>` // Fallback phone
     }
+    return { getIcon }
   }
 }
 </script>
 
 <style scoped>
-.calls-cards-section {
-  margin: 20px 0;
-}
-
-.section-header {
-  margin-bottom: 15px;
-}
-
-.section-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0;
-}
-
-.dark-mode .section-title {
-  color: #f9fafb;
+.calls-stats-section {
+  width: 100%;
 }
 
 .calls-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 15px;
-  margin-top: 15px;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
 }
 
-.call-status-card {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 20px;
-  transition: transform 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  position: relative;
+.status-card-horizontal {
+  display: flex;
+  background: var(--card-bg);
+  border-radius: var(--border-radius-sm);
   overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+  height: 60px;
+  transition: transform 0.2s ease;
 }
 
-.call-status-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+.status-card-horizontal:hover {
+  transform: translateY(-1px);
 }
 
-.dark-mode .call-status-card {
-  background: #2d3748;
+.card-icon-side {
+  width: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
 }
 
-.card-content {
-  text-align: center;
-  position: relative;
-  z-index: 1;
+.phone-icon {
+  width: 18px;
+  height: 18px;
 }
 
-.card-count {
-  font-size: 2.5rem;
-  font-weight: 700;
-  line-height: 1;
-  margin-bottom: 8px;
+.card-content-side {
+  flex-grow: 1;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .card-label {
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  opacity: 0.8;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
 }
 
-/* Card variants with enhanced visual styling */
-.card-success {
-  border-left: 4px solid #10b981;
+.card-count {
+  font-size: clamp(1rem, 2.5vw, 1.8rem);
+  font-weight: 900;
+  color: var(--text-main);
+  line-height: 1;
 }
 
-.card-success .card-count {
-  color: #10b981;
-}
-
-.card-warning {
-  border-left: 4px solid #f59e0b;
-}
-
-.card-warning .card-count {
-  color: #f59e0b;
-}
-
-.card-danger {
-  border-left: 4px solid #ef4444;
-}
-
-.card-danger .card-count {
-  color: #ef4444;
-}
-
-.card-info {
-  border-left: 4px solid #3b82f6;
-}
-
-.card-info .card-count {
-  color: #3b82f6;
-}
-
-.card-primary {
-  border-left: 4px solid #8b5cf6;
-}
-
-.card-primary .card-count {
-  color: #8b5cf6;
-}
-
-.card-secondary {
-  border-left: 4px solid #6b7280;
-}
-
-.card-secondary .card-count {
-  color: #6b7280;
-}
-
-/* Background gradient effects for cards */
-.card-success::after {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), transparent);
-}
-
-.card-warning::after {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), transparent);
-}
-
-.card-danger::after {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), transparent);
-}
-
-.card-info::after {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), transparent);
-}
-
-.card-primary::after {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.05), transparent);
-}
-
-.card-secondary::after {
-  background: linear-gradient(135deg, rgba(107, 114, 128, 0.05), transparent);
-}
-
-.call-status-card::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-  border-radius: 12px;
-}
-
-.loading-message, .error-message, .no-data-message {
-  grid-column: 1 / -1;
-  text-align: center;
-  padding: 20px;
-  border-radius: 8px;
-  background: #f8f9fa;
-  color: #6c757d;
-  font-weight: 500;
-}
-
-.error-message {
-  background: #fee;
-  color: #dc3545;
-}
-
-.dark-mode .loading-message,
-.dark-mode .no-data-message {
-  background: #374151;
-  color: #9ca3af;
-}
-
-.dark-mode .error-message {
-  background: #450a0a;
-  color: #f87171;
-}
-
-/* Pulse animation for active cards */
-.card-success:hover,
-.card-info:hover {
-  animation: subtle-glow 0.3s ease-in-out;
-}
-
-@keyframes subtle-glow {
-  0% {
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  }
-  100% {
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  }
-}
-
-/* Responsive design */
-@media (max-width: 768px) {
+@media screen and (min-width: 1440px) {
   .calls-cards-grid {
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 12px;
-  }
-  
-  .call-status-card {
-    padding: 16px;
-  }
-  
-  .card-count {
-    font-size: 2rem;
-  }
-  
-  .card-label {
-    font-size: 0.8rem;
+    grid-template-columns: repeat(7, 1fr);
   }
 }
 
-@media (max-width: 480px) {
-  .calls-cards-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-  }
-  
-  .call-status-card {
-    padding: 14px;
-  }
-  
-  .card-count {
-    font-size: 1.8rem;
-  }
-  
-  .card-label {
-    font-size: 0.75rem;
-  }
+@media screen and (min-width: 1920px) {
+  .status-card-horizontal { height: clamp(60px, 6vh, 80px); }
+  .card-icon-side { width: clamp(42px, 5vw, 60px); }
+  .phone-icon { width: clamp(18px, 2vw, 24px); height: clamp(18px, 2vw, 24px); }
+}
+
+.loading-state {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 12px;
+}
+
+.skeleton-card {
+  height: 60px;
+  background: var(--border-color);
+  opacity: 0.2;
+  border-radius: var(--border-radius-sm);
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
 }
 </style>
