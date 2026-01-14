@@ -657,6 +657,11 @@ class Settings(BaseSettings):
         description="Skip SCP download and use local files when mock_enabled is True"
     )
 
+    mock_notifications: bool = Field(
+        default=False,
+        description="Write notifications to markdown files instead of sending to server"
+    )
+
     mock_notifications_folder: str = Field(
         default="./mock_notifications",
         description="Folder for mock notification markdown files"

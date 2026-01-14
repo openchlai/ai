@@ -489,8 +489,8 @@ class EnhancedNotificationService:
         # Log payload for UI development
         self._log_payload(data, request_body)
 
-        # Check for mock mode - skip HTTP and write to markdown instead
-        if settings.mock_enabled:
+        # Check for mock notifications - skip HTTP and write to markdown instead
+        if settings.mock_notifications:
             logger.info(f"[mock] Skipping HTTP send - writing to mock notification file")
             await self._write_mock_notification(data)
             return True  # Pretend send succeeded
