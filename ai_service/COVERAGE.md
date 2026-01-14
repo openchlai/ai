@@ -1,10 +1,10 @@
 # 📊 Code Coverage Report - AI Service
 
 **Branch:** 403/merge
-**Commit:** [\`1a6d4dd\`](https://github.com/openchlai/ai/commit/1a6d4dd3958a23272c9f301614effac61461e9c0)
-**Generated:** 2026-01-13 06:46:57 UTC
+**Commit:** [\`314d433\`](https://github.com/openchlai/ai/commit/314d43361b714687a349f8943e90f5dbd154e391)
+**Generated:** 2026-01-14 10:05:24 UTC
 **Python Version:** 3.12
-**Workflow:** [\`20947336718\`](https://github.com/openchlai/ai/actions/runs/20947336718)
+**Workflow:** [\`20989959915\`](https://github.com/openchlai/ai/actions/runs/20989959915)
 
 ## 🎯 Coverage Summary
 
@@ -46,7 +46,7 @@ app/core/processing_modes.py                       93     26    72%   106, 110, 
 app/core/processing_strategy_manager.py           137    103    25%   60-93, 116-143, 149-153, 159-163, 168, 173, 183-210, 220-264, 276-287, 299-300, 304, 334-368
 app/core/resource_manager.py                      118     25    79%   88-89, 134-135, 150-151, 166-167, 197, 201-206, 210-228, 235-239
 app/core/streaming.py                             106     80    25%   22-29, 33-40, 44, 56-86, 96, 118, 141-143, 160, 175, 193-261, 265-283, 287-294
-app/core/text_chunker.py                          156     26    83%   70-72, 77-79, 86-90, 98, 158-182, 290
+app/core/text_chunker.py                          156     24    85%   77-79, 84-87, 98, 158-182, 290
 app/db/models.py                                   18      1    94%   34
 app/db/repositories/feedback_repository.py         77     61    21%   42-67, 90-122, 141-151, 170-213
 app/db/session.py                                  22     11    50%   27-31, 37-44
@@ -80,7 +80,7 @@ app/utils/mode_detector.py                         16      4    75%   16, 28-30,
 app/utils/scp_audio_downloader.py                 232    180    22%   45, 47, 51, 100-128, 138-140, 147-158, 165-166, 179-241, 259-295, 305-312, 317-326, 338-363, 374-447, 455-475, 494-495, 499-522, 530-541, 546-555
 app/utils/text_utils.py                           268    234    13%   19-20, 24, 29-33, 45-46, 53-108, 112-127, 142-180, 186, 198-199, 205-252, 256-264, 271, 286-329, 349-397, 413-475, 489-496, 511-560, 574-622
 -----------------------------------------------------------------------------
-TOTAL                                            7012   3843    45%
+TOTAL                                            7012   3841    45%
 ```
 
 ---
