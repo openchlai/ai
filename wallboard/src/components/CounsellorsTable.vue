@@ -1,55 +1,55 @@
 <template>
-  <div class="counsellors-section">
-    <div class="section-header">
-      <h2 class="section-title">Counsellors Online: {{ onlineCount }}</h2>
-    </div>
-    <div class="counsellors-table">
-      <div class="table-header">
-        <div class="col-ext">Ext.</div>
-        <div class="col-name">Name</div>
-        <div class="col-caller">Caller</div>
-        <div class="col-answered">Answered</div>
-        <div class="col-missed">Missed</div>
-        <div class="col-talk-time">Talk Time</div>
-        <div class="col-queue-status">Queue Status</div>
-        <div class="col-duration">Duration</div>
-      </div>
-      <div class="table-body" ref="tableContainer">
-        <div v-if="counsellors.length === 0" class="no-counsellors-row">
-          <div class="no-counsellors-text">No counsellors currently online</div>
-        </div>
-        <div 
+  <div class="table-wrapper">
+    <table class="agent-table">
+      <thead>
+        <tr>
+          <th class="th-ext">EXT</th>
+          <th class="th-agent">AGENT NAME</th>
+          <th class="th-stat">ANS</th>
+          <th class="th-stat">MISS</th>
+          <th class="th-stat">TALK</th>
+          <th class="th-status">STATUS</th>
+          <th class="th-time">TIME</th>
+        </tr>
+      </thead>
+      <tbody class="scrollable-tbody" ref="tableContainer">
+        <tr v-if="counsellors.length === 0">
+          <td colspan="7" class="no-agents">No agents currently online</td>
+        </tr>
+        <tr 
           v-for="counsellor in counsellors" 
           :key="counsellor.id"
-          class="table-row"
+          class="agent-row"
         >
-          <div class="col-ext">{{ counsellor.extension }}</div>
-          <div class="col-name">
-            <span v-if="counsellor.nameLoading" class="name-loading">Loading...</span>
-            <span v-else>{{ counsellor.name }}</span>
-          </div>
-          <div class="col-caller">{{ counsellor.caller || '--' }}</div>
-          <div class="col-answered">
-            <span v-if="counsellor.statsLoading" class="name-loading">Loading...</span>
-            <span v-else>{{ counsellor.answered || '0' }}</span>
-          </div>
-          <div class="col-missed">
-            <span v-if="counsellor.statsLoading" class="name-loading">Loading...</span>
-            <span v-else>{{ counsellor.missed || '0' }}</span>
-          </div>
-          <div class="col-talk-time">{{ counsellor.talkTime || '--' }}</div>
-          <div :class="['col-queue-status', getStatusClass(counsellor.queueStatus)]">
-            {{ counsellor.queueStatus || 'Offline' }}
-          </div>
-          <div class="col-duration">{{ counsellor.duration || '--' }}</div>
-        </div>
-      </div>
-    </div>
+          <td class="td-ext">#{{ counsellor.extension }}</td>
+          <td class="td-agent">
+            <div class="agent-info">
+              <div class="agent-avatar" :style="{ backgroundColor: getAvatarColor(counsellor.name) }">
+                {{ getInitials(counsellor.name) }}
+              </div>
+              <div class="agent-meta">
+                <span class="agent-name">{{ counsellor.name }}</span>
+              </div>
+            </div>
+          </td>
+          <td class="td-stat">{{ counsellor.answered || 0 }}</td>
+          <td class="td-stat">{{ counsellor.missed || 0 }}</td>
+          <td class="td-stat">{{ counsellor.talkTime || '0:00' }}</td>
+          <td class="td-status">
+            <span :class="['status-pill', getStatusClass(counsellor.queueStatus)]">
+              {{ counsellor.queueStatus }}
+            </span>
+          </td>
+          <td class="td-time">{{ counsellor.duration }}</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </template>
 
 <script>
 import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import { formatNumberWithCommas } from '../utils/formatters'
 
 export default {
   name: 'CounsellorsTable',
@@ -63,17 +63,35 @@ export default {
       type: Number,
       required: true,
       default: 0
+    },
+    availableCount: {
+      type: Number,
+      default: 0
     }
   },
   setup(props) {
     const tableContainer = ref(null)
     let scrollInterval = null
 
+    const getInitials = (name) => {
+      if (!name) return '?'
+      return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+    }
+
+    const getAvatarColor = (name) => {
+      const colors = ['#f47c20', '#1d3e8a', '#0e7337', '#b95e06', '#c0392b', '#8b5cf6']
+      let hash = 0
+      for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash)
+      }
+      return colors[Math.abs(hash) % colors.length]
+    }
+
     // Auto-scroll functionality
     const setupAutoScroll = (container, scrollSpeed = 0.8, pauseDuration = 2500) => {
       if (!container) return null
       
-      let direction = 1 // 1 for down, -1 for up
+      let direction = 1
       let isPaused = false
       
       return setInterval(() => {
@@ -82,9 +100,8 @@ export default {
         const { scrollTop, scrollHeight, clientHeight } = container
         const maxScroll = scrollHeight - clientHeight
         
-        if (maxScroll <= 0) return // No need to scroll if content fits
+        if (maxScroll <= 0) return
         
-        // Check if we've reached the bottom or top
         if (scrollTop >= maxScroll - 3) {
           direction = -1
           isPaused = true
@@ -99,7 +116,6 @@ export default {
       }, 40)
     }
 
-    // Start auto-scroll
     const startAutoScroll = () => {
       nextTick(() => {
         if (tableContainer.value) {
@@ -108,7 +124,6 @@ export default {
       })
     }
 
-    // Stop auto-scroll
     const stopAutoScroll = () => {
       if (scrollInterval) {
         clearInterval(scrollInterval)
@@ -116,13 +131,11 @@ export default {
       }
     }
 
-    // Watch for data changes to restart auto-scroll
     watch(() => props.counsellors, () => {
       stopAutoScroll()
       setTimeout(startAutoScroll, 800)
     })
 
-    // Lifecycle
     onMounted(() => {
       setTimeout(startAutoScroll, 1500)
     })
@@ -132,12 +145,17 @@ export default {
     })
 
     return {
-      tableContainer
+      tableContainer,
+      getInitials,
+      getAvatarColor,
+      formatNumberWithCommas
     }
   },
   methods: {
     getStatusClass(status) {
       const s = (status || 'Available').toString().toLowerCase()
+      if (s.includes('wrapup')) return 'status-wrapup'
+      if (s.includes('waiting')) return 'status-waiting'
       if (s.includes('on call')) return 'status-oncall'
       if (s.includes('ring')) return 'status-ringing'
       if (s.includes('queue')) return 'status-inqueue'
@@ -150,304 +168,132 @@ export default {
 </script>
 
 <style scoped>
-/* TV-Optimized Component styling */
-.counsellors-section {
+.table-wrapper {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
   min-height: 0;
+  overflow-x: auto;
 }
 
-.section-header {
-  flex-shrink: 0;
-  margin-bottom: 8px;
-}
-
-.section-title {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0;
-}
-
-.dark-mode .section-title {
-  color: #f9fafb;
-}
-
-.counsellors-table {
-  background: #ffffff;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+.agent-table {
+  width: 100%;
+  border-collapse: collapse;
   display: flex;
   flex-direction: column;
-  flex: 1;
-  min-height: 0;
+  height: 100%;
 }
 
-.dark-mode .counsellors-table {
-  background: #2d3748;
+.agent-table thead, .agent-table tbody tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
 }
 
-.table-header {
-  display: grid;
-  grid-template-columns: 50px 120px 80px 70px 60px 80px 100px 1fr;
-  gap: 8px;
-  padding: 8px 10px;
-  background: #f8fafc;
-  font-weight: 600;
-  font-size: 0.8rem;
-  color: #374151;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  flex-shrink: 0;
-}
-
-.dark-mode .table-header {
-  background: #374151;
-  color: #d1d5db;
-}
-
-/* Table body with auto-scroll - TV optimized height */
-.table-body {
+.agent-table tbody {
+  display: block;
   flex: 1;
   overflow-y: auto;
-  overflow-x: hidden;
-  scroll-behavior: smooth;
-  pointer-events: none;
-  max-height: 160px; /* Height for exactly 4 rows at 40px per row */
-  min-height: 160px;
+  min-height: 0;
 }
 
-/* Ultra-slim scrollbar for TV */
-.table-body::-webkit-scrollbar {
-  width: 1px;
+.agent-table thead th {
+  background: var(--bg-color);
+  color: var(--text-muted);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid var(--border-color);
 }
 
-.table-body::-webkit-scrollbar-track {
-  background: transparent;
+.agent-row td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
 }
 
-.table-body::-webkit-scrollbar-thumb {
-  background: rgba(203, 213, 225, 0.2);
-  border-radius: 1px;
-}
+.th-ext, .td-ext { width: 60px; }
+.th-stat, .td-stat { width: 45px; text-align: center !important; }
+.th-status, .td-status { width: 100px; }
+.th-time, .td-time { width: 70px; text-align: right !important; }
 
-.dark-mode .table-body::-webkit-scrollbar-thumb {
-  background: rgba(107, 114, 128, 0.2);
-}
-
-.table-row {
-  display: grid;
-  grid-template-columns: 50px 120px 80px 70px 60px 80px 100px 1fr;
-  gap: 8px;
-  padding: 8px 10px;
-  border-bottom: 1px solid #f3f4f6;
+.td-ext {
+  font-weight: 800;
+  color: var(--text-muted);
   font-size: 0.85rem;
-  height: 40px;
-  align-items: center;
-  font-weight: 500;
 }
 
-.dark-mode .table-row {
-  border-bottom-color: #4b5563;
-  color: #e2e8f0;
-}
-
-.table-row:last-child {
-  border-bottom: none;
-}
-
-.table-header > div,
-.table-row > div {
+.agent-info {
   display: flex;
   align-items: center;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  gap: 10px;
 }
 
-.no-counsellors-row {
-  padding: 20px 8px;
-  text-align: center;
-  height: 160px;
+.agent-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.no-counsellors-text {
-  color: #6b7280;
-  font-style: italic;
+  color: white;
+  font-weight: 900;
   font-size: 0.75rem;
+  flex-shrink: 0;
 }
 
-.dark-mode .no-counsellors-text {
-  color: #9ca3af;
+.agent-name {
+  font-weight: 800;
+  color: var(--text-main);
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
 }
 
-.name-loading {
-  color: #888;
+.td-stat {
+  font-weight: 700;
+  color: var(--text-main);
+  font-size: 0.9rem;
+}
+
+.status-pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+/* Status Pill Colors - Brand Aligned */
+.status-available { background: #E8F5E9; color: #0E7337; border: 1px solid #A5D6A7; }
+.status-oncall { background: #FFF3E0; color: #D35400; border: 1px solid #FFCC80; }
+.status-ringing { background: #FFEBEE; color: #C0392B; border: 1px solid #FFCDD2; }
+.status-wrapup { background: #FFFDE7; color: #FBC02D; border: 1px solid #FFF59D; }
+.status-offline { background: var(--bg-color); color: var(--text-muted); border: 1px solid var(--border-color); }
+
+.td-time {
+  font-weight: 800;
+  color: var(--text-main);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.95rem;
+}
+
+.no-agents {
+  padding: 40px;
+  text-align: center;
+  color: var(--text-muted);
   font-style: italic;
-  font-size: 0.65rem;
 }
 
-.dark-mode .name-loading {
-  color: #9ca3af;
-}
-
-/* Status color classes */
-.status-oncall {
-  color: #10b981;
-  font-weight: 600;
-}
-
-.status-ringing {
-  color: #f59e0b;
-  font-weight: 600;
-  animation: blink 1.5s ease-in-out infinite;
-}
-
-.status-inqueue {
-  color: #3b82f6;
-  font-weight: 600;
-}
-
-.status-available {
-  color: #6b7280;
-  font-weight: 500;
-}
-
-.status-offline {
-  color: #ef4444;
-  font-weight: 600;
-}
-
-.status-neutral {
-  color: #6b7280;
-}
-
-@keyframes blink {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-/* TV Screen optimizations */
-@media screen and (min-width: 1920px) {
-  .section-title {
-    font-size: 1rem;
-  }
-  
-  .table-header {
-    grid-template-columns: 60px 140px 100px 80px 70px 90px 120px 1fr;
-    gap: 10px;
-    padding: 8px 10px;
-    font-size: 0.75rem;
-  }
-  
-  .table-body {
-    max-height: 160px;
-    min-height: 160px;
-  }
-  
-  .table-row {
-    grid-template-columns: 60px 140px 100px 80px 70px 90px 120px 1fr;
-    gap: 10px;
-    padding: 8px 10px;
-    font-size: 0.8rem;
-    height: 40px;
-  }
-}
-
-/* 4K TV optimization */
-@media screen and (min-width: 3840px) {
-  .section-title {
-    font-size: 1.25rem;
-  }
-  
-  .table-header {
-    grid-template-columns: 80px 180px 120px 100px 90px 110px 150px 1fr;
-    gap: 15px;
-    padding: 12px 15px;
-    font-size: 0.9rem;
-  }
-  
-  .table-body {
-    max-height: 240px;
-    min-height: 240px;
-  }
-  
-  .table-row {
-    grid-template-columns: 80px 180px 120px 100px 90px 110px 150px 1fr;
-    gap: 15px;
-    padding: 12px 15px;
-    font-size: 1rem;
-    height: 60px;
-  }
-  
-  .no-counsellors-row {
-    height: 240px;
-    padding: 30px 15px;
-  }
-  
-  .no-counsellors-text {
-    font-size: 1rem;
-  }
-}
-
-/* Smaller TV screens */
-@media screen and (max-width: 1600px) {
-  .section-title {
-    font-size: 0.8rem;
-  }
-  
-  .table-header {
-    grid-template-columns: 45px 100px 70px 60px 50px 70px 90px 1fr;
-    gap: 6px;
-    padding: 5px 6px;
-    font-size: 0.6rem;
-  }
-  
-  .table-body {
-    max-height: 120px;
-    min-height: 120px;
-  }
-  
-  .table-row {
-    grid-template-columns: 45px 100px 70px 60px 50px 70px 90px 1fr;
-    gap: 6px;
-    padding: 5px 6px;
-    font-size: 0.65rem;
-    height: 30px;
-  }
-  
-  .no-counsellors-row {
-    height: 120px;
-    padding: 15px 6px;
-  }
-  
-  .no-counsellors-text {
-    font-size: 0.7rem;
-  }
-}
-
-/* Very small screens */
-@media screen and (max-width: 1200px) {
-  .table-header,
-  .table-row {
-    grid-template-columns: 40px 90px 60px 50px 45px 60px 80px 1fr;
-    font-size: 0.6rem;
-    height: 28px;
-  }
-  
-  .table-body {
-    max-height: 112px;
-    min-height: 112px;
-  }
-}
+.dark-mode .agent-table thead th { background: var(--card-bg); color: var(--text-muted); }
+.dark-mode .agent-row td { border-bottom-color: var(--border-color); }
+.dark-mode .agent-name, .dark-mode .td-stat, .dark-mode .td-time { color: white; }
 </style>

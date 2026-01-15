@@ -1,33 +1,34 @@
 <template>
-  <div class="counsellors-section">
-    <div class="section-header">
-      <h2 class="section-title">Callers Online: {{ onlineCount }}</h2>
-    </div>
-    <div class="counsellors-table">
-      <div class="table-header callers-header">
-        <div class="col-caller-num">Caller Number</div>
-        <div class="col-vector">Queue</div>
-        <div class="col-wait-time">Wait Time</div>
-        <div class="col-status">Status</div>
-      </div>
-      <div class="table-body" ref="tableContainer">
-        <div v-if="callers.length === 0" class="no-counsellors-row">
-          <div class="no-counsellors-text">No callers currently online</div>
-        </div>
-        <div 
+  <div class="table-v-wrapper">
+    <table class="caller-table">
+      <thead>
+        <tr>
+          <th class="th-agent">AGENT</th>
+          <th class="th-num">CALLER ID</th>
+          <th class="th-status">STATUS</th>
+          <th class="th-time">WAIT TIME</th>
+        </tr>
+      </thead>
+      <tbody class="scrollable-tbody" ref="tableContainer">
+        <tr v-if="callers.length === 0">
+          <td colspan="4" class="no-callers">No active calls in queue</td>
+        </tr>
+        <tr 
           v-for="caller in callers" 
           :key="caller.id"
-          class="table-row callers-row"
+          class="caller-row"
         >
-          <div class="col-caller-num">{{ caller.callerNumber || '--' }}</div>
-          <div class="col-vector">{{ caller.vector || '--' }}</div>
-          <div class="col-wait-time">{{ caller.waitTime || '--' }}</div>
-          <div :class="['col-status', getStatusClass(caller.queueStatus)]">
-            {{ caller.queueStatus || 'Unknown' }}
-          </div>
-        </div>
-      </div>
-    </div>
+          <td class="td-agent">{{ caller.agentExtension || '-' }}</td>
+          <td class="td-num">{{ formatNumber(caller.callerNumber) }}</td>
+          <td class="td-status">
+            <span :class="['status-pill', getStatusClass(caller.queueStatus)]">
+              {{ caller.queueStatus }}
+            </span>
+          </td>
+          <td class="td-time">{{ caller.waitTime }}</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </template>
 
@@ -46,28 +47,44 @@ export default {
       type: Number,
       required: true,
       default: 0
+    },
+    queuedCount: {
+      type: Number,
+      default: 0
     }
   },
   setup(props) {
     const tableContainer = ref(null)
     let scrollInterval = null
 
-    // Auto-scroll functionality
+    const formatNumber = (num) => {
+      if (!num || num === '--') return '--'
+      
+      const countryCode = import.meta.env.VITE_COUNTRY_CODE || '255'
+      
+      // Remove all non-digit characters
+      let clean = num.toString().replace(/\D/g, '')
+      
+      // Normalize specific patterns to International format
+      if (clean.startsWith('0')) {
+        clean = countryCode + clean.substring(1)
+      } else if (!clean.startsWith(countryCode)) {
+        clean = countryCode + clean
+      }
+      
+      // Return with plus prefix: +255723456789
+      return '+' + clean
+    }
+
     const setupAutoScroll = (container, scrollSpeed = 0.8, pauseDuration = 2500) => {
       if (!container) return null
-      
-      let direction = 1 // 1 for down, -1 for up
+      let direction = 1
       let isPaused = false
-      
       return setInterval(() => {
         if (isPaused || !container) return
-        
         const { scrollTop, scrollHeight, clientHeight } = container
         const maxScroll = scrollHeight - clientHeight
-        
-        if (maxScroll <= 0) return // No need to scroll if content fits
-        
-        // Check if we've reached the bottom or top
+        if (maxScroll <= 0) return
         if (scrollTop >= maxScroll - 3) {
           direction = -1
           isPaused = true
@@ -77,12 +94,10 @@ export default {
           isPaused = true
           setTimeout(() => { isPaused = false }, pauseDuration)
         }
-        
         container.scrollBy(0, direction * scrollSpeed)
       }, 40)
     }
 
-    // Start auto-scroll
     const startAutoScroll = () => {
       nextTick(() => {
         if (tableContainer.value) {
@@ -91,7 +106,6 @@ export default {
       })
     }
 
-    // Stop auto-scroll
     const stopAutoScroll = () => {
       if (scrollInterval) {
         clearInterval(scrollInterval)
@@ -99,13 +113,11 @@ export default {
       }
     }
 
-    // Watch for data changes to restart auto-scroll
     watch(() => props.callers, () => {
       stopAutoScroll()
       setTimeout(startAutoScroll, 800)
     })
 
-    // Lifecycle
     onMounted(() => {
       setTimeout(startAutoScroll, 1500)
     })
@@ -114,18 +126,20 @@ export default {
       stopAutoScroll()
     })
 
-    return {
-      tableContainer
+    return { tableContainer, formatNumber }
+  },
+  computed: {
+    // Helper to find connected agent for UI display
+    getConnectedAgent(caller) {
+      return caller.agentExtension || '--'
     }
   },
   methods: {
     getStatusClass(status) {
-      const s = (status || 'Available').toString().toLowerCase()
-      if (s.includes('on call')) return 'status-oncall'
+      const s = (status || 'queue').toString().toLowerCase()
       if (s.includes('ring')) return 'status-ringing'
       if (s.includes('queue')) return 'status-inqueue'
-      if (s.includes('available')) return 'status-available'
-      if (s.includes('offline')) return 'status-offline'
+      if (s.includes('connect')) return 'status-oncall'
       return 'status-neutral'
     }
   }
@@ -133,333 +147,98 @@ export default {
 </script>
 
 <style scoped>
-/* TV-Optimized Component styling */
-.counsellors-section {
+.table-v-wrapper {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
   min-height: 0;
+  overflow-x: auto;
 }
 
-.section-header {
-  flex-shrink: 0;
-  margin-bottom: 8px;
-}
-
-.section-title {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0;
-}
-
-.dark-mode .section-title {
-  color: #f9fafb;
-}
-
-.counsellors-table {
-  background: #ffffff;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+.caller-table {
+  width: 100%;
+  border-collapse: collapse;
   display: flex;
   flex-direction: column;
-  flex: 1;
-  min-height: 0;
+  height: 100%;
 }
 
-.dark-mode .counsellors-table {
-  background: #2d3748;
+.caller-table thead, .caller-table tbody tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
 }
 
-.callers-header,
-.callers-row {
-  display: grid !important;
-  grid-template-columns: 140px 100px 100px 1fr !important;
-  gap: 8px !important;
-}
-
-.table-header {
-  padding: 8px 10px;
-  background: #f8fafc;
-  font-weight: 600;
-  font-size: 0.8rem;
-  color: #374151;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  flex-shrink: 0;
-}
-
-.dark-mode .table-header {
-  background: #374151;
-  color: #d1d5db;
-}
-
-/* Table body with auto-scroll - TV optimized height */
-.table-body {
+.caller-table tbody {
+  display: block;
   flex: 1;
   overflow-y: auto;
-  overflow-x: hidden;
-  scroll-behavior: smooth;
-  pointer-events: none;
-  max-height: 160px; /* Height for exactly 4 rows at 40px per row */
-  min-height: 160px;
+  min-height: 0;
 }
 
-/* Ultra-slim scrollbar for TV */
-.table-body::-webkit-scrollbar {
-  width: 1px;
-}
-
-.table-body::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.table-body::-webkit-scrollbar-thumb {
-  background: rgba(203, 213, 225, 0.2);
-  border-radius: 1px;
-}
-
-.dark-mode .table-body::-webkit-scrollbar-thumb {
-  background: rgba(107, 114, 128, 0.2);
-}
-
-.table-row {
-  padding: 8px 10px;
-  border-bottom: 1px solid #f3f4f6;
-  font-size: 0.85rem;
-  height: 40px;
-  align-items: center;
-  font-weight: 500;
-}
-
-.dark-mode .table-row {
-  border-bottom-color: #4b5563;
-  color: #e2e8f0;
-}
-
-.table-row:last-child {
-  border-bottom: none;
-}
-
-.callers-header > div,
-.callers-row > div {
-  display: flex;
-  align-items: center;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.no-counsellors-row {
-  padding: 20px 8px;
-  text-align: center;
-  height: 160px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.no-counsellors-text {
-  color: #6b7280;
-  font-style: italic;
+.caller-table thead th {
+  background: var(--bg-color);
+  color: var(--text-muted);
+  padding: 10px 12px;
+  text-align: left;
   font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid var(--border-color);
 }
 
-.dark-mode .no-counsellors-text {
-  color: #9ca3af;
+.caller-row td {
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
 }
 
-/* Status color classes */
-.status-oncall {
-  color: #10b981;
-  font-weight: 600;
+.td-agent {
+  font-weight: 800;
+  color: var(--text-muted);
+  font-size: 0.9rem;
 }
 
-.status-ringing {
-  color: #f59e0b;
-  font-weight: 600;
-  animation: blink 1.5s ease-in-out infinite;
+.td-num {
+  font-weight: 900;
+  color: var(--text-main);
+  font-size: 1.1rem;
+  letter-spacing: -0.02em;
 }
 
-.status-inqueue {
-  color: #3b82f6;
-  font-weight: 600;
+.status-pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
-.status-available {
-  color: #6b7280;
-  font-weight: 500;
+/* Status Pill Colors - Brand Aligned */
+.status-inqueue { background: #FFEBEE; color: #C0392B; border: 1px solid #FFCDD2; }
+.status-ringing { background: #FFEBEE; color: #C0392B; border: 1px solid #FFCDD2; }
+.status-oncall { background: #E8F5E9; color: #0E7337; border: 1px solid #A5D6A7; }
+.status-neutral { background: var(--bg-color); color: var(--text-muted); border: 1px solid var(--border-color); }
+
+.td-time {
+  font-weight: 800;
+  color: var(--text-main);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  font-size: 1rem;
 }
 
-.status-offline {
-  color: #ef4444;
-  font-weight: 600;
+.no-callers {
+  padding: 40px;
+  text-align: center;
+  color: var(--text-muted);
+  font-style: italic;
 }
 
-.status-neutral {
-  color: #6b7280;
-}
-
-@keyframes blink {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-/* TV Screen optimizations */
-@media screen and (min-width: 1920px) {
-  .section-title {
-    font-size: 1rem;
-  }
-  
-  .callers-header,
-  .callers-row {
-    grid-template-columns: 160px 120px 120px 1fr !important;
-    gap: 10px !important;
-  }
-  
-  .table-header {
-    padding: 8px 10px;
-    font-size: 0.75rem;
-  }
-  
-  .table-body {
-    max-height: 160px;
-    min-height: 160px;
-  }
-  
-  .table-row {
-    padding: 8px 10px;
-    font-size: 0.8rem;
-    height: 40px;
-  }
-}
-
-/* 4K TV optimization */
-@media screen and (min-width: 3840px) {
-  .section-title {
-    font-size: 1.25rem;
-  }
-  
-  .callers-header,
-  .callers-row {
-    grid-template-columns: 200px 150px 150px 1fr !important;
-    gap: 15px !important;
-  }
-  
-  .table-header {
-    padding: 12px 15px;
-    font-size: 0.9rem;
-  }
-  
-  .table-body {
-    max-height: 240px;
-    min-height: 240px;
-  }
-  
-  .table-row {
-    padding: 12px 15px;
-    font-size: 1rem;
-    height: 60px;
-  }
-  
-  .no-counsellors-row {
-    height: 240px;
-    padding: 30px 15px;
-  }
-  
-  .no-counsellors-text {
-    font-size: 1rem;
-  }
-}
-
-/* Smaller TV screens */
-@media screen and (max-width: 1600px) {
-  .section-title {
-    font-size: 0.8rem;
-  }
-  
-  .callers-header,
-  .callers-row {
-    grid-template-columns: 120px 80px 80px 1fr !important;
-    gap: 6px !important;
-  }
-  
-  .table-header {
-    padding: 5px 6px;
-    font-size: 0.6rem;
-  }
-  
-  .table-body {
-    max-height: 120px;
-    min-height: 120px;
-  }
-  
-  .table-row {
-    padding: 5px 6px;
-    font-size: 0.65rem;
-    height: 30px;
-  }
-  
-  .no-counsellors-row {
-    height: 120px;
-    padding: 15px 6px;
-  }
-  
-  .no-counsellors-text {
-    font-size: 0.7rem;
-  }
-}
-
-/* Very small screens */
-@media screen and (max-width: 1200px) {
-  .callers-header,
-  .callers-row {
-    grid-template-columns: 100px 70px 70px 1fr !important;
-    gap: 5px !important;
-  }
-  
-  .table-header,
-  .table-row {
-    font-size: 0.6rem;
-  }
-  
-  .table-row {
-    height: 28px;
-  }
-  
-  .table-body {
-    max-height: 112px;
-    min-height: 112px;
-  }
-}
-
-/* Mobile fallback */
-@media screen and (max-width: 768px) {
-  .counsellors-table {
-    overflow-x: auto;
-  }
-  
-  .callers-header,
-  .callers-row {
-    display: flex !important;
-    min-width: 500px;
-    gap: 10px !important;
-  }
-  
-  .callers-header > div,
-  .callers-row > div {
-    flex: 1;
-    min-width: 100px;
-  }
-  
-  .col-caller-num {
-    min-width: 130px;
-  }
-}
+.dark-mode .caller-table thead th { background: var(--card-bg); color: var(--text-muted); }
+.dark-mode .caller-row td { border-bottom-color: var(--border-color); }
+.dark-mode .td-num, .dark-mode .td-time { color: white; }
 </style>

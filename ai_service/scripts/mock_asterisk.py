@@ -23,6 +23,7 @@ import argparse
 import asyncio
 import logging
 import os
+import random
 import socket
 import struct
 import sys
@@ -73,7 +74,7 @@ class AudioFileLoader:
 
     def _load_audio_files(self):
         """Scan folder and load all supported audio files"""
-        supported_extensions = ['*.wav', '*.WAV', '*.mp3', '*.MP3', '*.gsm', '*.GSM']
+        supported_extensions = ['*.wav', '*.WAV', '*.mp3', '*.MP3', '*.gsm', '*.GSM', '*.ogg', '*.OGG']
 
         audio_paths = []
         for ext in supported_extensions:
@@ -96,11 +97,16 @@ class AudioFileLoader:
         """Load a single audio file and convert to PCM"""
         import wave
 
-        # For WAV files, use wave module
+        # For WAV files, try wave module first
         if path.suffix.lower() == '.wav':
-            return self._load_wav_file(path)
+            try:
+                return self._load_wav_file(path)
+            except wave.Error as e:
+                # File has .wav extension but isn't a valid WAV (e.g., Ogg with wrong extension)
+                logger.warning(f"  {path.name} has .wav extension but isn't valid WAV format, trying ffmpeg conversion...")
+                return self._convert_with_ffmpeg(path)
         else:
-            # For other formats, try using scipy or librosa if available
+            # For other formats, try using scipy or ffmpeg
             return self._load_with_scipy(path)
 
     def _load_wav_file(self, path: Path) -> AudioFile:
@@ -162,8 +168,8 @@ class AudioFileLoader:
             from scipy.io import wavfile
             from scipy import signal
 
-            # For GSM or other formats, try subprocess with ffmpeg
-            if path.suffix.lower() in ['.gsm', '.mp3']:
+            # For GSM, MP3, OGG or other formats, use ffmpeg
+            if path.suffix.lower() in ['.gsm', '.mp3', '.ogg']:
                 return self._convert_with_ffmpeg(path)
 
             sample_rate, audio = wavfile.read(str(path))
@@ -269,9 +275,12 @@ class AsteriskMockClient:
 
     @staticmethod
     def generate_call_id(sequence: int = 0) -> str:
-        """Generate Asterisk-style call ID: {timestamp}.{sequence}"""
-        timestamp = int(time.time())
-        return f"{timestamp}.{sequence}"
+        """Generate Asterisk-style call ID: {timestamp}.{sequence} with random offsets"""
+        # Add random offset to timestamp to simulate different call start times
+        timestamp = int(time.time()) + random.randint(0, 9999)
+        # Add random offset to sequence to ensure uniqueness
+        sequence_with_offset = sequence + random.randint(0, 999)
+        return f"{timestamp}.{sequence_with_offset}"
 
     async def connect(self) -> bool:
         """Connect to TCP server"""

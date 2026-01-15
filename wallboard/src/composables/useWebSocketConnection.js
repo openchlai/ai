@@ -10,7 +10,7 @@ export function useWebSocketConnection(wsHost) {
 
   const handleMessage = (payload, fetchCounsellorName, fetchCounsellorStats) => {
     lastUpdate.value = new Date().toLocaleString()
-    
+
     let obj = payload
     if (typeof payload === 'string') {
       try {
@@ -74,18 +74,20 @@ export function useWebSocketConnection(wsHost) {
         return { _uid: key, ...arr }
       })
     }
-    
+
     channels.value = chArr
 
     // Trigger name and stats fetching for new counsellor extensions
     const counsellorChannels = chArr.filter(ch => {
       const context = (ch.CHAN_CONTEXT || '').toLowerCase()
-      return context === 'agentlogin'
+      const extension = ch.CHAN_EXTEN
+      // Match explicit agent context OR standard internal extensions (3-4 digits)
+      return context === 'agentlogin' || context === 'from-internal' || (extension && /^\d{3,4}$/.test(extension))
     })
-    
+
     counsellorChannels.forEach((ch) => {
       const extension = ch.CHAN_EXTEN
-      
+
       if (extension && extension !== '--') {
         if (fetchCounsellorName) {
           fetchCounsellorName(extension)
@@ -100,33 +102,39 @@ export function useWebSocketConnection(wsHost) {
   const connect = (channelsRef, fetchCounsellorName, fetchCounsellorStats) => {
     if (ws.value && wsReady.value === 'open') return
     wsReady.value = 'connecting'
+    console.warn('Attempting to connect to WebSocket:', wsHost)
 
     try {
       ws.value = new WebSocket(wsHost)
 
       ws.value.onopen = () => {
+        console.warn('WebSocket connection established successfully')
         reconnectAttempt.value = 0
         wsReady.value = 'open'
       }
 
       ws.value.onmessage = (ev) => {
         try {
-          console.log('WebSocket message received', ev.data)
+          // Extra verbose logging for debugging
+          // console.log('WS Data:', ev.data)
           handleMessage(ev.data, fetchCounsellorName, fetchCounsellorStats)
         } catch (err) {
-          // Handle silently
+          console.error('WS Message handle error:', err)
         }
       }
 
       ws.value.onclose = (ev) => {
+        console.warn(`WebSocket connection closed (code: ${ev.code}, reason: ${ev.reason})`)
         wsReady.value = 'closed'
         scheduleReconnect(channelsRef, fetchCounsellorName, fetchCounsellorStats)
       }
 
       ws.value.onerror = (err) => {
+        console.error('WebSocket encountered an error:', err)
         wsReady.value = 'error'
       }
     } catch (err) {
+      console.error('WebSocket connection attempt failed:', err)
       wsReady.value = 'error'
       scheduleReconnect(channelsRef, fetchCounsellorName, fetchCounsellorStats)
     }
@@ -149,9 +157,9 @@ export function useWebSocketConnection(wsHost) {
       reconnectTimer.value = null
     }
     if (ws.value) {
-      try { 
-        ws.value.close() 
-      } catch (e) { 
+      try {
+        ws.value.close()
+      } catch (e) {
         // ignore cleanup errors
       }
       ws.value = null
