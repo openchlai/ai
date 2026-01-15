@@ -10,7 +10,7 @@ from datetime import datetime
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 # Async test support
-pytest_plugins = ('pytest_asyncio',)
+pytest_plugins = ('pytest_asyncio', 'app')
 
 # Global fixture to patch settings for all tests .....
 @pytest.fixture(autouse=True)
@@ -179,6 +179,44 @@ def mock_celery_task():
     with patch('app.tasks.audio_tasks.process_streaming_audio_task.delay') as mock_task:
         mock_task.return_value.id = "test_task_123"
         yield mock_task
+
+@pytest.fixture
+def mock_celery_task_sync():
+    """
+    Mock Celery tasks to return synchronous results for testing
+
+    Usage:
+        def test_endpoint(client, mock_celery_task_sync):
+            with mock_celery_task_sync('app.tasks.audio_tasks.process_audio_task',
+                                       {"result": "data"}) as mock:
+                response = client.post("/audio/process", ...)
+                assert response.status_code == 200
+    """
+    from contextlib import contextmanager
+
+    @contextmanager
+    def _mock_task(task_path: str, return_value: dict):
+        """Context manager to mock a Celery task with synchronous return"""
+        # Mock the task's apply_async and delay methods
+        with patch(f'{task_path}.apply_async') as mock_apply, \
+             patch(f'{task_path}.delay') as mock_delay:
+
+            # Create a mock result that acts like it's already done
+            mock_result = MagicMock()
+            mock_result.id = "test_task_sync_123"
+            mock_result.state = "SUCCESS"
+            mock_result.result = return_value
+            mock_result.ready.return_value = True
+            mock_result.successful.return_value = True
+            mock_result.get.return_value = return_value
+
+            # Both methods return the mock result
+            mock_apply.return_value = mock_result
+            mock_delay.return_value = mock_result
+
+            yield mock_apply
+
+    return _mock_task
 
 # Async service fixtures
 @pytest.fixture

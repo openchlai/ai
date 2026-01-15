@@ -163,3 +163,16 @@ ai_service/logs/
 ai_service/test_feedback.db
 ai_service/scripts/create_test_feedback.py
 ai_service/tests/test_agent_feedback.py
+ai_service/MagicMock/settings.mock_notifications_folder/129575132784800/call123.md
+ai_service/MagicMock/settings.mock_notifications_folder/129575134829632/call123.md
+ai_service/MagicMock/settings.mock_notifications_folder/129575135078512/test123.md
+ai_service/MagicMock/settings.mock_notifications_folder/129575135131456/call123.md
+ai_service/MagicMock/settings.mock_notifications_folder/129575135376208/test.md
+ai_service/MagicMock/settings.mock_notifications_folder/136288645402304/call123.md
+ai_service/MagicMock/settings.mock_notifications_folder/136288645541680/test.md
+ai_service/MagicMock/settings.mock_notifications_folder/136288646102336/call123.md
+ai_service/MagicMock/settings.mock_notifications_folder/136288646287712/test123.md
+ai_service/MagicMock/settings.mock_notifications_folder/136288661332976/call123.md
+ai_service/MagicMock/settings.mock_notifications_folder/139168703398832/call123.md
+ai_service/MagicMock/settings.mock_notifications_folder/139168703527680/call123.md
+ai_service/MagicMock/settings.mock_notifications_folder/139168703823168/test123.md
