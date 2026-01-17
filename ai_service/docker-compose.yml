@@ -22,6 +22,8 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+    env_file:
+      - .env
     environment:
       - APP_PORT=${APP_PORT:-8125}
       - DEBUG=${DEBUG:-true}
@@ -29,6 +31,7 @@ services:
       - SITE_ID=${SITE_ID:-dev-local}
       - ENABLE_MODEL_LOADING=false  # API server doesn't need models
       - ENABLE_METRICS=true  # Enable Prometheus metrics
+      - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=redis://redis:6379/0
       - REDIS_TASK_DB=${REDIS_TASK_DB:-1}
       - DOCKER_CONTAINER=true
@@ -38,6 +41,12 @@ services:
       - STREAMING_PORT=${STREAMING_PORT:-8300}
       - STREAMING_HOST=${STREAMING_HOST:-0.0.0.0}
       - REDIS_STREAMING_DB=${REDIS_STREAMING_DB:-2}
+      # SCP Audio Download Configuration
+      - SCP_USER=${SCP_USER}
+      - SCP_SERVER=${SCP_SERVER}
+      - SCP_PASSWORD=${SCP_PASSWORD}
+      - SCP_REMOTE_PATH_TEMPLATE=${SCP_REMOTE_PATH_TEMPLATE}
+      - SCP_TIMEOUT_SECONDS=${SCP_TIMEOUT_SECONDS}
       # HuggingFace Configuration
       - HF_TOKEN=${HF_TOKEN}
       - USE_HF_MODELS=${USE_HF_MODELS:-true}
@@ -79,6 +88,8 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+    env_file:
+      - .env
     environment:
       - DEBUG=${DEBUG:-true}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
@@ -86,9 +97,16 @@ services:
       - NUMBA_CACHE_DIR=/tmp/numba_cache
       - NUMBA_DISABLE_JIT=0
       - NUMBA_DISABLE_CACHING=1
+      - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=redis://redis:6379/0
       - REDIS_TASK_DB=${REDIS_TASK_DB:-1}
       - DOCKER_CONTAINER=true
+      # SCP Audio Download Configuration
+      - SCP_USER=${SCP_USER}
+      - SCP_SERVER=${SCP_SERVER}
+      - SCP_PASSWORD=${SCP_PASSWORD}
+      - SCP_REMOTE_PATH_TEMPLATE=${SCP_REMOTE_PATH_TEMPLATE}
+      - SCP_TIMEOUT_SECONDS=${SCP_TIMEOUT_SECONDS}
       # HuggingFace Configuration
       - HF_TOKEN=${HF_TOKEN}
       - USE_HF_MODELS=${USE_HF_MODELS:-true}
@@ -131,7 +149,10 @@ services:
     depends_on:
       - redis
       - celery-worker
+    env_file:
+      - .env
     environment:
+      - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=redis://redis:6379/0
       - REDIS_TASK_DB=${REDIS_TASK_DB:-1}
       - DOCKER_CONTAINER=true

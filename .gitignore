@@ -128,6 +128,7 @@ obj/
 temp*/
 gateway/ai_service/db.sqlite3
 gateway/ai_service/audio/
+ai_service/transcription_data_set_1
 
 # Models
 model/
@@ -176,3 +177,5 @@ ai_service/MagicMock/settings.mock_notifications_folder/136288661332976/call123.
 ai_service/MagicMock/settings.mock_notifications_folder/139168703398832/call123.md
 ai_service/MagicMock/settings.mock_notifications_folder/139168703527680/call123.md
 ai_service/MagicMock/settings.mock_notifications_folder/139168703823168/test123.md
+ai_service/transcription_data_set_1/1737217551.180138.txt
+ai_service/mock_astteriisk_110_calls.out
