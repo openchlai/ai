@@ -192,14 +192,13 @@ class TestTranslationTranslateTask:
 
 
         with patch.object(translation_translate_task, 'update_state'):
-
             result = translation_translate_task("Hello world")
 
         assert result is not None
-        assert "translation" in result
+        assert "translated" in result
         assert "processing_time" in result
         assert "model_info" in result
-        assert result["task_id"] == "task-301"
+        assert result["translated"] == "Hola mundo"
 
     @patch('app.tasks.model_tasks.get_worker_model_loader')
     def test_translation_model_not_ready(self, mock_get_loader, mock_model_loader):
@@ -229,18 +228,17 @@ class TestSummarizationTask:
         }
         mock_model_loader.models = {"summarizer": summarizer}
 
-
-        result = summarization_summarize_task(
-            mock_task_context,
-            "This is a very long text that needs summarization",
-            max_length=100
-        )
+        with patch.object(summarization_summarize_task, 'update_state'):
+            result = summarization_summarize_task(
+                "This is a very long text that needs summarization",
+                max_length=100
+            )
 
         assert result is not None
         assert "summary" in result
         assert "processing_time" in result
         assert "model_info" in result
-        assert result["task_id"] == "task-401"
+        assert result["summary"] == "Brief summary of the text"
         summarizer.summarize.assert_called_with(
             "This is a very long text that needs summarization",
             max_length=100
@@ -270,41 +268,39 @@ class TestQAEvaluateTask:
     """Tests for qa_evaluate_task"""
 
     @patch('app.tasks.model_tasks.get_worker_model_loader')
-    def test_qa_evaluate_success(self, mock_get_loader, mock_model_loader):
+    @patch('app.model_scripts.qa_model.qa_model')
+    def test_qa_evaluate_success(self, mock_qa, mock_get_loader, mock_model_loader):
         """Test successful QA evaluation"""
         mock_get_loader.return_value = mock_model_loader
         mock_model_loader.is_model_ready.return_value = True
 
-        qa_model = MagicMock()
-        qa_model.evaluate.return_value = {"overall_score": 0.85, "categories": {}}
-        qa_model.get_model_info.return_value = {"model_type": "qa"}
-        mock_model_loader.models = {"qa": qa_model}
+        mock_qa.is_ready.return_value = True
+        mock_qa.predict.return_value = {"overall_score": 0.85, "categories": {}}
+        mock_qa.get_model_info.return_value = {"model_type": "qa"}
 
-
-        result = qa_evaluate_task(
-            mock_task_context,
-            conversation="Test conversation",
-            qa_rules={"rule1": "value1"}
-        )
+        with patch.object(qa_evaluate_task, 'update_state'):
+            result = qa_evaluate_task(
+                transcript="Test conversation",
+                threshold=0.5
+            )
 
         assert result is not None
-        assert "qa_results" in result
+        assert "evaluations" in result
         assert "processing_time" in result
         assert "model_info" in result
-        assert result["task_id"] == "task-501"
 
     @patch('app.tasks.model_tasks.get_worker_model_loader')
-    def test_qa_model_not_ready(self, mock_get_loader, mock_model_loader):
+    @patch('app.model_scripts.qa_model.qa_model')
+    def test_qa_model_not_ready(self, mock_qa, mock_get_loader, mock_model_loader):
         """Test QA evaluation when model is not ready"""
         mock_get_loader.return_value = mock_model_loader
         mock_model_loader.is_model_ready.return_value = False
 
+        mock_qa.is_ready.return_value = False
 
         with pytest.raises(RuntimeError, match="QA model not ready"):
             qa_evaluate_task(
-                mock_task_context,
-                conversation="Test",
-                qa_rules={}
+                transcript="Test"
             )
 
 
@@ -318,30 +314,26 @@ class TestWhisperTranscribeTask:
         mock_model_loader.is_model_ready.return_value = True
 
         whisper = MagicMock()
-        whisper.transcribe_audio_bytes.return_value = {
-            "text": "Hello world",
-            "segments": [{"start": 0, "end": 2, "text": "Hello world"}]
-        }
+        whisper.transcribe_audio_bytes.return_value = "Hello world"
         whisper.get_model_info.return_value = {
             "model_type": "whisper",
             "model_size": "base"
         }
         mock_model_loader.models = {"whisper": whisper}
 
-
         audio_bytes = b'\x00' * 1000
-        result = whisper_transcribe_task(
-            mock_task_context,
-            audio_bytes=audio_bytes,
-            filename="test.wav",
-            language="en"
-        )
+        with patch.object(whisper_transcribe_task, 'update_state'):
+            result = whisper_transcribe_task(
+                audio_bytes=audio_bytes,
+                filename="test.wav",
+                language="en"
+            )
 
         assert result is not None
         assert "transcript" in result
         assert "processing_time" in result
         assert "model_info" in result
-        assert result["task_id"] == "task-601"
+        assert result["transcript"] == "Hello world"
 
     @patch('app.tasks.model_tasks.get_worker_model_loader')
     def test_whisper_transcribe_model_not_ready(self, mock_get_loader, mock_model_loader):
@@ -352,7 +344,6 @@ class TestWhisperTranscribeTask:
 
         with pytest.raises(RuntimeError, match="Whisper model not ready"):
             whisper_transcribe_task(
-                mock_task_context,
                 audio_bytes=b'audio',
                 filename="test.wav",
                 language="en"
@@ -365,16 +356,15 @@ class TestWhisperTranscribeTask:
         mock_model_loader.is_model_ready.return_value = True
 
         whisper = MagicMock()
-        whisper.transcribe_audio_bytes.return_value = {"text": "Hello"}
+        whisper.transcribe_audio_bytes.return_value = "Hello"
         whisper.get_model_info.return_value = {}
         mock_model_loader.models = {"whisper": whisper}
 
-
-        result = whisper_transcribe_task(
-            mock_task_context,
-            audio_bytes=b'audio',
-            filename="test.wav"
-        )
+        with patch.object(whisper_transcribe_task, 'update_state'):
+            result = whisper_transcribe_task(
+                audio_bytes=b'audio',
+                filename="test.wav"
+            )
 
         assert result is not None
         # Verify default language was used
