@@ -62,7 +62,7 @@ class TestNERExtractTask:
     """Tests for ner_extract_task"""
 
     @patch('app.tasks.model_tasks.get_worker_model_loader')
-    def test_ner_extract_success(self, mock_get_loader, mock_task_context, mock_model_loader):
+    def test_ner_extract_success(self, mock_get_loader, mock_model_loader):
         """Test successful NER extraction"""
         mock_get_loader.return_value = mock_model_loader
         mock_model_loader.is_model_ready.return_value = True
@@ -76,45 +76,39 @@ class TestNERExtractTask:
         }
         mock_model_loader.models = {"ner": ner_model}
 
-        mock_task_context.request.id = "task-123"
-        mock_task_context.update_state = MagicMock()
+        with patch.object(ner_extract_task, 'update_state') as mock_update_state:
+            with patch.object(ner_extract_task, 'update_state'):
 
-        result = ner_extract_task(mock_task_context, "John works at Acme Corp", flat=True)
+                result = ner_extract_task("John works at Acme Corp", flat=True)
 
-        assert result is not None
-        assert "entities" in result
-        assert "processing_time" in result
-        assert "model_info" in result
-        assert "timestamp" in result
-        assert "task_id" in result
-        assert result["task_id"] == "task-123"
-        mock_task_context.update_state.assert_called_once()
+            assert result is not None
+            assert "entities" in result
+            assert "processing_time" in result
+            assert "model_info" in result
+            assert "timestamp" in result
+            mock_update_state.assert_called_once()
 
     @patch('app.tasks.model_tasks.get_worker_model_loader')
-    def test_ner_extract_model_not_ready(self, mock_get_loader, mock_task_context, mock_model_loader):
+    def test_ner_extract_model_not_ready(self, mock_get_loader, mock_model_loader):
         """Test NER extraction when model is not ready"""
         mock_get_loader.return_value = mock_model_loader
         mock_model_loader.is_model_ready.return_value = False
 
-        mock_task_context.request.id = "task-124"
-
         with pytest.raises(RuntimeError, match="NER model not ready"):
-            ner_extract_task(mock_task_context, "Test text", flat=True)
+            ner_extract_task("Test text", flat=True)
 
     @patch('app.tasks.model_tasks.get_worker_model_loader')
-    def test_ner_extract_model_not_available(self, mock_get_loader, mock_task_context, mock_model_loader):
+    def test_ner_extract_model_not_available(self, mock_get_loader, mock_model_loader):
         """Test NER extraction when model is not in loader"""
         mock_get_loader.return_value = mock_model_loader
         mock_model_loader.is_model_ready.return_value = True
         mock_model_loader.models = {}  # No NER model
 
-        mock_task_context.request.id = "task-125"
-
         with pytest.raises(RuntimeError, match="NER model not available"):
-            ner_extract_task(mock_task_context, "Test text", flat=True)
+            ner_extract_task("Test text", flat=True)
 
     @patch('app.tasks.model_tasks.get_worker_model_loader')
-    def test_ner_extract_grouped_entities(self, mock_get_loader, mock_task_context, mock_model_loader):
+    def test_ner_extract_grouped_entities(self, mock_get_loader, mock_model_loader):
         """Test NER extraction with grouped entities"""
         mock_get_loader.return_value = mock_model_loader
         mock_model_loader.is_model_ready.return_value = True
@@ -124,9 +118,10 @@ class TestNERExtractTask:
         ner_model.get_model_info.return_value = {"model_type": "spacy"}
         mock_model_loader.models = {"ner": ner_model}
 
-        mock_task_context.request.id = "task-126"
 
-        result = ner_extract_task(mock_task_context, "Test text", flat=False)
+        with patch.object(ner_extract_task, 'update_state'):
+
+            result = ner_extract_task("Test text", flat=False)
 
         assert result is not None
         ner_model.extract_entities.assert_called_with("Test text", flat=False)
@@ -136,7 +131,7 @@ class TestClassifierClassifyTask:
     """Tests for classifier_classify_task"""
 
     @patch('app.tasks.model_tasks.get_worker_model_loader')
-    def test_classifier_classify_success(self, mock_get_loader, mock_task_context, mock_model_loader):
+    def test_classifier_classify_success(self, mock_get_loader, mock_model_loader):
         """Test successful classification"""
         mock_get_loader.return_value = mock_model_loader
         mock_model_loader.is_model_ready.return_value = True
@@ -144,6 +139,9 @@ class TestClassifierClassifyTask:
         classifier = MagicMock()
         classifier.classify.return_value = {
             "main_category": "customer_service",
+            "sub_category": "general_inquiry",
+            "intervention": "none",
+            "priority": "low",
             "confidence": 0.95
         }
         classifier.get_model_info.return_value = {
@@ -152,9 +150,10 @@ class TestClassifierClassifyTask:
         }
         mock_model_loader.models = {"classifier_model": classifier}
 
-        mock_task_context.request.id = "task-201"
 
-        result = classifier_classify_task(mock_task_context, "I need help with my order")
+        with patch.object(classifier_classify_task, 'update_state'):
+
+            result = classifier_classify_task("I need help with my order")
 
         assert result is not None
         assert "classification" in result
@@ -163,22 +162,21 @@ class TestClassifierClassifyTask:
         assert result["task_id"] == "task-201"
 
     @patch('app.tasks.model_tasks.get_worker_model_loader')
-    def test_classifier_model_not_ready(self, mock_get_loader, mock_task_context, mock_model_loader):
+    def test_classifier_model_not_ready(self, mock_get_loader, mock_model_loader):
         """Test classification when model is not ready"""
         mock_get_loader.return_value = mock_model_loader
         mock_model_loader.is_model_ready.return_value = False
 
-        mock_task_context.request.id = "task-202"
 
         with pytest.raises(RuntimeError, match="Classifier model not ready"):
-            classifier_classify_task(mock_task_context, "Test narrative")
+            classifier_classify_task("Test narrative")
 
 
 class TestTranslationTranslateTask:
     """Tests for translation_translate_task"""
 
     @patch('app.tasks.model_tasks.get_worker_model_loader')
-    def test_translation_success(self, mock_get_loader, mock_task_context, mock_model_loader):
+    def test_translation_success(self, mock_get_loader, mock_model_loader):
         """Test successful translation"""
         mock_get_loader.return_value = mock_model_loader
         mock_model_loader.is_model_ready.return_value = True
@@ -192,9 +190,10 @@ class TestTranslationTranslateTask:
         }
         mock_model_loader.models = {"translator": translator}
 
-        mock_task_context.request.id = "task-301"
 
-        result = translation_translate_task(mock_task_context, "Hello world")
+        with patch.object(translation_translate_task, 'update_state'):
+
+            result = translation_translate_task("Hello world")
 
         assert result is not None
         assert "translation" in result
@@ -203,22 +202,21 @@ class TestTranslationTranslateTask:
         assert result["task_id"] == "task-301"
 
     @patch('app.tasks.model_tasks.get_worker_model_loader')
-    def test_translation_model_not_ready(self, mock_get_loader, mock_task_context, mock_model_loader):
+    def test_translation_model_not_ready(self, mock_get_loader, mock_model_loader):
         """Test translation when model is not ready"""
         mock_get_loader.return_value = mock_model_loader
         mock_model_loader.is_model_ready.return_value = False
 
-        mock_task_context.request.id = "task-302"
 
         with pytest.raises(RuntimeError, match="Translation model not ready"):
-            translation_translate_task(mock_task_context, "Test text")
+            translation_translate_task("Test text")
 
 
 class TestSummarizationTask:
     """Tests for summarization_summarize_task"""
 
     @patch('app.tasks.model_tasks.get_worker_model_loader')
-    def test_summarization_success(self, mock_get_loader, mock_task_context, mock_model_loader):
+    def test_summarization_success(self, mock_get_loader, mock_model_loader):
         """Test successful summarization"""
         mock_get_loader.return_value = mock_model_loader
         mock_model_loader.is_model_ready.return_value = True
@@ -231,7 +229,6 @@ class TestSummarizationTask:
         }
         mock_model_loader.models = {"summarizer": summarizer}
 
-        mock_task_context.request.id = "task-401"
 
         result = summarization_summarize_task(
             mock_task_context,
@@ -250,7 +247,7 @@ class TestSummarizationTask:
         )
 
     @patch('app.tasks.model_tasks.get_worker_model_loader')
-    def test_summarization_default_max_length(self, mock_get_loader, mock_task_context, mock_model_loader):
+    def test_summarization_default_max_length(self, mock_get_loader, mock_model_loader):
         """Test summarization with default max_length"""
         mock_get_loader.return_value = mock_model_loader
         mock_model_loader.is_model_ready.return_value = True
@@ -260,9 +257,10 @@ class TestSummarizationTask:
         summarizer.get_model_info.return_value = {}
         mock_model_loader.models = {"summarizer": summarizer}
 
-        mock_task_context.request.id = "task-402"
 
-        result = summarization_summarize_task(mock_task_context, "Test text")
+        with patch.object(summarization_summarize_task, 'update_state'):
+
+            result = summarization_summarize_task("Test text")
 
         assert result is not None
         summarizer.summarize.assert_called_with("Test text", max_length=256)
@@ -272,7 +270,7 @@ class TestQAEvaluateTask:
     """Tests for qa_evaluate_task"""
 
     @patch('app.tasks.model_tasks.get_worker_model_loader')
-    def test_qa_evaluate_success(self, mock_get_loader, mock_task_context, mock_model_loader):
+    def test_qa_evaluate_success(self, mock_get_loader, mock_model_loader):
         """Test successful QA evaluation"""
         mock_get_loader.return_value = mock_model_loader
         mock_model_loader.is_model_ready.return_value = True
@@ -282,7 +280,6 @@ class TestQAEvaluateTask:
         qa_model.get_model_info.return_value = {"model_type": "qa"}
         mock_model_loader.models = {"qa": qa_model}
 
-        mock_task_context.request.id = "task-501"
 
         result = qa_evaluate_task(
             mock_task_context,
@@ -297,12 +294,11 @@ class TestQAEvaluateTask:
         assert result["task_id"] == "task-501"
 
     @patch('app.tasks.model_tasks.get_worker_model_loader')
-    def test_qa_model_not_ready(self, mock_get_loader, mock_task_context, mock_model_loader):
+    def test_qa_model_not_ready(self, mock_get_loader, mock_model_loader):
         """Test QA evaluation when model is not ready"""
         mock_get_loader.return_value = mock_model_loader
         mock_model_loader.is_model_ready.return_value = False
 
-        mock_task_context.request.id = "task-502"
 
         with pytest.raises(RuntimeError, match="QA model not ready"):
             qa_evaluate_task(
@@ -316,7 +312,7 @@ class TestWhisperTranscribeTask:
     """Tests for whisper_transcribe_task"""
 
     @patch('app.tasks.model_tasks.get_worker_model_loader')
-    def test_whisper_transcribe_success(self, mock_get_loader, mock_task_context, mock_model_loader):
+    def test_whisper_transcribe_success(self, mock_get_loader, mock_model_loader):
         """Test successful transcription"""
         mock_get_loader.return_value = mock_model_loader
         mock_model_loader.is_model_ready.return_value = True
@@ -332,7 +328,6 @@ class TestWhisperTranscribeTask:
         }
         mock_model_loader.models = {"whisper": whisper}
 
-        mock_task_context.request.id = "task-601"
 
         audio_bytes = b'\x00' * 1000
         result = whisper_transcribe_task(
@@ -349,12 +344,11 @@ class TestWhisperTranscribeTask:
         assert result["task_id"] == "task-601"
 
     @patch('app.tasks.model_tasks.get_worker_model_loader')
-    def test_whisper_transcribe_model_not_ready(self, mock_get_loader, mock_task_context, mock_model_loader):
+    def test_whisper_transcribe_model_not_ready(self, mock_get_loader, mock_model_loader):
         """Test transcription when Whisper model is not ready"""
         mock_get_loader.return_value = mock_model_loader
         mock_model_loader.is_model_ready.return_value = False
 
-        mock_task_context.request.id = "task-602"
 
         with pytest.raises(RuntimeError, match="Whisper model not ready"):
             whisper_transcribe_task(
@@ -365,7 +359,7 @@ class TestWhisperTranscribeTask:
             )
 
     @patch('app.tasks.model_tasks.get_worker_model_loader')
-    def test_whisper_transcribe_default_language(self, mock_get_loader, mock_task_context, mock_model_loader):
+    def test_whisper_transcribe_default_language(self, mock_get_loader, mock_model_loader):
         """Test transcription with default language"""
         mock_get_loader.return_value = mock_model_loader
         mock_model_loader.is_model_ready.return_value = True
@@ -375,7 +369,6 @@ class TestWhisperTranscribeTask:
         whisper.get_model_info.return_value = {}
         mock_model_loader.models = {"whisper": whisper}
 
-        mock_task_context.request.id = "task-603"
 
         result = whisper_transcribe_task(
             mock_task_context,
@@ -392,7 +385,7 @@ class TestTaskErrorHandling:
     """Tests for error handling across tasks"""
 
     @patch('app.tasks.model_tasks.get_worker_model_loader')
-    def test_ner_task_exception_handling(self, mock_get_loader, mock_task_context, mock_model_loader):
+    def test_ner_task_exception_handling(self, mock_get_loader, mock_model_loader):
         """Test NER task handles exceptions"""
         mock_get_loader.return_value = mock_model_loader
         mock_model_loader.is_model_ready.return_value = True
@@ -401,13 +394,12 @@ class TestTaskErrorHandling:
         ner_model.extract_entities.side_effect = Exception("Model error")
         mock_model_loader.models = {"ner": ner_model}
 
-        mock_task_context.request.id = "task-701"
 
         with pytest.raises(Exception, match="Model error"):
-            ner_extract_task(mock_task_context, "Test text", flat=True)
+            ner_extract_task("Test text", flat=True)
 
     @patch('app.tasks.model_tasks.get_worker_model_loader')
-    def test_classifier_task_exception_handling(self, mock_get_loader, mock_task_context, mock_model_loader):
+    def test_classifier_task_exception_handling(self, mock_get_loader, mock_model_loader):
         """Test classifier task handles exceptions"""
         mock_get_loader.return_value = mock_model_loader
         mock_model_loader.is_model_ready.return_value = True
@@ -416,7 +408,6 @@ class TestTaskErrorHandling:
         classifier.classify.side_effect = Exception("Classification error")
         mock_model_loader.models = {"classifier_model": classifier}
 
-        mock_task_context.request.id = "task-702"
 
         with pytest.raises(Exception, match="Classification error"):
-            classifier_classify_task(mock_task_context, "Test narrative")
+            classifier_classify_task("Test narrative")
