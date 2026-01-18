@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 import logging
 from datetime import datetime
@@ -8,6 +8,7 @@ from typing import List, Dict, Optional
 from celery.result import AsyncResult
 from ..tasks.model_tasks import classifier_classify_task
 from ..celery_app import celery_app
+from .models import ErrorResponse, ErrorCodes, create_error_response
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/classifier", tags=["classifier"])
@@ -68,10 +69,50 @@ class ClassifierTaskStatusResponse(BaseModel):
     progress: Optional[Dict] = None
 
 
-@router.post("/classify", response_model=ClassifierTaskResponse)
+@router.post(
+    "/classify",
+    response_model=ClassifierTaskResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    responses={
+        202: {
+            "description": "Classification task accepted and queued for processing",
+            "model": ClassifierTaskResponse
+        },
+        400: {
+            "description": "Invalid input (empty narrative)",
+            "model": ErrorResponse
+        },
+        503: {
+            "description": "Classifier model not ready (standalone mode only)",
+            "model": ErrorResponse
+        },
+        500: {
+            "description": "Internal server error during task submission",
+            "model": ErrorResponse
+        }
+    }
+)
 async def classify_narrative(request: ClassifierRequest):
-    """Classify case narrative (async via Celery)"""
-    
+    """
+    Classify case narrative into categories (async via Celery).
+
+    This endpoint analyzes case narratives and classifies them into:
+    - **Main Category**: Primary case type (abuse, neglect, etc.)
+    - **Sub Category**: Specific sub-type
+    - **Intervention**: Recommended intervention type
+    - **Priority**: Case urgency level
+
+    **Workflow:**
+    1. POST to /classifier/classify with narrative text
+    2. Receive task_id in response
+    3. Poll /classifier/task/{task_id} for results
+
+    **Processing Time:** Usually 10-30 seconds depending on narrative length
+
+    Returns:
+        ClassifierTaskResponse: Task ID and status endpoint for polling
+    """
+
     if is_api_server_mode():
         # API Server mode - delegate to Celery worker
         # Skip local model check as models are on workers
@@ -80,13 +121,24 @@ async def classify_narrative(request: ClassifierRequest):
         # Standalone mode - check local model
         if not model_loader.is_model_ready("classifier_model"):
             raise HTTPException(
-                status_code=503, 
-                detail="Classifier model not ready. Check /health/models for status."
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=create_error_response(
+                    error_code=ErrorCodes.MODEL_NOT_READY,
+                    message="Classifier model not ready. Check /health/models for status.",
+                    detail="Model failed to load or is currently initializing"
+                ).model_dump()
             )
-    
+
     if not request.narrative.strip():
-        raise HTTPException(status_code=400, detail="Narrative input cannot be empty")
-    
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=create_error_response(
+                error_code=ErrorCodes.INVALID_INPUT,
+                message="Narrative input cannot be empty",
+                field="narrative"
+            ).model_dump()
+        )
+
     try:
         start_time = datetime.now()
 
@@ -95,9 +147,9 @@ async def classify_narrative(request: ClassifierRequest):
             queue='model_processing'
         )
 
-        
+
         logger.info(f"📤 Classification task submitted: {task.id}")
-        
+
         return ClassifierTaskResponse(
             task_id=task.id,
             status="queued",
@@ -105,10 +157,17 @@ async def classify_narrative(request: ClassifierRequest):
             estimated_time="10-30 seconds",
             status_endpoint=f"/classifier/task/{task.id}"
         )
-        
+
     except Exception as e:
         logger.error(f"Failed to submit classification task: {e}")
-        raise HTTPException(status_code=500, detail="Failed to submit task")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=create_error_response(
+                error_code=ErrorCodes.TASK_SUBMISSION_FAILED,
+                message="Failed to submit classification task",
+                detail=str(e)
+            ).model_dump()
+        )
 
 
 @router.get("/task/{task_id}", response_model=ClassifierTaskStatusResponse)

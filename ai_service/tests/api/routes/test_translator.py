@@ -25,13 +25,16 @@ MOCK_MODEL_INFO = {
 
 def test_translate_success():
     """Test successful text translation task submission."""
-    with patch('app.api.translator_routes.translation_translate_task.apply_async') as mock_task:
+    with patch('app.api.translator_routes.is_api_server_mode', return_value=False), \
+         patch('app.api.translator_routes.model_loader') as mock_loader, \
+         patch('app.api.translator_routes.translation_translate_task.apply_async') as mock_task:
+        mock_loader.is_model_ready.return_value = True
         mock_result = type('obj', (object,), {'id': 'test_task_123'})()
         mock_task.return_value = mock_result
 
         response = client.post("/translate/", json={"text": VALID_TEXT})
 
-        assert response.status_code == 200
+        assert response.status_code == 202
         response_json = response.json()
 
         # Endpoint now returns task_id for async processing
@@ -45,11 +48,12 @@ def test_translate_empty_text():
     Test the case where the text input is an empty string.
     The endpoint should return a 400 Bad Request error.
     """
-    with patch('app.api.translator_routes.model_loader') as mock_loader:
-        mock_loader.is_model_ready.return_value = True 
-        
+    with patch('app.api.translator_routes.is_api_server_mode', return_value=False), \
+         patch('app.api.translator_routes.model_loader') as mock_loader:
+        mock_loader.is_model_ready.return_value = True
+
         response = client.post("/translate/", json={"text": EMPTY_TEXT})
-        
+
         assert response.status_code == 400
         assert response.json() == {"detail": "Text input cannot be empty"}
 
@@ -72,7 +76,10 @@ def test_translate_model_not_available():
     Test the case where task submission fails.
     The endpoint should return a 500 Internal Server Error.
     """
-    with patch('app.api.translator_routes.translation_translate_task.apply_async') as mock_task:
+    with patch('app.api.translator_routes.is_api_server_mode', return_value=False), \
+         patch('app.api.translator_routes.model_loader') as mock_loader, \
+         patch('app.api.translator_routes.translation_translate_task.apply_async') as mock_task:
+        mock_loader.is_model_ready.return_value = True
         mock_task.side_effect = Exception("Task submission failed")
 
         response = client.post("/translate/", json={"text": VALID_TEXT})
@@ -87,7 +94,10 @@ def test_translate_exception_on_run():
     Test the case where an unexpected exception occurs during task submission.
     The endpoint should return a 500 Internal Server Error.
     """
-    with patch('app.api.translator_routes.translation_translate_task.apply_async') as mock_task:
+    with patch('app.api.translator_routes.is_api_server_mode', return_value=False), \
+         patch('app.api.translator_routes.model_loader') as mock_loader, \
+         patch('app.api.translator_routes.translation_translate_task.apply_async') as mock_task:
+        mock_loader.is_model_ready.return_value = True
         mock_task.side_effect = RuntimeError("Celery connection error")
 
         response = client.post("/translate/", json={"text": VALID_TEXT})

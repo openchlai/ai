@@ -40,7 +40,7 @@ def test_summarize_success():
 
         response = client.post("/summarizer/summarize", json={"text": VALID_TEXT, "max_length": 60})
 
-        assert response.status_code == 200
+        assert response.status_code == 202
         response_json = response.json()
 
         # Check for async task response
@@ -96,7 +96,7 @@ def test_summarize_model_not_available():
         response = client.post("/summarizer/summarize", json={"text": VALID_TEXT})
 
         # Task is still submitted - worker will handle the error
-        assert response.status_code == 200
+        assert response.status_code == 202
         assert "task_id" in response.json()
 
 def test_summarize_exception_on_run():
@@ -104,7 +104,10 @@ def test_summarize_exception_on_run():
     Test the case where an unexpected exception occurs during task submission.
     The endpoint should return a 500 Internal Server Error.
     """
-    with patch('app.api.summarizer_routes.summarization_summarize_task.apply_async') as mock_task:
+    with patch('app.api.summarizer_routes.is_api_server_mode', return_value=False), \
+         patch('app.api.summarizer_routes.model_loader') as mock_loader, \
+         patch('app.api.summarizer_routes.summarization_summarize_task.apply_async') as mock_task:
+        mock_loader.is_model_ready.return_value = True
         mock_task.side_effect = Exception("Task submission failed")
 
         response = client.post("/summarizer/summarize", json={"text": VALID_TEXT})
@@ -157,7 +160,10 @@ def test_get_summarizer_info_not_found():
 
 def test_summarizer_demo_endpoint_success():
     """Test the /summarizer/demo endpoint for a successful task submission."""
-    with patch('app.api.summarizer_routes.summarization_summarize_task.apply_async') as mock_task:
+    with patch('app.api.summarizer_routes.is_api_server_mode', return_value=False), \
+         patch('app.api.summarizer_routes.model_loader') as mock_loader, \
+         patch('app.api.summarizer_routes.summarization_summarize_task.apply_async') as mock_task:
+        mock_loader.is_model_ready.return_value = True
         mock_result = type('obj', (object,), {'id': 'test_demo_task_sum_123'})()
         mock_task.return_value = mock_result
 

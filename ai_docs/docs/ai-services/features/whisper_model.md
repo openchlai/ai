@@ -442,89 +442,45 @@ except torch.cuda.OutOfMemoryError:
 
 ### 3.1. Via AI Service API (Production Use)
 
-The Whisper model is deployed as part of the AI Service and accessible via REST API.
+The Whisper model is deployed as part of the AI Service and accessible via REST API. The API uses an **asynchronous task-based architecture** where transcription requests are queued and processed by Celery workers, allowing the system to handle resource-intensive audio processing without blocking HTTP connections.
 
-#### Endpoint
+#### Workflow Overview
+
+The Whisper transcription API follows a **2-step asynchronous workflow**:
+
+1. **Submit Transcription Request** → Receive `task_id` (HTTP 202 Accepted)
+2. **Poll Task Status** → Retrieve transcription results when ready (HTTP 200 OK)
+
+This architecture ensures reliable processing of audio files and prevents timeout issues during GPU-intensive speech-to-text operations.
+
+---
+
+#### Step 1: Submit Transcription Task
+
+**Endpoint:**
 ```
 POST /whisper/transcribe
 ```
 
-#### Request Format
+**Request Format:**
 
 **Headers:**
 ```
 Content-Type: multipart/form-data
 ```
 
-**Request Body:**
-```
-- audio: file (required) - Audio file in supported format
-- language: string (optional) - Language code (e.g., "sw", "en", "auto")
-```
+**Form Data:**
+- `audio` (required, file): Audio file in supported format (WAV, MP3, FLAC, M4A, OGG, WebM)
+- `language` (optional, string): Language code (e.g., "sw", "en", "auto" for auto-detection)
 
-#### Response Format
-
-**Success Response (200):**
+**Success Response (HTTP 202 Accepted):**
 ```json
 {
-  "transcript": "string",
-  "language": "string",
-  "processing_time": 0,
-  "model_info": {
-    "model_name": "whisper",
-    "model_path": "string",
-    "fallback_model_id": "openchs/asr-whisper-helpline-sw-v1",
-    "device": "cuda:0",
-    "is_loaded": true,
-    "translation_enabled": true,
-    "version": "large-v2",
-    "supported_formats": ["wav", "mp3", "flac", "m4a", "ogg", "webm"]
-  },
-  "timestamp": "string",
-  "audio_info": {
-    "filename": "string",
-    "file_size_mb": 0,
-    "format": "string",
-    "content_type": "string"
-  }
-}
-```
-
-**Validation Error (422):**
-```json
-{
-  "detail": [
-    {
-      "loc": ["string"],
-      "msg": "string",
-      "type": "string"
-    }
-  ]
-}
-```
-
-#### Example cURL Requests
-
-**Basic Transcription (Auto-detect language):**
-```bash
-curl -X POST "http://192.168.8.18:8123/whisper/transcribe" \
-  -H "Content-Type: multipart/form-data" \
-  -F "audio=@sample.wav"
-```
-
-**Response:**
-```json
-{
-  "transcript": "Mbukweli, kaitike vipi? Nukuanasema. Kikozana na baba mdo...",
-  "language": null,
-  "processing_time": 63.396394,
-  "model_info": {
-    "model_name": "whisper",
-    "device": "cuda:0",
-    "translation_enabled": true,
-    "version": "large-v2"
-  },
-  "timestamp": "2025-10-21T12:05:27.726046",
+  "task_id": "task_whisper_a1b2c3d4e5f6",
+  "status": "queued",
+  "message": "Transcription task submitted successfully. Check status at /whisper/task/{task_id}",
+  "status_endpoint": "/whisper/task/task_whisper_a1b2c3d4e5f6",
+  "estimated_time": "30-120 seconds",
   "audio_info": {
     "filename": "sample.wav",
     "file_size_mb": 1.97,
@@ -534,29 +490,211 @@ curl -X POST "http://192.168.8.18:8123/whisper/transcribe" \
 }
 ```
 
-**Swahili Transcription (Specify language):**
+**Response Fields:**
+- `task_id` (string): Unique identifier for tracking the transcription task
+- `status` (string): Initial task state (`"queued"` or `"processing"`)
+- `message` (string): Human-readable confirmation message
+- `status_endpoint` (string): URL path for polling task status
+- `estimated_time` (string): Expected processing duration based on audio length
+- `audio_info` (object): Information about the uploaded audio file
+
+---
+
+#### Step 2: Poll Transcription Status
+
+**Endpoint:**
+```
+GET /whisper/task/{task_id}
+```
+
+**Response States:**
+
+**1. Processing (HTTP 200 OK):**
+```json
+{
+  "task_id": "task_whisper_a1b2c3d4e5f6",
+  "status": "processing",
+  "message": "Transcription in progress. Please check again shortly.",
+  "progress": "45%"
+}
+```
+
+**2. Completed Successfully (HTTP 200 OK):**
+```json
+{
+  "task_id": "task_whisper_a1b2c3d4e5f6",
+  "status": "completed",
+  "result": {
+    "transcript": "Mbukweli, kaitike vipi? Nukuanasema. Kikozana na baba mdo...",
+    "language": "sw",
+    "processing_time": 63.396394,
+    "model_info": {
+      "model_name": "whisper",
+      "model_path": "/app/models/whisper",
+      "fallback_model_id": "openchs/asr-whisper-helpline-sw-v1",
+      "device": "cuda:0",
+      "is_loaded": true,
+      "translation_enabled": true,
+      "version": "large-v2",
+      "supported_formats": ["wav", "mp3", "flac", "m4a", "ogg", "webm"]
+    },
+    "timestamp": "2025-10-21T12:05:27.726046",
+    "audio_info": {
+      "filename": "sample.wav",
+      "file_size_mb": 1.97,
+      "format": ".wav",
+      "content_type": "audio/wav",
+      "duration_seconds": 45.2
+    }
+  }
+}
+```
+
+**3. Failed (HTTP 200 OK with error details):**
+```json
+{
+  "task_id": "task_whisper_a1b2c3d4e5f6",
+  "status": "failed",
+  "error": "Transcription failed: Unsupported audio format"
+}
+```
+
+---
+
+#### cURL Examples
+
+**Step 1: Submit Transcription Task (Auto-detect language)**
 ```bash
-curl -X POST "http://192.168.8.18:8123/whisper/transcribe" \
+curl -X POST "https://your-api-domain.com/whisper/transcribe" \
+  -H "Content-Type: multipart/form-data" \
+  -F "audio=@sample.wav"
+```
+
+**Response:**
+```json
+{
+  "task_id": "task_whisper_a1b2c3d4e5f6",
+  "status": "queued",
+  "message": "Transcription task submitted successfully. Check status at /whisper/task/task_whisper_a1b2c3d4e5f6",
+  "status_endpoint": "/whisper/task/task_whisper_a1b2c3d4e5f6",
+  "estimated_time": "30-60 seconds",
+  "audio_info": {
+    "filename": "sample.wav",
+    "file_size_mb": 1.97,
+    "format": ".wav",
+    "content_type": "audio/wav"
+  }
+}
+```
+
+**Step 2: Poll for Results**
+```bash
+curl -X GET "https://your-api-domain.com/whisper/task/task_whisper_a1b2c3d4e5f6"
+```
+
+**With Language Specification:**
+```bash
+curl -X POST "https://your-api-domain.com/whisper/transcribe" \
   -H "Content-Type: multipart/form-data" \
   -F "audio=@helpline_call.wav" \
   -F "language=sw"
 ```
 
-**English Transcription:**
-```bash
-curl -X POST "http://192.168.8.18:8123/whisper/transcribe" \
-  -H "Content-Type: multipart/form-data" \
-  -F "audio=@english_audio.mp3" \
-  -F "language=en"
+---
+
+#### Python Client Example
+
+```python
+import requests
+import time
+from typing import Dict, Optional
+
+class WhisperClient:
+    def __init__(self, base_url: str, timeout: int = 300):
+        self.base_url = base_url.rstrip('/')
+        self.timeout = timeout
+
+    def transcribe(self, audio_file_path: str, language: Optional[str] = None) -> Dict:
+        """
+        Submit transcription request and wait for results.
+
+        Args:
+            audio_file_path: Path to audio file
+            language: Optional language code (e.g., "sw", "en", "auto")
+
+        Returns:
+            Transcription results dictionary
+
+        Raises:
+            ValueError: For validation errors (400)
+            RuntimeError: For server errors
+        """
+        # Step 1: Submit task
+        with open(audio_file_path, 'rb') as audio_file:
+            files = {'audio': audio_file}
+            data = {'language': language} if language else {}
+
+            response = requests.post(
+                f"{self.base_url}/whisper/transcribe",
+                files=files,
+                data=data,
+                timeout=30
+            )
+
+        if response.status_code == 202:
+            task_data = response.json()
+            task_id = task_data["task_id"]
+            print(f"Task submitted: {task_id}")
+            print(f"Estimated time: {task_data.get('estimated_time', 'unknown')}")
+        else:
+            response.raise_for_status()
+
+        # Step 2: Poll for results
+        start_time = time.time()
+        poll_interval = 2.0  # Start with 2 seconds for audio processing
+
+        while time.time() - start_time < self.timeout:
+            response = requests.get(
+                f"{self.base_url}/whisper/task/{task_id}",
+                timeout=10
+            )
+            response.raise_for_status()
+
+            task_status = response.json()
+            status = task_status["status"]
+
+            if status == "completed":
+                return task_status["result"]
+            elif status == "failed":
+                raise RuntimeError(f"Transcription failed: {task_status.get('error', 'Unknown error')}")
+            elif status == "processing":
+                progress = task_status.get('progress', 'unknown')
+                print(f"Processing... {progress}")
+
+            time.sleep(poll_interval)
+            poll_interval = min(poll_interval * 1.2, 10.0)  # Cap at 10 seconds
+
+        raise TimeoutError(f"Transcription did not complete within {self.timeout} seconds")
+
+# Usage example
+client = WhisperClient("https://your-api-domain.com", timeout=300)
+
+try:
+    result = client.transcribe(
+        audio_file_path="sample.wav",
+        language="sw"
+    )
+
+    print(f"Transcript: {result['transcript']}")
+    print(f"Language: {result['language']}")
+    print(f"Processing time: {result['processing_time']:.2f}s")
+    print(f"Audio duration: {result['audio_info']['duration_seconds']:.2f}s")
+
+except Exception as e:
+    print(f"Error: {e}")
 ```
 
-**Long Audio File (Automatic chunking):**
-```bash
-curl -X POST "http://192.168.8.18:8123/whisper/transcribe" \
-  -H "Content-Type: multipart/form-data" \
-  -F "audio=@long_call_5_minutes.wav" \
-  -F "language=sw"
-```
+---
 
 #### Getting Whisper Model Info
 

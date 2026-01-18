@@ -40,7 +40,7 @@ class TranslationTaskStatusResponse(BaseModel):
     progress: Optional[Dict] = None
 
 
-@router.post("/", response_model=TranslationTaskResponse)
+@router.post("/", response_model=TranslationTaskResponse, status_code=202)
 async def translate_text(request: TranslationRequest):
     """Translate text (async via Celery)"""
     

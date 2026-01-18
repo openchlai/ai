@@ -26,8 +26,9 @@ def sample_text():
 class TestClassifierRoutes:
     """Test classifier API routes"""
 
+    @patch('app.api.classifier_route.is_api_server_mode', return_value=False)
     @patch('app.api.classifier_route.model_loader')
-    def test_classify_text_success(self, mock_loader, classifier_app, sample_text):
+    def test_classify_text_success(self, mock_loader, mock_api_server_mode, classifier_app, sample_text):
         """Test successful text classification"""
         mock_model = MagicMock()
         mock_model.classify.return_value = {
@@ -47,13 +48,14 @@ class TestClassifierRoutes:
             json={"narrative": sample_text}
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 202
         data = response.json()
         assert data["status"] == "queued"
         assert "task_id" in data
 
+    @patch('app.api.classifier_route.is_api_server_mode', return_value=False)
     @patch('app.api.classifier_route.model_loader')
-    def test_classify_text_empty(self, mock_loader, classifier_app):
+    def test_classify_text_empty(self, mock_loader, mock_api_server_mode, classifier_app):
         """Test classification with empty text"""
         response = classifier_app.post(
             "/classifier/classify",
@@ -61,7 +63,7 @@ class TestClassifierRoutes:
         )
 
         assert response.status_code == 400
-        assert "Narrative input cannot be empty" in response.json()["detail"]
+        assert "Narrative input cannot be empty" in response.json()["detail"]["error"]["message"]
 
     @patch('app.api.classifier_route.model_loader')
     @patch('app.api.classifier_route.is_api_server_mode', return_value=False) # Simulate standalone mode
@@ -76,7 +78,7 @@ class TestClassifierRoutes:
         )
 
         assert response.status_code == 503
-        assert "Classifier model not ready" in response.json()["detail"]
+        assert "Classifier model not ready" in response.json()["detail"]["error"]["message"]
 
     def test_get_classifier_info(self, classifier_app):
         """Test getting classifier model information"""
@@ -140,7 +142,7 @@ class TestClassifierRoutes:
             json={"narrative": sample_text}
         )
         assert response.status_code == 500
-        assert "Failed to submit task" in response.json()["detail"]
+        assert "Failed to submit" in response.json()["detail"]["error"]["message"]
 
     @patch('app.api.classifier_route.AsyncResult')
     def test_get_classifier_task_status_pending(self, mock_async_result, classifier_app):

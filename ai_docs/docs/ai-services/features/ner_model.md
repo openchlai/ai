@@ -517,15 +517,32 @@ def _cleanup_memory(self):
 
 ### 3.1. Via AI Service API (Production Use)
 
-The NER model is deployed as part of the AI Service and accessible via REST API.
+The NER model is deployed as part of the AI Service and accessible via REST API. The API uses an **asynchronous task-based architecture** for scalable processing.
 
-#### Endpoint
+#### Workflow Overview
 
+**Asynchronous Processing Pattern:**
+1. **Submit** extraction request → Receive `task_id` immediately
+2. **Poll** task status endpoint → Check processing progress
+3. **Retrieve** results when task completes
+
+This pattern allows for:
+- Non-blocking API calls
+- Scalable concurrent processing
+- Progress tracking for long-running extractions
+- Graceful handling of high load
+
+---
+
+#### Submit NER Extraction Task
+
+**Endpoint:**
 ```
 POST /ner/extract
 ```
 
-#### Request Format
+**HTTP Method:** `POST`
+**Status Code:** `202 Accepted` (task queued for processing)
 
 **Headers:**
 ```
@@ -544,49 +561,167 @@ Content-Type: application/json
 - `text` (required, string): The input text to analyze for named entities
 - `flat` (optional, boolean): Controls output format. If `true`, returns individual tokens; if `false`, groups consecutive entities. Default: `true`
 
-#### Response Format
-
-**Success Response (200):**
+**Success Response (202 Accepted):**
 ```json
 {
-  "entities": [
-    {
-      "text": "string",
-      "label": "string",
-      "start": 0,
-      "end": 0,
-      "confidence": 0.95
-    }
-  ],
-  "processing_time": 0,
-  "model_info": {
-    "model_path": "string",
-    "hf_repo_id": "openchs/ner_distillbert_v1",
-    "device": "cuda",
-    "loaded": true,
-    "fallback_model_name": "en_core_web_lg",
-    "use_hf": true
+  "task_id": "task_abc123def456",
+  "status": "queued",
+  "message": "NER processing started. Check status at /ner/task/{task_id}",
+  "status_endpoint": "/ner/task/task_abc123def456",
+  "estimated_time": "5-15 seconds"
+}
+```
+
+**Response Fields:**
+- `task_id`: Unique identifier for tracking this extraction task
+- `status`: Initial status (always "queued" for new tasks)
+- `message`: Human-readable status message
+- `status_endpoint`: URL to poll for task results
+- `estimated_time`: Approximate processing duration
+
+**Error Responses:**
+
+*Empty Input (400 Bad Request):*
+```json
+{
+  "error": {
+    "error_code": "INVALID_INPUT",
+    "message": "Text input cannot be empty",
+    "field": "text",
+    "timestamp": "2024-01-18T10:30:00.000Z"
   },
-  "timestamp": "string"
+  "status": "error",
+  "request_id": "req_abc123"
 }
 ```
 
-**Validation Error (422):**
+*Model Not Ready (503 Service Unavailable):*
 ```json
 {
-  "detail": [
-    {
-      "loc": ["string"],
-      "msg": "string",
-      "type": "string"
-    }
-  ]
+  "error": {
+    "error_code": "MODEL_NOT_READY",
+    "message": "NER model not ready. Check /health/models for status.",
+    "detail": "Model failed to load or is currently initializing",
+    "timestamp": "2024-01-18T10:30:00.000Z"
+  },
+  "status": "error"
 }
 ```
 
-#### Example cURL Request
+*Task Submission Failed (500 Internal Server Error):*
+```json
+{
+  "error": {
+    "error_code": "TASK_SUBMISSION_FAILED",
+    "message": "Failed to submit NER task",
+    "detail": "Redis connection timeout",
+    "timestamp": "2024-01-18T10:30:00.000Z"
+  },
+  "status": "error"
+}
+```
 
-**Basic Entity Extraction:**
+**Standardized Error Codes:**
+- `INVALID_INPUT` - Empty or malformed input data
+- `MODEL_NOT_READY` - NER model not loaded (standalone mode)
+- `TASK_SUBMISSION_FAILED` - Celery task queue error
+
+---
+
+#### Get Task Status and Results
+
+**Endpoint:**
+```
+GET /ner/task/{task_id}
+```
+
+**HTTP Method:** `GET`
+**Status Code:** `200 OK`
+
+**Path Parameters:**
+- `task_id` (required): Task identifier from submission response
+
+**Response - Task Pending:**
+```json
+{
+  "task_id": "task_abc123",
+  "status": "pending",
+  "progress": {
+    "message": "Task is queued and waiting to be processed"
+  }
+}
+```
+
+**Response - Task Processing:**
+```json
+{
+  "task_id": "task_abc123",
+  "status": "processing",
+  "progress": {
+    "status": "Extracting entities...",
+    "percent": 50
+  }
+}
+```
+
+**Response - Task Success:**
+```json
+{
+  "task_id": "task_abc123",
+  "status": "success",
+  "result": {
+    "entities": [
+      {
+        "text": "John",
+        "label": "NAME",
+        "start": 0,
+        "end": 4,
+        "confidence": 0.92
+      },
+      {
+        "text": "Central Park",
+        "label": "LANDMARK",
+        "start": 30,
+        "end": 42,
+        "confidence": 0.88
+      }
+    ],
+    "processing_time": 0.156,
+    "model_info": {
+      "hf_repo_id": "openchs/ner_distillbert_v1",
+      "device": "cuda",
+      "loaded": true
+    },
+    "timestamp": "2025-10-17T15:45:30.123456"
+  }
+}
+```
+
+**Response - Task Failed:**
+```json
+{
+  "task_id": "task_abc123",
+  "status": "failed",
+  "error": "NER model not available on worker"
+}
+```
+
+**Task Status Values:**
+- `pending` - Task queued, waiting for processing
+- `processing` - Task currently being executed
+- `success` - Task completed successfully, results available
+- `failed` - Task execution failed, error message provided
+
+**Polling Best Practices:**
+- **Initial Poll:** Wait 2-3 seconds before first status check
+- **Poll Interval:** Check every 2-5 seconds for pending tasks
+- **Timeout:** Consider task failed if pending > 60 seconds
+- **Exponential Backoff:** Increase interval for long-running tasks
+- **Result Retention:** Results available for ~1 hour after completion
+
+#### Complete cURL Example Workflow
+
+**Step 1: Submit NER Extraction Task**
 ```bash
 curl -X POST "https://your-api-domain.com/ner/extract" \
   -H "Content-Type: application/json" \
@@ -595,64 +730,125 @@ curl -X POST "https://your-api-domain.com/ner/extract" \
   }'
 ```
 
-**Response:**
+**Response (202 Accepted):**
 ```json
 {
-  "entities": [
-    {
-      "text": "John",
-      "label": "NAME",
-      "start": 0,
-      "end": 4,
-      "confidence": 0.92
-    },
-    {
-      "text": "Central Park",
-      "label": "LANDMARK",
-      "start": 30,
-      "end": 42,
-      "confidence": 0.88
-    },
-    {
-      "text": "12-year-old",
-      "label": "AGE",
-      "start": 61,
-      "end": 72,
-      "confidence": 0.85
-    },
-    {
-      "text": "girl",
-      "label": "GENDER",
-      "start": 73,
-      "end": 77,
-      "confidence": 0.79
-    },
-    {
-      "text": "555-0123",
-      "label": "PHONE_NUMBER",
-      "start": 95,
-      "end": 103,
-      "confidence": 0.94
-    }
-  ],
-  "processing_time": 0.156,
-  "model_info": {
-    "hf_repo_id": "openchs/ner_distillbert_v1",
-    "device": "cuda",
-    "loaded": true
-  },
-  "timestamp": "2025-10-17T15:45:30.123456"
+  "task_id": "task_a1b2c3d4e5f6",
+  "status": "queued",
+  "message": "NER processing started. Check status at /ner/task/{task_id}",
+  "status_endpoint": "/ner/task/task_a1b2c3d4e5f6",
+  "estimated_time": "5-15 seconds"
 }
+```
+
+**Step 2: Poll Task Status**
+```bash
+# Wait 2-3 seconds, then check status
+curl -X GET "https://your-api-domain.com/ner/task/task_a1b2c3d4e5f6"
+```
+
+**Response (Success - 200 OK):**
+```json
+{
+  "task_id": "task_a1b2c3d4e5f6",
+  "status": "success",
+  "result": {
+    "entities": [
+      {
+        "text": "John",
+        "label": "NAME",
+        "start": 0,
+        "end": 4,
+        "confidence": 0.92
+      },
+      {
+        "text": "Central Park",
+        "label": "LANDMARK",
+        "start": 30,
+        "end": 42,
+        "confidence": 0.88
+      },
+      {
+        "text": "12-year-old",
+        "label": "AGE",
+        "start": 61,
+        "end": 72,
+        "confidence": 0.85
+      },
+      {
+        "text": "girl",
+        "label": "GENDER",
+        "start": 73,
+        "end": 77,
+        "confidence": 0.79
+      },
+      {
+        "text": "555-0123",
+        "label": "PHONE_NUMBER",
+        "start": 95,
+        "end": 103,
+        "confidence": 0.94
+      }
+    ],
+    "processing_time": 0.156,
+    "model_info": {
+      "hf_repo_id": "openchs/ner_distillbert_v1",
+      "device": "cuda",
+      "loaded": true
+    },
+    "timestamp": "2025-10-17T15:45:30.123456",
+    "task_id": "task_a1b2c3d4e5f6"
+  }
+}
+```
+
+**Complete Shell Script Example:**
+```bash
+#!/bin/bash
+
+# Step 1: Submit task
+RESPONSE=$(curl -s -X POST "https://your-api-domain.com/ner/extract" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "John reported an incident at Central Park.",
+    "flat": true
+  }')
+
+# Extract task_id
+TASK_ID=$(echo $RESPONSE | jq -r '.task_id')
+echo "Task submitted: $TASK_ID"
+
+# Step 2: Poll for results
+while true; do
+  sleep 3
+  STATUS_RESPONSE=$(curl -s -X GET "https://your-api-domain.com/ner/task/$TASK_ID")
+  STATUS=$(echo $STATUS_RESPONSE | jq -r '.status')
+
+  echo "Task status: $STATUS"
+
+  if [ "$STATUS" = "success" ]; then
+    echo "Entities found:"
+    echo $STATUS_RESPONSE | jq '.result.entities'
+    break
+  elif [ "$STATUS" = "failed" ]; then
+    echo "Task failed:"
+    echo $STATUS_RESPONSE | jq '.error'
+    break
+  fi
+done
 ```
 
 **Grouped Entity Extraction:**
 ```bash
+# Submit task with grouped output
 curl -X POST "https://your-api-domain.com/ner/extract" \
   -H "Content-Type: application/json" \
   -d '{
     "text": "Maria Garcia lives in New York City and works at Children Hospital.",
     "flat": false
   }'
+
+# Response includes task_id, then poll /ner/task/{task_id} for grouped results
 ```
 
 #### Getting NER Info
@@ -832,33 +1028,155 @@ Processing times vary based on:
 
 ### Error Handling
 
+All errors follow a **standardized error response format** for consistent client handling:
+
+**Error Response Structure:**
+```json
+{
+  "error": {
+    "error_code": "string",      // Machine-readable error code
+    "message": "string",           // Human-readable message
+    "detail": "string",            // Additional debugging information (optional)
+    "field": "string",             // Field name for validation errors (optional)
+    "timestamp": "ISO-8601-string" // When the error occurred
+  },
+  "status": "error",
+  "request_id": "string"          // Request ID for tracing (optional)
+}
+```
+
 **Common Error Scenarios:**
 
-1. **Empty Input:**
+1. **Empty Input (400 Bad Request):**
 ```json
 {
-  "detail": [
-    {
-      "loc": ["body", "text"],
-      "msg": "Text input cannot be empty",
-      "type": "value_error"
-    }
-  ]
+  "error": {
+    "error_code": "INVALID_INPUT",
+    "message": "Text input cannot be empty",
+    "field": "text",
+    "timestamp": "2024-01-18T10:30:00.000Z"
+  },
+  "status": "error",
+  "request_id": "req_abc123"
 }
 ```
 
-2. **Model Not Ready:**
+2. **Model Not Ready (503 Service Unavailable):**
 ```json
 {
-  "detail": "NER model not ready. Check /health/models for status."
+  "error": {
+    "error_code": "MODEL_NOT_READY",
+    "message": "NER model not ready. Check /health/models for status.",
+    "detail": "Model failed to load or is currently initializing",
+    "timestamp": "2024-01-18T10:30:00.000Z"
+  },
+  "status": "error"
 }
 ```
 
-3. **Service Unavailable:**
+3. **Task Submission Failed (500 Internal Server Error):**
 ```json
 {
-  "detail": "NER model not loaded"
+  "error": {
+    "error_code": "TASK_SUBMISSION_FAILED",
+    "message": "Failed to submit NER task",
+    "detail": "Redis connection timeout",
+    "timestamp": "2024-01-18T10:30:00.000Z"
+  },
+  "status": "error"
 }
+```
+
+4. **Task Not Found (when polling):**
+```json
+{
+  "error": {
+    "error_code": "TASK_NOT_FOUND",
+    "message": "Task ID not found or expired",
+    "detail": "Task results are retained for 1 hour after completion",
+    "timestamp": "2024-01-18T10:30:00.000Z"
+  },
+  "status": "error"
+}
+```
+
+**Error Code Reference:**
+| Error Code | HTTP Status | Description | Recommended Action |
+|-----------|-------------|-------------|-------------------|
+| `INVALID_INPUT` | 400 | Empty or malformed text input | Check request body format |
+| `MODEL_NOT_READY` | 503 | NER model not loaded (standalone mode) | Check `/health/models`, retry in 30s |
+| `TASK_SUBMISSION_FAILED` | 500 | Celery queue error | Retry request, check system health |
+| `TASK_NOT_FOUND` | 404 | Task ID doesn't exist or expired | Re-submit extraction request |
+| `TASK_TIMEOUT` | 500 | Processing exceeded time limit | Re-submit with shorter text |
+
+**Client Error Handling Best Practices:**
+```python
+import requests
+import time
+
+def extract_entities_with_retry(text, max_retries=3):
+    """Submit NER task with automatic retry on failures"""
+
+    # Submit task
+    for attempt in range(max_retries):
+        try:
+            response = requests.post(
+                "https://your-api-domain.com/ner/extract",
+                json={"text": text},
+                timeout=10
+            )
+
+            if response.status_code == 202:
+                # Task submitted successfully
+                data = response.json()
+                task_id = data["task_id"]
+                break
+
+            elif response.status_code == 503:
+                # Model not ready - wait and retry
+                error_data = response.json()
+                if error_data.get("error", {}).get("error_code") == "MODEL_NOT_READY":
+                    print(f"Model not ready, retrying in 30s (attempt {attempt + 1})")
+                    time.sleep(30)
+                    continue
+
+            else:
+                # Other error - raise exception
+                response.raise_for_status()
+
+        except requests.RequestException as e:
+            print(f"Request failed: {e}")
+            if attempt < max_retries - 1:
+                time.sleep(5)
+                continue
+            raise
+
+    # Poll for results
+    poll_interval = 3
+    max_poll_time = 60
+    elapsed = 0
+
+    while elapsed < max_poll_time:
+        time.sleep(poll_interval)
+        elapsed += poll_interval
+
+        status_response = requests.get(
+            f"https://your-api-domain.com/ner/task/{task_id}"
+        )
+
+        if status_response.status_code == 200:
+            status_data = status_response.json()
+
+            if status_data["status"] == "success":
+                return status_data["result"]["entities"]
+
+            elif status_data["status"] == "failed":
+                error = status_data.get("error", "Unknown error")
+                raise Exception(f"NER task failed: {error}")
+
+            # Still processing, continue polling
+
+    raise TimeoutError(f"Task {task_id} did not complete within {max_poll_time}s")
 ```
 
 ### Health Checks

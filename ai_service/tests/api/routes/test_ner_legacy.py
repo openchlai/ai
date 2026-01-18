@@ -38,7 +38,7 @@ def test_extract_success_flat():
 
         response = client.post("/ner/extract", json={"text": VALID_TEXT})
 
-        assert response.status_code == 200
+        assert response.status_code == 202
         response_json = response.json()
         # Endpoint now returns task_id for async processing
         assert "task_id" in response_json
@@ -54,7 +54,7 @@ def test_extract_success_grouped():
 
         response = client.post("/ner/extract", json={"text": VALID_TEXT, "flat": False})
 
-        assert response.status_code == 200
+        assert response.status_code == 202
         response_json = response.json()
         assert "task_id" in response_json
         assert response_json["status"] == "queued"
@@ -65,9 +65,9 @@ def test_extract_empty_text():
         mock_loader.is_model_ready.return_value = True
         
         response = client.post("/ner/extract", json={"text": EMPTY_TEXT})
-        
+
         assert response.status_code == 400
-        assert response.json() == {"detail": "Text input cannot be empty"}
+        assert "Text input cannot be empty" in response.json()["detail"]["error"]["message"]
 
 def test_extract_model_not_ready():
     """Test the case where the NER model is not ready in standalone mode."""
@@ -78,7 +78,7 @@ def test_extract_model_not_ready():
         response = client.post("/ner/extract", json={"text": VALID_TEXT})
 
         assert response.status_code == 503
-        assert response.json() == {"detail": "NER model not ready. Check /health/models for status."}
+        assert "NER model not ready" in response.json()["detail"]["error"]["message"]
 
 def test_extract_exception_on_run():
     """Test the case where an unexpected exception occurs during task submission."""
@@ -88,7 +88,7 @@ def test_extract_exception_on_run():
         response = client.post("/ner/extract", json={"text": VALID_TEXT})
 
         assert response.status_code == 500
-        assert "Failed to submit NER task" in response.json()["detail"]
+        assert "Failed to submit NER task" in response.json()["detail"]["error"]["message"]
 
 
 def test_get_ner_info_ready():
