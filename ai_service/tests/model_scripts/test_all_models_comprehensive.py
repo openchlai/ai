@@ -15,39 +15,28 @@ from datetime import datetime
 class TestNERModelInitialization:
     """Tests for NERModel initialization"""
 
-    @patch('app.model_scripts.ner_model.torch.cuda.is_available')
-    def test_ner_model_init(self, mock_cuda):
+    def test_ner_model_init(self):
         """Test NER model initialization"""
         from app.model_scripts.ner_model import NERModel
-
-        mock_cuda.return_value = False
 
         model = NERModel()
 
         assert model is not None
-        assert model.device == torch.device("cpu")
+        assert hasattr(model, 'model_path')
 
 
 class TestNERModelLoading:
     """Tests for NER model loading"""
 
-    @patch('app.model_scripts.ner_model.AutoTokenizer')
-    @patch('app.model_scripts.ner_model.AutoModelForTokenClassification')
-    @patch('app.model_scripts.ner_model.settings')
+    @patch('app.model_scripts.ner_model.spacy.load')
     @patch('os.path.exists')
-    def test_load_ner_model_success(self, mock_exists, mock_settings, mock_model_class, mock_tokenizer_class):
+    def test_load_ner_model_success(self, mock_exists, mock_spacy_load):
         """Test successful NER model loading"""
         from app.model_scripts.ner_model import NERModel
 
         mock_exists.return_value = True
-        mock_settings.get_model_path.return_value = "/models/ner"
-
-        mock_tokenizer = MagicMock()
-        mock_tokenizer_class.from_pretrained.return_value = mock_tokenizer
-
-        mock_model = MagicMock()
-        mock_model.to = MagicMock(return_value=mock_model)
-        mock_model_class.from_pretrained.return_value = mock_model
+        mock_nlp = MagicMock()
+        mock_spacy_load.return_value = mock_nlp
 
         ner = NERModel()
         result = ner.load()
@@ -55,14 +44,12 @@ class TestNERModelLoading:
         assert result is True
         assert ner.loaded is True
 
-    @patch('app.model_scripts.ner_model.AutoTokenizer')
-    @patch('app.model_scripts.ner_model.settings')
-    def test_load_ner_model_failure(self, mock_settings, mock_tokenizer_class):
+    @patch('app.model_scripts.ner_model.spacy.load')
+    def test_load_ner_model_failure(self, mock_spacy_load):
         """Test NER model loading failure"""
         from app.model_scripts.ner_model import NERModel
 
-        mock_settings.get_model_path.return_value = "/models/ner"
-        mock_tokenizer_class.from_pretrained.side_effect = Exception("Failed to load")
+        mock_spacy_load.side_effect = Exception("Failed to load")
 
         ner = NERModel()
         result = ner.load()
@@ -159,14 +146,12 @@ class TestSummarizerModelLoading:
 
     @patch('app.model_scripts.summarizer_model.AutoTokenizer')
     @patch('app.model_scripts.summarizer_model.AutoModelForSeq2SeqLM')
-    @patch('app.model_scripts.summarizer_model.settings')
     @patch('os.path.exists')
-    def test_load_summarizer_success(self, mock_exists, mock_settings, mock_model_class, mock_tokenizer_class):
+    def test_load_summarizer_success(self, mock_exists, mock_model_class, mock_tokenizer_class):
         """Test successful summarizer loading"""
         from app.model_scripts.summarizer_model import SummarizationModel
 
         mock_exists.return_value = True
-        mock_settings.get_model_path.return_value = "/models/summarizer"
 
         mock_tokenizer = MagicMock()
         mock_tokenizer_class.from_pretrained.return_value = mock_tokenizer
@@ -182,12 +167,10 @@ class TestSummarizerModelLoading:
         assert summarizer.loaded is True
 
     @patch('app.model_scripts.summarizer_model.AutoTokenizer')
-    @patch('app.model_scripts.summarizer_model.settings')
-    def test_load_summarizer_failure(self, mock_settings, mock_tokenizer_class):
+    def test_load_summarizer_failure(self, mock_tokenizer_class):
         """Test summarizer loading failure"""
         from app.model_scripts.summarizer_model import SummarizationModel
 
-        mock_settings.get_model_path.return_value = "/models/summarizer"
         mock_tokenizer_class.from_pretrained.side_effect = Exception("Failed to load")
 
         summarizer = SummarizationModel()
@@ -279,14 +262,12 @@ class TestTranslatorModelLoading:
 
     @patch('app.model_scripts.translator_model.AutoTokenizer')
     @patch('app.model_scripts.translator_model.AutoModelForSeq2SeqLM')
-    @patch('app.model_scripts.translator_model.settings')
     @patch('os.path.exists')
-    def test_load_translator_success(self, mock_exists, mock_settings, mock_model_class, mock_tokenizer_class):
+    def test_load_translator_success(self, mock_exists, mock_model_class, mock_tokenizer_class):
         """Test successful translator loading"""
         from app.model_scripts.translator_model import TranslationModel
 
         mock_exists.return_value = True
-        mock_settings.get_model_path.return_value = "/models/translator"
 
         mock_tokenizer = MagicMock()
         mock_tokenizer_class.from_pretrained.return_value = mock_tokenizer
@@ -302,12 +283,10 @@ class TestTranslatorModelLoading:
         assert translator.loaded is True
 
     @patch('app.model_scripts.translator_model.AutoTokenizer')
-    @patch('app.model_scripts.translator_model.settings')
-    def test_load_translator_failure(self, mock_settings, mock_tokenizer_class):
+    def test_load_translator_failure(self, mock_tokenizer_class):
         """Test translator loading failure"""
         from app.model_scripts.translator_model import TranslationModel
 
-        mock_settings.get_model_path.return_value = "/models/translator"
         mock_tokenizer_class.from_pretrained.side_effect = Exception("Failed to load")
 
         translator = TranslationModel()
@@ -400,16 +379,15 @@ class TestWhisperModelInitialization:
 class TestWhisperModelLoading:
     """Tests for Whisper model loading"""
 
+    @patch('os.makedirs')
     @patch('app.model_scripts.whisper_model.WhisperProcessor')
     @patch('app.model_scripts.whisper_model.WhisperForConditionalGeneration')
-    @patch('app.model_scripts.whisper_model.settings')
     @patch('os.path.exists')
-    def test_load_whisper_success(self, mock_exists, mock_settings, mock_model_class, mock_processor_class):
+    def test_load_whisper_success(self, mock_exists, mock_model_class, mock_processor_class, mock_makedirs):
         """Test successful Whisper loading"""
         from app.model_scripts.whisper_model import WhisperModel
 
         mock_exists.return_value = True
-        mock_settings.get_model_path.return_value = "/models/whisper"
 
         mock_processor = MagicMock()
         mock_processor_class.from_pretrained.return_value = mock_processor
@@ -424,13 +402,12 @@ class TestWhisperModelLoading:
         assert result is True
         assert whisper.loaded is True
 
+    @patch('os.makedirs')
     @patch('app.model_scripts.whisper_model.WhisperProcessor')
-    @patch('app.model_scripts.whisper_model.settings')
-    def test_load_whisper_failure(self, mock_settings, mock_processor_class):
+    def test_load_whisper_failure(self, mock_processor_class, mock_makedirs):
         """Test Whisper loading failure"""
         from app.model_scripts.whisper_model import WhisperModel
 
-        mock_settings.get_model_path.return_value = "/models/whisper"
         mock_processor_class.from_pretrained.side_effect = Exception("Failed to load")
 
         whisper = WhisperModel()
