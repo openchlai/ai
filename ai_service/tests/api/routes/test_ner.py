@@ -44,7 +44,7 @@ class TestNERRoutes:
             json={"text": sample_text}
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 202
         data = response.json()
         assert data["status"] == "queued"
         assert "task_id" in data
@@ -72,7 +72,7 @@ class TestNERRoutes:
             json={"text": sample_text, "flat": False}
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 202
         data = response.json()
         assert data["status"] == "queued"
         assert "task_id" in data
@@ -93,7 +93,7 @@ class TestNERRoutes:
             json={"text": sample_text}
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 202
         data = response.json()
         assert data["status"] == "queued"
         mock_loader.is_model_ready.assert_not_called() # Should not check local model
@@ -161,7 +161,7 @@ class TestNERRoutes:
             json={"text": sample_text}
         )
         assert response.status_code == 500
-        assert "Failed to submit NER task" in response.json()["detail"]
+        assert "Failed to submit NER task" in response.json()["detail"]["error"]["message"]
 
     @patch('app.api.ner_routes.AsyncResult')
     def test_get_ner_task_status_pending(self, mock_async_result, ner_app):

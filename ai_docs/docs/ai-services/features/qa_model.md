@@ -174,175 +174,350 @@ Audio Input → ASR → English Transcript → NER/Classification/Summarization 
 
 ## 3. Using the Model
 
-### 3.1. Via AI Service API
+### 3.1. Via AI Service API (Production Use)
+
+The QA model is deployed as part of the AI Service and accessible via REST API. The API uses an **asynchronous task-based architecture** where QA evaluation requests are queued and processed by Celery workers, allowing the system to handle resource-intensive inference without blocking HTTP connections.
+
+#### Workflow Overview
+
+The QA evaluation API follows a **2-step asynchronous workflow**:
+
+1. **Submit QA Evaluation Request** → Receive `task_id` (HTTP 202 Accepted)
+2. **Poll Task Status** → Retrieve QA evaluation results when ready (HTTP 200 OK)
+
+This architecture ensures reliable processing of long transcripts and prevents timeout issues during GPU-intensive QA scoring operations.
+
+---
+
+#### Step 1: Submit QA Evaluation Task
 
 **Endpoint:**
-Request URL
-```bash
-http://192.168.10.6:8123/qa/evaluate
+```
+POST /qa/evaluate
 ```
 
-
-Curl
-```bash
-curl -X 'POST' \
-  'http://192.168.10.6:8123/qa/evaluate' \
-  -H 'accept: application/json' \
-  -H 'Content-Type: application/json' \
-  -d '{
+**Request Format:**
+```json
+{
   "transcript": "Hello, this is 116 sauti child helpline. My name is Jackson Kibwana, how can I help you today?",
   "threshold": 0.6,
   "return_raw": false
-}'
-```
-
-
-Response body
-```json
-
-{
-  "evaluations": {
-    "opening": [
-      {
-        "submetric": "Use of call opening phrase",
-        "prediction": true,
-        "score": "✓",
-        "probability": 0.9567105174064636
-      }
-    ],
-    "listening": [
-      {
-        "submetric": "Caller was not interrupted",
-        "prediction": true,
-        "score": "✓",
-        "probability": 0.7852196097373962
-      },
-      {
-        "submetric": "Empathizes with the caller",
-        "prediction": false,
-        "score": "✗",
-        "probability": 0.5563325881958008
-      },
-      {
-        "submetric": "Paraphrases or rephrases the issue",
-        "prediction": false,
-        "score": "✗",
-        "probability": 0.3898620903491974
-      },
-      {
-        "submetric": "Uses 'please' and 'thank you'",
-        "prediction": true,
-        "score": "✓",
-        "probability": 0.6255266070365906
-      },
-      {
-        "submetric": "Does not hesitate or sound unsure",
-        "prediction": true,
-        "score": "✓",
-        "probability": 0.6388158202171326
-      }
-    ],
-    "proactiveness": [
-      {
-        "submetric": "Willing to solve extra issues",
-        "prediction": false,
-        "score": "✗",
-        "probability": 0.4224390387535095
-      },
-      {
-        "submetric": "Confirms satisfaction with action points",
-        "prediction": false,
-        "score": "✗",
-        "probability": 0.32597222924232483
-      },
-      {
-        "submetric": "Follows up on case updates",
-        "prediction": false,
-        "score": "✗",
-        "probability": 0.08417876809835434
-      }
-    ],
-    "resolution": [
-      {
-        "submetric": "Gives accurate information",
-        "prediction": false,
-        "score": "✗",
-        "probability": 0.5878533720970154
-      },
-      {
-        "submetric": "Correct language use",
-        "prediction": true,
-        "score": "✓",
-        "probability": 0.7913471460342407
-      },
-      {
-        "submetric": "Consults if unsure",
-        "prediction": false,
-        "score": "✗",
-        "probability": 0.2499508112668991
-      },
-      {
-        "submetric": "Follows correct steps",
-        "prediction": false,
-        "score": "✗",
-        "probability": 0.574279248714447
-      },
-      {
-        "submetric": "Explains solution process clearly",
-        "prediction": false,
-        "score": "✗",
-        "probability": 0.4905984699726105
-      }
-    ],
-    "hold": [
-      {
-        "submetric": "Explains before placing on hold",
-        "prediction": false,
-        "score": "✗",
-        "probability": 0.1048022210597992
-      },
-      {
-        "submetric": "Thanks caller for holding",
-        "prediction": false,
-        "score": "✗",
-        "probability": 0.18482911586761475
-      }
-    ],
-    "closing": [
-      {
-        "submetric": "Proper call closing phrase used",
-        "prediction": false,
-        "score": "✗",
-        "probability": 0.15396814048290253
-      }
-    ]
-  },
-  "processing_time": 0.008944,
-  "model_info": {
-    "model_path": "/home/rogendo/Work/New/ai/ai_service/models/all_qa_distilbert_v1",
-    "loaded": true,
-    "load_time": "2025-10-17T17:20:37.541899",
-    "device": "cuda",
-    "error": null,
-    "max_length": 512,
-    "model_type": "MultiHeadQAClassifier",
-    "qa_heads": [
-      "opening",
-      "listening",
-      "proactiveness",
-      "resolution",
-      "hold",
-      "closing"
-    ]
-  },
-  "timestamp": "2025-10-17T19:22:46.853704"
 }
 ```
 
-Status code
-```bash
-200
+**Success Response (HTTP 202 Accepted):**
+```json
+{
+  "task_id": "task_qa_a1b2c3d4e5f6",
+  "status": "queued",
+  "message": "QA evaluation task submitted successfully. Check status at /qa/task/{task_id}",
+  "status_endpoint": "/qa/task/task_qa_a1b2c3d4e5f6",
+  "estimated_time": "1-2 seconds"
+}
 ```
+
+**Response Fields:**
+- `task_id` (string): Unique identifier for tracking the QA evaluation task
+- `status` (string): Initial task state (`"queued"` or `"processing"`)
+- `message` (string): Human-readable confirmation message
+- `status_endpoint` (string): URL path for polling task status
+- `estimated_time` (string): Expected processing duration
+
+---
+
+#### Step 2: Poll QA Evaluation Status
+
+**Endpoint:**
+```
+GET /qa/task/{task_id}
+```
+
+**Response States:**
+
+**1. Processing (HTTP 200 OK):**
+```json
+{
+  "task_id": "task_qa_a1b2c3d4e5f6",
+  "status": "processing",
+  "message": "QA evaluation in progress. Please check again shortly."
+}
+```
+
+**2. Completed Successfully (HTTP 200 OK):**
+```json
+{
+  "task_id": "task_qa_a1b2c3d4e5f6",
+  "status": "completed",
+  "result": {
+    "evaluations": {
+      "opening": [
+        {
+          "submetric": "Use of call opening phrase",
+          "prediction": true,
+          "score": "✓",
+          "probability": 0.9567105174064636
+        }
+      ],
+      "listening": [
+        {
+          "submetric": "Caller was not interrupted",
+          "prediction": true,
+          "score": "✓",
+          "probability": 0.7852196097373962
+        },
+        {
+          "submetric": "Empathizes with the caller",
+          "prediction": false,
+          "score": "✗",
+          "probability": 0.5563325881958008
+        },
+        {
+          "submetric": "Paraphrases or rephrases the issue",
+          "prediction": false,
+          "score": "✗",
+          "probability": 0.3898620903491974
+        },
+        {
+          "submetric": "Uses 'please' and 'thank you'",
+          "prediction": true,
+          "score": "✓",
+          "probability": 0.6255266070365906
+        },
+        {
+          "submetric": "Does not hesitate or sound unsure",
+          "prediction": true,
+          "score": "✓",
+          "probability": 0.6388158202171326
+        }
+      ],
+      "proactiveness": [
+        {
+          "submetric": "Willing to solve extra issues",
+          "prediction": false,
+          "score": "✗",
+          "probability": 0.4224390387535095
+        },
+        {
+          "submetric": "Confirms satisfaction with action points",
+          "prediction": false,
+          "score": "✗",
+          "probability": 0.32597222924232483
+        },
+        {
+          "submetric": "Follows up on case updates",
+          "prediction": false,
+          "score": "✗",
+          "probability": 0.08417876809835434
+        }
+      ],
+      "resolution": [
+        {
+          "submetric": "Gives accurate information",
+          "prediction": false,
+          "score": "✗",
+          "probability": 0.5878533720970154
+        },
+        {
+          "submetric": "Correct language use",
+          "prediction": true,
+          "score": "✓",
+          "probability": 0.7913471460342407
+        },
+        {
+          "submetric": "Consults if unsure",
+          "prediction": false,
+          "score": "✗",
+          "probability": 0.2499508112668991
+        },
+        {
+          "submetric": "Follows correct steps",
+          "prediction": false,
+          "score": "✗",
+          "probability": 0.574279248714447
+        },
+        {
+          "submetric": "Explains solution process clearly",
+          "prediction": false,
+          "score": "✗",
+          "probability": 0.4905984699726105
+        }
+      ],
+      "hold": [
+        {
+          "submetric": "Explains before placing on hold",
+          "prediction": false,
+          "score": "✗",
+          "probability": 0.1048022210597992
+        },
+        {
+          "submetric": "Thanks caller for holding",
+          "prediction": false,
+          "score": "✗",
+          "probability": 0.18482911586761475
+        }
+      ],
+      "closing": [
+        {
+          "submetric": "Proper call closing phrase used",
+          "prediction": false,
+          "score": "✗",
+          "probability": 0.15396814048290253
+        }
+      ]
+    },
+    "processing_time": 0.008944,
+    "model_info": {
+      "model_path": "/home/rogendo/Work/New/ai/ai_service/models/all_qa_distilbert_v1",
+      "loaded": true,
+      "load_time": "2025-10-17T17:20:37.541899",
+      "device": "cuda",
+      "error": null,
+      "max_length": 512,
+      "model_type": "MultiHeadQAClassifier",
+      "qa_heads": [
+        "opening",
+        "listening",
+        "proactiveness",
+        "resolution",
+        "hold",
+        "closing"
+      ]
+    },
+    "timestamp": "2025-10-17T19:22:46.853704"
+  }
+}
+```
+
+**3. Failed (HTTP 200 OK with error details):**
+```json
+{
+  "task_id": "task_qa_a1b2c3d4e5f6",
+  "status": "failed",
+  "error": "QA evaluation failed due to invalid input format"
+}
+```
+
+---
+
+#### cURL Examples
+
+**Step 1: Submit QA Evaluation Task**
+```bash
+curl -X POST "https://your-api-domain.com/qa/evaluate" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "transcript": "Hello, this is 116 sauti child helpline. My name is Jackson Kibwana, how can I help you today?",
+    "threshold": 0.6,
+    "return_raw": false
+  }'
+```
+
+**Response:**
+```json
+{
+  "task_id": "task_qa_a1b2c3d4e5f6",
+  "status": "queued",
+  "message": "QA evaluation task submitted successfully. Check status at /qa/task/task_qa_a1b2c3d4e5f6",
+  "status_endpoint": "/qa/task/task_qa_a1b2c3d4e5f6",
+  "estimated_time": "1-2 seconds"
+}
+```
+
+**Step 2: Poll for Results**
+```bash
+curl -X GET "https://your-api-domain.com/qa/task/task_qa_a1b2c3d4e5f6"
+```
+
+---
+
+#### Python Client Example
+
+```python
+import requests
+import time
+from typing import Dict
+
+class QAClient:
+    def __init__(self, base_url: str, timeout: int = 30):
+        self.base_url = base_url.rstrip('/')
+        self.timeout = timeout
+
+    def evaluate(self, transcript: str, threshold: float = 0.5, return_raw: bool = False) -> Dict:
+        """
+        Submit QA evaluation request and wait for results.
+
+        Args:
+            transcript: Call transcript text to evaluate
+            threshold: Classification threshold for QA metrics
+            return_raw: Whether to return raw probabilities
+
+        Returns:
+            QA evaluation results dictionary
+
+        Raises:
+            ValueError: For validation errors (400)
+            RuntimeError: For server errors
+        """
+        # Step 1: Submit task
+        response = requests.post(
+            f"{self.base_url}/qa/evaluate",
+            json={
+                "transcript": transcript,
+                "threshold": threshold,
+                "return_raw": return_raw
+            },
+            timeout=10
+        )
+
+        if response.status_code == 202:
+            task_data = response.json()
+            task_id = task_data["task_id"]
+        else:
+            response.raise_for_status()
+
+        # Step 2: Poll for results
+        start_time = time.time()
+        poll_interval = 0.5
+
+        while time.time() - start_time < self.timeout:
+            response = requests.get(
+                f"{self.base_url}/qa/task/{task_id}",
+                timeout=10
+            )
+            response.raise_for_status()
+
+            task_status = response.json()
+
+            if task_status["status"] == "completed":
+                return task_status["result"]
+            elif task_status["status"] == "failed":
+                raise RuntimeError(f"QA evaluation failed: {task_status.get('error', 'Unknown error')}")
+
+            time.sleep(poll_interval)
+            poll_interval = min(poll_interval * 1.5, 3.0)
+
+        raise TimeoutError(f"QA evaluation did not complete within {self.timeout} seconds")
+
+# Usage example
+client = QAClient("https://your-api-domain.com")
+
+try:
+    result = client.evaluate(
+        transcript="Hello, this is 116 sauti child helpline. My name is Jackson Kibwana...",
+        threshold=0.6
+    )
+
+    print(f"QA Evaluation Results:")
+    for metric, submetrics in result['evaluations'].items():
+        print(f"\n{metric.upper()}:")
+        for item in submetrics:
+            print(f"  {item['submetric']}: {item['score']} ({item['probability']:.3f})")
+
+except Exception as e:
+    print(f"Error: {e}")
+```
+
+---
 
 
 **Info Endpoint:**

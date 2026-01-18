@@ -41,7 +41,7 @@ def test_classify_success():
 
         response = client.post("/classifier/classify", json={"narrative": VALID_NARRATIVE})
 
-        assert response.status_code == 200
+        assert response.status_code == 202
         response_json = response.json()
 
         # Endpoint now returns task_id for async processing
@@ -59,9 +59,9 @@ def test_classify_empty_narrative():
         mock_loader.is_model_ready.return_value = True  # Model is ready.
         
         response = client.post("/classifier/classify", json={"narrative": EMPTY_NARRATIVE})
-        
+
     assert response.status_code == 400
-    assert response.json() == {"detail": "Narrative input cannot be empty"}
+    assert "Narrative input cannot be empty" in response.json()["detail"]["error"]["message"]
 
 
 def test_classify_model_not_ready():
@@ -77,7 +77,7 @@ def test_classify_model_not_ready():
         response = client.post("/classifier/classify", json={"narrative": VALID_NARRATIVE})
 
         assert response.status_code == 503
-        assert response.json() == {"detail": "Classifier model not ready. Check /health/models for status."}
+        assert "Classifier model not ready" in response.json()["detail"]["error"]["message"]
 
 def test_classify_exception_on_run():
     """
@@ -90,5 +90,5 @@ def test_classify_exception_on_run():
         response = client.post("/classifier/classify", json={"narrative": VALID_NARRATIVE})
 
         assert response.status_code == 500
-        assert "Failed to submit task" in response.json()["detail"]
+        assert "Failed to submit" in response.json()["detail"]["error"]["message"]
 

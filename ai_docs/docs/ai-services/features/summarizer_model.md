@@ -321,73 +321,226 @@ The summarization model integrates into the complete AI service pipeline for com
 
 ## 3. API Usage
 
-### 3.1. Summarize Text
+### 3.1. Summarize Text (Production Use)
 
-**Endpoint:** `POST /summarizer/summarize`
+The summarization model is deployed as part of the AI Service and accessible via REST API. The API uses an **asynchronous task-based architecture** where summarization requests are queued and processed by Celery workers, allowing the system to handle resource-intensive text generation without blocking HTTP connections.
 
-**Description:** Generates a summary of a given English call transcript.
+#### Workflow Overview
+
+The summarization API follows a **2-step asynchronous workflow**:
+
+1. **Submit Summarization Request** → Receive `task_id` (HTTP 202 Accepted)
+2. **Poll Task Status** → Retrieve summary results when ready (HTTP 200 OK)
+
+This architecture ensures reliable processing of long transcripts and prevents timeout issues during GPU-intensive text generation operations.
+
+---
+
+#### Step 1: Submit Summarization Task
+
+**Endpoint:**
+```
+POST /summarizer/summarize
+```
 
 **Request Format:**
-
 ```json
 {
-  "text": "The text to be summarized.",
+  "text": "Hello, is this 116? Yes, thank you for your call. Who am I speaking with? My name is Ahmed...",
   "max_length": 256
 }
 ```
 
-The request body should be a JSON object with the following fields:
-- `text` (required): The text to be summarized
-- `max_length` (optional): Maximum length of summary (default: 256)
+**Request Fields:**
+- `text` (required, string): The text to be summarized
+- `max_length` (optional, integer): Maximum length of summary (default: 256)
 
-**Response Format:**
-
+**Success Response (HTTP 202 Accepted):**
 ```json
 {
-  "summary": "The generated summary.",
-  "processing_time": 2.34,
-  "model_info": {
-    "model_path": "The path to the model.",
-    "loaded": true,
-    "load_time": "2025-10-17T10:30:00",
-    "device": "cuda:0",
-    "error": null,
-    "task": "text-summarization",
-    "framework": "transformers",
-    "max_length": 512,
-    "chunking_supported": true
-  },
-  "timestamp": "2025-10-17T10:32:34"
+  "task_id": "task_sum_a1b2c3d4e5f6",
+  "status": "queued",
+  "message": "Summarization task submitted successfully. Check status at /summarizer/task/{task_id}",
+  "status_endpoint": "/summarizer/task/task_sum_a1b2c3d4e5f6",
+  "estimated_time": "2-5 seconds"
 }
 ```
 
-**Example Request:**
+**Response Fields:**
+- `task_id` (string): Unique identifier for tracking the summarization task
+- `status` (string): Initial task state (`"queued"` or `"processing"`)
+- `message` (string): Human-readable confirmation message
+- `status_endpoint` (string): URL path for polling task status
+- `estimated_time` (string): Expected processing duration
 
+---
+
+#### Step 2: Poll Summarization Status
+
+**Endpoint:**
+```
+GET /summarizer/task/{task_id}
+```
+
+**Response States:**
+
+**1. Processing (HTTP 200 OK):**
+```json
+{
+  "task_id": "task_sum_a1b2c3d4e5f6",
+  "status": "processing",
+  "message": "Summarization in progress. Please check again shortly."
+}
+```
+
+**2. Completed Successfully (HTTP 200 OK):**
+```json
+{
+  "task_id": "task_sum_a1b2c3d4e5f6",
+  "status": "completed",
+  "result": {
+    "summary": "Ahmed from Mombasa reported a case of child labor involving a 5-year-old girl being forced to work at a local factory. The child appears exhausted and malnourished. The counselor advised Ahmed to report the case to the Mombasa Child Welfare Society and police, with follow-up support from the helpline.",
+    "processing_time": 2.45,
+    "model_info": {
+      "model_path": "/app/models/summarization",
+      "loaded": true,
+      "load_time": "2025-10-17T10:30:00",
+      "device": "cuda:0",
+      "error": null,
+      "task": "text-summarization",
+      "framework": "transformers",
+      "max_length": 512,
+      "chunking_supported": true
+    },
+    "timestamp": "2025-10-17T10:32:45"
+  }
+}
+```
+
+**3. Failed (HTTP 200 OK with error details):**
+```json
+{
+  "task_id": "task_sum_a1b2c3d4e5f6",
+  "status": "failed",
+  "error": "Summarization failed due to invalid input format"
+}
+```
+
+---
+
+#### cURL Examples
+
+**Step 1: Submit Summarization Task**
 ```bash
-curl -X POST \
+curl -X POST "https://your-api-domain.com/summarizer/summarize" \
   -H "Content-Type: application/json" \
   -d '{
-    "text": "Hello, is this 116? Yes, thank you for your call. Who am I speaking with? My name is Ahmed, and I'\''m calling from Mombasa. I have a problem that requires immediate attention. A friend of mine has a daughter, only 5 years old, who is being forced into child labor at a local factory. This sounds dire, Ahmed. Thank you for bringing this to our notice. Has anyone else noticed this? Sadly, no one seems to care. She looks exhausted and malnourished. I'\''m worried sick. I understand your concern. The best thing you can do is report it to the Mombasa Child Welfare Society and also to the police. We can follow up on this case too. Please don'\''t hesitate to call again."
-  }' \
-  http://localhost:8123/summarizer/summarize
+    "text": "Hello, is this 116? Yes, thank you for your call. Who am I speaking with? My name is Ahmed, and I am calling from Mombasa. I have a problem that requires immediate attention. A friend of mine has a daughter, only 5 years old, who is being forced into child labor at a local factory. This sounds dire, Ahmed. Thank you for bringing this to our notice. Has anyone else noticed this? Sadly, no one seems to care. She looks exhausted and malnourished. I am worried sick. I understand your concern. The best thing you can do is report it to the Mombasa Child Welfare Society and also to the police. We can follow up on this case too. Please do not hesitate to call again.",
+    "max_length": 256
+  }'
 ```
 
-**Example Response:**
-
+**Response:**
 ```json
 {
-  "summary": "Ahmed from Mombasa reported a case of child labor involving a 5-year-old girl being forced to work at a local factory. The child appears exhausted and malnourished. The counselor advised Ahmed to report the case to the Mombasa Child Welfare Society and police, with follow-up support from the helpline.",
-  "processing_time": 2.45,
-  "model_info": {
-    "model_path": "/app/models/summarization",
-    "loaded": true,
-    "load_time": "2025-10-17T10:30:00",
-    "device": "cuda:0",
-    "error": null
-  },
-  "timestamp": "2025-10-17T10:32:45"
+  "task_id": "task_sum_a1b2c3d4e5f6",
+  "status": "queued",
+  "message": "Summarization task submitted successfully. Check status at /summarizer/task/task_sum_a1b2c3d4e5f6",
+  "status_endpoint": "/summarizer/task/task_sum_a1b2c3d4e5f6",
+  "estimated_time": "2-5 seconds"
 }
 ```
+
+**Step 2: Poll for Results**
+```bash
+curl -X GET "https://your-api-domain.com/summarizer/task/task_sum_a1b2c3d4e5f6"
+```
+
+---
+
+#### Python Client Example
+
+```python
+import requests
+import time
+from typing import Dict
+
+class SummarizerClient:
+    def __init__(self, base_url: str, timeout: int = 30):
+        self.base_url = base_url.rstrip('/')
+        self.timeout = timeout
+
+    def summarize(self, text: str, max_length: int = 256) -> Dict:
+        """
+        Submit summarization request and wait for results.
+
+        Args:
+            text: Text to be summarized
+            max_length: Maximum length of summary
+
+        Returns:
+            Summarization results dictionary
+
+        Raises:
+            ValueError: For validation errors (400)
+            RuntimeError: For server errors
+        """
+        # Step 1: Submit task
+        response = requests.post(
+            f"{self.base_url}/summarizer/summarize",
+            json={
+                "text": text,
+                "max_length": max_length
+            },
+            timeout=10
+        )
+
+        if response.status_code == 202:
+            task_data = response.json()
+            task_id = task_data["task_id"]
+        else:
+            response.raise_for_status()
+
+        # Step 2: Poll for results
+        start_time = time.time()
+        poll_interval = 0.5
+
+        while time.time() - start_time < self.timeout:
+            response = requests.get(
+                f"{self.base_url}/summarizer/task/{task_id}",
+                timeout=10
+            )
+            response.raise_for_status()
+
+            task_status = response.json()
+
+            if task_status["status"] == "completed":
+                return task_status["result"]
+            elif task_status["status"] == "failed":
+                raise RuntimeError(f"Summarization failed: {task_status.get('error', 'Unknown error')}")
+
+            time.sleep(poll_interval)
+            poll_interval = min(poll_interval * 1.5, 3.0)
+
+        raise TimeoutError(f"Summarization did not complete within {self.timeout} seconds")
+
+# Usage example
+client = SummarizerClient("https://your-api-domain.com")
+
+try:
+    result = client.summarize(
+        text="Hello, is this 116? Yes, thank you for your call...",
+        max_length=256
+    )
+
+    print(f"Summary: {result['summary']}")
+    print(f"Processing time: {result['processing_time']:.2f}s")
+
+except Exception as e:
+    print(f"Error: {e}")
+```
+
+---
 
 ### 3.2. Get Model Information
 
