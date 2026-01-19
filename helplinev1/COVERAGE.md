@@ -1,19 +1,19 @@
 # Code Coverage Report - HelplineV1
 
 **Branch:** 455/merge
-**Commit:** [e0b0f82](https://github.com/openchlai/ai/commit/e0b0f8255381164dd2953b6ed1451336b6051a08)
-**Generated:** 2026-01-19 21:52:38 UTC
+**Commit:** [2d5fcbd](https://github.com/openchlai/ai/commit/2d5fcbd49c2a673ad146d80ad9e7a314bb9c08d5)
+**Generated:** 2026-01-19 22:04:05 UTC
 **PHP Version:** 8.3
 
 ## Coverage Summary
 
-![Coverage](https://img.shields.io/badge/Coverage-4%25-red)
+![Coverage](https://img.shields.io/badge/Coverage-89%25-brightgreen)
 ![Tests](https://img.shields.io/badge/Tests-PHPUnit-blue)
 
 | Metric | Value |
 |--------| ------|
-| **Coverage** | 4% |
-| **Generated** | 2026-01-19 21:52:38 UTC |
+| **Coverage** | 89% |
+| **Generated** | 2026-01-19 22:04:05 UTC |
 | **Branch** | 455/merge |
 | **PHP Version** | 8.3 |
 
@@ -102,7 +102,7 @@ Deprecated: strlen(): Passing null to parameter #1 ($string) of type string is d
 ..rest_uri_response_error - 404
 ...                            225 / 225 (100%)
 
-Time: 00:00.430, Memory: 28.00 MB
+Time: 00:00.415, Memory: 28.00 MB
 
 There were 2 errors:
 
@@ -132,7 +132,7 @@ Failed asserting that two strings are equal.
 +++ Actual
 @@ @@
 -'test_session_123'
-+'g3ch7dohnhn4ov7ghtcqapsg7d'
++'iuln40qvmhro0gv6mbcto696ji'
 
 /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/SessionManagerTest.php:92
 /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
@@ -161,23 +161,23 @@ Failed asserting that null is of type "array".
 /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/ApiUtilsTest.php:203
 /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
 
-6) Tests\Unit\ApiUtilsTest::testSrcEnumDefinitions
+6) Tests\Unit\ApiUtilsTest::testValidationFlags
+Should have a field with email validation
+Failed asserting that null is not null.
+
+/home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/ApiUtilsTest.php:246
+/home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
+
+7) Tests\Unit\ApiUtilsTest::testSrcEnumDefinitions
 Failed asserting that null is of type "array".
 
 /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/ApiUtilsTest.php:255
 /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
 
-7) Tests\Unit\ApiUtilsTest::testLocationEnumDefinitions
+8) Tests\Unit\ApiUtilsTest::testLocationEnumDefinitions
 Failed asserting that null is of type "array".
 
 /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/ApiUtilsTest.php:278
-/home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
-
-8) Tests\Unit\ApiUtilsTest::testValidationFlags
-Should have a field with email validation
-Failed asserting that null is not null.
-
-/home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/ApiUtilsTest.php:246
 /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
 
 9) Tests\Unit\ContextTest::testCtxFvFunctionGeneratesKeyMap
@@ -269,7 +269,7 @@ Failed asserting that 1 matches expected 0.
 /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
 
 22) Tests\Unit\RequestResponseTest::testValIdUniqueness
-Failed asserting that actual size 1 matches expected size 100.
+Failed asserting that actual size 2 matches expected size 100.
 
 /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/RequestResponseTest.php:220
 /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
@@ -320,7 +320,7 @@ Failed asserting that two strings are equal.
 /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
 
 28) Tests\Unit\ValidationTest::testValidIdGeneration
-Failed asserting that 17688595570920.0 is not equal to 17688595570920.0.
+Failed asserting that 17688602447200.0 is not equal to 17688602447200.0.
 
 /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/ValidationTest.php:245
 /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
@@ -754,7 +754,7 @@ Request Response (Tests\Unit\RequestResponse)
  ✔ Kv operators
  ✘ Val id uniqueness
    │
-   │ Failed asserting that actual size 1 matches expected size 100.
+   │ Failed asserting that actual size 2 matches expected size 100.
    │
    │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/RequestResponseTest.php:220
    │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
@@ -848,7 +848,7 @@ Session Manager (Tests\Unit\SessionManager)
    │ +++ Actual
    │ @@ @@
    │ -'test_session_123'
-   │ +'dqj3nkc2j5qgfe7d8fbohjbd9v'
+   │ +'rjo4upmcig8fa0lkvo7887s1og'
    │
    │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/SessionManagerTest.php:92
    │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
@@ -921,7 +921,7 @@ Validation (Tests\Unit\Validation)
  ✔ Validation errors
  ✘ Valid id generation
    │
-   │ Failed asserting that 17688595582045.0 is not equal to 17688595582045.0.
+   │ Failed asserting that 17688602458238.0 is not equal to 17688602458238.0.
    │
    │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/ValidationTest.php:245
    │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
@@ -995,7 +995,7 @@ rest_uri_response_error - 404
  ✔ Model id generation
  ✔ Kv function
 
-Time: 00:00.437, Memory: 28.00 MB
+Time: 00:00.428, Memory: 28.00 MB
 
 Summary of non-successful tests:
 
@@ -1017,7 +1017,7 @@ Session Manager (Tests\Unit\SessionManager)
    │ +++ Actual
    │ @@ @@
    │ -'test_session_123'
-   │ +'dqj3nkc2j5qgfe7d8fbohjbd9v'
+   │ +'rjo4upmcig8fa0lkvo7887s1og'
    │
    │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/SessionManagerTest.php:92
    │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
@@ -1232,7 +1232,7 @@ Request Response (Tests\Unit\RequestResponse)
 
  ✘ Val id uniqueness
    │
-   │ Failed asserting that actual size 1 matches expected size 100.
+   │ Failed asserting that actual size 2 matches expected size 100.
    │
    │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/RequestResponseTest.php:220
    │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
@@ -1297,7 +1297,7 @@ Validation (Tests\Unit\Validation)
 
  ✘ Valid id generation
    │
-   │ Failed asserting that 17688595582045.0 is not equal to 17688595582045.0.
+   │ Failed asserting that 17688602458238.0 is not equal to 17688602458238.0.
    │
    │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/ValidationTest.php:245
    │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
