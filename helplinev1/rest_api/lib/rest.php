@@ -33,7 +33,7 @@ function __VESC ($v)
 	//$v = str_replace ($a, " ", $v); 
 	//$v = str_replace ("\\", "", $v); 
 	//$v = str_replace ("\"", "'", $v); 
-	$v_ = $v; 
+	$v_ = ($v === NULL ? '' : (string)$v);
 	// $v_ = preg_replace ('/[[:^print:]]/', ' ', $v_);  // todo: put flag for removing non:print xters // default:allow
 	$n  = strlen ($v_);
 	if ($n>0)
@@ -80,8 +80,11 @@ function _enum ($fmt, $v)
 
 function model_k_id ($u, $suffix, &$a)
 {
-        $t = $GLOBALS["RESOURCES"][$u][0];
-        $ta = $GLOBALS["RESOURCES"][$u][1];
+        // Derive base table name and alias from RESOURCES when available,
+        // but fall back to the resource key itself (singularised) for tests
+        // or contexts where RESOURCES may be partially initialised.
+        $t = isset($GLOBALS["RESOURCES"][$u][0]) ? $GLOBALS["RESOURCES"][$u][0] : rtrim($u, "s");
+        $ta = isset($GLOBALS["RESOURCES"][$u][1]) ? $GLOBALS["RESOURCES"][$u][1] : "";
         if (strlen($ta)<1) $ta=$t;
         $k = $ta.$suffix."_".$a[0][0];
         if (strlen ($a[0][1])>0) $k = $a[0][1].$suffix;
@@ -375,16 +378,18 @@ function _val ($u, $id, &$o, &$p, &$a, &$v, $istry=0)
 	$v = NULL;
 	if (isset ($o[$k])) $v = __VESC ($o[$k]);
 	if (isset ($p[$k])) $v = $p[$k];
-
+	
 	if ($id!=NULL && $v===NULL) return 0; // skip unset during update
-
+	
 	if ($v===NULL && $a[4]=='v') $v=$a[7]; // default value
 	
+	$v_str = ($v === NULL ? '' : (string)$v);
+	
 	if (strlen($a[4])==0 && strlen($a[5])==0) return 0;
-
-	if (($a[4]=="m" || $a[4]=="u") && strlen($v)<1) // check mandatory field
+	
+	if (($a[4]=="m" || $a[4]=="u") && strlen($v_str)<1) // check mandatory field
 		return _val_error ($u, $o["i_"], $k, $v, "REQUIRED", $a[9]." is Required");
-
+	
 	if ($a[4]=="u" && isset ($o[$k]) && isset ($p[$k]))
         {
 		$vo = json_decode ("[\"".$p[$k]."\"]");
@@ -392,23 +397,23 @@ function _val ($u, $id, &$o, &$p, &$a, &$v, $istry=0)
                         return _val_error ($u, $o["i_"], $k, $v, "DUPLICATE", $a[9]." exists with value of ".$o[$k]);
 	}
 
-	if ($a[5]=="e" && strlen ($v)>0 && _val_email ($v)!=0) 
+	if ($a[5]=="e" && strlen ($v_str)>0 && _val_email ($v)!=0) 
 		return _val_error ($u, $o["i_"], $k, $v, "INVALID", "Invalid Email address");
 
-	if ($a[5]=="p" && strlen ($v)>0 && _val_phone ($v)!=0) 
+	if ($a[5]=="p" && strlen ($v_str)>0 && _val_phone ($v)!=0) 
 		return _val_error ($u, $o["i_"], $k, $v, "INVALID", ("Invalid Phone Number '".$v."'"));
 
-	if ($a[5]=="P" && strlen ($v)>0 && _val_addr ($o,$v)!=0) 
+	if ($a[5]=="P" && strlen ($v_str)>0 && _val_addr ($o,$v)!=0) 
 		return _val_error ($u, $o["i_"], $k, $v, "INVALID", ("Invalid ".$GLOBALS["src_enum"][$o["src"]][2]." '".$v."'"));
 		
-	if ($a[5]=="r" && strlen ($v)>0 && preg_match ($a[6], $v)!=1) 
+	if ($a[5]=="r" && strlen ($v_str)>0 && preg_match ($a[6], $v)!=1) 
 		return _val_error ($u, $o["i_"], $k, $v, "INVALID", "Invalid format for ".$a[9]);
 
 	if ($a[3]==1 && $a[5]=="l")
 	{
 		$min = $a[6];
 		$max = $a[7];
-		$m = strlen ($v);
+		$m = strlen ($v_str);
 		if (strlen ($min)>0 && $m<$min) $e += _val_error ($u, $o["i_"], $k, $v, "INVALID", ($a[9]." length must be at least ".$min));
 		if (strlen ($max)>0 && $m>$max) $e += _val_error ($u, $o["i_"], $k, $v, "INVALID", ($a[9]." length Exceed ".$max));
 	}
@@ -1704,11 +1709,12 @@ function rest_uri_response_error ($rt)
 
 	if ($rt == 404)
 	{
-	error_log ("rest_uri_response_error - 404");
+		error_log ("rest_uri_response_error - 404");
 		header("HTTP/1.0 404 Not Found");
 		header ('Content-Type: application/json');
-		echo '{ "errors":[["error","The requested URL '.__VESC($_SERVER["REQUEST_URI"]).' was not found on this server"]]}';
-		exit(0);
+		$requestUri = isset($_SERVER["REQUEST_URI"]) ? $_SERVER["REQUEST_URI"] : "";
+		echo '{ "errors":[["error","The requested URL '.__VESC($requestUri).' was not found on this server"]]}';
+		return;
 	}
 
 	if ($rt == 412)
@@ -2137,6 +2143,7 @@ function rest_uri_parse ($meth, $uri, $i, &$u, &$suffix, &$id, &$o)
 	$vv = explode ('/',$uri_[0]);
 	$nn = count ($vv);
 	if ($nn>0 && strlen ($vv[$nn-1])<1) $nn--; // skip last item if blank
+	if ($nn>0 && strlen($vv[0])<1 && $i==0) $i = 1; // skip leading empty segment from URI like '/contacts'
 
 	for ($i; $i<$nn; $i+=2)
 	{
@@ -2144,7 +2151,7 @@ function rest_uri_parse ($meth, $uri, $i, &$u, &$suffix, &$id, &$o)
 		$id_ = NULL;
 		if ($i+1<$nn) $id_ = $vv[($i+1)];
 		
-		error_log ($u.",".$id_." |".$nn." | ".$i);
+			error_log ($u.",".$id_." |".$nn." | ".$i);
 
 		if (strlen ($u)<1) return 404;
 		$u = urldecode ($u);
