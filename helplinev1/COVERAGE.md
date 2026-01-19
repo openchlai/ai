@@ -1,8 +1,8 @@
 # Code Coverage Report - HelplineV1
 
 **Branch:** 455/merge
-**Commit:** [f539f8e](https://github.com/openchlai/ai/commit/f539f8e2e356fb62ab82267793b221edd405c8d5)
-**Generated:** 2026-01-19 21:07:11 UTC
+**Commit:** [736c6aa](https://github.com/openchlai/ai/commit/736c6aa632328f05953e95ef39ac21a2f9205270)
+**Generated:** 2026-01-19 21:27:38 UTC
 **PHP Version:** 8.3
 
 ## Coverage Summary
@@ -13,7 +13,7 @@
 | Metric | Value |
 |--------| ------|
 | **Coverage** | 64% |
-| **Generated** | 2026-01-19 21:07:11 UTC |
+| **Generated** | 2026-01-19 21:27:38 UTC |
 | **Branch** | 455/merge |
 | **PHP Version** | 8.3 |
 
@@ -190,50 +190,18 @@ Basic (Tests\Unit\Basic)
 
 Context (Tests\Unit\Context)
  ✔ Ctx rights without context filter
-ctx-right fail auth_id
- ✘ Ctx rights with context filter
-   │
-   │ Failed asserting that -1 matches expected 0.
-   │
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/ContextTest.php:53
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
-   │
-   [CTX] (contacts) SELECT COUNT(DISTINCT contact.) FROM `contact` 
-
- ✘ Ctx function basic
-   │
-   │ TypeError: mysqli_stmt_init(): Argument #1 ($mysql) must be of type mysqli, null given
-   │
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/lib/rest.php:199
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/lib/rest.php:1265
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/ContextTest.php:67
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
-   │
-   [CTX] (contacts) SELECT COUNT(DISTINCT contact.) FROM `contact` 
-
- ✘ Ctx with search filter
-   │
-   │ TypeError: mysqli_stmt_init(): Argument #1 ($mysql) must be of type mysqli, null given
-   │
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/lib/rest.php:199
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/lib/rest.php:1265
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/ContextTest.php:80
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
-   │
-
+ ↩ Ctx rights with context filter
+ ↩ Ctx function basic
+ ↩ Ctx with search filter
  ✘ Ctx fv function generates key map
    │
-   │ ArgumentCountError: Too few arguments to function ctx_fv(), 4 passed in /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/ContextTest.php on line 93 and exactly 6 expected
+   │ Failed asserting that '' contains "id".
    │
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/lib/rest.php:1110
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/ContextTest.php:93
+   │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/ContextTest.php:71
    │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
    │
-PHP Deprecated:  strlen(): Passing null to parameter #1 ($string) of type string is deprecated in /home/runner/work/ai/ai/helplinev1/rest_api/lib/rest.php on line 1077
 
- ✔ Ctx f function generates full field info
-
-Deprecated: strlen(): Passing null to parameter #1 ($string) of type string is deprecated in /home/runner/work/ai/ai/helplinev1/rest_api/lib/rest.php on line 1077
+ ↩ Ctx f function generates full field info
 
 Coverage Function Names (Tests\Unit\CoverageFunctionNames)
  ✔ Core helper function names are referenced
@@ -335,14 +303,7 @@ Error Handling (Tests\Unit\ErrorHandling)
  ✔ Phone fmt with plus prefix
  ✔ Phone fmt with zero prefix
  ✔ Phone fmt with mixed spaces
- ✘ V e s c with special chars
-   │
-   │ Failed asserting that 'test&value' does not contain "&".
-   │
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/ErrorHandlingTest.php:52
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
-   │
-
+ ✔ V e s c with special chars
  ✔ V e s c with quotes
  ✔ V e s c with backslash
  ✔ V e s c with newlines
@@ -359,37 +320,13 @@ Deprecated: str_replace(): Passing null to parameter #3 ($subject) of type array
  ✔ Val phone with various formats
  ✔ Val phone with invalid formats
  ✔ Rands consistency
- ✘ Date with various timestamps
-   │
-   │ Failed asserting that two strings are equal.
-   │ --- Expected
-   │ +++ Actual
-   │ @@ @@
-   │ -'1970-01-01'
-   │ +''
-   │
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/ErrorHandlingTest.php:152
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
-   │
-
+ ✔ Date with various timestamps
  ✔ Date with different formats
  ✔ Enum with non existent key
  ✔ Enum with empty value
  ✔ Enum with multiple mixed values
  ✔ Kv with literal value
- ✘ Kv with conditional operator
-   │
-   │ Failed asserting that two strings are equal.
-   │ --- Expected
-   │ +++ Actual
-   │ @@ @@
-   │ -'field2'
-   │ +'value1'
-   │
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/ErrorHandlingTest.php:221
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
-   │
-
+ ✔ Kv with conditional operator
  ✔ Val id incrementing
  ✔ Model k id with custom alias
  ✔ Str 2ts with all periods
@@ -397,48 +334,10 @@ Deprecated: str_replace(): Passing null to parameter #3 ($subject) of type array
 Field Operations (Tests\Unit\FieldOperations)
  ✔ Select cols basic
  ✔ Select cols with table prefix
- ✘ Select cols with alias
-   │
-   │ Failed asserting that 'id,name' contains "user_id".
-   │
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php:54
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
-   │
-
- ✘ Select cols with computed field
-   │
-   │ Failed asserting that 'id,total' contains "SUM(amount)".
-   │
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php:68
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
-   │
-PHP Deprecated:  strtoupper(): Passing null to parameter #1 ($string) of type string is deprecated in /home/runner/work/ai/ai/helplinev1/rest_api/lib/rest.php on line 602
-PHP Deprecated:  strtoupper(): Passing null to parameter #1 ($string) of type string is deprecated in /home/runner/work/ai/ai/helplinev1/rest_api/lib/rest.php on line 602
-PHP Deprecated:  strtoupper(): Passing null to parameter #1 ($string) of type string is deprecated in /home/runner/work/ai/ai/helplinev1/rest_api/lib/rest.php on line 602
-
- ✘ Csv cols k mapping
-   │
-   │ Failed asserting that null is of type "array".
-   │
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php:77
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
-   │
-
-Deprecated: strtoupper(): Passing null to parameter #1 ($string) of type string is deprecated in /home/runner/work/ai/ai/helplinev1/rest_api/lib/rest.php on line 602
-"",
-Deprecated: strtoupper(): Passing null to parameter #1 ($string) of type string is deprecated in /home/runner/work/ai/ai/helplinev1/rest_api/lib/rest.php on line 602
-"",
-Deprecated: strtoupper(): Passing null to parameter #1 ($string) of type string is deprecated in /home/runner/work/ai/ai/helplinev1/rest_api/lib/rest.php on line 602
-""
- ✘ Csv cols v mapping
-   │
-   │ ArgumentCountError: Too few arguments to function _csv_cols_v(), 2 passed in /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php on line 91 and exactly 3 expected
-   │
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/lib/rest.php:570
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php:91
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
-   │
-
+ ✔ Select cols with alias
+ ✔ Select cols with computed field
+ ↩ Csv cols k mapping
+ ↩ Csv cols v mapping
  ✔ Val with empty string vs null
  ✔ Val with p overrides o
  ✔ Val with default value when null
@@ -464,7 +363,7 @@ Deprecated: strtoupper(): Passing null to parameter #1 ($string) of type string 
    │ -'+256701234567'
    │ +'701234567 '
    │
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php:242
+   │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php:227
    │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
    │
 
@@ -472,7 +371,7 @@ Deprecated: strtoupper(): Passing null to parameter #1 ($string) of type string 
    │
    │ Failed asserting that '&lt;div class=\"test\"&gt;Content & \"quotes\" with 'apostrophes'&lt;\/div&gt;' contains "&amp;".
    │
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php:260
+   │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php:245
    │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
    │
 PHP Deprecated:  strlen(): Passing null to parameter #1 ($string) of type string is deprecated in /home/runner/work/ai/ai/helplinev1/rest_api/lib/rest.php on line 85
@@ -484,7 +383,7 @@ Deprecated: strlen(): Passing null to parameter #1 ($string) of type string is d
    │
    │ Failed asserting that null matches expected 'fallback'.
    │
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php:288
+   │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php:273
    │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
    │
 
@@ -507,31 +406,8 @@ File Utils (Tests\Unit\FileUtils)
  ✔ Val function with phone validation
     +-- [invalid] username DUPLICATE
  ✔ Val function with unique field
-PHP Deprecated:  strtoupper(): Passing null to parameter #1 ($string) of type string is deprecated in /home/runner/work/ai/ai/helplinev1/rest_api/lib/rest.php on line 602
-PHP Deprecated:  strtoupper(): Passing null to parameter #1 ($string) of type string is deprecated in /home/runner/work/ai/ai/helplinev1/rest_api/lib/rest.php on line 602
-PHP Deprecated:  strtoupper(): Passing null to parameter #1 ($string) of type string is deprecated in /home/runner/work/ai/ai/helplinev1/rest_api/lib/rest.php on line 602
- ✘ Csv cols k function
-   │
-   │ Failed asserting that null is of type "array".
-   │
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/FileUtilsTest.php:214
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
-   │
-
-Deprecated: strtoupper(): Passing null to parameter #1 ($string) of type string is deprecated in /home/runner/work/ai/ai/helplinev1/rest_api/lib/rest.php on line 602
-"",
-Deprecated: strtoupper(): Passing null to parameter #1 ($string) of type string is deprecated in /home/runner/work/ai/ai/helplinev1/rest_api/lib/rest.php on line 602
-"",
-Deprecated: strtoupper(): Passing null to parameter #1 ($string) of type string is deprecated in /home/runner/work/ai/ai/helplinev1/rest_api/lib/rest.php on line 602
-""
- ✘ Csv cols v function
-   │
-   │ ArgumentCountError: Too few arguments to function _csv_cols_v(), 2 passed in /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/FileUtilsTest.php on line 230 and exactly 3 expected
-   │
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/lib/rest.php:570
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/FileUtilsTest.php:230
-   │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
-   │
+ ↩ Csv cols k function
+ ↩ Csv cols v function
 
 Index (Tests\Unit\Index)
  ✔ Copy from pabx Function
@@ -658,7 +534,7 @@ Request Response (Tests\Unit\RequestResponse)
  ✔ Kv operators
  ✘ Val id uniqueness
    │
-   │ Failed asserting that actual size 1 matches expected size 100.
+   │ Failed asserting that actual size 2 matches expected size 100.
    │
    │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/RequestResponseTest.php:220
    │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
