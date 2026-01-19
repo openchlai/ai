@@ -87,6 +87,30 @@ if (!function_exists('headers_list')) {
     }
 }
 
+// Load model definitions before tests run
+require_once __DIR__ . '/../api/model.php';
+require_once __DIR__ . '/../lib/rest.php';
+
+// Ensure RESOURCES and RIGHTS are available globally
+if (isset($RESOURCES)) {
+    $GLOBALS['RESOURCES'] = $RESOURCES;
+}
+if (isset($RIGHTS_1)) {
+    $GLOBALS['RIGHTS_1'] = $RIGHTS_1;
+}
+if (isset($RIGHTS_2)) {
+    $GLOBALS['RIGHTS_2'] = $RIGHTS_2;
+}
+if (isset($RIGHTS_3)) {
+    $GLOBALS['RIGHTS_3'] = $RIGHTS_3;
+}
+if (isset($RIGHTS_4)) {
+    $GLOBALS['RIGHTS_4'] = $RIGHTS_4;
+}
+if (isset($RIGHTS_99)) {
+    $GLOBALS['RIGHTS_99'] = $RIGHTS_99;
+}
+
 // Start session for tests that need it
 if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
     @session_start();
