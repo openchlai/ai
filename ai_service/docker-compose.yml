@@ -41,6 +41,12 @@ services:
       - STREAMING_PORT=${STREAMING_PORT:-8301}
       - STREAMING_HOST=${STREAMING_HOST:-0.0.0.0}
       - REDIS_STREAMING_DB=${REDIS_STREAMING_DB:-2}
+      # SCP Audio Download Configuration
+      - SCP_USER=${SCP_USER}
+      - SCP_SERVER=${SCP_SERVER}
+      - SCP_PASSWORD=${SCP_PASSWORD}
+      - SCP_REMOTE_PATH_TEMPLATE=${SCP_REMOTE_PATH_TEMPLATE}
+      - SCP_TIMEOUT_SECONDS=${SCP_TIMEOUT_SECONDS}
       # HuggingFace Configuration
       - HF_TOKEN=${HF_TOKEN}
       - USE_HF_MODELS=${USE_HF_MODELS:-true}
@@ -131,6 +137,12 @@ services:
       - REDIS_URL=redis://localhost:6379/0
       - REDIS_TASK_DB=${REDIS_TASK_DB:-1}
       - DOCKER_CONTAINER=true
+      # SCP Audio Download Configuration
+      - SCP_USER=${SCP_USER}
+      - SCP_SERVER=${SCP_SERVER}
+      - SCP_PASSWORD=${SCP_PASSWORD}
+      - SCP_REMOTE_PATH_TEMPLATE=${SCP_REMOTE_PATH_TEMPLATE}
+      - SCP_TIMEOUT_SECONDS=${SCP_TIMEOUT_SECONDS}
       # HuggingFace Configuration
       - HF_TOKEN=${HF_TOKEN}
       - USE_HF_MODELS=${USE_HF_MODELS:-true}

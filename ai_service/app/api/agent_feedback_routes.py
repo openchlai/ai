@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Optional, List, Any
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.encoders import jsonable_encoder
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 
 from ..db.session import get_db
@@ -25,7 +25,8 @@ class FeedbackUpdateRequest(BaseModel):
     feedback: int = Field(..., ge=1, le=5, description="Rating from 1 (poor) to 5 (excellent)")
     reason: Optional[str] = Field(None, description="Optional explanation for the rating")
     
-    @validator('task')
+    @field_validator('task')
+    @classmethod
     def validate_task(cls, v):
         valid_tasks = ['transcription', 'classification', 'ner', 'summarization', 'translation', 'qa']
         if v not in valid_tasks:
@@ -48,9 +49,6 @@ class FeedbackResponse(BaseModel):
 
     class Config:
         from_attributes = True
-        json_encoders = {
-            datetime: lambda v: v.isoformat() if v else None
-        }
 
 
 class FeedbackStatisticsResponse(BaseModel):

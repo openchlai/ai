@@ -33,6 +33,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Initialize global asterisk_server
+asterisk_server = None
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan events"""

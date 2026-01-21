@@ -86,6 +86,8 @@ async def evaluate_transcript(request: QARequest):
             status_endpoint=f"/qa/task/{task.id}"
         )
         
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Failed to submit QA task: {e}")
         raise HTTPException(status_code=500, detail="Failed to submit task")
@@ -132,7 +134,7 @@ async def get_qa_task_status(task_id: str):
             return QATaskStatusResponse(
                 task_id=task_id,
                 status="failed",
-                error=str(task_result.info)
+                error=str(task_result.info) if task_result.info else "Unknown task error"
             )
         
         else:
