@@ -94,46 +94,7 @@ def initialize_paths(self):
 
 ### 2.2. Model Loading and Initialization
 
-The summarization model is loaded through the `SummarizationModel` class during FastAPI application startup:
-
-```python
-class SummarizationModel:
-    """Summarization model with intelligent chunking support"""
-    
-    def __init__(self, model_path: str = None):
-        from ..config.settings import settings
-        
-        self.model_path = model_path or settings.get_model_path("summarization")
-        self.tokenizer = None
-        self.model = None
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.loaded = False
-        self.max_length = 512  # Model's maximum token limit
-        
-    def load(self) -> bool:
-        """Load model from local files or Hugging Face Hub"""
-        try:
-            logger.info(f"📦 Loading summarization model from {self.model_path}")
-            
-            self.tokenizer = AutoTokenizer.from_pretrained(
-                self.model_path,
-                local_files_only=True
-            )
-            self.model = AutoModelForSeq2SeqLM.from_pretrained(
-                self.model_path,
-                local_files_only=True
-            )
-            
-            self.model.to(self.device)
-            self.loaded = True
-            
-            logger.info(f"✅ Summarization model loaded on {self.device}")
-            return True
-            
-        except Exception as e:
-            logger.error(f"❌ Failed to load summarization model: {e}")
-            return False
-```
+The summarization model is loaded through the `SummarizationModel` class during FastAPI application startup.
 
 **Model Loader Integration:**
 
@@ -143,104 +104,9 @@ The summarization model is managed by the central `model_loader` which handles:
 - Dependency tracking
 - Health monitoring
 
-```python
-# During FastAPI startup
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Initialize summarization model via model_loader
-    model_loader.load_model("summarizer")
-    yield
-    # Cleanup on shutdown
-```
 
-### 2.3. API Endpoints Layer
 
-Summarization functionality is exposed through FastAPI routes (`app/api/summarizer_routes.py`):
-
-```python
-router = APIRouter(prefix="/summarizer", tags=["summarizer"])
-
-class SummarizationRequest(BaseModel):
-    text: str
-    max_length: int = 256
-
-class SummarizationResponse(BaseModel):
-    summary: str
-    processing_time: float
-    model_info: Dict
-    timestamp: str
-
-@router.post("/summarize", response_model=SummarizationResponse)
-async def summarize_text_endpoint(request: SummarizationRequest):
-    """Summarize a given text"""
-    
-    # Check model readiness
-    if not model_loader.is_model_ready("summarizer"):
-        raise HTTPException(
-            status_code=503,
-            detail="Summarizer model not ready. Check /health/models for status."
-        )
-    
-    # Validate input
-    if not request.text.strip():
-        raise HTTPException(
-            status_code=400,
-            detail="Text input cannot be empty"
-        )
-    
-    # Get summarizer model
-    summarizer_model = model_loader.models.get("summarizer")
-    if not summarizer_model:
-        raise HTTPException(status_code=503, detail="Summarizer model not available")
-    
-    try:
-        start_time = datetime.now()
-        
-        # Generate summary
-        summary = summarizer_model.summarize(request.text, max_length=request.max_length)
-        
-        processing_time = (datetime.now() - start_time).total_seconds()
-        model_info = summarizer_model.get_model_info()
-        
-        logger.info(f"✅ Summarizer processed {len(request.text)} characters in {processing_time:.2f}s")
-        
-        return SummarizationResponse(
-            summary=summary,
-            processing_time=processing_time,
-            model_info=model_info,
-            timestamp=datetime.now().isoformat()
-        )
-        
-    except Exception as e:
-        logger.exception("❌ Summarization failed")
-        raise HTTPException(status_code=500, detail=f"Summarization failed: {str(e)}")
-```
-
-**Information Endpoint:**
-
-```python
-@router.get("/info")
-async def get_summarizer_info():
-    """Get summarizer model information"""
-    if not model_loader.is_model_ready("summarizer"):
-        return {
-            "status": "not_ready",
-            "message": "Summarizer model not loaded"
-        }
-    
-    summarizer_model = model_loader.models.get("summarizer")
-    if summarizer_model:
-        return {
-            "status": "ready",
-            "model_info": summarizer_model.get_model_info()
-        }
-    return {
-        "status": "error",
-        "message": "Summarizer model not found"
-    }
-```
-
-### 2.4. Intelligent Chunking Strategy
+### 2.3. Intelligent Chunking Strategy
 
 The summarization model implements intelligent text chunking for handling long transcripts that exceed the 512-token context window:
 
@@ -258,35 +124,9 @@ The overlap between chunks ensures:
 - Better handling of sentence splits
 - Improved summarization quality for long conversations
 
-### 2.5. Health Monitoring
+### 2.4. Health Monitoring
 
-The summarization model integrates with the AI service health monitoring system (`app/api/health_routes.py`):
-
-**Model Status Endpoint:**
-
-```python
-@router.get("/health/models")
-async def models_health():
-    """Get detailed model status with dependency info"""
-    model_status = model_loader.get_model_status()
-    ready_models = model_loader.get_ready_models()
-    implementable_models = model_loader.get_implementable_models()
-    blocked_models = model_loader.get_blocked_models()
-    
-    return {
-        "timestamp": datetime.now().isoformat(),
-        "summary": {
-            "total": len(model_status),
-            "ready": len(ready_models),
-            "implementable": len(implementable_models),
-            "blocked": len(blocked_models)
-        },
-        "ready_models": ready_models,
-        "implementable_models": implementable_models,
-        "blocked_models": blocked_models,
-        "details": model_status
-    }
-```
+The summarization model integrates with the AI service health monitoring system (`app/api/health_routes.py`) and thus you can check the health of your summarization model on the api/health endpoint.
 
 **Model Readiness States:**
 
@@ -313,7 +153,7 @@ async def models_health():
 }
 ```
 
-### 2.6. Pipeline Integration
+### 2.5. Pipeline Integration
 
 The summarization model integrates into the complete AI service pipeline for comprehensive case analysis.
 
@@ -458,89 +298,6 @@ curl -X GET "https://your-api-domain.com/summarizer/task/task_sum_a1b2c3d4e5f6"
 
 ---
 
-#### Python Client Example
-
-```python
-import requests
-import time
-from typing import Dict
-
-class SummarizerClient:
-    def __init__(self, base_url: str, timeout: int = 30):
-        self.base_url = base_url.rstrip('/')
-        self.timeout = timeout
-
-    def summarize(self, text: str, max_length: int = 256) -> Dict:
-        """
-        Submit summarization request and wait for results.
-
-        Args:
-            text: Text to be summarized
-            max_length: Maximum length of summary
-
-        Returns:
-            Summarization results dictionary
-
-        Raises:
-            ValueError: For validation errors (400)
-            RuntimeError: For server errors
-        """
-        # Step 1: Submit task
-        response = requests.post(
-            f"{self.base_url}/summarizer/summarize",
-            json={
-                "text": text,
-                "max_length": max_length
-            },
-            timeout=10
-        )
-
-        if response.status_code == 202:
-            task_data = response.json()
-            task_id = task_data["task_id"]
-        else:
-            response.raise_for_status()
-
-        # Step 2: Poll for results
-        start_time = time.time()
-        poll_interval = 0.5
-
-        while time.time() - start_time < self.timeout:
-            response = requests.get(
-                f"{self.base_url}/summarizer/task/{task_id}",
-                timeout=10
-            )
-            response.raise_for_status()
-
-            task_status = response.json()
-
-            if task_status["status"] == "completed":
-                return task_status["result"]
-            elif task_status["status"] == "failed":
-                raise RuntimeError(f"Summarization failed: {task_status.get('error', 'Unknown error')}")
-
-            time.sleep(poll_interval)
-            poll_interval = min(poll_interval * 1.5, 3.0)
-
-        raise TimeoutError(f"Summarization did not complete within {self.timeout} seconds")
-
-# Usage example
-client = SummarizerClient("https://your-api-domain.com")
-
-try:
-    result = client.summarize(
-        text="Hello, is this 116? Yes, thank you for your call...",
-        max_length=256
-    )
-
-    print(f"Summary: {result['summary']}")
-    print(f"Processing time: {result['processing_time']:.2f}s")
-
-except Exception as e:
-    print(f"Error: {e}")
-```
-
----
 
 ### 3.2. Get Model Information
 

@@ -169,14 +169,14 @@ async def classify_narrative(request: ClassifierRequest):
     classifier = model_loader.models.get("classifier_model")
     chunker = ClassificationChunker(
         tokenizer_name="distilbert-base-uncased",
-        max_tokens=512,
+        max_tokens=256,        # aligned with model max_length
         overlap_tokens=150
     )
     
     # Check if chunking is needed
     token_count = chunker.count_tokens(request.narrative)
     
-    if token_count <= 512:
+    if token_count <= 256:
         # Direct classification
         classification = classifier.classify(request.narrative)
     else:
@@ -282,25 +282,34 @@ The classification model implements automatic GPU memory cleanup after each requ
 
 ### 3.1. Via AI Service API (Production Use)
 
-The classification model is deployed as part of the AI Service and accessible via REST API.
+The classification model is deployed as part of the AI Service and accessible via REST API. The current implementation exposes a synchronous endpoint for on-demand inference. The route performs automatic chunking and aggregation when needed and returns the final classification result in a single response. Errors and readiness checks are returned with standard HTTP status codes.
 
-#### Endpoint
+#### Endpoint (synchronous)
+
 ```
 POST /classifier/classify
 ```
 
-#### Request Format
+#### Request
 
-**Request Body:**
+Headers:
+
+```
+Content-Type: application/json
+```
+
+Body:
+
 ```json
 {
   "narrative": "string"
 }
 ```
 
-#### Response Format
+- `narrative` (required, string): The case narrative text to be classified
 
-**Success Response (200):**
+#### Success Response (HTTP 200 OK)
+
 ```json
 {
   "main_category": "sexual_abuse",
@@ -315,52 +324,64 @@ POST /classifier/classify
   },
   "chunks_processed": 1,
   "processing_time": 0.52,
+  "model_info": {
+    "model_path": "/app/models/classifier",
+    "loaded": true,
+    "device": "cpu"
+  },
   "timestamp": "2025-10-17T10:30:45Z"
 }
 ```
-#### **4.1. API Endpoints**
 
-  * **Primary Endpoint**: `POST /classifier/classify`
-  * **Request Body (JSON)**:
-    ```json
-    {
-      "text_transcript": "The transcript of the call goes here. It needs to be a single string."
-    }
-    ```
-  * **Example Response (JSON)**:
-    ```json
-    {
-      "case_id": "c-1a2b3c4d",
-      "predictions": {
-        "sub_category": {
-          "label": "Information",
-          "confidence": 0.92
-        },
-        "priority": {
-          "label": "1",
-          "confidence": 0.85
-        },
-        "main_category": 
-          {
-            "label": "Nutrition",
-            "confidence": 0.95
-          }
-        ,
-        "intervention": {
-          "label": "Counseling",
-          "confidence": 0.89
-        }
-      }
-    }
-    ```
-  - Curl request
+#### Errors / Status Codes
+- 400 Bad Request — invalid input (e.g. empty `narrative`)
+- 503 Service Unavailable — model not loaded or not ready
+- 500 Internal Server Error — unexpected server error during classification
 
-    ```bash
-    curl -X POST \
-      -H "Content-Type: application/json" \
-      -d '{"narrative": "A 12-year-old girl is being abused by her stepfather."}' \
-      http://localhost:8123/classifier/classify
-    ```
+#### Other endpoints
+- `GET /classifier/info` — returns model status and metadata
+- `POST /classifier/demo` — returns classification for a pre-configured sample narrative
+
+#### cURL examples (synchronous)
+
+Submit classification request:
+
+```bash
+curl -sS -X POST "http://<your-host>:8125/classifier/classify" \
+  -H "Content-Type: application/json" \
+  -d '{"narrative":"A 16-year-old girl called to report sexual abuse by her stepfather. Immediate intervention needed."}'
+```
+
+Get model info:
+
+```bash
+curl -sS http://<your-host>:8125/classifier/info
+```
+
+Run demo endpoint:
+
+```bash
+curl -sS -X POST http://<your-host>:8125/classifier/demo -H "Content-Type: application/json" -d '{}'
+```
+
+#### Python client example (synchronous)
+
+```python
+import requests
+
+def classify(base_url: str, narrative: str, timeout: int = 30):
+    resp = requests.post(
+        f"{base_url.rstrip('/')}/classifier/classify",
+        json={"narrative": narrative},
+        timeout=timeout,
+    )
+    resp.raise_for_status()
+    return resp.json()
+
+# Usage
+result = classify("http://your-host:8125", "A child reported abuse and needs urgent help.")
+print(result)
+```
 
 #### **4.2. Input Text Processing**
 
@@ -375,7 +396,7 @@ The Classify function expects a raw, clean transcript string. The model's servin
 
 The confidence score returned for each prediction is a probability value (0 to 1) indicating the model's certainty. The choice of threshold is a business decision that should be tuned based on the application's risk tolerance.
 
-  * **High Thresholds (e.g., \> 0.90)**: Recommended for **critical, automated actions** like case escalation or auto-creation of a trouble ticket. This ensures high precision and minimizes false positives, but may result in lower recall (i.e., missing some relevant cases).
+  * **High Thresholds (e.g., \> 0.90)**: Recommended for **critical, automated actions** like case escalation. This ensures high precision and minimizes false positives, but may result in lower recall (i.e., missing some relevant cases).
   * **Medium Thresholds (e.g., \> 0.75)**: Ideal for **data enrichment and analytics**. This provides a broader set of tags for dashboards and reports, balancing precision and recall to get a more complete picture of call trends.
   * **Low Thresholds (e.g., \> 0.50)**: Can be used for **human-in-the-loop applications**, where predictions serve as suggestions to an agent or reviewer. A lower threshold increases recall, ensuring a human sees a potential label even if the model isn't highly confident.
 

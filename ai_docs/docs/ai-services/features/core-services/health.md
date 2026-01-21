@@ -180,7 +180,7 @@ Lightweight health check that returns 200 if the service is running. Use this fo
 
 **Request:**
 ```bash
-curl -X GET "http://192.168.8.18:8123/health/"
+curl -X GET "http://127.0.0.1:8123/health/"
 ```
 
 **Response (200):**
@@ -214,7 +214,7 @@ Comprehensive health check including system resources, GPU status, model readine
 
 **Request:**
 ```bash
-curl -X GET "http://192.168.8.18:8123/health/detailed"
+curl -X GET "http://127.0.0.1:8123/health/detailed"
 ```
 
 **Response (200):**
@@ -487,7 +487,7 @@ Detailed status of all ML models including loading state, dependencies, and bloc
 
 **Request:**
 ```bash
-curl -X GET "http://192.168.8.18:8123/health/models"
+curl -X GET "http://127.0.0.1:8123/health/models"
 ```
 
 **Response (200):**
@@ -738,7 +738,7 @@ Information about ML frameworks, hardware capabilities, and system configuration
 
 **Request:**
 ```bash
-curl -X GET "http://192.168.8.18:8123/health/capabilities"
+curl -X GET "http://127.0.0.1:8123/health/capabilities"
 ```
 
 **Response (200):**
@@ -816,7 +816,7 @@ Detailed resource utilization including CPU, memory, disk, GPU, and process-leve
 
 **Request:**
 ```bash
-curl -X GET "http://192.168.8.18:8123/health/resources"
+curl -X GET "http://127.0.0.1:8123/health/resources"
 ```
 
 **Response (200):**
@@ -897,7 +897,7 @@ Status of Celery background task workers. Important for monitoring asynchronous 
 
 **Request:**
 ```bash
-curl -X GET "http://192.168.8.18:8123/health/celery/status"
+curl -X GET "http://127.0.0.1:8123/health/celery/status"
 ```
 
 **Response (200) - Workers Active:**
@@ -1039,7 +1039,7 @@ curl -X GET "http://192.168.8.18:8123/health/celery/status"
 
 ```nginx
 upstream ai_service {
-    server 192.168.8.18:8123 max_fails=3 fail_timeout=30s;
+    server 127.0.0.1:8123 max_fails=3 fail_timeout=30s;
     server 192.168.8.19:8123 max_fails=3 fail_timeout=30s backup;
 }
 
@@ -1157,10 +1157,10 @@ spec:
 
 ```bash
 # Check which models are blocked
-curl http://192.168.8.18:8123/health/models | jq '.blocked_models'
+curl http://127.0.0.1:8123/health/models | jq '.blocked_models'
 
 # Check dependency graph
-curl http://192.168.8.18:8123/health/models | jq '.dependencies'
+curl http://127.0.0.1:8123/health/models | jq '.dependencies'
 
 # Solution: Ensure dependencies are loaded first
 # Example: translator must load before classifier
@@ -1170,10 +1170,10 @@ curl http://192.168.8.18:8123/health/models | jq '.dependencies'
 
 ```bash
 # Check resource usage
-curl http://192.168.8.18:8123/health/resources | jq '.memory'
+curl http://127.0.0.1:8123/health/resources | jq '.memory'
 
 # Check GPU memory if applicable
-curl http://192.168.8.18:8123/health/resources | jq '.gpu.devices'
+curl http://127.0.0.1:8123/health/resources | jq '.gpu.devices'
 
 # Solution: Restart service or scale horizontally
 ```
@@ -1182,7 +1182,7 @@ curl http://192.168.8.18:8123/health/resources | jq '.gpu.devices'
 
 ```bash
 # Check Celery status
-curl http://192.168.8.18:8123/health/celery/status
+curl http://127.0.0.1:8123/health/celery/status
 
 # Solution: Start Celery workers
 # celery -A app.celery_app worker --loglevel=info
@@ -1192,7 +1192,7 @@ curl http://192.168.8.18:8123/health/celery/status
 
 ```bash
 # Check Redis in detailed health
-curl http://192.168.8.18:8123/health/detailed | jq '.redis'
+curl http://127.0.0.1:8123/health/detailed | jq '.redis'
 
 # Solution: Verify Redis is running and accessible
 # docker ps | grep redis
@@ -1220,7 +1220,7 @@ settings.log_level = "DEBUG"
 uvicorn app.main:app --reload --log-level debug
 
 # Watch health checks in real-time
-watch -n 5 'curl -s http://192.168.8.18:8123/health/detailed | jq .'
+watch -n 5 'curl -s http://127.0.0.1:8123/health/detailed | jq .'
 ```
 
 ---
