@@ -1,729 +1,422 @@
-# Call Sessions API — Documentation
+# Call Session Management API Documentation
 
+**API Version:** 0.1.0
+**Last Updated:** 2026-01-20
+**Status:** Production
 
+> **Note:** Response structures may vary slightly based on API version and configuration.
+> This documentation reflects API version 0.1.0 running in production mode.
 
-## 1. API Endpoint Overview
+## Overview
 
-The Call Sessions API provides endpoints to manage, monitor, and analyze call sessions in the BITZ AI pipeline. It enables:
+The Call Session Management API provides comprehensive real-time call tracking, progressive transcription management, and AI-powered analysis for helpline calls. This API enables monitoring of active calls, retrieving transcripts, accessing progressive analysis results, and managing the call lifecycle.
 
-- Real-time session monitoring and status updates
-- Post-call processing (transcription, translation, NER, classification, summarization, QA)
-- Progressive (realtime) analysis during calls
-- Exporting call data in JSON or plain text for downstream systems
-- Agent notification integration for alerts and completion notifications
-
-Processing modes supported:
-
-- postcall_only — process audio after call completion
-- realtime — live streaming analysis during calls
-- hybrid — realtime notifications plus post-call deep analysis
+**Base Path:** `/api/v1/calls`
 
 ---
 
-## 2. Architecture & Integration
-
-### 2.1 System components
-
-- Asterisk PBX — source of call audio
-- Session Manager — tracks active calls and manages audio streams
-- Real-time Processor (optional) — streaming transcription & analysis
-- Post-call Pipeline — runs full AI pipeline on recorded audio
-- Model Services — transcription (Whisper), translation (MarianMT), NER, classification, summarization, QA
-- Agent Notification Service — sends notifications to agents
-- Call Sessions API — provides access to session metadata, transcripts, exports, and processing status
-
-### 2.2 Data flow
-
-Active call flow:
-1. Call initiated → session created in Session Manager
-2. Audio streamed → real-time processor (if enabled)
-3. Progressive transcription/translation → agent notifications (optional)
-4. Call ends → post-call processing triggered
-5. Post-call pipeline completes → analysis and exports available via API
-
-Post-call processing flow:
-- Audio pulled from PBX (SCP, S3, or other configured method)
-- Transcription → translation → NER → classification → summarization → QA
-- Unified insights produced and optionally pushed to agents or exported
-
-### 2.3 Configuration
-
-Configuration is provided via environment variables or a settings file. Avoid hardcoding secrets; use secret stores for credentials.
-
-Example environment variables (redacted placeholders used for sensitive values):
+## Quick Start
 
 ```bash
-# API
-API_HOST=0.0.0.0
-API_PORT=8123
+# Get all active calls
+curl -X GET "http://localhost:8125/api/v1/calls/active"
 
-# Audio retrieval
-AUDIO_DOWNLOAD_METHOD=scp
-SCP_USER=helpline
-SCP_SERVER=192.168.10.3
-SCP_PASSWORD=<REDACTED> # Use SSH keys or secret store instead of plain password
-REMOTE_PATH_TEMPLATE=/home/dat/helpline/calls/{call_id}.gsm
+# Get specific call details
+curl -X GET "http://localhost:8125/api/v1/calls/{call_id}"
 
-# Processing options
-ENABLE_FULL_PIPELINE=true
-WHISPER_MODEL=openchs/asr-whisper-helpline-sw-v1
-TRANSLATION_MODEL=openchs/sw-en-opus-mt-mul-en-v1
-ENABLE_DIARIZATION=false
-ENABLE_NOISE_REDUCTION=true
-CONVERT_TO_WAV=true
-ENABLE_INSIGHTS_GENERATION=true
-ENABLE_QA_SCORING=true
-NOTIFY_COMPLETION=true
+# Get call transcript with segments
+curl -X GET "http://localhost:8125/api/v1/calls/{call_id}/transcript?include_segments=true"
 
-# Paths and limits
-MODELS_PATH=/app/models
-TEMP_PATH=/app/temp
-LOGS_PATH=/app/logs
-DOWNLOAD_TIMEOUT_SECONDS=60
-PROCESSING_TIMEOUT_SECONDS=300
-MAX_CONCURRENT_PROCESSING=5
+# Get progressive analysis
+curl -X GET "http://localhost:8125/api/v1/calls/{call_id}/progressive-analysis"
+
+# Manually end a call
+curl -X POST "http://localhost:8125/api/v1/calls/{call_id}/end"
 ```
 
 ---
 
-## 3. Endpoints Reference — conventions
+## Core Features
 
-- All endpoints return JSON by default unless otherwise noted.
-- Error responses follow a standard format:
+### Real-Time Call Tracking
+- Track active calls with cumulative transcripts
+- Monitor call duration and segment counts
+- View call status (active, completed, ended)
 
-```json
-{ "detail": "Error message description" }
-```
+### Progressive Transcription
+- Receive transcript segments as they arrive
+- Access cumulative transcripts in real-time
+- Paginate through historical segments
 
-- Validation errors follow this format:
+### Progressive AI Analysis
+- Real-time translation as transcripts arrive
+- Progressive entity extraction (NER)
+- Evolving classification during calls
+- Live QA scoring updates
 
-```json
-{
-  "detail": [
-    { "loc": ["path","call_id"], "msg": "Invalid call_id format", "type": "value_error" }
-  ]
-}
-```
+### Call Lifecycle Management
+- Manual call termination
+- AI pipeline triggering
+- Export capabilities for post-call analysis
 
 ---
 
-### 3.1 Get Active Calls
+## API Endpoints
 
-GET /api/v1/calls/active
+### GET /api/v1/calls/active
+Get all currently active call sessions.
 
-Description: Returns currently active call sessions and their realtime status.
-
-Response (200):
-
+**Response (200 OK):**
 ```json
 [
   {
-    "call_id": "string",
-    "start_time": "ISO8601",
-    "last_activity": "ISO8601",
+    "call_id": "1768919577.325299",
+    "start_time": "2026-01-20T14:29:47.085694",
+    "last_activity": "2026-01-20T14:29:47.085694",
     "connection_info": {
-      "client_addr": ["ip", port],
-      "temp_connection_id": "string",
-      "start_time": "ISO8601"
+      "client_addr": ["192.168.10.3", 34490],
+      "temp_connection_id": "192.168.10.3:34490:142946",
+      "start_time": "2026-01-20T14:29:47.085683"
     },
     "transcript_segments": [],
-    "cumulative_transcript": "string",
-    "total_audio_duration": 0,
+    "cumulative_transcript": "",
+    "total_audio_duration": 0.0,
     "segment_count": 0,
-    "status": "active|connection_closed",
-    "processing_mode": "postcall_only|realtime|hybrid",
-    "processing_plan": {}
+    "status": "active",
+    "processing_mode": "post_call",
+    "processing_plan": {
+      "mode": "post_call",
+      "streaming_enabled": false,
+      "postcall_enabled": true,
+      "streaming_config": null,
+      "postcall_config": {
+        "enable_insights": true,
+        "enable_qa_scoring": true,
+        "enable_summary": true,
+        "processing_timeout": 300
+      }
+    }
   }
 ]
 ```
 
-Example:
-
-```bash
-curl -X GET 'http://192.168.8.18:8123/api/v1/calls/active' -H 'Accept: application/json'
-```
+**Response Fields:**
+- `call_id` (string): Unique call identifier (Asterisk call ID format)
+- `start_time` (string): ISO-8601 timestamp when call session started
+- `last_activity` (string): ISO-8601 timestamp of last activity
+- `connection_info` (object): TCP connection details from Asterisk
+  - `client_addr` (array): [IP address, port] of the connected client
+  - `temp_connection_id` (string): Temporary connection identifier
+  - `start_time` (string): Connection establishment timestamp
+- `transcript_segments` (array): List of individual transcript segments
+- `cumulative_transcript` (string): Combined transcript text
+- `total_audio_duration` (float): Total audio duration in seconds
+- `segment_count` (integer): Number of transcript segments received
+- `status` (string): Call status (`active`, `connection_closed`, `completed`)
+- `processing_mode` (string): Processing mode for this call (`realtime`, `post_call`, `hybrid`, `adaptive`)
+- `processing_plan` (object): Detailed processing configuration
+  - `mode` (string): Actual processing mode being used
+  - `streaming_enabled` (boolean): Whether real-time streaming is enabled
+  - `postcall_enabled` (boolean): Whether post-call processing is enabled
+  - `streaming_config` (object/null): Configuration for streaming mode (if enabled)
+  - `postcall_config` (object/null): Configuration for post-call mode (if enabled)
 
 ---
 
-### 3.2 Get Call Stats
+### GET /api/v1/calls/stats
+Get aggregate statistics about all call sessions.
 
-GET /api/v1/calls/stats
-
-Description: Aggregated statistics for sessions.
-
-Response (200):
-
+**Response (200 OK):**
 ```json
 {
-  "active_sessions": 0,
-  "total_audio_duration": 0,
+  "active_sessions": 6,
+  "total_audio_duration": 0.0,
   "total_segments": 0,
-  "average_duration_per_session": 0,
-  "session_list": ["call_id1", "call_id2"]
-}
-```
-
-Example:
-
-```bash
-curl -X GET 'http://192.168.8.18:8123/api/v1/calls/stats' -H 'Accept: application/json'
-```
-
----
-
-### 3.3 Get Call Session
-
-GET /api/v1/calls/{call_id}
-
-Description: Get detailed info about a specific call.
-
-Path parameter:
-- call_id (string) — required
-
-Response (200):
-
-```json
-{
-  "call_id": "string",
-  "start_time": "ISO8601",
-  "last_activity": "ISO8601",
-  "connection_info": {},
-  "transcript_segments": [],
-  "cumulative_transcript": "string",
-  "total_audio_duration": 0,
-  "segment_count": 0,
-  "status": "string",
-  "processing_mode": "string",
-  "processing_plan": {}
-}
-```
-
-Error responses:
-- 404: Call session not found
-- 422: Validation error
-
-Example:
-
-```bash
-curl -X GET 'http://192.168.8.18:8123/api/v1/calls/1761295415.12887' -H 'Accept: application/json'
-```
-
----
-
-### 3.4 Get Call Transcript
-
-GET /api/v1/calls/{call_id}/transcript
-
-Query parameters:
-- include_segments (boolean, default: false) — include individual transcript segments
-
-Response (200):
-
-```json
-{
-  "call_id": "string",
-  "cumulative_transcript": "string",
-  "language": "sw",
-  "segment_count": 0,
-  "total_duration": 0,
-  "segments": [
-    { "text": "string", "start_time": 0, "end_time": 0, "confidence": 0.0 }
+  "average_duration_per_session": 0.0,
+  "session_list": [
+    "1768919428.325281",
+    "1768919577.325299",
+    "1768919584.325301"
   ]
 }
 ```
 
-Examples:
+**Response Fields:**
+- `active_sessions` (integer): Number of currently active call sessions
+- `total_audio_duration` (float): Total audio duration across all active sessions (seconds)
+- `total_segments` (integer): Total transcript segments across all sessions
+- `average_duration_per_session` (float): Average audio duration per session (seconds)
+- `session_list` (array): List of active call IDs
 
-```bash
-# With segments
-curl -X GET 'http://192.168.8.18:8123/api/v1/calls/1761295415.12887/transcript?include_segments=true' -H 'Accept: application/json'
-
-# Without segments
-curl -X GET 'http://192.168.8.18:8123/api/v1/calls/1761295415.12887/transcript' -H 'Accept: application/json'
-```
+**Note:** This endpoint returns statistics for currently active sessions only, not historical or completed calls.
 
 ---
 
-### 3.5 Manually End Call
+### GET /api/v1/calls/{call_id}
+Retrieve detailed information about a specific call.
 
-POST /api/v1/calls/{call_id}/end
+**Path Parameters:**
+- `call_id` (string, required): Unique call identifier
 
-Query parameters:
-- reason (string, default: "manual") — optional reason for ending the call
-
-Response (200):
-
+**Response (200 OK):**
 ```json
-"Call ended successfully"
+{
+  "call_id": "call_123456",
+  "status": "active",
+  "cumulative_transcript": "Hello, this is 116 child helpline...",
+  "total_audio_duration": 45.2,
+  "segment_count": 12,
+  "start_time": "2026-01-20T10:30:00",
+  "last_activity": "2026-01-20T10:31:45"
+}
 ```
 
-Error responses:
-- 404: Call session not found
-- 422: Validation error
+**Error Responses:**
+- `404`: Call session not found
 
-Example:
+---
 
-```bash
-curl -X POST 'http://192.168.8.18:8123/api/v1/calls/1761295415.12887/end?reason=manual' -H 'Accept: application/json'
+### GET /api/v1/calls/{call_id}/transcript
+Retrieve the transcript for a call, optionally with individual segments.
+
+**Query Parameters:**
+- `include_segments` (boolean, optional, default: false)
+
+**Response (200 OK):**
+```json
+{
+  "call_id": "call_123456",
+  "cumulative_transcript": "Complete transcript text...",
+  "total_duration": 45.2,
+  "segment_count": 12,
+  "status": "active",
+  "start_time": "2026-01-20T10:30:00",
+  "last_activity": "2026-01-20T10:31:45"
+}
 ```
 
 ---
 
-### 3.6 Get Call Segments
+### POST /api/v1/calls/{call_id}/end
+Manually terminate an active call session.
 
-GET /api/v1/calls/{call_id}/segments
+**Query Parameters:**
+- `reason` (string, optional, default: "manual")
 
-Response (200):
+**Response (200 OK):**
+```json
+{
+  "message": "Call session call_123456 ended successfully",
+  "final_transcript": "Complete final transcript...",
+  "total_duration": 120.5,
+  "segment_count": 35
+}
+```
 
+---
+
+### GET /api/v1/calls/{call_id}/segments
+Retrieve transcript segments with pagination.
+
+**Query Parameters:**
+- `limit` (integer, optional, default: 50, range: 1-1000)
+- `offset` (integer, optional, default: 0)
+
+**Response (200 OK):**
+```json
+{
+  "call_id": "call_123456",
+  "segments": [
+    {
+      "segment_id": 1,
+      "text": "Hello, this is 116...",
+      "timestamp": "2026-01-20T10:30:05",
+      "duration": 3.5
+    }
+  ],
+  "total_segments": 150,
+  "offset": 0,
+  "limit": 50,
+  "has_more": true
+}
+```
+
+---
+
+### GET /api/v1/calls/{call_id}/progressive-analysis
+Retrieve progressive AI analysis results.
+
+**Response (200 OK):**
+```json
+{
+  "call_id": "call_123456",
+  "cumulative_translation": "Children need help urgently...",
+  "latest_entities": [
+    {
+      "text": "Central Park",
+      "label": "LANDMARK",
+      "confidence": 0.92
+    }
+  ],
+  "latest_classification": {
+    "main_category": "VANE",
+    "sub_category": "Physical Abuse",
+    "priority": "high",
+    "confidence": 0.87
+  },
+  "processing_stats": {
+    "windows_processed": 5,
+    "total_entities": 12,
+    "classifications_made": 3
+  }
+}
+```
+
+---
+
+### GET /api/v1/calls/{call_id}/entity-evolution
+Track how extracted entities evolved during the call.
+
+**Response (200 OK):**
 ```json
 [
   {
-    "segment_id": 0,
-    "text": "string",
-    "start_time": 0.0,
-    "end_time": 0.0,
-    "duration": 0.0,
-    "confidence": 0.0,
-    "speaker": "string"
+    "window_id": 1,
+    "timestamp": "2026-01-20T10:30:10",
+    "text_window": "Hello, this is 116...",
+    "entities": [
+      {"text": "116", "label": "PHONE_NUMBER", "confidence": 0.95}
+    ]
   }
 ]
 ```
 
-Example:
+---
 
-```bash
-curl -X GET 'http://192.168.8.18:8123/api/v1/calls/1761295415.12887/segments' -H 'Accept: application/json'
+### GET /api/v1/calls/{call_id}/classification-evolution
+Track how case classification changed during the call.
+
+**Response (200 OK):**
+```json
+[
+  {
+    "window_id": 1,
+    "timestamp": "2026-01-20T10:30:15",
+    "classification": {
+      "main_category": "Information",
+      "sub_category": "General Inquiry",
+      "priority": "low",
+      "confidence": 0.75
+    }
+  }
+]
 ```
 
 ---
 
-### 3.7 Export Call for AI Pipeline
+## Progressive Analysis Explained
 
-GET /api/v1/calls/{call_id}/export
+### How It Works
 
-Query parameters:
-- format (string, optional, default: json) — one of: json, text
+As transcript segments arrive during a call, the system:
 
-Response (200) — JSON format (example):
+1. **Accumulates Text**: Builds cumulative transcript
+2. **Creates Windows**: Groups text into analysis windows (150-300 chars)
+3. **Translates**: English translation for each window
+4. **Extracts Entities**: NER on translated text
+5. **Classifies**: Case classification with confidence
+6. **Notifies Agents**: Real-time alerts on critical entities or high-priority cases
 
-```json
-{
-  "call_id": "string",
-  "metadata": { "start_time": "ISO8601", "end_time": "ISO8601", "duration": 0, "status": "string" },
-  "transcription": { "original": "string", "language": "sw" },
-  "translation": { "translated": "string", "language": "en" },
-  "entities": {},
-  "classification": {},
-  "summary": {},
-  "insights": {},
-  "processing_info": {}
+### Analysis Windows Configuration
+
+- Min window size: 150 characters
+- Target window size: 300 characters
+- Overlap: 50 characters
+- Processing interval: 30 seconds
+
+---
+
+## Integration Examples
+
+### Python Example
+
+```python
+import requests
+
+class CallSessionClient:
+    def __init__(self, base_url="http://localhost:8125"):
+        self.base_url = base_url
+
+    def get_active_calls(self):
+        response = requests.get(f"{self.base_url}/api/v1/calls/active")
+        response.raise_for_status()
+        return response.json()
+
+    def get_progressive_analysis(self, call_id):
+        response = requests.get(
+            f"{self.base_url}/api/v1/calls/{call_id}/progressive-analysis"
+        )
+        response.raise_for_status()
+        return response.json()
+
+# Usage
+client = CallSessionClient()
+active_calls = client.get_active_calls()
+
+for call in active_calls:
+    analysis = client.get_progressive_analysis(call['call_id'])
+    if analysis['latest_classification']['priority'] == 'high':
+        print(f"⚠️ HIGH PRIORITY: {call['call_id']}")
+```
+
+### JavaScript Example
+
+```javascript
+async function monitorActiveCalls() {
+    const response = await fetch('http://localhost:8125/api/v1/calls/active');
+    const calls = await response.json();
+
+    for (const call of calls) {
+        const analysisResponse = await fetch(
+            `http://localhost:8125/api/v1/calls/${call.call_id}/progressive-analysis`
+        );
+        const analysis = await analysisResponse.json();
+
+        if (analysis.latest_classification.priority === 'high') {
+            console.warn(`⚠️ HIGH PRIORITY: ${call.call_id}`);
+        }
+    }
 }
-```
 
-Plain-text export example (abridged):
-
-```
-=== CALL EXPORT ===
-Call ID: {call_id}
-Date: {start_time}
-Duration: {duration} seconds
-Status: {status}
-
---- ORIGINAL TRANSCRIPT (Swahili) ---
-{transcript_text}
-
---- ENGLISH TRANSLATION ---
-{translation_text}
-
---- NAMED ENTITIES ---
-Persons: {person_list}
-Locations: {location_list}
-
---- SUMMARY ---
-{summary_text}
-
-=== END OF EXPORT ===
-```
-
-Examples:
-
-```bash
-# JSON export
-curl -X GET 'http://192.168.8.18:8123/api/v1/calls/1761295415.12887/export?format=json' -H 'Accept: application/json' -o call_export.json
-
-# Text export
-curl -X GET 'http://192.168.8.18:8123/api/v1/calls/1761295415.12887/export?format=text' -H 'Accept: application/json' -o call_export.txt
+// Poll every 10 seconds
+setInterval(monitorActiveCalls, 10000);
 ```
 
 ---
 
-### 3.8 Trigger AI Pipeline Processing
+## Best Practices
 
-POST /api/v1/calls/{call_id}/trigger-ai-pipeline
+### 1. Polling Strategy
+- Poll active calls every 5-10 seconds for transcript updates
+- Poll progressive analysis every 15-30 seconds
+- Use pagination for calls with many segments
 
-Response (200):
+### 2. Error Handling
+Always handle 404 errors gracefully - calls may end during polling.
 
-```json
-"AI pipeline processing triggered successfully"
-```
+### 3. Priority Detection
+Monitor classification evolution for priority escalation and trigger alerts.
 
-Error responses:
-- 404: Call session not found
-- 422: Validation error
-- 503: Service unavailable
-
-Example:
-
-```bash
-curl -X POST 'http://192.168.8.18:8123/api/v1/calls/1761295415.12887/trigger-ai-pipeline' -H 'Accept: application/json'
-```
+### 4. Export Before Cleanup
+Always export call data before any cleanup operations.
 
 ---
 
-### 3.9 Get Progressive Analysis
-
-GET /api/v1/calls/{call_id}/progressive-analysis
-
-Response (200):
-
-```json
-{
-  "call_id": "string",
-  "cumulative_translation": "string",
-  "translation_windows": 0,
-  "latest_entities": {},
-  "latest_classification": {},
-  "evolution_data": {}
-}
-```
-
-Example:
-
-```bash
-curl -X GET 'http://192.168.8.18:8123/api/v1/calls/1761295415.12887/progressive-analysis' -H 'Accept: application/json'
-```
-
----
-
-### 3.10 Get Call Translation
-
-GET /api/v1/calls/{call_id}/translation
-
-Response (200):
-
-```json
-{
-  "call_id": "string",
-  "cumulative_translation": "string",
-  "language": "en",
-  "source_language": "sw"
-}
-```
-
-Example:
-
-```bash
-curl -X GET 'http://192.168.8.18:8123/api/v1/calls/1761295415.12887/translation' -H 'Accept: application/json'
-```
-
----
-
-### 3.11 Get Entity Evolution
-
-GET /api/v1/calls/{call_id}/entity-evolution
-
-Response (200): array of timestamped windows showing entity discovery and cumulative entities.
-
-Example:
-
-```bash
-curl -X GET 'http://192.168.8.18:8123/api/v1/calls/1761295415.12887/entity-evolution' -H 'Accept: application/json'
-```
-
----
-
-### 3.12 Get Classification Evolution
-
-GET /api/v1/calls/{call_id}/classification-evolution
-
-Response (200): array of classification snapshots with change indicators.
-
-Example:
-
-```bash
-curl -X GET 'http://192.168.8.18:8123/api/v1/calls/1761295415.12887/classification-evolution' -H 'Accept: application/json'
-```
-
----
-
-### 3.13 Get Agent Service Health
-
-GET /api/v1/calls/agent-service/health
-
-Response (200):
-
-```json
-{
-  "status": "healthy|unhealthy",
-  "service_name": "agent_notification_service",
-  "timestamp": "ISO8601",
-  "checks": { "api_connectivity": true, "authentication": true },
-  "details": {}
-}
-```
-
-Example:
-
-```bash
-curl -X GET 'http://192.168.8.18:8123/api/v1/calls/agent-service/health' -H 'Accept: application/json'
-```
-
----
-
-### 3.14 Test Agent Auth
-
-POST /api/v1/calls/agent-service/test-auth
-
-Response (200):
-
-```json
-{ "status": "success|failed", "token_obtained": true, "token_expires_in": 3600 }
-```
-
-Example:
-
-```bash
-curl -X POST 'http://192.168.8.18:8123/api/v1/calls/agent-service/test-auth' -H 'Accept: application/json'
-```
-
----
-
-### 3.15 Test Agent Notification
-
-POST /api/v1/calls/agent-service/test-notification?call_id={call_id}
-
-Response (200):
-
-```json
-{ "status": "success|failed", "notification_sent": true, "agent_response_code": 200 }
-```
-
-Example:
-
-```bash
-curl -X POST 'http://192.168.8.18:8123/api/v1/calls/agent-service/test-notification?call_id=test_123' -H 'Accept: application/json'
-```
-
----
-
-### 3.16 Get Processing Status
-
-GET /api/v1/calls/processing/status
-
-Response (200): global processing overview.
-
-Example:
-
-```bash
-curl -X GET 'http://192.168.8.18:8123/api/v1/calls/processing/status' -H 'Accept: application/json'
-```
-
----
-
-### 3.17 Get Call Processing Status
-
-GET /api/v1/calls/{call_id}/processing
-
-Response (200):
-
-```json
-{
-  "call_id": "string",
-  "processing_status": "pending|in_progress|completed|failed",
-  "current_stage": "string",
-  "stages_completed": [],
-  "stages_remaining": [],
-  "progress_percentage": 0.0,
-  "started_at": "ISO8601",
-  "estimated_completion": "ISO8601",
-  "errors": [],
-  "pipeline_config": {}
-}
-```
-
-Example:
-
-```bash
-curl -X GET 'http://192.168.8.18:8123/api/v1/calls/1761295415.12887/processing' -H 'Accept: application/json'
-```
-
----
-
-## 4. Usage Examples
-
-### 4.1 Monitoring Active Calls
-
-```bash
-curl -X GET 'http://192.168.8.18:8123/api/v1/calls/stats' -H 'Accept: application/json'
-curl -X GET 'http://192.168.8.18:8123/api/v1/calls/active' -H 'Accept: application/json'
-curl -X GET 'http://192.168.8.18:8123/api/v1/calls/1761295415.12887' -H 'Accept: application/json'
-```
-
-### 4.2 Processing Complete Calls
-
-```bash
-curl -X POST 'http://192.168.8.18:8123/api/v1/calls/1761295415.12887/trigger-ai-pipeline' -H 'Accept: application/json'
-curl -X GET 'http://192.168.8.18:8123/api/v1/calls/1761295415.12887/processing' -H 'Accept: application/json'
-curl -X GET 'http://192.168.8.18:8123/api/v1/calls/processing/status' -H 'Accept: application/json'
-```
-
-### 4.3 Exporting Call Data
-
-```bash
-curl -X GET 'http://192.168.8.18:8123/api/v1/calls/1761295415.12887/export?format=json' -H 'Accept: application/json' -o call_export.json
-curl -X GET 'http://192.168.8.18:8123/api/v1/calls/1761295415.12887/export?format=text' -H 'Accept: application/json' -o call_export.txt
-```
-
-### 4.4 Progressive Analysis
-
-```bash
-curl -X GET 'http://192.168.8.18:8123/api/v1/calls/1761295415.12887/progressive-analysis' -H 'Accept: application/json'
-curl -X GET 'http://192.168.8.18:8123/api/v1/calls/1761295415.12887/translation' -H 'Accept: application/json'
-curl -X GET 'http://192.168.8.18:8123/api/v1/calls/1761295415.12887/entity-evolution' -H 'Accept: application/json'
-```
-
-### 4.5 Agent Service Testing
-
-```bash
-curl -X GET 'http://192.168.8.18:8123/api/v1/calls/agent-service/health' -H 'Accept: application/json'
-curl -X POST 'http://192.168.8.18:8123/api/v1/calls/agent-service/test-auth' -H 'Accept: application/json'
-curl -X POST 'http://192.168.8.18:8123/api/v1/calls/agent-service/test-notification?call_id=test_123' -H 'Accept: application/json'
-```
-
----
-
-## 5. Data Models
-
-### 5.1 Call Session Object
-
-```json
-{
-  "call_id": "string",
-  "start_time": "ISO8601",
-  "last_activity": "ISO8601",
-  "connection_info": { "client_addr": ["ip", port], "temp_connection_id": "string" },
-  "transcript_segments": [],
-  "cumulative_transcript": "string",
-  "total_audio_duration": 0,
-  "segment_count": 0,
-  "status": "active|connection_closed|completed|failed",
-  "processing_mode": "postcall_only|realtime|hybrid",
-  "processing_plan": {}
-}
-```
-
-### 5.2 Transcript Segment Object
-
-```json
-{
-  "segment_id": 0,
-  "text": "string",
-  "start_time": 0.0,
-  "end_time": 0.0,
-  "duration": 0.0,
-  "confidence": 0.0,
-  "speaker": "string"
-}
-```
-
-### 5.3 Translation Object
-
-```json
-{
-  "call_id": "string",
-  "cumulative_translation": "string",
-  "language": "en",
-  "source_language": "sw",
-  "translation_model": "openchs/sw-en-opus-mt-mul-en-v1"
-}
-```
-
-(Additional model examples omitted for brevity — follow same JSON style.)
-
----
-
-## 6. Production Considerations
-
-### Performance
-- Active calls listing: < 100ms (target)
-- Transcript retrieval: < 200ms (target)
-- Export generation: depends on size (500ms — 2s typical)
-
-Processing time estimates (approximate):
-- Transcription: ~15–30s per minute of audio (model-dependent)
-- Translation / NER / classification: per-call times vary by model/length
-
-### Rate limiting and best practices
-- GET: 100 req/min per client (recommended)
-- POST: 20 req/min per client (recommended)
-- Use exponential backoff and caches for frequent requests
-
-### Security
-- Use HTTPS in production
-- Store secrets in a secret manager (do not commit credentials)
-- Restrict API to internal network or authorized IPs
-
-### Data retention
-- Active sessions: memory while call is active
-- Completed sessions: configurable (example: 24 hours in-memory, then archive)
-- Audio retention: configurable (default example: 30 days)
-
----
-
-## 7. Troubleshooting
-
-Common checks:
-- Verify call exists via `/api/v1/calls/active` and `/api/v1/calls/stats`
-- Check processing status endpoints before requesting exports
-- Use health endpoints to validate model readiness: `/health/models` and `/health/detailed`
-
-Logs:
-- Application logs: `./logs/app.log` or `/app/logs/app.log` (container)
-- Processing logs: `/app/logs/processing.log`
-
----
-
-## 8. API Versioning
-
-- Current: v1
-- Version format: `/api/v{version}/`
-- Deprecation policy: deprecated endpoints supported for 6 months with migration notes
-
----
-
-## 9. Support and Contact
-
-- Email: info@bitz-itc.com
-- For bugs: include call_id, endpoint, request/response, timestamp, and relevant logs
-
----
-
-## 10. Changelog
-
-### v1.0.0 — Initial release
-- Active call monitoring
-- Post-call processing pipeline
-- Progressive analysis endpoints
-- Export functionality and agent notifications
-
-Planned features: WebSocket realtime updates, batch processing API, webhooks, advanced filtering.
-
----
-
-## 11. License
-
-This documentation is proprietary to BITZ ITC and provided for authorized users only.
-
-© 2025 BITZ ITC. All rights reserved.
+## Related Documentation
+
+- [Notifications API](notifications.md)
+- [Agent Feedback API](agent_feedback.md)
+- [Processing Mode API](processing_mode.md)
+- [Streaming API](streaming.md)
 
 ---

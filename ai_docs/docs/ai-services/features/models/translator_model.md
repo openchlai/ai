@@ -455,14 +455,27 @@ def _cleanup_memory(self):
 
 ### 3.1. Via AI Service API (Production Use)
 
-The translation model is deployed as part of the AI Service and accessible via REST API.
+The translation model is deployed as part of the AI Service and accessible via REST API. The API uses an **asynchronous task-based architecture** where translation requests are queued and processed by Celery workers, allowing the system to handle resource-intensive translation without blocking HTTP connections.
 
-#### Endpoint
+#### Workflow Overview
+
+The translation API follows a **2-step asynchronous workflow**:
+
+1. **Submit Translation Request** → Receive `task_id` (HTTP 202 Accepted)
+2. **Poll Task Status** → Retrieve translation results when ready (HTTP 200 OK)
+
+This architecture ensures reliable processing of long texts and prevents timeout issues during GPU-intensive translation operations.
+
+---
+
+#### Step 1: Submit Translation Task
+
+**Endpoint:**
 ```
 POST /translate/
 ```
 
-#### Request Format
+**Request Format:**
 
 **Headers:**
 ```
@@ -476,41 +489,95 @@ Content-Type: application/json
 }
 ```
 
-#### Response Format
+**Request Fields:**
+- `text` (required, string): The Swahili text to be translated to English
 
-**Success Response (200):**
+**Success Response (HTTP 202 Accepted):**
 ```json
 {
-  "translated": "string",
-  "processing_time": 0,
-  "model_info": {
-    "model_path": "string",
-    "hf_repo_id": "openchs/sw-en-opus-mt-mul-en-v1",
-    "device": "cuda",
-    "loaded": true,
-    "max_length": 512,
-    "chunking_supported": true
-  },
-  "timestamp": "string"
+  "task_id": "task_trans_a1b2c3d4e5f6",
+  "status": "queued",
+  "message": "Translation started. Check status at /translate/task/{task_id}",
+  "estimated_time": "5-20 seconds",
+  "status_endpoint": "/translate/task/task_trans_a1b2c3d4e5f6"
 }
 ```
 
-**Validation Error (422):**
+**Response Fields:**
+- `task_id` (string): Unique identifier for tracking the translation task
+- `status` (string): Initial task state (`"queued"` or `"processing"`)
+- `message` (string): Human-readable confirmation message
+- `estimated_time` (string): Expected processing duration
+- `status_endpoint` (string): URL path for polling task status
+
+---
+
+#### Step 2: Poll Translation Status
+
+**Endpoint:**
+```
+GET /translate/task/{task_id}
+```
+
+**Response States:**
+
+**1. Pending (HTTP 200 OK):**
 ```json
 {
-  "detail": [
-    {
-      "loc": ["string"],
-      "msg": "string",
-      "type": "string"
-    }
-  ]
+  "task_id": "task_trans_a1b2c3d4e5f6",
+  "status": "pending",
+  "progress": {
+    "message": "Task is queued"
+  }
 }
 ```
 
-#### Example cURL Request
+**2. Processing (HTTP 200 OK):**
+```json
+{
+  "task_id": "task_trans_a1b2c3d4e5f6",
+  "status": "processing",
+  "progress": {
+    "message": "Translation in progress..."
+  }
+}
+```
 
-**Basic Translation:**
+**3. Completed Successfully (HTTP 200 OK):**
+```json
+{
+  "task_id": "task_trans_a1b2c3d4e5f6",
+  "status": "success",
+  "result": {
+    "translated": "Children need help urgently. There is a big problem here.",
+    "processing_time": 1.23,
+    "model_info": {
+      "model_path": "./models/translation",
+      "hf_repo_id": "openchs/sw-en-opus-mt-mul-en-v1",
+      "device": "cuda",
+      "loaded": true,
+      "max_length": 512,
+      "chunking_supported": true
+    },
+    "timestamp": "2025-10-15T10:30:45.123456"
+  }
+}
+```
+
+**4. Failed (HTTP 200 OK with error details):**
+```json
+{
+  "task_id": "task_trans_a1b2c3d4e5f6",
+  "status": "failed",
+  "error": "Translation failed due to invalid input format"
+}
+```
+
+---
+
+#### cURL Examples
+
+**Step 1: Submit Translation Task**
 ```bash
 curl -X POST "https://your-api-domain.com/translate/" \
   -H "Content-Type: application/json" \
@@ -522,19 +589,99 @@ curl -X POST "https://your-api-domain.com/translate/" \
 **Response:**
 ```json
 {
-  "translated": "Children need help urgently. There is a big problem here.",
-  "processing_time": 1.23,
-  "model_info": {
-    "model_path": "./models/translation",
-    "hf_repo_id": "openchs/sw-en-opus-mt-mul-en-v1",
-    "device": "cuda",
-    "loaded": true,
-    "max_length": 512,
-    "chunking_supported": true
-  },
-  "timestamp": "2025-10-15T10:30:45Z"
+  "task_id": "task_trans_a1b2c3d4e5f6",
+  "status": "queued",
+  "message": "Translation started. Check status at /translate/task/{task_id}",
+  "estimated_time": "5-20 seconds",
+  "status_endpoint": "/translate/task/task_trans_a1b2c3d4e5f6"
 }
 ```
+
+**Step 2: Poll for Results**
+```bash
+curl -X GET "https://your-api-domain.com/translate/task/task_trans_a1b2c3d4e5f6"
+```
+
+---
+
+#### Python Client Example
+
+```python
+import requests
+import time
+from typing import Dict
+
+class TranslatorClient:
+    def __init__(self, base_url: str, timeout: int = 60):
+        self.base_url = base_url.rstrip('/')
+        self.timeout = timeout
+
+    def translate(self, text: str) -> Dict:
+        """
+        Submit translation request and wait for results.
+
+        Args:
+            text: Swahili text to be translated
+
+        Returns:
+            Translation results dictionary
+
+        Raises:
+            ValueError: For validation errors (400)
+            RuntimeError: For server errors
+        """
+        # Step 1: Submit task
+        response = requests.post(
+            f"{self.base_url}/translate/",
+            json={"text": text},
+            timeout=10
+        )
+
+        if response.status_code == 202:
+            task_data = response.json()
+            task_id = task_data["task_id"]
+        else:
+            response.raise_for_status()
+
+        # Step 2: Poll for results
+        start_time = time.time()
+        poll_interval = 0.5
+
+        while time.time() - start_time < self.timeout:
+            response = requests.get(
+                f"{self.base_url}/translate/task/{task_id}",
+                timeout=10
+            )
+            response.raise_for_status()
+
+            task_status = response.json()
+
+            if task_status["status"] == "success":
+                return task_status["result"]
+            elif task_status["status"] == "failed":
+                raise RuntimeError(f"Translation failed: {task_status.get('error', 'Unknown error')}")
+
+            time.sleep(poll_interval)
+            poll_interval = min(poll_interval * 1.5, 3.0)
+
+        raise TimeoutError(f"Translation did not complete within {self.timeout} seconds")
+
+# Usage example
+client = TranslatorClient("https://your-api-domain.com")
+
+try:
+    result = client.translate(
+        text="Watoto wanahitaji msaada wa haraka. Kuna tatizo kubwa hapa."
+    )
+
+    print(f"Translated: {result['translated']}")
+    print(f"Processing time: {result['processing_time']:.2f}s")
+
+except Exception as e:
+    print(f"Error: {e}")
+```
+
+---
 
 #### Getting Translation Info
 
@@ -546,27 +693,40 @@ GET /translate/info
 **Response:**
 ```json
 {
-  "status": "ready",
+  "status": "api_server_mode",
+  "message": "Translation model available on Celery workers",
+  "mode": "api_server",
   "model_info": {
-    "hf_repo_id": "openchs/sw-en-opus-mt-mul-en-v1",
-    "device": "cuda",
-    "loaded": true,
-    "max_length": 512,
-    "chunking_supported": true,
-    "fallback_strategies": [
-      "chunked_translation",
-      "memory_cleanup",
-      "retry_logic"
-    ]
+    "name": "Translation Model",
+    "location": "celery_workers",
+    "note": "Model loaded on worker nodes"
   }
 }
 ```
+
+#### Demo Endpoint
+
+For a quick demonstration of the translation capabilities, you can use the demo endpoint.
+
+- **Endpoint:** `POST /translate/demo`
+- **Description:** Runs a demo of the translation model with a sample text.
+- **Response:**
+  - A `TaskResponse` object with details about the enqueued demo task.
+
+**Example `curl` command:**
+
+```bash
+curl -X POST "http://192.168.10.6:8125/translate/demo"
+```
+
+---
 
 #### Features
 - **Automatic Chunking:** Long inputs are automatically chunked to handle conversations without truncation
 - **Segment Processing:** Configured with 450 max tokens per segment with 50 token overlap
 - **Intelligent Reconstruction:** Translated chunks are combined with proper spacing and punctuation handling
 - **GPU Memory Management:** Automatic cleanup between requests and during long translations
+- **Async Processing:** Non-blocking task-based architecture via Celery workers
 
 ---
 

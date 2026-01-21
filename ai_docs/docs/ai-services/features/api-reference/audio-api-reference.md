@@ -27,13 +27,19 @@ The Audio API provides audio processing endpoints for transcription, translation
 
 #### Request Parameters
 
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `audio` | file | **Yes** | - | Audio file to process |
-| `language` | string | No | `null` | Language code (e.g., 'sw', 'en') or 'auto' for detection |
-| `include_translation` | boolean | No | `true` | Include translation in output |
-| `include_insights` | boolean | No | `true` | Generate comprehensive insights |
-| `background` | boolean | No | `true` | Process asynchronously (true) or synchronously (false) |
+- **Request Body:**
+  - `audio`: The audio file to process (e.g., `.wav`, `.mp3`).
+  - `language` (optional): The language of the audio. Defaults to 'sw' (Swahili).
+  - `include_translation` (optional): Whether to include translation to English. Defaults to `True`.
+  - `include_insights` (optional): Whether to include NER, classification, and other insights. Defaults to `True`.
+  - `background` (optional): Whether to process in the background (asynchronous). Defaults to `True`.
+- **Response:**
+  - `task_id`: A unique identifier for the processing task.
+  - `status`: The current status of the task (e.g., "queued").
+  - `message`: A descriptive message about the task.
+  - `estimated_time`: An estimated time for task completion.
+  - `status_endpoint`: The URL to check the task's status.
+
 
 #### Supported Audio Formats
 

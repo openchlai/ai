@@ -36,7 +36,7 @@ The Whisper model is deeply integrated into the AI service through multiple laye
 
 The Whisper model is configured through the central settings system (`app/config/settings.py`):
 
-```python
+```python 
 class Settings(BaseSettings):
     # Whisper Model Configuration
     whisper_model_variant: str = "large_v2"
@@ -75,61 +75,9 @@ The system automatically detects whether it's running in Docker or local develop
 
 ### 2.2. Model Loading and Initialization
 
-The Whisper model is loaded through the `WhisperModel` class during FastAPI application startup:
-
-```python
-class WhisperModel:
-    """HuggingFace Whisper model supporting both transcription and translation"""
-    
-    def __init__(self, model_path: str = None, enable_translation: bool = True):
-        from ..config.settings import settings
-        
-        self.settings = settings
-        self.model_path = model_path or settings.get_model_path("whisper")
-        self.enable_translation = enable_translation
-        
-        ...
-
-        # Supported language codes for Whisper
-        self.supported_languages = {
-            "auto": "Auto-detect",
-            "en": "English",
-            "es": "Spanish", 
-            "fr": "French",
-            "de": "German",
-            "it": "Italian",
-            "pt": "Portuguese",
-            "ru": "Russian",
-            "ja": "Japanese",
-            "ko": "Korean",
-            "zh": "Chinese",
-            "ar": "Arabic",
-            "hi": "Hindi",
-            "sw": "Swahili",
-            "am": "Amharic",
-            "lg": "Luganda",
-            "rw": "Kinyarwanda",
-            "so": "Somali",
-            "yo": "Yoruba",
-            "ig": "Igbo",
-            "ha": "Hausa",
-            "zu": "Zulu",
-            "xh": "Xhosa",
-            "af": "Afrikaans",
-            "ny": "Chichewa"
-        }
-```
+The Whisper model is loaded through the `WhisperModel` class during FastAPI application startup.
 
 **Model Loading Implementation:**
-
-```python
-def load(self) -> bool:
-    """Load Whisper model with HuggingFace Hub support - NO AUTHENTICATION"""
-    try:
-        ...
-```
-
-**Model Loader Integration:**
 
 The Whisper model is managed by the central `model_loader` which handles:
 - Startup initialization
@@ -137,69 +85,12 @@ The Whisper model is managed by the central `model_loader` which handles:
 - Dependency tracking
 - Health monitoring
 
-```python
-# During FastAPI startup
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Initialize Whisper model via model_loader
-    model_loader.load_model("whisper")
-    yield
-    # Cleanup on shutdown
-```
-
 ### 2.3. API Endpoints Layer
 
-Whisper functionality is exposed through FastAPI routes (`app/api/endpoints/whisper_routes.py`):
+Whisper functionality is exposed through FastAPI routes (`app/api/endpoints/whisper_routes.py`)
 
-```python
-router = APIRouter(prefix="/whisper", tags=["whisper"])
 
-class TranscriptionRequest(BaseModel):
-    language: Optional[str] = None  # e.g., "en", "sw", "fr", "auto"
 
-class TranscriptionResponse(BaseModel):
-    transcript: str
-    language: Optional[str]
-    processing_time: float
-    model_info: Dict
-    timestamp: str
-    audio_info: Dict
-
-@router.post("/transcribe", response_model=TranscriptionResponse)
-async def transcribe_audio(
-    audio: UploadFile = File(...),
-    language: Optional[str] = Form(None)
-):
-    """
-    Transcribe uploaded audio file to text
-    
-    Parameters:
-    - audio: Audio file (wav, mp3, flac, m4a, ogg, webm)
-    - language: Language code (e.g., 'en', 'sw', 'fr') or 'auto' for auto-detection
-    """
-    ...
-```
-
-**Information Endpoints:**
-
-```python
-@router.get("/info")
-async def get_whisper_info():
-    """Get Whisper model information"""
-    ...
-
-@router.get("/languages")
-async def get_supported_languages():
-    """Get list of supported languages"""
-    if not model_loader.is_model_ready("whisper"):
-        return {
-            "error": "Whisper model not ready",
-            "supported_languages": {}
-        }
-    
-    whisper_model = model_loader.models.get("whisper")
-    ...
-```
 
 ### 2.4. Audio Processing Strategy
 
@@ -302,12 +193,19 @@ async def models_health():
 - **Implementable:** Model can be loaded but not yet initialized
 - **Blocked:** Missing dependencies preventing model loading
 
-**Model Info Method:**
+**Model Info:**
 
-```python
-def get_model_info(self) -> Dict[str, Any]:
-    """Get model information"""
-   ...
+This endpoint provides information about the Whisper model.
+
+- **Endpoint:** `GET /whisper/info`
+- **Description:** Retrieves information about the Whisper model.
+- **Response:**
+  - A JSON object with details about the model.
+
+**Example `curl` command:**
+
+```bash
+curl -X GET "http://192.168.10.6:8125/whisper/info"
 ```
 
 **Health Check Example Response:**
@@ -1049,13 +947,13 @@ Monitor Whisper service health:
 
 ```bash
 # Check if Whisper is ready
-curl -X GET "http://192.168.8.18:8123/whisper/info"
+curl -X GET "http://your-host:8125/whisper/info"
 
 # Get detailed model status
-curl -X GET "http://192.168.8.18:8123/health/models"
+curl -X GET "http://your-host:8125/health/models"
 
 # Get supported languages
-curl -X GET "http://192.168.8.18:8123/whisper/languages"
+curl -X GET "http://your-host:8125/whisper/languages"
 ```
 
 ### GPU Memory Management
