@@ -72,7 +72,7 @@ class TestProcessingWindow:
         assert sample_processing_window.window_id == 1
         assert sample_processing_window.start_position == 0
         assert sample_processing_window.end_position == 150
-        assert sample_processing_window.text_content == "Hello world, this is a test transcript for processing."
+        assert sample_processing_window.text_content == "Hello, this is a test."
         assert sample_processing_window.translation is not None
         assert sample_processing_window.entities is not None
         assert sample_processing_window.classification is not None
@@ -499,17 +499,17 @@ class TestProgressiveProcessor:
         
         with patch('app.streaming.progressive_processor.NOTIFICATIONS_ENABLED', True), \
              patch('app.streaming.progressive_processor.enhanced_notification_service') as mock_service:
-            
-            mock_service.send_translation_update = AsyncMock()
-            mock_service.send_entity_update = AsyncMock()
-            mock_service.send_classification_update = AsyncMock()
-            
+
+            mock_service.send_streaming_translation = AsyncMock()
+            mock_service.send_streaming_entities = AsyncMock()
+            mock_service.send_streaming_classification = AsyncMock()
+
             await processor._send_agent_notifications(call_id, sample_processing_window)
-        
+
         # Verify all notification types were sent
-        mock_service.send_translation_update.assert_called_once()
-        mock_service.send_entity_update.assert_called_once()
-        mock_service.send_classification_update.assert_called_once()
+        mock_service.send_streaming_translation.assert_called_once()
+        mock_service.send_streaming_entities.assert_called_once()
+        mock_service.send_streaming_classification.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_send_agent_notifications_disabled(self, processor, sample_processing_window):
@@ -686,9 +686,9 @@ class TestProgressiveProcessorAdditional:
              patch('app.streaming.progressive_processor.enhanced_notification_service') as mock_service:
             
             # Make translation update fail
-            mock_service.send_translation_update = AsyncMock(side_effect=Exception("Translation notification failed"))
-            mock_service.send_entity_update = AsyncMock()
-            mock_service.send_classification_update = AsyncMock()
+            mock_service.send_streaming_translation = AsyncMock(side_effect=Exception("Translation notification failed"))
+            mock_service.send_streaming_entities = AsyncMock()
+            mock_service.send_streaming_classification = AsyncMock()
             
             # Should not raise exception
             await processor._send_agent_notifications(call_id, window)
@@ -712,8 +712,8 @@ class TestProgressiveProcessorAdditional:
              patch('app.streaming.progressive_processor.enhanced_notification_service') as mock_service:
             
             # Make entity update fail
-            mock_service.send_entity_update = AsyncMock(side_effect=Exception("Entity notification failed"))
-            mock_service.send_classification_update = AsyncMock()
+            mock_service.send_streaming_entities = AsyncMock(side_effect=Exception("Entity notification failed"))
+            mock_service.send_streaming_classification = AsyncMock()
             
             # Should not raise exception
             await processor._send_agent_notifications(call_id, window)
@@ -737,7 +737,7 @@ class TestProgressiveProcessorAdditional:
              patch('app.streaming.progressive_processor.enhanced_notification_service') as mock_service:
             
             # Make classification update fail
-            mock_service.send_classification_update = AsyncMock(side_effect=Exception("Classification notification failed"))
+            mock_service.send_streaming_classification = AsyncMock(side_effect=Exception("Classification notification failed"))
             
             # Should not raise exception
             await processor._send_agent_notifications(call_id, window)
@@ -1012,13 +1012,13 @@ class TestProgressiveProcessor100Percent:
              patch('app.streaming.progressive_processor.enhanced_notification_service') as mock_service:
             
             # Only entity update should be called and fail
-            mock_service.send_entity_update = AsyncMock(side_effect=Exception("Entity notification failed"))
+            mock_service.send_streaming_entities = AsyncMock(side_effect=Exception("Entity notification failed"))
             
             # Should not raise exception, should handle entity notification failure
             await processor._send_agent_notifications(call_id, window)
             
             # Verify entity update was called
-            mock_service.send_entity_update.assert_called_once()
+            mock_service.send_streaming_entities.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_send_agent_notifications_classification_exception_lines_375_376(self, processor, sample_progressive_analysis):
@@ -1042,13 +1042,13 @@ class TestProgressiveProcessor100Percent:
              patch('app.streaming.progressive_processor.enhanced_notification_service') as mock_service:
             
             # Only classification update should be called and fail
-            mock_service.send_classification_update = AsyncMock(side_effect=Exception("Classification notification failed"))
+            mock_service.send_streaming_classification = AsyncMock(side_effect=Exception("Classification notification failed"))
             
             # Should not raise exception, should handle classification notification failure
             await processor._send_agent_notifications(call_id, window)
             
             # Verify classification update was called
-            mock_service.send_classification_update.assert_called_once()
+            mock_service.send_streaming_classification.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_comprehensive_exception_coverage(self, processor):
@@ -1127,18 +1127,18 @@ class TestProgressiveProcessor100Percent:
             patch('app.streaming.progressive_processor.enhanced_notification_service') as mock_service:
             
             # Make entity notification fail - this will stop the entire method
-            mock_service.send_translation_update = AsyncMock()
-            mock_service.send_entity_update = AsyncMock(side_effect=Exception("Specific entity failure"))
-            mock_service.send_classification_update = AsyncMock()
+            mock_service.send_streaming_translation = AsyncMock()
+            mock_service.send_streaming_entities = AsyncMock(side_effect=Exception("Specific entity failure"))
+            mock_service.send_streaming_classification = AsyncMock()
             
             # Should handle the failure gracefully
             await processor._send_agent_notifications(call_id, window)
             
             # Translation should succeed, entity should fail and stop execution
-            mock_service.send_translation_update.assert_called_once()
-            mock_service.send_entity_update.assert_called_once()
+            mock_service.send_streaming_translation.assert_called_once()
+            mock_service.send_streaming_entities.assert_called_once()
             # Classification should NOT be called because execution stopped
-            mock_service.send_classification_update.assert_not_called()
+            mock_service.send_streaming_classification.assert_not_called()
 
 
 
@@ -1176,7 +1176,7 @@ class TestProgressiveProcessor100Percent:
                 classification=None  # No classification to avoid other notifications
             )
             
-            mock_service.send_entity_update = AsyncMock(side_effect=Exception("Entity notification failed"))
+            mock_service.send_streaming_entities = AsyncMock(side_effect=Exception("Entity notification failed"))
             
             await processor._send_agent_notifications(call_id, window_with_entities)
             
@@ -1194,7 +1194,7 @@ class TestProgressiveProcessor100Percent:
                 classification={"main_category": "test", "confidence": 0.9}
             )
             
-            mock_service.send_classification_update = AsyncMock(side_effect=Exception("Classification notification failed"))
+            mock_service.send_streaming_classification = AsyncMock(side_effect=Exception("Classification notification failed"))
             
             await processor._send_agent_notifications(call_id, window_with_classification)
 
@@ -1314,7 +1314,7 @@ class TestProgressiveProcessor100Percent:
                 classification=None  # No classification to avoid other notifications
             )
             
-            mock_service.send_entity_update = AsyncMock(side_effect=Exception("Entity notification failed"))
+            mock_service.send_streaming_entities = AsyncMock(side_effect=Exception("Entity notification failed"))
             
             # This should hit the entity exception block specifically
             await processor._send_agent_notifications(call_id, window_with_entities)
@@ -1334,7 +1334,7 @@ class TestProgressiveProcessor100Percent:
                 classification={"main_category": "test", "confidence": 0.9}
             )
             
-            mock_service.send_classification_update = AsyncMock(side_effect=Exception("Classification notification failed"))
+            mock_service.send_streaming_classification = AsyncMock(side_effect=Exception("Classification notification failed"))
             
             # This should hit the classification exception block specifically
             await processor._send_agent_notifications(call_id, window_with_classification)

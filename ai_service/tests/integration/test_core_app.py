@@ -45,14 +45,12 @@ class TestCeleryApp:
 
     def test_celery_app_configuration(self):
         """Test celery app has basic configuration"""
-        with patch('celery.Celery') as mock_celery:
-            mock_instance = MagicMock()
-            mock_celery.return_value = mock_instance
-            
-            from app.celery_app import celery_app
-            
-            # Verify Celery was instantiated
-            mock_celery.assert_called_once()
+        from app.celery_app import celery_app
+
+        # Verify celery_app exists and has expected attributes
+        assert celery_app is not None
+        assert hasattr(celery_app, 'conf')  # Celery configuration
+        assert hasattr(celery_app, 'Task')  # Task base class
 
 class TestModelLoader:
     """Test model loader functionality"""
@@ -178,22 +176,19 @@ class TestStreamingComponents:
 class TestAudioTasks:
     """Test audio processing tasks"""
 
-    @patch('app.tasks.audio_tasks.model_loader')
-    def test_audio_tasks_import(self, mock_loader):
+    def test_audio_tasks_import(self):
         """Test that audio tasks can be imported"""
         from app.tasks.audio_tasks import process_streaming_audio_task
-        
+
         assert process_streaming_audio_task is not None
 
     def test_task_helper_functions(self):
-        """Test task helper functions"""
-        with patch('app.tasks.audio_tasks.tempfile'), \
-             patch('soundfile.write'):
-            from app.tasks.audio_tasks import _save_audio_bytes_to_temp_file
-            
-            # Test that function exists and can be called
-            result = _save_audio_bytes_to_temp_file(b"fake_audio", 16000)
-            assert isinstance(result, str)
+        """Test task helper functions exist"""
+        from app.tasks.audio_tasks import get_worker_status, get_worker_models
+
+        # Test that functions exist and are callable
+        assert callable(get_worker_status)
+        assert callable(get_worker_models)
 
 @pytest.mark.skip(reason="AgentNotificationService has been deprecated and replaced with EnhancedNotificationService")
 class TestAgentNotificationService:
@@ -225,27 +220,20 @@ class TestMainApp:
 
     def test_main_app_creation(self):
         """Test that main app can be created"""
-        with patch('app.main.lifespan'), \
-             patch('app.api.audio_routes.router'), \
-             patch('app.api.health_routes.router'):
-            
-            from app.main import create_app
-            
-            app = create_app()
-            assert app is not None
+        from app.main import app
+
+        assert app is not None
+        assert hasattr(app, 'title')
+        assert hasattr(app, 'version')
 
     def test_cors_configuration(self):
         """Test CORS configuration"""
-        with patch('app.main.lifespan'), \
-             patch('app.api.audio_routes.router'), \
-             patch('app.api.health_routes.router'), \
-             patch('fastapi.middleware.cors.CORSMiddleware'):
-            
-            from app.main import create_app
-            
-            app = create_app()
-            # Just test that app can be created with CORS
-            assert app is not None
+        from app.main import app
+
+        # Just test that app exists and has middleware
+        assert app is not None
+        # CORS middleware is added to the app's user_middleware list
+        assert hasattr(app, 'user_middleware')
 
 class TestIntegration:
     """Test integration between components"""

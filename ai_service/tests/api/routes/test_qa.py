@@ -194,7 +194,7 @@ class TestQARoutes:
             "timestamp": "2023-01-01T00:00:00"
         }
         mock_loader.get_model.return_value = mock_model
-        
+
         with patch('app.api.qa_route.qa_evaluate_task') as mock_celery_task:
             mock_celery_task.apply_async.return_value = MagicMock(id="demo_task_id")
 
@@ -206,3 +206,81 @@ class TestQARoutes:
             mock_celery_task.apply_async.assert_called_once()
             args, kwargs = mock_celery_task.apply_async.call_args
             assert kwargs['args'][0].startswith("Agent:") # Match demo transcript
+
+    @patch('app.api.qa_route.is_api_server_mode', return_value=True)
+    @patch('app.api.qa_route.qa_evaluate_task')
+    def test_evaluate_transcript_api_server_mode(self, mock_celery_task, mock_api_server_mode, qa_app):
+        """Test transcript evaluation in API server mode (skips local model check)"""
+        mock_celery_task.apply_async.return_value = MagicMock(id="api_server_task_id")
+
+        transcript = "This is a test transcript for API server mode execution."
+        response = qa_app.post(
+            "/qa/evaluate",
+            json={"transcript": transcript}
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "queued"
+        assert data["task_id"] == "api_server_task_id"
+        mock_celery_task.apply_async.assert_called_once()
+
+    @patch('app.api.qa_route.model_loader')
+    @patch('app.api.qa_route.is_api_server_mode', return_value=False)
+    @patch('app.api.qa_route.qa_evaluate_task')
+    def test_evaluate_transcript_empty_after_strip(self, mock_celery_task, mock_api_server_mode, mock_loader, qa_app):
+        """Test transcript evaluation with whitespace-only transcript"""
+        mock_model = MagicMock()
+        mock_model.is_ready.return_value = True
+        mock_loader.get_model.return_value = mock_model
+
+        response = qa_app.post(
+            "/qa/evaluate",
+            json={"transcript": "          "}  # Only whitespace
+        )
+
+        assert response.status_code == 400
+        assert "cannot be empty" in response.json()["detail"]
+
+    @patch('app.api.qa_route.model_loader')
+    @patch('app.api.qa_route.is_api_server_mode', return_value=False)
+    @patch('app.api.qa_route.qa_evaluate_task')
+    def test_evaluate_transcript_task_submission_exception(self, mock_celery_task, mock_api_server_mode, mock_loader, qa_app):
+        """Test exception handling when task submission fails"""
+        mock_model = MagicMock()
+        mock_model.is_ready.return_value = True
+        mock_loader.get_model.return_value = mock_model
+        mock_celery_task.apply_async.side_effect = Exception("Celery connection error")
+
+        transcript = "This is a test transcript that will fail during submission."
+        response = qa_app.post(
+            "/qa/evaluate",
+            json={"transcript": transcript}
+        )
+
+        assert response.status_code == 500
+        assert "Failed to submit task" in response.json()["detail"]
+
+    @patch('app.api.qa_route.is_api_server_mode', return_value=True)
+    def test_get_qa_info_api_server_mode(self, mock_api_server_mode, qa_app):
+        """Test QA info endpoint in API server mode"""
+        response = qa_app.get("/qa/info")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "api_server_mode"
+        assert "Celery workers" in data["message"]
+        assert data["model_info"]["mode"] == "api_server"
+
+    @patch('app.api.qa_route.qa_model.is_ready', return_value=False)
+    @patch('app.api.qa_route.is_api_server_mode', return_value=False)
+    def test_get_qa_info_model_not_ready(self, mock_api_server_mode, mock_is_ready, qa_app):
+        """Test QA info endpoint when model is not ready in standalone mode"""
+        with patch('app.api.qa_route.qa_model.get_model_info', return_value={"error": "Model failed to load"}):
+            response = qa_app.get("/qa/info")
+
+            assert response.status_code == 200
+            data = response.json()
+            assert data["status"] == "not_ready"
+            assert "not loaded" in data["message"]
+            assert "model_info" in data

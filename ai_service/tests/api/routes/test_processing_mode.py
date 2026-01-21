@@ -108,3 +108,54 @@ def test_test_processing_mode_invalid(client, mock_strategy_manager):
     response = client.post("/api/v1/processing/test-mode/invalid_mode")
     assert response.status_code == 400
     assert "Invalid mode" in response.json()["detail"]
+
+
+# Additional exception tests for missing coverage
+
+def test_get_available_modes_exception(client):
+    """Test exception handling in get_available_modes"""
+    with patch('app.api.processing_mode_routes.processing_strategy_manager') as mock_mgr:
+        # Make accessing config.default_mode.value raise an exception
+        type(mock_mgr.config).default_mode = property(fget=lambda s: (_ for _ in ()).throw(Exception("Config error")))
+
+        response = client.get("/api/v1/processing/modes")
+        assert response.status_code == 500
+        assert "Failed to get available modes" in response.json()["detail"]
+
+
+def test_update_processing_configuration_exception(client, mock_strategy_manager):
+    """Test exception handling in update_processing_configuration"""
+    mock_strategy_manager.update_mode_configuration.side_effect = Exception("Update failed")
+
+    payload = {"default_mode": "hybrid"}
+    response = client.post("/api/v1/processing/configure", json=payload)
+    assert response.status_code == 500
+    assert "Failed to update" in response.json()["detail"]
+
+
+def test_create_call_processing_plan_exception(client, mock_strategy_manager):
+    """Test exception handling in create_call_processing_plan"""
+    mock_strategy_manager.get_sanitized_processing_plan.side_effect = Exception("Plan creation failed")
+
+    payload = {"call_id": "test_call"}
+    response = client.post("/api/v1/processing/plan", json=payload)
+    assert response.status_code == 500
+    assert "Failed to create processing plan" in response.json()["detail"]
+
+
+def test_get_processing_statistics_exception(client, mock_strategy_manager):
+    """Test exception handling in get_processing_statistics"""
+    mock_strategy_manager.mode_usage_stats = None  # Cause an error
+
+    response = client.get("/api/v1/processing/statistics")
+    assert response.status_code == 500
+    assert "Failed to get statistics" in response.json()["detail"]
+
+
+def test_test_processing_mode_exception(client, mock_strategy_manager):
+    """Test exception handling in test_processing_mode"""
+    mock_strategy_manager.get_sanitized_processing_plan.side_effect = Exception("Test mode failed")
+
+    response = client.post("/api/v1/processing/test-mode/hybrid")
+    assert response.status_code == 500
+    assert "Failed to test" in response.json()["detail"]

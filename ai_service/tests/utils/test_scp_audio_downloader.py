@@ -450,3 +450,361 @@ class TestDownloadByMethod:
         assert audio_bytes is None
         assert download_info['success'] is False
         assert "Unsupported" in download_info['error']
+
+    @pytest.mark.asyncio
+    async def test_download_audio_by_method_http(self):
+        """Test download with HTTP method"""
+        from app.utils.scp_audio_downloader import download_audio_by_method
+
+        with patch('app.utils.scp_audio_downloader.download_audio_via_http',
+                   return_value=(None, {'success': False, 'method': 'http', 'error': 'Not implemented'})):
+
+            audio_bytes, download_info = await download_audio_by_method(
+                "test_call_123",
+                method="http"
+            )
+
+            assert download_info['method'] == "http"
+
+    @pytest.mark.asyncio
+    @patch('app.config.settings.settings')
+    async def test_download_audio_by_method_mock(self, mock_settings):
+        """Test download with mock method"""
+        mock_settings.mock_enabled = True
+        mock_settings.mock_audio_folder = "/tmp/mock_audio"
+        mock_settings.mock_use_folder_files = True
+
+        from app.utils.scp_audio_downloader import download_audio_by_method
+
+        with patch('app.utils.scp_audio_downloader.download_audio_for_mock',
+                   return_value=(b"mock_audio", {'success': True, 'method': 'mock'})):
+
+            audio_bytes, download_info = await download_audio_by_method(
+                "test_call_123",
+                method="mock"
+            )
+
+            assert download_info['method'] == "mock"
+
+    @pytest.mark.asyncio
+    @patch('app.config.settings.settings')
+    async def test_download_audio_by_method_scp_with_mock_override(self, mock_settings):
+        """Test that SCP method uses mock when mock_enabled and mock_skip_scp_download"""
+        mock_settings.mock_enabled = True
+        mock_settings.mock_skip_scp_download = True
+        mock_settings.mock_audio_folder = "/tmp/mock_audio"
+        mock_settings.mock_use_folder_files = True
+
+        from app.utils.scp_audio_downloader import download_audio_by_method
+
+        with patch('app.utils.scp_audio_downloader.download_audio_for_mock',
+                   return_value=(b"mock_audio", {'success': True, 'method': 'mock'})) as mock_fn:
+
+            audio_bytes, download_info = await download_audio_by_method(
+                "test_call_123",
+                method="scp"
+            )
+
+            # Should have called mock download instead of SCP
+            mock_fn.assert_called_once()
+
+
+class TestHTTPDownload:
+    """Test HTTP-based audio download"""
+
+    @pytest.mark.asyncio
+    async def test_download_audio_via_http_not_implemented(self):
+        """Test HTTP download returns not implemented error"""
+        from app.utils.scp_audio_downloader import download_audio_via_http
+
+        audio_bytes, download_info = await download_audio_via_http(
+            "test_call_123",
+            {"base_url": "http://example.com"}
+        )
+
+        assert audio_bytes is None
+        assert download_info['success'] is False
+        assert download_info['method'] == "http"
+        assert "not implemented" in download_info['error']
+
+
+class TestMockDownload:
+    """Test mock audio download"""
+
+    @pytest.mark.asyncio
+    @patch('app.config.settings.settings')
+    async def test_download_audio_for_mock_disabled(self, mock_settings):
+        """Test mock download when mock mode is disabled"""
+        mock_settings.mock_enabled = False
+
+        from app.utils.scp_audio_downloader import download_audio_for_mock
+
+        audio_bytes, download_info = await download_audio_for_mock("test_call_123")
+
+        assert audio_bytes is None
+        assert download_info['success'] is False
+        assert "not enabled" in download_info['error']
+
+    @pytest.mark.asyncio
+    @patch('app.config.settings.settings')
+    async def test_download_audio_for_mock_enabled(self, mock_settings):
+        """Test mock download when mock mode is enabled"""
+        mock_settings.mock_enabled = True
+        mock_settings.mock_audio_folder = "/tmp/mock_audio"
+        mock_settings.mock_use_folder_files = True
+
+        from app.utils.scp_audio_downloader import download_audio_for_mock
+
+        with patch('app.utils.scp_audio_downloader.download_audio_local',
+                   return_value=(b"mock_audio", {'success': True, 'method': 'local'})):
+
+            audio_bytes, download_info = await download_audio_for_mock("test_call_123")
+
+            assert audio_bytes == b"mock_audio"
+            assert download_info['method'] == "mock"
+
+
+class TestTestSCPDownload:
+    """Test the test_scp_download function"""
+
+    @pytest.mark.asyncio
+    async def test_test_scp_download_success(self):
+        """Test the test_scp_download function with success"""
+        from app.utils.scp_audio_downloader import test_scp_download
+
+        with patch('app.utils.scp_audio_downloader.download_audio_by_method',
+                   return_value=(b"test_audio", {'success': True, 'file_size_mb': 1.5, 'format': 'wav'})):
+
+            result = await test_scp_download("test_call", method="scp")
+
+            assert result is True
+
+    @pytest.mark.asyncio
+    async def test_test_scp_download_failure(self):
+        """Test the test_scp_download function with failure"""
+        from app.utils.scp_audio_downloader import test_scp_download
+
+        with patch('app.utils.scp_audio_downloader.download_audio_by_method',
+                   return_value=(None, {'success': False, 'error': 'Connection failed'})):
+
+            result = await test_scp_download("test_call", method="scp")
+
+            assert result is False
+
+
+class TestDownloadAndConvertPipeline:
+    """Additional tests for download and convert pipeline"""
+
+    @pytest.mark.asyncio
+    async def test_download_and_convert_with_conversion_success(self):
+        """Test download and convert with successful WAV conversion"""
+        from app.utils.scp_audio_downloader import download_and_convert_audio
+
+        gsm_bytes = b"mock_gsm_audio"
+        wav_bytes = b"mock_wav_audio_converted"
+
+        with patch('app.utils.scp_audio_downloader.download_audio_via_scp',
+                   return_value=(gsm_bytes, {'success': True, 'format': 'gsm', 'file_size_bytes': 100, 'file_size_mb': 0.1})), \
+             patch('app.utils.scp_audio_downloader.convert_gsm_to_wav',
+                   return_value=wav_bytes):
+
+            audio_bytes, download_info = await download_and_convert_audio(
+                "test_call_123",
+                convert_to_wav=True
+            )
+
+            assert audio_bytes == wav_bytes
+            assert download_info['conversion_successful'] is True
+
+    @pytest.mark.asyncio
+    async def test_download_and_convert_with_conversion_failure(self):
+        """Test download and convert when WAV conversion fails"""
+        from app.utils.scp_audio_downloader import download_and_convert_audio
+
+        gsm_bytes = b"mock_gsm_audio"
+
+        with patch('app.utils.scp_audio_downloader.download_audio_via_scp',
+                   return_value=(gsm_bytes, {'success': True, 'format': 'gsm', 'file_size_bytes': 100, 'file_size_mb': 0.1})), \
+             patch('app.utils.scp_audio_downloader.convert_gsm_to_wav',
+                   return_value=None):
+
+            audio_bytes, download_info = await download_and_convert_audio(
+                "test_call_123",
+                convert_to_wav=True
+            )
+
+            # Should return original GSM bytes when conversion fails
+            assert audio_bytes == gsm_bytes
+            assert download_info['conversion_successful'] is False
+            assert download_info['format'] == "gsm_original"
+
+    @pytest.mark.asyncio
+    async def test_download_and_convert_download_failure(self):
+        """Test download and convert when download fails"""
+        from app.utils.scp_audio_downloader import download_and_convert_audio
+
+        with patch('app.utils.scp_audio_downloader.download_audio_via_scp',
+                   return_value=(None, {'success': False, 'error': 'Connection refused'})):
+
+            audio_bytes, download_info = await download_and_convert_audio(
+                "test_call_123",
+                convert_to_wav=True
+            )
+
+            assert audio_bytes is None
+            assert download_info['success'] is False
+
+
+class TestSCPDownloadEdgeCases:
+    """Edge cases for SCP download"""
+
+    @pytest.mark.asyncio
+    @patch('app.config.settings.settings')
+    async def test_download_audio_via_scp_with_custom_config(self, mock_settings):
+        """Test SCP download with custom config override"""
+        from app.utils.scp_audio_downloader import download_audio_via_scp
+
+        custom_config = {
+            "user": "custom_user",
+            "server": "custom_server.com",
+            "password": "custom_pass",
+            "remote_path_template": "/custom/path/{call_id}.wav",
+            "timeout_seconds": 60
+        }
+
+        with patch('app.utils.scp_audio_downloader.asyncio.create_subprocess_exec') as mock_exec, \
+             patch('app.utils.scp_audio_downloader.tempfile.NamedTemporaryFile') as mock_temp, \
+             patch('app.utils.scp_audio_downloader.os.path.exists', return_value=False):
+
+            mock_process = AsyncMock()
+            mock_process.communicate.return_value = (b"", b"")
+            mock_process.returncode = 1
+            mock_exec.return_value = mock_process
+            mock_temp.return_value.__enter__.return_value.name = "/tmp/temp_file"
+
+            audio_bytes, download_info = await download_audio_via_scp("test_call_123", custom_config)
+
+            assert download_info['server'] == "custom_server.com"
+
+    @pytest.mark.asyncio
+    @patch('app.config.settings.settings')
+    async def test_download_audio_via_scp_empty_file(self, mock_settings):
+        """Test SCP download when file is empty"""
+        mock_settings.scp_user = "testuser"
+        mock_settings.scp_server = "testserver.com"
+        mock_settings.scp_password = "testpass"
+        mock_settings.scp_remote_path_template = "/recordings/{call_id}.gsm"
+        mock_settings.scp_timeout_seconds = 30
+
+        from app.utils.scp_audio_downloader import download_audio_via_scp
+
+        with patch('app.utils.scp_audio_downloader.asyncio.create_subprocess_exec') as mock_exec, \
+             patch('app.utils.scp_audio_downloader.os.path.exists', return_value=True), \
+             patch('app.utils.scp_audio_downloader.os.path.getsize', return_value=0), \
+             patch('app.utils.scp_audio_downloader.tempfile.NamedTemporaryFile') as mock_temp:
+
+            mock_process = AsyncMock()
+            mock_process.communicate.return_value = (b"", b"")
+            mock_process.returncode = 0
+            mock_exec.return_value = mock_process
+            mock_temp.return_value.__enter__.return_value.name = "/tmp/temp_file"
+
+            audio_bytes, download_info = await download_audio_via_scp("test_call_123")
+
+            assert audio_bytes is None
+            assert download_info['success'] is False
+            assert "empty" in download_info['error']
+
+    @pytest.mark.asyncio
+    @patch('app.config.settings.settings')
+    async def test_download_audio_via_scp_general_exception(self, mock_settings):
+        """Test SCP download with general exception"""
+        mock_settings.scp_user = "testuser"
+        mock_settings.scp_server = "testserver.com"
+        mock_settings.scp_password = "testpass"
+        mock_settings.scp_remote_path_template = "/recordings/{call_id}.gsm"
+        mock_settings.scp_timeout_seconds = 30
+
+        from app.utils.scp_audio_downloader import download_audio_via_scp
+
+        with patch('app.utils.scp_audio_downloader.asyncio.create_subprocess_exec',
+                   side_effect=Exception("Unexpected error")), \
+             patch('app.utils.scp_audio_downloader.tempfile.NamedTemporaryFile') as mock_temp:
+
+            mock_temp.return_value.__enter__.return_value.name = "/tmp/temp_file"
+
+            audio_bytes, download_info = await download_audio_via_scp("test_call_123")
+
+            assert audio_bytes is None
+            assert "SCP error" in download_info['error']
+
+
+class TestFormatDetectionExtended:
+    """Extended format detection tests"""
+
+    def test_detect_audio_format_wav16(self):
+        """Test wav16 format detection"""
+        from app.utils.scp_audio_downloader import _detect_audio_format
+
+        result = _detect_audio_format("/recordings/call_123.wav16")
+        assert result == "wav16"
+
+    def test_detect_audio_format_mp3(self):
+        """Test MP3 format detection"""
+        from app.utils.scp_audio_downloader import _detect_audio_format
+
+        result = _detect_audio_format("/recordings/call_123.mp3")
+        assert result == "mp3"
+
+    def test_detect_audio_format_ogg(self):
+        """Test OGG format detection"""
+        from app.utils.scp_audio_downloader import _detect_audio_format
+
+        result = _detect_audio_format("/recordings/call_123.ogg")
+        assert result == "ogg"
+
+    def test_detect_audio_format_flac(self):
+        """Test FLAC format detection"""
+        from app.utils.scp_audio_downloader import _detect_audio_format
+
+        result = _detect_audio_format("/recordings/call_123.flac")
+        assert result == "flac"
+
+
+class TestLocalDownloadExtended:
+    """Extended local download tests"""
+
+    @pytest.mark.asyncio
+    async def test_download_audio_local_exception_handling(self):
+        """Test local download exception handling"""
+        from app.utils.scp_audio_downloader import download_audio_local
+
+        local_config = {
+            "local_path_template": "/var/spool/asterisk/{call_id}.gsm"
+        }
+
+        with patch('app.utils.scp_audio_downloader.os.path.exists', side_effect=Exception("Permission denied")):
+
+            audio_bytes, download_info = await download_audio_local("test_call_123", local_config)
+
+            assert audio_bytes is None
+            assert download_info['success'] is False
+            assert "error" in download_info['error'].lower()
+
+    @pytest.mark.asyncio
+    async def test_download_audio_local_folder_no_files(self):
+        """Test local download folder mode when no files match"""
+        from app.utils.scp_audio_downloader import download_audio_local
+
+        local_config = {
+            "mock_audio_folder": "/tmp/audio_folder",
+            "use_folder_files": True
+        }
+
+        with patch('app.utils.scp_audio_downloader.os.path.isdir', return_value=True), \
+             patch('app.utils.scp_audio_downloader._find_audio_file_in_folder', return_value=None):
+
+            audio_bytes, download_info = await download_audio_local("test_call_123", local_config)
+
+            assert audio_bytes is None
+            assert download_info['success'] is False

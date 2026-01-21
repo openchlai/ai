@@ -169,7 +169,7 @@ class TestTCPProtocol:
         # Mock the audio buffer to return audio array on first call
         mock_audio_array = np.random.random(80000).astype(np.float32)
 
-        with patch('app.streaming.audio_buffer.AsteriskAudioBuffer') as mock_buffer_class, \
+        with patch('app.streaming.tcp_server.AsteriskAudioBuffer') as mock_buffer_class, \
              patch('app.streaming.tcp_server.call_session_manager') as mock_session_manager:
 
             mock_buffer = Mock()

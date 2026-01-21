@@ -179,8 +179,7 @@ class TestWhisperModelBasic:
              patch("os.makedirs"), \
              patch("torch.cuda.is_available", return_value=False), \
              patch("tempfile.NamedTemporaryFile") as mock_temp, \
-             patch("librosa.load") as mock_load, \
-             patch("numpy.frombuffer") as mock_frombuffer:
+             patch("librosa.load") as mock_load:
 
             # Setup mocks
             mock_pipeline.return_value = MagicMock()
@@ -189,7 +188,6 @@ class TestWhisperModelBasic:
             mock_temp_file.name = "/tmp/test.wav"
             mock_temp.__enter__.return_value = mock_temp_file
 
-            mock_frombuffer.return_value = np.array([0.1, 0.2, 0.3])  # Mock audio data
             mock_load.return_value = (np.array([0.1, 0.2, 0.3]), 16000)
 
             from app.model_scripts.whisper_model import WhisperModel
@@ -203,8 +201,10 @@ class TestWhisperModelBasic:
             model.model.generate.return_value = [[1, 2, 3]]
             model.processor.batch_decode.return_value = ["PCM audio content"]
 
-            # Test transcribe_pcm_audio
-            pcm_bytes = b'\x00' * 1000
+            # Test transcribe_pcm_audio with non-silent audio
+            # Create PCM data that has energy above silence threshold
+            # int16 range is -32768 to 32767, so values > 32 will have energy > 0.001 when normalized
+            pcm_bytes = (np.random.randint(100, 1000, size=1000, dtype=np.int16)).tobytes()
             result = model.transcribe_pcm_audio(pcm_bytes, sample_rate=16000)
             assert result == "PCM audio content"
 

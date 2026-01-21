@@ -220,6 +220,75 @@ class TestSummarizationChunker:
         assert "First part" in reconstructed
         assert "Second part" in reconstructed
 
+    @patch('app.utils.text_utils.AutoTokenizer')
+    def test_chunk_transcript_small_text(self, mock_tokenizer_class):
+        """Test chunk_transcript with text that fits in one chunk"""
+        mock_tokenizer = MagicMock()
+        mock_tokenizer.encode.return_value = [101] * 50  # 50 tokens, under limit
+        mock_tokenizer_class.from_pretrained.return_value = mock_tokenizer
+
+        from app.utils.text_utils import SummarizationChunker
+
+        chunker = SummarizationChunker(max_tokens=512)
+        transcript = "This is a short transcript. It has two sentences."
+
+        chunks = chunker.chunk_transcript(transcript)
+
+        assert len(chunks) == 1
+        assert chunks[0]['chunk_index'] == 0
+        assert 'text' in chunks[0]
+        assert 'token_count' in chunks[0]
+
+    @patch('app.utils.text_utils.AutoTokenizer')
+    def test_chunk_transcript_with_overlap(self, mock_tokenizer_class):
+        """Test chunk_transcript with text requiring multiple chunks and overlap"""
+        mock_tokenizer = MagicMock()
+        # Return different token counts: first test chunk is too big, then smaller ones
+        def mock_encode(text, add_special_tokens=True):
+            # Make chunks that trigger overlap behavior
+            if "Sentence one" in text and "Sentence six" in text:
+                return [101] * 600  # Entire text too long
+            elif "Sentence one" in text and len(text) > 50:
+                return [101] * 300  # First chunk still too big
+            elif "Sentence one" in text:
+                return [101] * 100  # Individual sentence fits
+            else:
+                return [101] * min(100, len(text))  # Other sentences
+
+        mock_tokenizer.encode.side_effect = mock_encode
+        mock_tokenizer_class.from_pretrained.return_value = mock_tokenizer
+
+        from app.utils.text_utils import SummarizationChunker
+
+        chunker = SummarizationChunker(max_tokens=512, overlap_tokens=50)
+        long_transcript = "Sentence one. Sentence two. Sentence three. Sentence four. Sentence five. Sentence six."
+
+        chunks = chunker.chunk_transcript(long_transcript)
+
+        assert len(chunks) >= 1
+        for chunk in chunks:
+            assert 'text' in chunk
+            assert 'chunk_index' in chunk
+            assert 'sentence_count' in chunk
+
+    @patch('app.utils.text_utils.AutoTokenizer')
+    def test_get_overlap_sentences(self, mock_tokenizer_class):
+        """Test _get_overlap_sentences helper method"""
+        mock_tokenizer = MagicMock()
+        mock_tokenizer.encode.side_effect = lambda text, **kw: [101] * len(text.split())
+        mock_tokenizer_class.from_pretrained.return_value = mock_tokenizer
+
+        from app.utils.text_utils import SummarizationChunker
+
+        chunker = SummarizationChunker(max_tokens=512, overlap_tokens=50)
+        sentences = ["Short sentence one.", "Short sentence two.", "Short sentence three.", "Short sentence four."]
+
+        # Get overlap sentences that fit in token limit
+        overlap = chunker._get_overlap_sentences(sentences, target_tokens=10)
+
+        assert isinstance(overlap, list)
+        # Should get some sentences that fit in the token limit
+
 
 class TestNERChunker:
     """Test NER-specific chunking with character position tracking"""
