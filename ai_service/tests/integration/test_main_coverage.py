@@ -1,7 +1,5 @@
 """
-Comprehensive coverage tests for app/main.py - Phase 3B
-Focuses on achieving 95% coverage for main.py (currently 49%)
-Tests endpoints, error handling, and conditional code paths
+Comprehensive coverage tests for app/main.py 
 """
 import pytest
 from unittest.mock import MagicMock, AsyncMock, patch

@@ -1,6 +1,5 @@
 """
-Comprehensive tests for model_tasks.py Celery tasks - Phase 2B
-Focuses on achieving 95% coverage for all model inference tasks
+Comprehensive tests for model_tasks.py Celery tasks
 """
 import pytest
 from unittest.mock import MagicMock, AsyncMock, patch, call

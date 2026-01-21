@@ -1,6 +1,5 @@
 """
 Comprehensive tests for classifier_model.py
-Focus: Achieving 95% coverage for multi-head classifier model
 """
 import pytest
 import torch

@@ -1,7 +1,5 @@
 """
 Comprehensive tests for call_session_manager.py - streaming call session management
-Focus: Achieving 95% coverage for call session lifecycle and real-time processing
-Updated to match actual CallSessionManager API (2026-01-21)
 """
 import pytest
 import asyncio
