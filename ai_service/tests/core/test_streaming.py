@@ -181,7 +181,97 @@ class TestAudioStreamingService:
     async def test_close_exception(self, mock_redis):
         service = AudioStreamingService()
         await service.get_redis_client()
-        
+
         mock_redis.close.side_effect = Exception("Close failed")
         # Should not raise
         await service.close()
+
+    @pytest.mark.asyncio
+    async def test_publish_progress_no_subscribers(self, mock_redis):
+        """Test publish_progress when no subscribers are active (line 80)"""
+        service = AudioStreamingService()
+        mock_redis.publish.return_value = 0  # No active subscribers
+
+        success = await service.publish_progress("task1", "step1", 50, "working")
+
+        assert success is True
+        mock_redis.publish.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_subscribe_timeout(self, mock_redis):
+        """Test subscribe_to_task with timeout (lines 236-248)"""
+        import asyncio
+        service = AudioStreamingService()
+        mock_pubsub = mock_redis.pubsub.return_value
+
+        # Create a generator that yields messages but never completes
+        async def message_generator():
+            # Keep yielding non-message types to trigger timeout
+            for i in range(100):
+                yield {"type": "subscribe"}
+                await asyncio.sleep(0.001)  # Small delay
+
+        mock_pubsub.listen.side_effect = message_generator
+
+        # Set a very short timeout
+        updates = []
+        async for update in service.subscribe_to_task("task1", timeout=0.05):
+            updates.append(update)
+
+        # Should get subscription confirmation + timeout message
+        assert len(updates) >= 2
+        assert updates[0]["status"] == "subscribed"
+        # Last message should be timeout
+        assert updates[-1]["status"] == "timeout"
+
+    @pytest.mark.asyncio
+    async def test_subscribe_unsubscribe_error(self, mock_redis):
+        """Test subscribe_to_task with error in finally block (lines 260-261)"""
+        service = AudioStreamingService()
+        mock_pubsub = mock_redis.pubsub.return_value
+
+        # Make unsubscribe fail
+        mock_pubsub.unsubscribe.side_effect = Exception("Unsubscribe failed")
+
+        msg = {"type": "message", "data": json.dumps({"step": "completed", "progress": 100})}
+
+        async def message_generator():
+            yield msg
+
+        mock_pubsub.listen.side_effect = message_generator
+
+        # Should not raise, just log error
+        updates = []
+        async for update in service.subscribe_to_task("task1"):
+            updates.append(update)
+
+        # Should still get updates
+        assert len(updates) >= 2
+
+    @pytest.mark.asyncio
+    async def test_cleanup_task_channel_success(self, mock_redis):
+        """Test successful cleanup_task_channel (lines 278-279)"""
+        service = AudioStreamingService()
+        mock_redis.publish.return_value = 1
+
+        success = await service.cleanup_task_channel("task1")
+
+        assert success is True
+        mock_redis.publish.assert_called_once()
+        args = mock_redis.publish.call_args
+        data = json.loads(args[0][1])
+        assert data["step"] == "cleanup"
+
+    @pytest.mark.asyncio
+    async def test_close_both_clients(self, mock_redis):
+        """Test close() with both redis and pubsub clients (lines 290-292)"""
+        service = AudioStreamingService()
+        # Initialize both clients
+        await service.get_redis_client()
+        await service.get_pubsub_client()
+
+        # Should close both without raising
+        await service.close()
+
+        # Both close methods should be called
+        assert mock_redis.close.call_count == 2

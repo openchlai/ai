@@ -11,7 +11,7 @@ from app.tasks.health_tasks import health_check_models
 class TestHealthCheckModels:
     """Tests for health_check_models task"""
 
-    @patch('app.tasks.health_tasks.model_loader')
+    @patch('app.model_scripts.model_loader.model_loader')
     @patch('socket.gethostname')
     def test_health_check_all_models_ready(self, mock_hostname, mock_loader):
         """Test health check when all models are ready"""
@@ -35,7 +35,7 @@ class TestHealthCheckModels:
             "qa", "classifier_model", "ner", "summarizer", "translator", "whisper"
         ]
 
-    @patch('app.tasks.health_tasks.model_loader')
+    @patch('app.model_scripts.model_loader.model_loader')
     @patch('socket.gethostname')
     def test_health_check_some_models_missing(self, mock_hostname, mock_loader):
         """Test health check when some models are not ready"""
@@ -54,7 +54,7 @@ class TestHealthCheckModels:
         assert result['models_loaded']['whisper'] is True
         assert result['total_ready_models'] == 2
 
-    @patch('app.tasks.health_tasks.model_loader')
+    @patch('app.model_scripts.model_loader.model_loader')
     @patch('socket.gethostname')
     def test_health_check_no_models_ready(self, mock_hostname, mock_loader):
         """Test health check when no models are ready"""
@@ -69,7 +69,7 @@ class TestHealthCheckModels:
         assert result['total_ready_models'] == 0
         assert result['ready_models'] == []
 
-    @patch('app.tasks.health_tasks.model_loader')
+    @patch('app.model_scripts.model_loader.model_loader')
     @patch('socket.gethostname')
     def test_health_check_exception_handling(self, mock_hostname, mock_loader):
         """Test health check when model loader raises exception"""
@@ -86,14 +86,15 @@ class TestHealthCheckModels:
         assert result['total_ready_models'] == 0
         assert result['ready_models'] == []
 
-    @patch('app.tasks.health_tasks.model_loader')
     @patch('socket.gethostname')
-    def test_health_check_import_error(self, mock_hostname, mock_loader):
+    def test_health_check_import_error(self, mock_hostname):
         """Test health check when import fails"""
         mock_hostname.return_value = "test-worker-5"
 
         # Simulate import error by raising during model loader access
-        with patch('app.tasks.health_tasks.model_loader', side_effect=RuntimeError("Import failed")):
+        # Patch the model_loader to raise an exception when accessed
+        with patch('app.model_scripts.model_loader.model_loader') as mock_loader:
+            mock_loader.get_ready_models.side_effect = RuntimeError("Import failed")
             result = health_check_models()
 
             assert result['status'] == 'error'
@@ -101,7 +102,7 @@ class TestHealthCheckModels:
             assert 'error' in result
             assert all(v is False for v in result['models_loaded'].values())
 
-    @patch('app.tasks.health_tasks.model_loader')
+    @patch('app.model_scripts.model_loader.model_loader')
     def test_health_check_returns_dict(self, mock_loader):
         """Test that health check always returns a dictionary"""
         mock_loader.get_ready_models.return_value = ["qa"]
@@ -115,7 +116,7 @@ class TestHealthCheckModels:
         assert 'ready_models' in result
         assert 'total_ready_models' in result
 
-    @patch('app.tasks.health_tasks.model_loader')
+    @patch('app.model_scripts.model_loader.model_loader')
     @patch('socket.gethostname')
     def test_health_check_hostname_included(self, mock_hostname, mock_loader):
         """Test that worker hostname is properly included in response"""
@@ -127,7 +128,7 @@ class TestHealthCheckModels:
 
         assert result['worker_host'] == expected_hostname
 
-    @patch('app.tasks.health_tasks.model_loader')
+    @patch('app.model_scripts.model_loader.model_loader')
     @patch('socket.gethostname')
     def test_health_check_classifier_alias(self, mock_hostname, mock_loader):
         """Test that classifier_model is properly aliased to classifier"""
@@ -141,7 +142,7 @@ class TestHealthCheckModels:
         assert result['models_loaded']['classifier'] is True
         assert 'classifier_model' in result['ready_models']
 
-    @patch('app.tasks.health_tasks.model_loader')
+    @patch('app.model_scripts.model_loader.model_loader')
     @patch('socket.gethostname')
     def test_health_check_complete_response_structure(self, mock_hostname, mock_loader):
         """Test complete response structure matches specification"""

@@ -54,7 +54,7 @@ class TestIntelligentTextChunker:
     @pytest.fixture
     def very_long_sentence(self):
         """Single sentence that's too long and needs forced splitting"""
-        words = ["word"] * 200  # Create a 200-word sentence
+        words = ["word"] * 500  # Create a 500-word sentence (>400 tokens to force splitting)
         return " ".join(words) + "."
     
     # Basic functionality tests
@@ -340,7 +340,12 @@ class TestTextChunk:
 # Performance benchmarks
 class TestPerformanceBenchmarks:
     """Performance benchmarks for the text chunker"""
-    
+
+    @pytest.fixture
+    def chunker(self):
+        """Create a text chunker instance for benchmarking"""
+        return IntelligentTextChunker()
+
     @pytest.mark.benchmark
     def test_chunking_speed_small_text(self, chunker):
         """Benchmark chunking speed for small texts"""

@@ -19,17 +19,19 @@ def test_streaming_init():
 def test_audio_buffer_basic():
     """Test audio buffer basic functionality"""
     from app.streaming.audio_buffer import AsteriskAudioBuffer
-    
+
     buffer = AsteriskAudioBuffer()
     assert buffer is not None
-    
+
     # Test adding data
-    buffer.add_chunk(b"test_audio_data", 1234567890)
-    assert len(buffer.chunks) > 0
-    
-    # Test getting duration
-    duration = buffer.get_total_duration()
-    assert duration >= 0
+    result = buffer.add_chunk(b"test_audio_data")
+    # Small chunk won't trigger window, so result should be None
+    assert result is None
+
+    # Test getting stats
+    stats = buffer.get_stats()
+    assert stats["chunks_received"] == 1
+    assert stats["buffer_size_bytes"] > 0
 
 def test_config_settings_methods():
     """Test additional settings methods"""

@@ -1592,6 +1592,7 @@ class TestErrorPaths:
         mock_settings.notification_max_retries = 1
         mock_settings.notification_retry_delay = 0.001
         mock_settings.mock_enabled = False
+        mock_settings.mock_notifications = False  # Must explicitly set to False, otherwise returns MagicMock (truthy)
 
         service = EnhancedNotificationService()
         service.bearer_token = "token123"

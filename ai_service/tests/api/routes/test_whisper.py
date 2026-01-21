@@ -210,9 +210,9 @@ def test_whisper_demo_endpoint():
         mock_whisper = mock_loader.models.get.return_value
         mock_whisper.get_model_info.return_value = MOCK_MODEL_INFO
         mock_whisper.get_supported_languages.return_value = MOCK_LANGUAGES
-        
+
         response = client.post("/whisper/demo")
-        
+
         assert response.status_code == 200
         response_json = response.json()
         assert "demo_info" in response_json
@@ -220,3 +220,198 @@ def test_whisper_demo_endpoint():
         assert "supported_languages" in response_json
         assert response_json["model_status"]["status"] == "ready"
         assert response_json["supported_languages"]["supported_languages"] == MOCK_LANGUAGES
+
+
+# Additional tests for better coverage
+
+def test_transcribe_api_server_mode():
+    """Test transcription in API server mode (delegates to Celery worker)."""
+    mock_audio_file = create_mock_audio_file()
+    with patch('app.api.whisper_routes.is_api_server_mode', return_value=True), \
+         patch('app.api.whisper_routes.whisper_transcribe_task.apply_async') as mock_task:
+        mock_result = type('obj', (object,), {'id': 'test-whisper-task-123'})()
+        mock_task.return_value = mock_result
+
+        response = client.post(
+            "/whisper/transcribe",
+            files={"audio": ("test.wav", mock_audio_file, "audio/wav")},
+            data={"language": "sw"}
+        )
+
+        assert response.status_code == 200
+        response_json = response.json()
+        assert "task_id" in response_json
+        assert response_json["task_id"] == "test-whisper-task-123"
+        assert response_json["status"] == "queued"
+
+
+def test_transcribe_model_not_available():
+    """Test transcription when model instance is None in standalone mode.
+    The HTTPException(503) from inside try block gets caught and wrapped in 500 error.
+    """
+    mock_audio_file = create_mock_audio_file()
+    with patch('app.api.whisper_routes.is_api_server_mode', return_value=False), \
+         patch('app.api.whisper_routes.model_loader') as mock_loader:
+        mock_loader.is_model_ready.return_value = True
+        mock_loader.models.get.return_value = None  # Model instance not found
+
+        response = client.post(
+            "/whisper/transcribe",
+            files={"audio": ("test.wav", mock_audio_file, "audio/wav")}
+        )
+
+        # HTTPException(503) inside try gets caught and wrapped in 500
+        assert response.status_code == 500
+        assert "not available" in response.json()["detail"]
+
+
+def test_get_task_status_pending():
+    """Test getting task status when task is pending."""
+    with patch('app.api.whisper_routes.AsyncResult') as mock_async:
+        mock_result = type('obj', (object,), {'state': 'PENDING'})()
+        mock_async.return_value = mock_result
+
+        response = client.get("/whisper/task/test-pending-task")
+
+        assert response.status_code == 200
+        assert response.json()["status"] == "pending"
+        assert response.json()["progress"]["message"] == "Task is queued"
+
+
+def test_get_task_status_processing():
+    """Test getting task status when task is processing."""
+    with patch('app.api.whisper_routes.AsyncResult') as mock_async:
+        mock_result = type('obj', (object,), {'state': 'PROCESSING', 'info': {"progress": 50}})()
+        mock_async.return_value = mock_result
+
+        response = client.get("/whisper/task/test-processing-task")
+
+        assert response.status_code == 200
+        assert response.json()["status"] == "processing"
+
+
+def test_get_task_status_success():
+    """Test getting task status when task completed successfully."""
+    with patch('app.api.whisper_routes.AsyncResult') as mock_async:
+        mock_result = type('obj', (object,), {
+            'state': 'SUCCESS',
+            'result': {
+                'transcript': 'This is a test transcription.',
+                'language': 'en',
+                'processing_time': 2.5,
+                'model_info': {'model': 'whisper-large'},
+                'timestamp': '2024-01-01T12:00:00',
+                'audio_info': {'filename': 'test.wav', 'file_size_mb': 1.5}
+            }
+        })()
+        mock_async.return_value = mock_result
+
+        response = client.get("/whisper/task/test-success-task")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "success"
+        assert data["result"]["transcript"] == "This is a test transcription."
+
+
+def test_get_task_status_failure():
+    """Test getting task status when task failed."""
+    with patch('app.api.whisper_routes.AsyncResult') as mock_async:
+        mock_result = type('obj', (object,), {
+            'state': 'FAILURE',
+            'info': Exception("Transcription failed")
+        })()
+        mock_async.return_value = mock_result
+
+        response = client.get("/whisper/task/test-failed-task")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "failed"
+        assert "error" in data
+
+
+def test_get_task_status_other_state():
+    """Test getting task status when task is in other state."""
+    with patch('app.api.whisper_routes.AsyncResult') as mock_async:
+        mock_result = type('obj', (object,), {'state': 'RETRY'})()
+        mock_async.return_value = mock_result
+
+        response = client.get("/whisper/task/test-retry-task")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "retry"
+
+
+def test_get_task_status_exception():
+    """Test getting task status when exception occurs."""
+    with patch('app.api.whisper_routes.AsyncResult') as mock_async:
+        mock_async.side_effect = Exception("Connection error")
+
+        response = client.get("/whisper/task/test-exception-task")
+
+        assert response.status_code == 500
+        assert "Error checking task" in response.json()["detail"]
+
+
+def test_get_whisper_info_api_server_mode():
+    """Test getting whisper info in API server mode."""
+    with patch('app.api.whisper_routes.is_api_server_mode', return_value=True):
+        response = client.get("/whisper/info")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "api_server_mode"
+        assert "Celery workers" in data["message"]
+
+
+def test_get_whisper_info_model_not_found():
+    """Test the /whisper/info endpoint when the model is not found."""
+    with patch('app.api.whisper_routes.is_api_server_mode', return_value=False), \
+         patch('app.api.whisper_routes.model_loader') as mock_loader:
+        mock_loader.is_model_ready.return_value = True
+        mock_loader.models.get.return_value = None
+
+        response = client.get("/whisper/info")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "error"
+        assert "not found" in data["message"]
+
+
+def test_get_supported_languages_api_server_mode():
+    """Test getting supported languages in API server mode."""
+    with patch('app.api.whisper_routes.is_api_server_mode', return_value=True):
+        response = client.get("/whisper/languages")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "supported_languages" in data
+        assert data["mode"] == "api_server"
+
+
+def test_get_supported_languages_model_not_found():
+    """Test getting supported languages when model is not found."""
+    with patch('app.api.whisper_routes.is_api_server_mode', return_value=False), \
+         patch('app.api.whisper_routes.model_loader') as mock_loader:
+        mock_loader.is_model_ready.return_value = True
+        mock_loader.models.get.return_value = None
+
+        response = client.get("/whisper/languages")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["error"] == "Whisper model not available"
+
+
+def test_whisper_demo_api_server_mode():
+    """Test the /whisper/demo endpoint in API server mode."""
+    with patch('app.api.whisper_routes.is_api_server_mode', return_value=True):
+        response = client.post("/whisper/demo")
+
+        assert response.status_code == 200
+        response_json = response.json()
+        assert "demo_info" in response_json
+        assert response_json["model_status"]["status"] == "api_server_mode"

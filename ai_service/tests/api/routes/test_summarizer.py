@@ -173,4 +173,121 @@ def test_summarizer_demo_endpoint_success():
         response_json = response.json()
         # Demo endpoint also returns task_id now
         assert "task_id" in response_json
-        assert response_json["status"] == "queued" 
+        assert response_json["status"] == "queued"
+
+
+# Additional tests for better coverage
+
+def test_summarize_api_server_mode():
+    """Test summarization in API server mode (doesn't check local model)."""
+    with patch('app.api.summarizer_routes.is_api_server_mode', return_value=True), \
+         patch('app.api.summarizer_routes.summarization_summarize_task.apply_async') as mock_task:
+        mock_result = Mock()
+        mock_result.id = "test-api-server-task"
+        mock_task.return_value = mock_result
+
+        response = client.post("/summarizer/summarize", json={"text": VALID_TEXT})
+
+        assert response.status_code == 202
+        assert response.json()["task_id"] == "test-api-server-task"
+
+
+def test_get_task_status_pending():
+    """Test getting task status when task is pending."""
+    with patch('app.api.summarizer_routes.AsyncResult') as mock_async:
+        mock_result = Mock()
+        mock_result.state = 'PENDING'
+        mock_async.return_value = mock_result
+
+        response = client.get("/summarizer/task/test-pending-task")
+
+        assert response.status_code == 200
+        assert response.json()["status"] == "pending"
+        assert response.json()["progress"]["message"] == "Task is queued"
+
+
+def test_get_task_status_processing():
+    """Test getting task status when task is processing."""
+    with patch('app.api.summarizer_routes.AsyncResult') as mock_async:
+        mock_result = Mock()
+        mock_result.state = 'PROCESSING'
+        mock_result.info = {"progress": 50}
+        mock_async.return_value = mock_result
+
+        response = client.get("/summarizer/task/test-processing-task")
+
+        assert response.status_code == 200
+        assert response.json()["status"] == "processing"
+
+
+def test_get_task_status_success():
+    """Test getting task status when task completed successfully."""
+    with patch('app.api.summarizer_routes.AsyncResult') as mock_async:
+        mock_result = Mock()
+        mock_result.state = 'SUCCESS'
+        mock_result.result = {
+            'summary': 'This is a summary',
+            'processing_time': 1.5,
+            'model_info': {'model': 'test-model'},
+            'timestamp': '2024-01-01T12:00:00'
+        }
+        mock_async.return_value = mock_result
+
+        response = client.get("/summarizer/task/test-success-task")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "success"
+        assert data["result"]["summary"] == "This is a summary"
+
+
+def test_get_task_status_failure():
+    """Test getting task status when task failed."""
+    with patch('app.api.summarizer_routes.AsyncResult') as mock_async:
+        mock_result = Mock()
+        mock_result.state = 'FAILURE'
+        mock_result.info = Exception("Task failed with error")
+        mock_async.return_value = mock_result
+
+        response = client.get("/summarizer/task/test-failed-task")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "failed"
+        assert "error" in data
+
+
+def test_get_task_status_other_state():
+    """Test getting task status when task is in other state."""
+    with patch('app.api.summarizer_routes.AsyncResult') as mock_async:
+        mock_result = Mock()
+        mock_result.state = 'RETRY'
+        mock_async.return_value = mock_result
+
+        response = client.get("/summarizer/task/test-retry-task")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "retry"
+
+
+def test_get_task_status_exception():
+    """Test getting task status when exception occurs."""
+    with patch('app.api.summarizer_routes.AsyncResult') as mock_async:
+        mock_async.side_effect = Exception("Connection error")
+
+        response = client.get("/summarizer/task/test-exception-task")
+
+        assert response.status_code == 500
+        assert "Error checking task" in response.json()["detail"]
+
+
+def test_get_summarizer_info_api_server_mode():
+    """Test getting summarizer info in API server mode."""
+    with patch('app.api.summarizer_routes.is_api_server_mode', return_value=True):
+        response = client.get("/summarizer/info")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "api_server_mode"
+        assert "Celery workers" in data["message"]

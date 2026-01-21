@@ -40,7 +40,7 @@ def mock_session_data():
 class TestCallSessionManagerInitialization:
     """Tests for CallSessionManager initialization"""
 
-    @patch('app.streaming.call_session_manager.redis_client')
+    @patch('app.config.settings.redis_task_client')
     def test_session_manager_init(self, mock_redis):
         """Test CallSessionManager initialization"""
         from app.streaming.call_session_manager import CallSessionManager
@@ -50,7 +50,7 @@ class TestCallSessionManagerInitialization:
         assert manager is not None
         assert manager.redis_client == mock_redis
 
-    @patch('app.streaming.call_session_manager.redis_client')
+    @patch('app.config.settings.redis_task_client')
     def test_session_manager_init_with_defaults(self, mock_redis):
         """Test CallSessionManager with default parameters"""
         from app.streaming.call_session_manager import CallSessionManager
@@ -63,7 +63,8 @@ class TestCallSessionManagerInitialization:
 class TestCreateSession:
     """Tests for creating new call sessions"""
 
-    @patch('app.streaming.call_session_manager.redis_client')
+    @pytest.mark.asyncio
+    @patch('app.config.settings.redis_task_client')
     async def test_create_session_success(self, mock_redis):
         """Test successful session creation"""
         from app.streaming.call_session_manager import CallSessionManager
@@ -82,7 +83,8 @@ class TestCreateSession:
         mock_redis.hset.assert_called()
         mock_redis.expire.assert_called()
 
-    @patch('app.streaming.call_session_manager.redis_client')
+    @pytest.mark.asyncio
+    @patch('app.config.settings.redis_task_client')
     async def test_create_session_with_metadata(self, mock_redis):
         """Test session creation with metadata"""
         from app.streaming.call_session_manager import CallSessionManager
@@ -101,7 +103,8 @@ class TestCreateSession:
 
         assert session_id is not None
 
-    @patch('app.streaming.call_session_manager.redis_client')
+    @pytest.mark.asyncio
+    @patch('app.config.settings.redis_task_client')
     async def test_create_session_redis_failure(self, mock_redis):
         """Test session creation when Redis fails"""
         from app.streaming.call_session_manager import CallSessionManager
@@ -118,7 +121,8 @@ class TestCreateSession:
 class TestGetSession:
     """Tests for retrieving session data"""
 
-    @patch('app.streaming.call_session_manager.redis_client')
+    @pytest.mark.asyncio
+    @patch('app.config.settings.redis_task_client')
     async def test_get_session_success(self, mock_redis, mock_session_data):
         """Test successful session retrieval"""
         from app.streaming.call_session_manager import CallSessionManager
@@ -138,7 +142,8 @@ class TestGetSession:
         assert session is not None
         mock_redis.hgetall.assert_called_with("call_session:session_123")
 
-    @patch('app.streaming.call_session_manager.redis_client')
+    @pytest.mark.asyncio
+    @patch('app.config.settings.redis_task_client')
     async def test_get_session_not_found(self, mock_redis):
         """Test getting non-existent session"""
         from app.streaming.call_session_manager import CallSessionManager
@@ -150,7 +155,8 @@ class TestGetSession:
 
         assert session is None or session == {}
 
-    @patch('app.streaming.call_session_manager.redis_client')
+    @pytest.mark.asyncio
+    @patch('app.config.settings.redis_task_client')
     async def test_get_session_with_transcript(self, mock_redis):
         """Test getting session with transcript data"""
         from app.streaming.call_session_manager import CallSessionManager
@@ -170,7 +176,8 @@ class TestGetSession:
 class TestUpdateSession:
     """Tests for updating session data"""
 
-    @patch('app.streaming.call_session_manager.redis_client')
+    @pytest.mark.asyncio
+    @patch('app.config.settings.redis_task_client')
     async def test_update_session_success(self, mock_redis):
         """Test successful session update"""
         from app.streaming.call_session_manager import CallSessionManager
@@ -185,7 +192,8 @@ class TestUpdateSession:
         assert result is True or result is None
         mock_redis.hset.assert_called()
 
-    @patch('app.streaming.call_session_manager.redis_client')
+    @pytest.mark.asyncio
+    @patch('app.config.settings.redis_task_client')
     async def test_update_session_transcript(self, mock_redis):
         """Test updating session transcript"""
         from app.streaming.call_session_manager import CallSessionManager
@@ -199,7 +207,8 @@ class TestUpdateSession:
 
         mock_redis.hset.assert_called()
 
-    @patch('app.streaming.call_session_manager.redis_client')
+    @pytest.mark.asyncio
+    @patch('app.config.settings.redis_task_client')
     async def test_update_session_analysis_results(self, mock_redis):
         """Test updating session with analysis results"""
         from app.streaming.call_session_manager import CallSessionManager
@@ -221,7 +230,8 @@ class TestUpdateSession:
 class TestEndSession:
     """Tests for ending call sessions"""
 
-    @patch('app.streaming.call_session_manager.redis_client')
+    @pytest.mark.asyncio
+    @patch('app.config.settings.redis_task_client')
     async def test_end_session_success(self, mock_redis):
         """Test successful session termination"""
         from app.streaming.call_session_manager import CallSessionManager
@@ -240,7 +250,8 @@ class TestEndSession:
         calls = [str(c) for c in mock_redis.hset.call_args_list]
         assert any('completed' in c or 'ended' in c for c in calls)
 
-    @patch('app.streaming.call_session_manager.redis_client')
+    @pytest.mark.asyncio
+    @patch('app.config.settings.redis_task_client')
     async def test_end_session_with_summary(self, mock_redis):
         """Test ending session with final summary"""
         from app.streaming.call_session_manager import CallSessionManager
@@ -257,7 +268,8 @@ class TestEndSession:
 
         mock_redis.hset.assert_called()
 
-    @patch('app.streaming.call_session_manager.redis_client')
+    @pytest.mark.asyncio
+    @patch('app.config.settings.redis_task_client')
     async def test_end_session_not_found(self, mock_redis):
         """Test ending non-existent session"""
         from app.streaming.call_session_manager import CallSessionManager
@@ -274,7 +286,8 @@ class TestEndSession:
 class TestDeleteSession:
     """Tests for deleting sessions"""
 
-    @patch('app.streaming.call_session_manager.redis_client')
+    @pytest.mark.asyncio
+    @patch('app.config.settings.redis_task_client')
     async def test_delete_session_success(self, mock_redis):
         """Test successful session deletion"""
         from app.streaming.call_session_manager import CallSessionManager
@@ -287,7 +300,8 @@ class TestDeleteSession:
         assert result is True or result == 1
         mock_redis.delete.assert_called_with("call_session:session_123")
 
-    @patch('app.streaming.call_session_manager.redis_client')
+    @pytest.mark.asyncio
+    @patch('app.config.settings.redis_task_client')
     async def test_delete_session_not_found(self, mock_redis):
         """Test deleting non-existent session"""
         from app.streaming.call_session_manager import CallSessionManager
@@ -303,7 +317,8 @@ class TestDeleteSession:
 class TestListActiveSessions:
     """Tests for listing active sessions"""
 
-    @patch('app.streaming.call_session_manager.redis_client')
+    @pytest.mark.asyncio
+    @patch('app.config.settings.redis_task_client')
     async def test_list_active_sessions(self, mock_redis):
         """Test listing all active sessions"""
         from app.streaming.call_session_manager import CallSessionManager
@@ -325,7 +340,8 @@ class TestListActiveSessions:
         assert sessions is not None
         assert isinstance(sessions, list)
 
-    @patch('app.streaming.call_session_manager.redis_client')
+    @pytest.mark.asyncio
+    @patch('app.config.settings.redis_task_client')
     async def test_list_active_sessions_empty(self, mock_redis):
         """Test listing when no active sessions"""
         from app.streaming.call_session_manager import CallSessionManager
@@ -342,7 +358,8 @@ class TestListActiveSessions:
 class TestProcessAudioChunk:
     """Tests for processing audio chunks"""
 
-    @patch('app.streaming.call_session_manager.redis_client')
+    @patch('app.config.settings.redis_task_client')
+    @pytest.mark.asyncio
     @patch('app.streaming.call_session_manager.model_loader')
     async def test_process_audio_chunk_success(self, mock_loader, mock_redis):
         """Test successful audio chunk processing"""
@@ -373,7 +390,8 @@ class TestProcessAudioChunk:
 
         assert result is not None
 
-    @patch('app.streaming.call_session_manager.redis_client')
+    @pytest.mark.asyncio
+    @patch('app.config.settings.redis_task_client')
     async def test_process_audio_chunk_invalid_session(self, mock_redis):
         """Test processing chunk for invalid session"""
         from app.streaming.call_session_manager import CallSessionManager
@@ -394,7 +412,8 @@ class TestProcessAudioChunk:
 class TestGetSessionStats:
     """Tests for getting session statistics"""
 
-    @patch('app.streaming.call_session_manager.redis_client')
+    @pytest.mark.asyncio
+    @patch('app.config.settings.redis_task_client')
     async def test_get_session_stats_success(self, mock_redis):
         """Test getting session statistics"""
         from app.streaming.call_session_manager import CallSessionManager
@@ -411,7 +430,8 @@ class TestGetSessionStats:
 
         assert stats is not None
 
-    @patch('app.streaming.call_session_manager.redis_client')
+    @pytest.mark.asyncio
+    @patch('app.config.settings.redis_task_client')
     async def test_get_session_stats_not_found(self, mock_redis):
         """Test getting stats for non-existent session"""
         from app.streaming.call_session_manager import CallSessionManager
@@ -427,7 +447,8 @@ class TestGetSessionStats:
 class TestSessionTimeout:
     """Tests for session timeout handling"""
 
-    @patch('app.streaming.call_session_manager.redis_client')
+    @pytest.mark.asyncio
+    @patch('app.config.settings.redis_task_client')
     async def test_check_session_timeout(self, mock_redis):
         """Test checking for session timeout"""
         from app.streaming.call_session_manager import CallSessionManager
@@ -445,7 +466,8 @@ class TestSessionTimeout:
 
         assert is_timeout is True or is_timeout is not None
 
-    @patch('app.streaming.call_session_manager.redis_client')
+    @pytest.mark.asyncio
+    @patch('app.config.settings.redis_task_client')
     async def test_cleanup_timed_out_sessions(self, mock_redis):
         """Test cleanup of timed out sessions"""
         from app.streaming.call_session_manager import CallSessionManager
@@ -466,7 +488,8 @@ class TestSessionTimeout:
 class TestSessionErrorHandling:
     """Tests for error handling in session management"""
 
-    @patch('app.streaming.call_session_manager.redis_client')
+    @pytest.mark.asyncio
+    @patch('app.config.settings.redis_task_client')
     async def test_create_session_redis_error(self, mock_redis):
         """Test session creation with Redis error"""
         from app.streaming.call_session_manager import CallSessionManager
@@ -477,7 +500,8 @@ class TestSessionErrorHandling:
         with pytest.raises(Exception):
             await manager.create_session(caller_id="caller_001")
 
-    @patch('app.streaming.call_session_manager.redis_client')
+    @pytest.mark.asyncio
+    @patch('app.config.settings.redis_task_client')
     async def test_update_session_redis_error(self, mock_redis):
         """Test session update with Redis error"""
         from app.streaming.call_session_manager import CallSessionManager
@@ -488,7 +512,8 @@ class TestSessionErrorHandling:
         with pytest.raises(Exception):
             await manager.update_session("session_123", {"status": "active"})
 
-    @patch('app.streaming.call_session_manager.redis_client')
+    @pytest.mark.asyncio
+    @patch('app.config.settings.redis_task_client')
     async def test_get_session_redis_error(self, mock_redis):
         """Test session retrieval with Redis error"""
         from app.streaming.call_session_manager import CallSessionManager

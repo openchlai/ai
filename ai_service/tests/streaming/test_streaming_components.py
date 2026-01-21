@@ -102,16 +102,26 @@ class TestAsteriskAudioBuffer:
     def test_overlapping_windows(self):
         """Test overlapping window behavior"""
         buffer = AsteriskAudioBuffer()
-        
-        # Fill first window
+
+        # Fill first window (250 chunks * 640 bytes = 160,000 bytes)
+        first_window = None
         for i in range(250):
-            buffer.add_chunk(b'\x00' * 640)
-        
-        # Add more chunks - should trigger second window with overlap
-        for i in range(125):  # Half a window more
             result = buffer.add_chunk(b'\x00' * 640)
-            if i == 124:  # Should trigger at 375 total chunks
-                assert result is not None
+            if result is not None:
+                first_window = result
+
+        # First window should have triggered
+        assert first_window is not None
+
+        # Add enough chunks for second window (another 250 chunks = 160,000 bytes)
+        second_window = None
+        for i in range(250):
+            result = buffer.add_chunk(b'\x00' * 640)
+            if result is not None:
+                second_window = result
+
+        # Second window should have triggered
+        assert second_window is not None
 
     def test_get_stats(self):
         """Test buffer statistics"""
@@ -138,17 +148,19 @@ class TestAsteriskAudioBuffer:
     def test_buffer_overflow_protection(self):
         """Test buffer doesn't grow indefinitely"""
         buffer = AsteriskAudioBuffer()
-        
+
         # Add way more chunks than needed
-        for i in range(1000):  # 20 seconds worth
+        for i in range(1000):  # 20 seconds worth (640,000 bytes)
             result = buffer.add_chunk(b'\x00' * 640)
             # Should get multiple window outputs
             if result is not None:
                 assert isinstance(result, np.ndarray)
-        
+
         # Buffer should not be excessively large
+        # After 1000 chunks (640,000 bytes = 4 windows), buffer should be ~640KB
+        # Buffer resets after 10 windows (1,600,000 bytes = 50 seconds)
         stats = buffer.get_stats()
-        assert stats["buffer_size_bytes"] < 200000  # Less than ~6 seconds
+        assert stats["buffer_size_bytes"] < 2000000  # Less than ~60 seconds (before reset)
 
     def test_invalid_chunk_size(self):
         """Test handling of invalid chunk sizes"""

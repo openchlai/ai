@@ -422,17 +422,26 @@ class TestAsteriskTCPServer:
         """Test that generated filenames follow expected format"""
         call_id = "test_call_123"
         audio_array = np.array([0.1, 0.2, 0.3], dtype=np.float32)
-        
+
+        # Mock session manager to return a valid session with realtime processing enabled
+        from unittest.mock import AsyncMock
+        mock_session = Mock()
+        mock_session.processing_plan = {
+            "realtime_processing": {"enabled": True}
+        }
+        mock_session.processing_mode = "streaming"
+
         with patch('app.streaming.tcp_server.process_streaming_audio_task') as mock_task_func, \
-             patch('app.streaming.tcp_server.datetime') as mock_datetime:
-            
+             patch('app.streaming.tcp_server.datetime') as mock_datetime, \
+             patch('app.streaming.tcp_server.call_session_manager.get_session', new_callable=AsyncMock, return_value=mock_session):
+
             # Mock datetime to return predictable timestamp
             mock_datetime.now.return_value.strftime.return_value = "123456789"
-            
+
             mock_task_func.delay.return_value = Mock(id="task_123")
-            
+
             asyncio.run(tcp_server._submit_transcription(audio_array, call_id))
-        
+
         # Verify filename format
         call_kwargs = mock_task_func.delay.call_args.kwargs
         filename = call_kwargs['filename']
