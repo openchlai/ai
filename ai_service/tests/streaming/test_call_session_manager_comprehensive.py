@@ -1,11 +1,12 @@
 """
 Comprehensive tests for call_session_manager.py - streaming call session management
 Focus: Achieving 95% coverage for call session lifecycle and real-time processing
+Updated to match actual CallSessionManager API (2026-01-21)
 """
 import pytest
 import asyncio
 from unittest.mock import MagicMock, patch, AsyncMock, call
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 
 
@@ -15,105 +16,113 @@ def mock_redis_client():
     client = MagicMock()
     client.hset = MagicMock(return_value=True)
     client.hget = MagicMock(return_value=None)
-    client.hgetall = MagicMock(return_value={})
-    client.hdel = MagicMock(return_value=True)
-    client.expire = MagicMock(return_value=True)
-    client.exists = MagicMock(return_value=0)
+    client.expireat = MagicMock(return_value=True)
+    client.sadd = MagicMock(return_value=True)
+    client.srem = MagicMock(return_value=True)
     return client
 
 
 @pytest.fixture
-def mock_session_data():
-    """Mock call session data"""
-    return {
-        "session_id": "session_123",
-        "status": "active",
-        "start_time": datetime.now().isoformat(),
-        "language": "sw",
-        "chunks_processed": 0,
-        "total_duration": 0.0,
-        "transcript": "",
-        "analysis": {}
-    }
+def mock_enhanced_notification_service():
+    """Mock enhanced notification service"""
+    with patch('app.streaming.call_session_manager.enhanced_notification_service') as mock_service:
+        mock_service.send_call_start = AsyncMock()
+        mock_service.send_call_end_streaming = AsyncMock()
+        yield mock_service
+
+
+@pytest.fixture
+def mock_enhanced_processing_manager():
+    """Mock enhanced processing manager"""
+    with patch('app.streaming.call_session_manager.enhanced_processing_manager') as mock_manager:
+        from app.core.enhanced_processing_manager import EnhancedProcessingMode
+        mock_manager.determine_mode.return_value = EnhancedProcessingMode.DUAL
+        mock_manager.get_processing_config.return_value = {
+            "streaming_processing": {"enabled": True},
+            "postcall_processing": {"enabled": True}
+        }
+        mock_manager.should_enable_streaming.return_value = True
+        mock_manager.should_enable_postcall.return_value = True
+        yield mock_manager
 
 
 class TestCallSessionManagerInitialization:
     """Tests for CallSessionManager initialization"""
 
-    @patch('app.config.settings.redis_task_client')
-    def test_session_manager_init(self, mock_redis):
-        """Test CallSessionManager initialization"""
+    def test_session_manager_init(self, mock_redis_client):
+        """Test CallSessionManager initialization with provided redis client"""
         from app.streaming.call_session_manager import CallSessionManager
 
-        manager = CallSessionManager(redis_client=mock_redis)
+        manager = CallSessionManager(redis_client=mock_redis_client)
 
         assert manager is not None
-        assert manager.redis_client == mock_redis
+        assert manager.redis_client == mock_redis_client
+        assert isinstance(manager.active_sessions, dict)
+        assert len(manager.active_sessions) == 0
 
-    @patch('app.config.settings.redis_task_client')
-    def test_session_manager_init_with_defaults(self, mock_redis):
-        """Test CallSessionManager with default parameters"""
+    @patch('app.config.settings.redis_task_client', MagicMock())
+    def test_session_manager_init_with_defaults(self, mock_redis=None):
+        """Test CallSessionManager with default redis client"""
         from app.streaming.call_session_manager import CallSessionManager
 
         manager = CallSessionManager()
 
         assert manager is not None
+        # redis_client may be None if redis_task_client is not configured
+        assert hasattr(manager, 'redis_client')
 
 
 class TestCreateSession:
-    """Tests for creating new call sessions"""
+    """Tests for starting new call sessions (using start_session method)"""
 
     @pytest.mark.asyncio
-    @patch('app.config.settings.redis_task_client')
-    async def test_create_session_success(self, mock_redis):
-        """Test successful session creation"""
+    async def test_create_session_success(self, mock_redis_client, mock_enhanced_processing_manager,
+                                          mock_enhanced_notification_service):
+        """Test successful session creation using start_session"""
         from app.streaming.call_session_manager import CallSessionManager
 
-        manager = CallSessionManager(redis_client=mock_redis)
-        mock_redis.hset.return_value = True
-        mock_redis.expire.return_value = True
+        manager = CallSessionManager(redis_client=mock_redis_client)
 
-        session_id = await manager.create_session(
-            caller_id="caller_001",
-            language="sw"
-        )
+        connection_info = {"channel": "phone", "agent_id": "agent_123"}
+        session = await manager.start_session("call_001", connection_info)
 
-        assert session_id is not None
-        assert isinstance(session_id, str)
-        mock_redis.hset.assert_called()
-        mock_redis.expire.assert_called()
+        assert session is not None
+        assert session.call_id == "call_001"
+        assert session.status == "active"
+        assert session.connection_info == connection_info
+        assert "call_001" in manager.active_sessions
+        mock_redis_client.hset.assert_called()
 
     @pytest.mark.asyncio
-    @patch('app.config.settings.redis_task_client')
-    async def test_create_session_with_metadata(self, mock_redis):
-        """Test session creation with metadata"""
+    async def test_create_session_with_metadata(self, mock_redis_client,
+                                                      mock_enhanced_processing_manager,
+                                                      mock_enhanced_notification_service):
+        """Test session creation with mode override (metadata)"""
         from app.streaming.call_session_manager import CallSessionManager
 
-        manager = CallSessionManager(redis_client=mock_redis)
-        mock_redis.hset.return_value = True
-        mock_redis.expire.return_value = True
+        manager = CallSessionManager(redis_client=mock_redis_client)
 
-        metadata = {"agent_id": "agent_123", "channel": "phone"}
+        session = await manager.start_session("call_002", {}, mode_override="POST_CALL")
 
-        session_id = await manager.create_session(
-            caller_id="caller_001",
-            language="en",
-            metadata=metadata
-        )
-
-        assert session_id is not None
+        assert session is not None
+        # Verify mode override was passed to processing manager
+        call_context = mock_enhanced_processing_manager.determine_mode.call_args[0][0]
+        assert "mode_override" in call_context
+        assert call_context["mode_override"] == "POST_CALL"
 
     @pytest.mark.asyncio
-    @patch('app.config.settings.redis_task_client')
-    async def test_create_session_redis_failure(self, mock_redis):
+    async def test_create_session_redis_failure(self, mock_redis_client,
+                                                      mock_enhanced_processing_manager):
         """Test session creation when Redis fails"""
         from app.streaming.call_session_manager import CallSessionManager
 
-        manager = CallSessionManager(redis_client=mock_redis)
-        mock_redis.hset.side_effect = Exception("Redis connection error")
+        manager = CallSessionManager(redis_client=mock_redis_client)
+
+        # Make processing manager raise an exception
+        mock_enhanced_processing_manager.determine_mode.side_effect = Exception("Redis connection error")
 
         with pytest.raises(Exception) as exc_info:
-            await manager.create_session(caller_id="caller_001")
+            await manager.start_session("call_003", {})
 
         assert "Redis" in str(exc_info.value) or "connection" in str(exc_info.value).lower()
 
@@ -122,404 +131,455 @@ class TestGetSession:
     """Tests for retrieving session data"""
 
     @pytest.mark.asyncio
-    @patch('app.config.settings.redis_task_client')
-    async def test_get_session_success(self, mock_redis, mock_session_data):
-        """Test successful session retrieval"""
+    async def test_get_session_success(self, mock_redis_client,
+                                             mock_enhanced_processing_manager,
+                                             mock_enhanced_notification_service):
+        """Test successful session retrieval from memory"""
         from app.streaming.call_session_manager import CallSessionManager
 
-        manager = CallSessionManager(redis_client=mock_redis)
+        manager = CallSessionManager(redis_client=mock_redis_client)
 
-        # Mock Redis to return session data
-        mock_redis.hgetall.return_value = {
-            b'session_id': b'session_123',
-            b'status': b'active',
-            b'start_time': mock_session_data['start_time'].encode(),
-            b'language': b'sw'
-        }
+        # Create a session
+        created_session = await manager.start_session("call_004", {})
 
-        session = await manager.get_session("session_123")
+        # Get the session
+        retrieved_session = await manager.get_session("call_004")
 
-        assert session is not None
-        mock_redis.hgetall.assert_called_with("call_session:session_123")
+        assert retrieved_session is not None
+        assert retrieved_session.call_id == "call_004"
+        assert retrieved_session == created_session
 
     @pytest.mark.asyncio
-    @patch('app.config.settings.redis_task_client')
-    async def test_get_session_not_found(self, mock_redis):
+    async def test_get_session_not_found(self, mock_redis_client):
         """Test getting non-existent session"""
         from app.streaming.call_session_manager import CallSessionManager
 
-        manager = CallSessionManager(redis_client=mock_redis)
-        mock_redis.hgetall.return_value = {}
+        manager = CallSessionManager(redis_client=mock_redis_client)
+        mock_redis_client.hget.return_value = None
 
         session = await manager.get_session("nonexistent_session")
 
-        assert session is None or session == {}
+        assert session is None
 
     @pytest.mark.asyncio
-    @patch('app.config.settings.redis_task_client')
-    async def test_get_session_with_transcript(self, mock_redis):
+    async def test_get_session_with_transcript(self, mock_redis_client,
+                                                     mock_enhanced_processing_manager,
+                                                     mock_enhanced_notification_service):
         """Test getting session with transcript data"""
         from app.streaming.call_session_manager import CallSessionManager
 
-        manager = CallSessionManager(redis_client=mock_redis)
+        manager = CallSessionManager(redis_client=mock_redis_client)
 
-        mock_redis.hgetall.return_value = {
-            b'session_id': b'session_123',
-            b'transcript': b'Hello, this is a test transcript'
-        }
+        # Create session and add transcript
+        await manager.start_session("call_005", {})
 
-        session = await manager.get_session("session_123")
+        with patch('app.streaming.call_session_manager.progressive_processor') as mock_processor:
+            mock_processor.process_if_ready = AsyncMock(return_value=None)
+            await manager.add_transcription("call_005", "Hello, this is a test transcript", 5.0)
+
+        session = await manager.get_session("call_005")
 
         assert session is not None
+        assert session.cumulative_transcript == "Hello, this is a test transcript"
 
 
 class TestUpdateSession:
-    """Tests for updating session data"""
+    """Tests for updating session data (using add_transcription method)"""
 
     @pytest.mark.asyncio
-    @patch('app.config.settings.redis_task_client')
-    async def test_update_session_success(self, mock_redis):
-        """Test successful session update"""
+    async def test_update_session_success(self, mock_redis_client,
+                                               mock_enhanced_processing_manager,
+                                               mock_enhanced_notification_service):
+        """Test successful session update via add_transcription"""
         from app.streaming.call_session_manager import CallSessionManager
 
-        manager = CallSessionManager(redis_client=mock_redis)
-        mock_redis.hset.return_value = True
+        manager = CallSessionManager(redis_client=mock_redis_client)
 
-        updates = {"status": "processing", "chunks_processed": 5}
+        # Create a session first
+        await manager.start_session("call_006", {})
 
-        result = await manager.update_session("session_123", updates)
+        # Add transcription (update session)
+        with patch('app.streaming.call_session_manager.progressive_processor') as mock_processor:
+            mock_processor.process_if_ready = AsyncMock(return_value=None)
 
-        assert result is True or result is None
-        mock_redis.hset.assert_called()
+            updated_session = await manager.add_transcription(
+                "call_006",
+                "Updated transcript",
+                audio_duration=2.5
+            )
+
+        assert updated_session is not None
+        assert updated_session.cumulative_transcript == "Updated transcript"
+        assert mock_redis_client.hset.called
 
     @pytest.mark.asyncio
-    @patch('app.config.settings.redis_task_client')
-    async def test_update_session_transcript(self, mock_redis):
-        """Test updating session transcript"""
+    async def test_update_session_transcript(self, mock_redis_client,
+                                                   mock_enhanced_processing_manager,
+                                                   mock_enhanced_notification_service):
+        """Test updating session transcript creates proper segment"""
         from app.streaming.call_session_manager import CallSessionManager
 
-        manager = CallSessionManager(redis_client=mock_redis)
-        mock_redis.hset.return_value = True
+        manager = CallSessionManager(redis_client=mock_redis_client)
+        await manager.start_session("call_007", {})
 
-        updates = {"transcript": "New transcript text"}
+        with patch('app.streaming.call_session_manager.progressive_processor') as mock_processor:
+            mock_processor.process_if_ready = AsyncMock(return_value=None)
 
-        await manager.update_session("session_123", updates)
+            await manager.add_transcription("call_007", "New transcript text", 3.0)
 
-        mock_redis.hset.assert_called()
+        session = await manager.get_session("call_007")
+        assert len(session.transcript_segments) == 1
+        assert session.transcript_segments[0]['transcript'] == "New transcript text"
+        mock_redis_client.hset.assert_called()
 
     @pytest.mark.asyncio
-    @patch('app.config.settings.redis_task_client')
-    async def test_update_session_analysis_results(self, mock_redis):
-        """Test updating session with analysis results"""
+    async def test_update_session_analysis_results(self, mock_redis_client,
+                                                         mock_enhanced_processing_manager,
+                                                         mock_enhanced_notification_service):
+        """Test updating session with transcription and metadata (analysis results)"""
         from app.streaming.call_session_manager import CallSessionManager
 
-        manager = CallSessionManager(redis_client=mock_redis)
-        mock_redis.hset.return_value = True
+        manager = CallSessionManager(redis_client=mock_redis_client)
+        await manager.start_session("call_008", {})
 
-        analysis = {
+        analysis_metadata = {
             "entities": {"PERSON": ["John"]},
             "classification": {"category": "general"}
         }
-        updates = {"analysis": json.dumps(analysis)}
 
-        await manager.update_session("session_123", updates)
+        with patch('app.streaming.call_session_manager.progressive_processor') as mock_processor:
+            mock_processor.process_if_ready = AsyncMock(return_value=None)
 
-        mock_redis.hset.assert_called()
+            await manager.add_transcription("call_008", "Transcript with analysis", 5.0, metadata=analysis_metadata)
+
+        session = await manager.get_session("call_008")
+        assert session.transcript_segments[0]['metadata'] == analysis_metadata
+        mock_redis_client.hset.assert_called()
 
 
 class TestEndSession:
     """Tests for ending call sessions"""
 
     @pytest.mark.asyncio
-    @patch('app.config.settings.redis_task_client')
-    async def test_end_session_success(self, mock_redis):
+    async def test_end_session_success(self, mock_redis_client,
+                                         mock_enhanced_processing_manager,
+                                         mock_enhanced_notification_service):
         """Test successful session termination"""
         from app.streaming.call_session_manager import CallSessionManager
 
-        manager = CallSessionManager(redis_client=mock_redis)
-        mock_redis.hset.return_value = True
-        mock_redis.hgetall.return_value = {
-            b'session_id': b'session_123',
-            b'status': b'active'
-        }
+        manager = CallSessionManager(redis_client=mock_redis_client)
 
-        result = await manager.end_session("session_123")
+        # Create session
+        await manager.start_session("call_009", {})
 
-        assert result is True or result is None
-        # Should update status to completed
-        calls = [str(c) for c in mock_redis.hset.call_args_list]
-        assert any('completed' in c or 'ended' in c for c in calls)
+        # Mock progressive processor
+        with patch('app.streaming.call_session_manager.progressive_processor') as mock_processor:
+            mock_processor.finalize_call_analysis = AsyncMock(return_value={
+                "total_windows_processed": 5,
+                "final_translation_length": 1000
+            })
+
+            # End session
+            ended_session = await manager.end_session("call_009", reason="completed")
+
+        assert ended_session is not None
+        assert ended_session.status == "completed"
+        assert "call_009" not in manager.active_sessions
 
     @pytest.mark.asyncio
-    @patch('app.config.settings.redis_task_client')
-    async def test_end_session_with_summary(self, mock_redis):
-        """Test ending session with final summary"""
+    async def test_end_session_with_summary(self, mock_redis_client,
+                                                  mock_enhanced_processing_manager,
+                                                  mock_enhanced_notification_service):
+        """Test ending session (reason parameter acts like summary)"""
         from app.streaming.call_session_manager import CallSessionManager
 
-        manager = CallSessionManager(redis_client=mock_redis)
-        mock_redis.hset.return_value = True
-        mock_redis.hgetall.return_value = {
-            b'session_id': b'session_123'
-        }
+        manager = CallSessionManager(redis_client=mock_redis_client)
+        await manager.start_session("call_010", {})
 
-        summary = {"total_chunks": 10, "duration": 125.5}
+        with patch('app.streaming.call_session_manager.progressive_processor') as mock_processor:
+            mock_processor.finalize_call_analysis = AsyncMock(return_value=None)
 
-        await manager.end_session("session_123", summary=summary)
+            # Use reason parameter (no summary parameter in actual API)
+            await manager.end_session("call_010", reason="completed_with_summary")
 
-        mock_redis.hset.assert_called()
+        # Session should be ended
+        assert "call_010" not in manager.active_sessions
+        mock_enhanced_notification_service.send_call_end_streaming.assert_called()
 
     @pytest.mark.asyncio
-    @patch('app.config.settings.redis_task_client')
-    async def test_end_session_not_found(self, mock_redis):
+    async def test_end_session_not_found(self, mock_redis_client):
         """Test ending non-existent session"""
         from app.streaming.call_session_manager import CallSessionManager
 
-        manager = CallSessionManager(redis_client=mock_redis)
-        mock_redis.hgetall.return_value = {}
+        manager = CallSessionManager(redis_client=mock_redis_client)
 
         result = await manager.end_session("nonexistent_session")
 
-        # Should handle gracefully
-        assert result is not None or isinstance(result, bool)
+        # Should handle gracefully and return None
+        assert result is None
 
 
 class TestDeleteSession:
-    """Tests for deleting sessions"""
+    """Tests for deleting/cleaning up sessions (using end_session + manual cleanup)"""
 
     @pytest.mark.asyncio
-    @patch('app.config.settings.redis_task_client')
-    async def test_delete_session_success(self, mock_redis):
-        """Test successful session deletion"""
+    async def test_delete_session_success(self, mock_redis_client,
+                                                mock_enhanced_processing_manager,
+                                                mock_enhanced_notification_service):
+        """Test session deletion via end_session"""
         from app.streaming.call_session_manager import CallSessionManager
 
-        manager = CallSessionManager(redis_client=mock_redis)
-        mock_redis.delete.return_value = 1
+        manager = CallSessionManager(redis_client=mock_redis_client)
+        await manager.start_session("call_011", {})
 
-        result = await manager.delete_session("session_123")
+        with patch('app.streaming.call_session_manager.progressive_processor') as mock_processor:
+            mock_processor.finalize_call_analysis = AsyncMock(return_value=None)
 
-        assert result is True or result == 1
-        mock_redis.delete.assert_called_with("call_session:session_123")
+            result = await manager.end_session("call_011")
+
+        # Session removed from active sessions
+        assert result is not None
+        assert "call_011" not in manager.active_sessions
 
     @pytest.mark.asyncio
-    @patch('app.config.settings.redis_task_client')
-    async def test_delete_session_not_found(self, mock_redis):
+    async def test_delete_session_not_found(self, mock_redis_client):
         """Test deleting non-existent session"""
         from app.streaming.call_session_manager import CallSessionManager
 
-        manager = CallSessionManager(redis_client=mock_redis)
-        mock_redis.delete.return_value = 0
+        manager = CallSessionManager(redis_client=mock_redis_client)
 
-        result = await manager.delete_session("nonexistent")
+        result = await manager.end_session("nonexistent")
 
-        assert result is not None
+        assert result is None
 
 
 class TestListActiveSessions:
     """Tests for listing active sessions"""
 
     @pytest.mark.asyncio
-    @patch('app.config.settings.redis_task_client')
-    async def test_list_active_sessions(self, mock_redis):
-        """Test listing all active sessions"""
+    async def test_list_active_sessions(self, mock_redis_client,
+                                             mock_enhanced_processing_manager,
+                                             mock_enhanced_notification_service):
+        """Test listing all active sessions using get_all_active_sessions"""
         from app.streaming.call_session_manager import CallSessionManager
 
-        manager = CallSessionManager(redis_client=mock_redis)
+        manager = CallSessionManager(redis_client=mock_redis_client)
 
-        # Mock Redis keys and data
-        mock_redis.keys.return_value = [
-            b'call_session:session_1',
-            b'call_session:session_2'
-        ]
-        mock_redis.hgetall.return_value = {
-            b'session_id': b'session_1',
-            b'status': b'active'
-        }
+        # Create multiple sessions
+        await manager.start_session("call_012", {})
+        await manager.start_session("call_013", {})
 
-        sessions = await manager.list_active_sessions()
+        sessions = await manager.get_all_active_sessions()
 
         assert sessions is not None
         assert isinstance(sessions, list)
+        assert len(sessions) == 2
 
     @pytest.mark.asyncio
-    @patch('app.config.settings.redis_task_client')
-    async def test_list_active_sessions_empty(self, mock_redis):
+    async def test_list_active_sessions_empty(self, mock_redis_client):
         """Test listing when no active sessions"""
         from app.streaming.call_session_manager import CallSessionManager
 
-        manager = CallSessionManager(redis_client=mock_redis)
-        mock_redis.keys.return_value = []
+        manager = CallSessionManager(redis_client=mock_redis_client)
 
-        sessions = await manager.list_active_sessions()
+        sessions = await manager.get_all_active_sessions()
 
-        assert sessions is not None
+        assert isinstance(sessions, list)
         assert len(sessions) == 0
 
 
 class TestProcessAudioChunk:
-    """Tests for processing audio chunks"""
+    """Tests for processing audio (via add_transcription - no process_audio_chunk method)"""
 
-    @patch('app.config.settings.redis_task_client')
     @pytest.mark.asyncio
-    @patch('app.streaming.call_session_manager.model_loader')
-    async def test_process_audio_chunk_success(self, mock_loader, mock_redis):
-        """Test successful audio chunk processing"""
+    async def test_process_audio_chunk_success(self, mock_redis_client,
+                                                     mock_enhanced_processing_manager,
+                                                     mock_enhanced_notification_service):
+        """Test audio processing via add_transcription"""
         from app.streaming.call_session_manager import CallSessionManager
 
-        manager = CallSessionManager(redis_client=mock_redis)
+        manager = CallSessionManager(redis_client=mock_redis_client)
+        await manager.start_session("call_014", {})
 
-        # Mock models
-        whisper_mock = MagicMock()
-        whisper_mock.transcribe_audio_bytes = AsyncMock(return_value={
-            "text": "Test transcript",
-            "segments": []
-        })
-        mock_loader.models = {"whisper": whisper_mock}
-        mock_redis.hgetall.return_value = {
-            b'session_id': b'session_123',
-            b'status': b'active'
-        }
-        mock_redis.hset.return_value = True
+        # Simulate audio chunk processing by adding transcription
+        with patch('app.streaming.call_session_manager.progressive_processor') as mock_processor:
+            mock_processed_window = MagicMock()
+            mock_processed_window.window_id = 1
+            mock_processor.process_if_ready = AsyncMock(return_value=mock_processed_window)
 
-        audio_chunk = b'\x00\x01\x02\x03' * 100
-
-        result = await manager.process_audio_chunk(
-            session_id="session_123",
-            audio_chunk=audio_chunk,
-            chunk_index=0
-        )
+            result = await manager.add_transcription(
+                call_id="call_014",
+                transcript="Test transcript from audio chunk",
+                audio_duration=2.5
+            )
 
         assert result is not None
+        assert result.cumulative_transcript == "Test transcript from audio chunk"
 
     @pytest.mark.asyncio
-    @patch('app.config.settings.redis_task_client')
-    async def test_process_audio_chunk_invalid_session(self, mock_redis):
-        """Test processing chunk for invalid session"""
+    async def test_process_audio_chunk_invalid_session(self, mock_redis_client):
+        """Test processing for invalid session"""
         from app.streaming.call_session_manager import CallSessionManager
 
-        manager = CallSessionManager(redis_client=mock_redis)
-        mock_redis.hgetall.return_value = {}
+        manager = CallSessionManager(redis_client=mock_redis_client)
 
-        audio_chunk = b'\x00\x01' * 100
+        # Try to add transcription to non-existent session
+        result = await manager.add_transcription(
+            call_id="invalid_session",
+            transcript="test",
+            audio_duration=1.0
+        )
 
-        with pytest.raises(Exception):
-            await manager.process_audio_chunk(
-                session_id="invalid_session",
-                audio_chunk=audio_chunk,
-                chunk_index=0
-            )
+        # Should return None for non-existent session
+        assert result is None
 
 
 class TestGetSessionStats:
     """Tests for getting session statistics"""
 
     @pytest.mark.asyncio
-    @patch('app.config.settings.redis_task_client')
-    async def test_get_session_stats_success(self, mock_redis):
-        """Test getting session statistics"""
+    async def test_get_session_stats_success(self, mock_redis_client,
+                                                   mock_enhanced_processing_manager,
+                                                   mock_enhanced_notification_service):
+        """Test getting overall session statistics (NO call_id parameter)"""
         from app.streaming.call_session_manager import CallSessionManager
 
-        manager = CallSessionManager(redis_client=mock_redis)
+        manager = CallSessionManager(redis_client=mock_redis_client)
 
-        mock_redis.hgetall.return_value = {
-            b'session_id': b'session_123',
-            b'chunks_processed': b'10',
-            b'total_duration': b'125.5'
-        }
+        # Create sessions with transcriptions
+        await manager.start_session("call_015", {})
+        await manager.start_session("call_016", {})
 
-        stats = await manager.get_session_stats("session_123")
+        with patch('app.streaming.call_session_manager.progressive_processor') as mock_processor:
+            mock_processor.process_if_ready = AsyncMock(return_value=None)
+
+            await manager.add_transcription("call_015", "Test 1", 5.0)
+            await manager.add_transcription("call_016", "Test 2", 3.0)
+
+        # Get stats - NO PARAMETERS
+        stats = await manager.get_session_stats()
 
         assert stats is not None
+        assert isinstance(stats, dict)
+        assert stats['active_sessions'] == 2
+        assert stats['total_audio_duration'] == 8.0
 
     @pytest.mark.asyncio
-    @patch('app.config.settings.redis_task_client')
-    async def test_get_session_stats_not_found(self, mock_redis):
-        """Test getting stats for non-existent session"""
+    async def test_get_session_stats_not_found(self, mock_redis_client):
+        """Test getting stats when no sessions exist"""
         from app.streaming.call_session_manager import CallSessionManager
 
-        manager = CallSessionManager(redis_client=mock_redis)
-        mock_redis.hgetall.return_value = {}
+        manager = CallSessionManager(redis_client=mock_redis_client)
 
-        stats = await manager.get_session_stats("nonexistent")
+        stats = await manager.get_session_stats()
 
-        assert stats is None or stats == {}
+        assert stats is not None
+        assert stats['active_sessions'] == 0
+        assert stats['total_audio_duration'] == 0.0
 
 
 class TestSessionTimeout:
     """Tests for session timeout handling"""
 
     @pytest.mark.asyncio
-    @patch('app.config.settings.redis_task_client')
-    async def test_check_session_timeout(self, mock_redis):
-        """Test checking for session timeout"""
+    async def test_check_session_timeout(self, mock_redis_client,
+                                               mock_enhanced_processing_manager,
+                                               mock_enhanced_notification_service):
+        """Test cleanup of inactive sessions via _cleanup_inactive_sessions"""
         from app.streaming.call_session_manager import CallSessionManager
 
-        manager = CallSessionManager(redis_client=mock_redis)
+        manager = CallSessionManager(redis_client=mock_redis_client)
+        manager.session_timeout = timedelta(minutes=1)
 
-        # Mock old session
-        old_time = (datetime.now().timestamp() - 7200)  # 2 hours ago
-        mock_redis.hgetall.return_value = {
-            b'session_id': b'session_123',
-            b'start_time': str(old_time).encode()
-        }
+        # Create a session
+        await manager.start_session("call_017", {})
 
-        is_timeout = await manager.check_session_timeout("session_123", timeout_seconds=3600)
+        # Make it old
+        session = await manager.get_session("call_017")
+        session.last_activity = datetime.now() - timedelta(hours=2)
 
-        assert is_timeout is True or is_timeout is not None
+        # Run cleanup
+        with patch('app.streaming.call_session_manager.progressive_processor') as mock_processor:
+            mock_processor.finalize_call_analysis = AsyncMock(return_value=None)
+
+            await manager._cleanup_inactive_sessions()
+
+        # Session should be removed
+        assert "call_017" not in manager.active_sessions
 
     @pytest.mark.asyncio
-    @patch('app.config.settings.redis_task_client')
-    async def test_cleanup_timed_out_sessions(self, mock_redis):
-        """Test cleanup of timed out sessions"""
+    async def test_cleanup_timed_out_sessions(self, mock_redis_client,
+                                                    mock_enhanced_processing_manager,
+                                                    mock_enhanced_notification_service):
+        """Test cleanup keeps active sessions, removes old ones"""
         from app.streaming.call_session_manager import CallSessionManager
 
-        manager = CallSessionManager(redis_client=mock_redis)
+        manager = CallSessionManager(redis_client=mock_redis_client)
+        manager.session_timeout = timedelta(minutes=30)
 
-        mock_redis.keys.return_value = [b'call_session:session_1']
-        mock_redis.hgetall.return_value = {
-            b'session_id': b'session_1',
-            b'start_time': b'1000'  # Very old
-        }
+        # Create old and new sessions
+        await manager.start_session("old_session", {})
+        await manager.start_session("new_session", {})
 
-        cleaned = await manager.cleanup_timed_out_sessions(timeout_seconds=3600)
+        # Make one old
+        old_session = await manager.get_session("old_session")
+        old_session.last_activity = datetime.now() - timedelta(hours=2)
 
-        assert cleaned is not None
+        with patch('app.streaming.call_session_manager.progressive_processor') as mock_processor:
+            mock_processor.finalize_call_analysis = AsyncMock(return_value=None)
+
+            await manager._cleanup_inactive_sessions()
+
+        # Old removed, new kept
+        assert "old_session" not in manager.active_sessions
+        assert "new_session" in manager.active_sessions
 
 
 class TestSessionErrorHandling:
     """Tests for error handling in session management"""
 
     @pytest.mark.asyncio
-    @patch('app.config.settings.redis_task_client')
-    async def test_create_session_redis_error(self, mock_redis):
-        """Test session creation with Redis error"""
+    async def test_create_session_redis_error(self, mock_redis_client,
+                                                    mock_enhanced_processing_manager):
+        """Test session creation with processing error"""
         from app.streaming.call_session_manager import CallSessionManager
 
-        manager = CallSessionManager(redis_client=mock_redis)
-        mock_redis.hset.side_effect = Exception("Redis error")
+        manager = CallSessionManager(redis_client=mock_redis_client)
+        mock_enhanced_processing_manager.determine_mode.side_effect = Exception("Redis error")
 
         with pytest.raises(Exception):
-            await manager.create_session(caller_id="caller_001")
+            await manager.start_session("call_018", {})
 
     @pytest.mark.asyncio
-    @patch('app.config.settings.redis_task_client')
-    async def test_update_session_redis_error(self, mock_redis):
-        """Test session update with Redis error"""
+    async def test_update_session_redis_error(self, mock_redis_client,
+                                                    mock_enhanced_processing_manager,
+                                                    mock_enhanced_notification_service):
+        """Test transcription addition handles errors gracefully"""
         from app.streaming.call_session_manager import CallSessionManager
 
-        manager = CallSessionManager(redis_client=mock_redis)
-        mock_redis.hset.side_effect = Exception("Redis error")
+        manager = CallSessionManager(redis_client=mock_redis_client)
+        await manager.start_session("call_019", {})
 
-        with pytest.raises(Exception):
-            await manager.update_session("session_123", {"status": "active"})
+        # Make progressive processor fail
+        with patch('app.streaming.call_session_manager.progressive_processor') as mock_processor:
+            mock_processor.process_if_ready = AsyncMock(side_effect=Exception("Processing error"))
+
+            # Should not raise, but handle gracefully
+            result = await manager.add_transcription("call_019", "test", 1.0)
+
+        # Session should still be updated
+        assert result is not None
+        assert result.cumulative_transcript == "test"
 
     @pytest.mark.asyncio
-    @patch('app.config.settings.redis_task_client')
-    async def test_get_session_redis_error(self, mock_redis):
-        """Test session retrieval with Redis error"""
+    async def test_get_session_redis_error(self, mock_redis_client):
+        """Test session retrieval with Redis error falls back to memory"""
         from app.streaming.call_session_manager import CallSessionManager
 
-        manager = CallSessionManager(redis_client=mock_redis)
-        mock_redis.hgetall.side_effect = Exception("Redis error")
+        manager = CallSessionManager(redis_client=mock_redis_client)
+        mock_redis_client.hget.side_effect = Exception("Redis error")
 
-        with pytest.raises(Exception):
-            await manager.get_session("session_123")
+        # Should not raise, returns None
+        session = await manager.get_session("call_020")
+
+        assert session is None
