@@ -41,7 +41,7 @@ class SummarizationTaskStatusResponse(BaseModel):
     progress: Optional[Dict] = None
 
 
-@router.post("/summarize", response_model=SummarizationTaskResponse)
+@router.post("/summarize", response_model=SummarizationTaskResponse, status_code=202)
 async def summarize_text_endpoint(request: SummarizationRequest):
     """Summarize text (async via Celery)"""
     

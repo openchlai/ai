@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, Any, Optional
 from pydantic import BaseModel
 import logging
+from datetime import datetime
 
 from ..core.processing_strategy_manager import processing_strategy_manager
 from ..core.processing_modes import CallProcessingMode
@@ -87,6 +88,8 @@ async def update_processing_configuration(request: ProcessingModeUpdateRequest):
         else:
             raise HTTPException(status_code=400, detail="Failed to update configuration")
             
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"❌ Failed to update processing configuration: {e}")
         raise HTTPException(status_code=500, detail="Failed to update configuration")
@@ -196,4 +199,3 @@ def _get_mode_description(mode: CallProcessingMode) -> str:
     return descriptions.get(mode, "Unknown processing mode")
 
 # Include the router in main app
-from datetime import datetime

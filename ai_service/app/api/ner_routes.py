@@ -1,5 +1,5 @@
 # app/api/ner_routes.py - Updated with Celery Task Management
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 from typing import List, Dict, Union, Optional
 import logging
@@ -9,6 +9,7 @@ from celery.result import AsyncResult
 from ..tasks.model_tasks import ner_extract_task
 from ..model_scripts.model_loader import model_loader
 from ..utils.mode_detector import is_api_server_mode, get_execution_mode
+from .models import ErrorResponse, ErrorCodes, create_error_response
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/ner", tags=["ner"])
@@ -50,39 +51,87 @@ class NERTaskStatusResponse(BaseModel):
     progress: Optional[Dict] = None
 
 
-@router.post("/extract", response_model=NERTaskResponse)
+@router.post(
+    "/extract",
+    response_model=NERTaskResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    responses={
+        202: {
+            "description": "Task accepted and queued for processing",
+            "model": NERTaskResponse
+        },
+        400: {
+            "description": "Invalid input (empty text)",
+            "model": ErrorResponse
+        },
+        503: {
+            "description": "NER model not ready (standalone mode only)",
+            "model": ErrorResponse
+        },
+        500: {
+            "description": "Internal server error during task submission",
+            "model": ErrorResponse
+        }
+    }
+)
 async def extract_entities(request: NERRequest):
     """
-    Extract named entities from text (async via Celery)
-    
-    Returns task_id immediately for status checking
+    Extract named entities from text (async via Celery).
+
+    This endpoint submits a NER extraction task to the Celery queue and
+    returns immediately with a task_id for status polling.
+
+    **Workflow:**
+    1. POST to /ner/extract with text
+    2. Receive task_id in response
+    3. Poll /ner/task/{task_id} for results
+
+    **Entity Types Detected:**
+    - PERSON: Names of people
+    - ORG: Organizations, companies
+    - GPE: Geopolitical entities (countries, cities)
+    - DATE: Dates and time references
+    - And more...
+
+    **Processing Time:** Usually 5-15 seconds depending on text length
+
+    Returns:
+        NERTaskResponse: Task ID and status endpoint for polling
     """
-    
+
     # Mode-aware validation: only check local models in standalone mode
     if not is_api_server_mode():
         # In standalone mode, check if local model is ready
         if not model_loader.is_model_ready("ner"):
             raise HTTPException(
-                status_code=503, 
-                detail="NER model not ready. Check /health/models for status."
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=create_error_response(
+                    error_code=ErrorCodes.MODEL_NOT_READY,
+                    message="NER model not ready. Check /health/models for status.",
+                    detail="Model failed to load or is currently initializing"
+                ).model_dump()
             )
     # In API server mode, skip local model check - models are on workers
-    
+
     if not request.text.strip():
         raise HTTPException(
-            status_code=400,
-            detail="Text input cannot be empty"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=create_error_response(
+                error_code=ErrorCodes.INVALID_INPUT,
+                message="Text input cannot be empty",
+                field="text"
+            ).model_dump()
         )
-    
+
     try:
         # Submit task to Celery
         task = ner_extract_task.apply_async(
             args=[request.text, request.flat],
             queue='model_processing'
         )
-        
+
         logger.info(f"📤 NER task submitted: {task.id}")
-        
+
         return NERTaskResponse(
             task_id=task.id,
             status="queued",
@@ -90,12 +139,16 @@ async def extract_entities(request: NERRequest):
             estimated_time="5-15 seconds",
             status_endpoint=f"/ner/task/{task.id}"
         )
-        
+
     except Exception as e:
         logger.error(f"Failed to submit NER task: {e}")
         raise HTTPException(
-            status_code=500,
-            detail=f"Failed to submit NER task: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=create_error_response(
+                error_code=ErrorCodes.TASK_SUBMISSION_FAILED,
+                message="Failed to submit NER task",
+                detail=str(e)
+            ).model_dump()
         )
 
 
