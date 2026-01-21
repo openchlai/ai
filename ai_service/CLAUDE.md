@@ -9,16 +9,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 #### Production Mode (Docker Compose - Recommended)
 ```bash
 # Start complete stack with Docker Compose
-docker-compose up -d
+docker compose up -d
 
 # Start with streaming support
-ENABLE_STREAMING=true docker-compose up -d
+ENABLE_STREAMING=true docker compose up -d
 
 # View logs
-docker-compose logs -f
+docker compose logs -f
 
 # Stop services
-docker-compose down
+docker compose down
 ```
 
 #### Local Development Mode
@@ -77,7 +77,7 @@ celery -A app.celery_app worker --loglevel=info -E --pool=solo -Q model_processi
 celery -A app.celery_app flower --port=5555
 
 # Alternative: Monitor with Flower (Docker)
-docker-compose up flower
+docker compose up flower
 ```
 
 #### Celery Administration
@@ -285,9 +285,9 @@ celery -A app.celery_app worker --loglevel=info -E --pool=solo -Q model_processi
 **Solution**: 
 ```bash
 # Stop Docker workers if running locally
-sudo docker-compose stop celery-worker
+sudo docker compose stop celery-worker
 
-# Or update docker-compose.yml to use correct queues
+# Or update docker compose.yml to use correct queues
 ```
 
 #### No Tasks Visible in Flower
@@ -307,7 +307,7 @@ celery -A app.celery_app worker --loglevel=info -E --pool=solo -Q model_processi
 redis-cli ping
 
 # For Docker mode, ensure Redis container is up
-docker-compose up redis
+docker compose up redis
 ```
 
 ### Health Check Commands

@@ -1,27 +1,24 @@
 services:
-  # Redis for Celery backend
-  redis:
-    image: redis:7-alpine
-    restart: unless-stopped
-    volumes:
-      - redis_data:/data
-      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
-    command: redis-server /usr/local/etc/redis/redis.conf
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 3
+  # Redis for Celery backend (DISABLED - using host Redis)
+  # The host network mode means containers connect to host Redis at localhost:6379
+  # redis:
+  #   image: redis:7-alpine
+  #   network_mode: host
+  #   restart: unless-stopped
+  #   volumes:
+  #     - redis_data:/data
+  #     - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+  #   command: redis-server /usr/local/etc/redis/redis.conf
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 10s
+  #     timeout: 3s
+  #     retries: 3
 
   # Main FastAPI application
   ai-pipeline:
     build: .
-    ports:
-      - "${APP_PORT:-8125}:${APP_PORT:-8125}"
-      - "${STREAMING_PORT:-8300}:${STREAMING_PORT:-8300}"
-    depends_on:
-      redis:
-        condition: service_healthy
+    network_mode: host
     environment:
       - APP_PORT=${APP_PORT:-8125}
       - DEBUG=${DEBUG:-true}
@@ -35,13 +32,13 @@ services:
       - MYSQL_DATABASE=${MYSQL_DATABASE:-ai_service}
       - ENABLE_MODEL_LOADING=false  # API server doesn't need models
       - ENABLE_METRICS=true  # Enable Prometheus metrics
-      - REDIS_URL=redis://redis:6379/0
+      - REDIS_URL=redis://localhost:6379/0
       - REDIS_TASK_DB=${REDIS_TASK_DB:-1}
       - DOCKER_CONTAINER=true
       - ENABLE_STREAMING=${ENABLE_STREAMING:-false}
       - MAX_STREAMING_SLOTS=${MAX_STREAMING_SLOTS:-2}
       - MAX_BATCH_SLOTS=${MAX_BATCH_SLOTS:-1}
-      - STREAMING_PORT=${STREAMING_PORT:-8300}
+      - STREAMING_PORT=${STREAMING_PORT:-8301}
       - STREAMING_HOST=${STREAMING_HOST:-0.0.0.0}
       - REDIS_STREAMING_DB=${REDIS_STREAMING_DB:-2}
       # HuggingFace Configuration
@@ -116,10 +113,8 @@ services:
   # Celery worker for processing tasks
   celery-worker:
     build: .
+    network_mode: host
     user: "1003:1004"  # Run as franklin user to access local cache
-    depends_on:
-      redis:
-        condition: service_healthy
     environment:
       - DEBUG=${DEBUG:-true}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
@@ -133,7 +128,7 @@ services:
       - NUMBA_CACHE_DIR=/tmp/numba_cache
       - NUMBA_DISABLE_JIT=0
       - NUMBA_DISABLE_CACHING=1
-      - REDIS_URL=redis://redis:6379/0
+      - REDIS_URL=redis://localhost:6379/0
       - REDIS_TASK_DB=${REDIS_TASK_DB:-1}
       - DOCKER_CONTAINER=true
       # HuggingFace Configuration
@@ -209,11 +204,9 @@ services:
   # Optional: Celery monitoring (Flower)
   flower:
     build: .
-    depends_on:
-      - redis
-      - celery-worker
+    network_mode: host
     environment:
-      - REDIS_URL=redis://redis:6379/0
+      - REDIS_URL=redis://localhost:6379/0
       - REDIS_TASK_DB=${REDIS_TASK_DB:-1}
       - DOCKER_CONTAINER=true
       # HuggingFace Configuration (needed for task module imports)
@@ -227,8 +220,6 @@ services:
       - HF_SUMMARIZER_MODEL=${HF_SUMMARIZER_MODEL}
       - HF_QA_MODEL=${HF_QA_MODEL}
       - HF_HOME=/app/.cache/huggingface
-    ports:
-      - "5555:5555"
     command: celery -A app.celery_app flower --port=5555
     restart: unless-stopped
 
@@ -302,15 +293,10 @@ services:
   redis-exporter:
     image: oliver006/redis_exporter:latest
     container_name: redis-exporter
-    ports:
-      - "9121:9121"
+    network_mode: host
     environment:
-      - REDIS_ADDR=redis://redis:6379
+      - REDIS_ADDR=redis://localhost:6379
     restart: unless-stopped
-    depends_on:
-      - redis
-    networks:
-      - default
 
   # NVIDIA DCGM Exporter - GPU Metrics (Official NVIDIA)
   dcgm-exporter:
@@ -335,14 +321,9 @@ services:
   celery-exporter:
     image: danihodovic/celery-exporter:latest
     container_name: celery-exporter
-    ports:
-      - "9808:9808"
-    command: --broker-url=redis://redis:6379/0
+    network_mode: host
+    command: --broker-url=redis://localhost:6379/0
     restart: unless-stopped
-    depends_on:
-      - redis
-    networks:
-      - default
 
 volumes:
   redis_data:
