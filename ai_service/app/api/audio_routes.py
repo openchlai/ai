@@ -1,11 +1,10 @@
 # app/api/audio_routes.py (Updated for Celery)
 import asyncio
 import json
-from socket import socket
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict
 import logging
 from datetime import datetime
 import os
@@ -170,7 +169,7 @@ async def quick_audio_analysis(
             
     except Exception as e:
         logger.error(f"❌ Quick analysis failed for {audio.filename}: {e}")
-        raise HTTPException(status_code=500, detail=f"Quick analysis failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Quick analysis failed")
 
 @router.get("/task/{task_id}")
 async def get_task_status(task_id: str):

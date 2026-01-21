@@ -210,7 +210,7 @@ async def get_whisper_task_status(task_id: str):
             )
             
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error checking task: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error checking task")
 
 @router.get("/info")
 async def get_whisper_info():

@@ -227,35 +227,6 @@ class QAModel:
             logger.error(f"QA scoring failed: {e}")
             raise RuntimeError(f"QA scoring failed: {str(e)}")
 
-    def format_qa_response(self, raw_results: Dict) -> dict:
-        """Convert raw multi-head QA results into structured response."""
-        metrics = []
-
-        # Flatten predictions into a single list
-        for metric_name, submetrics in raw_results.items():
-            for submetric in submetrics:
-                metrics.append({
-                    "submetric": submetric["submetric"],
-                    "prediction": bool(submetric["prediction"]),
-                    "score": submetric["score"],
-                    "probability": submetric["probability"]
-                })
-
-        # Compute overall score (mean of probabilities)
-        overall_score_value = float(np.mean([m["probability"] for m in metrics])) if metrics else 0.0
-
-        overall_score = [{
-            "submetric": "Overall QA Score",
-            "prediction": bool(overall_score_value >= 0.5),
-            "score": f"{overall_score_value:.2f}",
-            "probability": overall_score_value
-        }]
-
-        return {
-            "overall_score": overall_score,
-            "metrics": metrics
-        }
-
     def predict(self, text: str, threshold: float = 0.5, return_raw: bool = False) -> Dict:
         """Predict QA metrics for a given transcript."""
         if not self.is_ready():

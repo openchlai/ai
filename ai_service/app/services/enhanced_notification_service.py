@@ -10,14 +10,21 @@ import base64
 import httpx
 import json
 import logging
+import os
 import uuid
 from datetime import datetime, timezone, timedelta
-from enum import Enum
-from typing import Any, Dict, Optional, List, Literal
+from typing import Any, Dict, Optional, Literal
 
 from pydantic import BaseModel, Field
 
 from app.config.settings import settings
+
+# Import unified notification types
+from app.models.notification_types import (
+    NotificationType,
+    ProcessingMode,
+    NotificationStatus
+)
 
 # Suppress SSL warnings for self-signed certificates
 import urllib3
@@ -29,43 +36,6 @@ from ..db.repositories.feedback_repository import FeedbackRepository
 
 # Configure logging
 logger = logging.getLogger(__name__)
-
-class NotificationType(str, Enum):
-    """Defines the types of notifications that can be sent."""
-    # Streaming
-    CALL_START = "call_start"
-    TRANSCRIPTION_UPDATE = "transcription_update"
-    TRANSLATION_UPDATE = "translation_update"
-    ENTITY_UPDATE = "entity_update"
-    CLASSIFICATION_UPDATE = "classification_update"
-    CALL_END_STREAMING = "call_end_streaming"
-
-    # Post-call
-    POST_CALL_START = "post_call_start"
-    POST_CALL_TRANSCRIPTION = "post_call_transcription"
-    POST_CALL_TRANSLATION = "post_call_translation"
-    POST_CALL_ENTITIES = "post_call_entities"
-    POST_CALL_CLASSIFICATION = "post_call_classification"
-    POST_CALL_SUMMARY = "post_call_summary"
-    POST_CALL_QA_SCORING = "post_call_qa_scoring"
-    POST_CALL_COMPLETE = "post_call_complete"
-
-    # Status
-    PROCESSING_PROGRESS = "processing_progress"
-    PROCESSING_ERROR = "processing_error"
-
-class ProcessingMode(str, Enum):
-    """Defines the processing modes for a call."""
-    STREAMING = "streaming"
-    POST_CALL = "post_call"
-    DUAL = "dual"
-    ADAPTIVE = "adaptive"
-
-class NotificationStatus(str, Enum):
-    """Defines the status of the notification payload."""
-    SUCCESS = "success"
-    IN_PROGRESS = "in_progress"
-    ERROR = "error"
 
 class UIMetadata(BaseModel):
     """UI-specific metadata to guide frontend rendering."""
@@ -177,6 +147,192 @@ class EnhancedNotificationService:
         except Exception as e:
             logger.error(f"❌ Failed to log payload: {e}")
 
+    def _extract_notification_summary(self, notification_type: str, payload_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Extract key fields from notification payload for markdown summary.
+
+        Args:
+            notification_type: Type of notification (e.g., 'postcall_transcription')
+            payload_data: The 'payload' section of the notification
+
+        Returns:
+            Dictionary with extracted summary fields
+        """
+        summary = {}
+
+        try:
+            if notification_type == "postcall_transcription":
+                transcript = payload_data.get("transcript", "")
+                summary = {
+                    "length": len(transcript),
+                    "text": transcript
+                }
+
+            elif notification_type == "postcall_translation":
+                translation = payload_data.get("translation", "")
+                summary = {
+                    "length": len(translation),
+                    "text": translation
+                }
+
+            elif notification_type == "postcall_classification":
+                summary = {
+                    "main_category": payload_data.get("main_category", "N/A"),
+                    "sub_category": payload_data.get("sub_category", "N/A"),
+                    "sub_category_2": payload_data.get("sub_category_2", "N/A"),
+                    "intervention": payload_data.get("intervention", "N/A"),
+                    "priority": payload_data.get("priority", "N/A"),
+                    "confidence": payload_data.get("confidence", 0) * 100  # Convert to percentage
+                }
+
+            elif notification_type == "postcall_entities":
+                entities = payload_data.get("entities", {})
+                counts = {}
+                entity_lists = {}
+
+                for entity_type, entity_list in entities.items():
+                    counts[entity_type] = len(entity_list) if isinstance(entity_list, list) else 0
+                    entity_lists[entity_type] = entity_list if isinstance(entity_list, list) else []
+
+                summary = {
+                    "counts": counts,
+                    "entities": entity_lists
+                }
+
+            elif notification_type == "postcall_qa_scoring":
+                qa_results = payload_data.get("qa_results", {})
+                summary = {
+                    "total_metrics": qa_results.get("total_metrics_evaluated", 0),
+                    "pass_rate": qa_results.get("pass_rate_percentage", 0),
+                    "overall_quality": qa_results.get("overall_quality", "N/A")
+                }
+
+            elif notification_type == "postcall_summary":
+                summary = {
+                    "summary": payload_data.get("summary", "N/A")
+                }
+
+            elif notification_type == "postcall_complete":
+                summary = {
+                    "status": payload_data.get("status", "N/A"),
+                    "processing_time": payload_data.get("processing_time_seconds", 0)
+                }
+
+            else:
+                # For unknown types, just return the payload as-is
+                summary = {"data": payload_data}
+
+        except Exception as e:
+            logger.error(f"Error extracting summary for {notification_type}: {e}")
+            summary = {"error": str(e)}
+
+        return summary
+
+    async def _write_mock_notification(self, notification_data: Dict[str, Any]):
+        """
+        Write notification to markdown file for mock mode.
+
+        Args:
+            notification_data: Complete notification payload (v2.0 format)
+        """
+        try:
+            # Get call_id and create folder
+            call_id = notification_data.get("call_metadata", {}).get("call_id", "unknown")
+            mock_folder = settings.mock_notifications_folder
+            os.makedirs(mock_folder, exist_ok=True)
+
+            # File path
+            file_path = os.path.join(mock_folder, f"{call_id}.md")
+
+            # Extract key info
+            notification_type = notification_data.get("notification_type", "unknown")
+            timestamp = notification_data.get("timestamp", datetime.now().isoformat())
+            processing_mode = notification_data.get("processing_mode", "N/A")
+            payload_data = notification_data.get("payload", {})
+
+            # Extract summary
+            summary = self._extract_notification_summary(notification_type, payload_data)
+
+            # Check if file exists (to add header for new files)
+            is_new_file = not os.path.exists(file_path)
+
+            # Open file in append mode
+            with open(file_path, 'a') as f:
+                # Add header for new files
+                if is_new_file:
+                    f.write(f"# Call Notifications: {call_id}\n\n")
+                    f.write(f"**Processing Mode**: {processing_mode}\n")
+                    f.write(f"**Started**: {timestamp}\n\n")
+                    f.write("---\n\n")
+
+                # Write notification section
+                f.write(f"## {notification_type.upper()}\n\n")
+                f.write(f"**Time**: {timestamp}\n")
+                f.write(f"**Type**: {notification_type}\n\n")
+
+                # Write type-specific content
+                if notification_type == "postcall_transcription":
+                    f.write(f"**Length**: {summary.get('length', 0)} characters\n\n")
+                    f.write("**Full Transcript**:\n```\n")
+                    f.write(summary.get('text', 'N/A'))
+                    f.write("\n```\n\n")
+
+                elif notification_type == "postcall_translation":
+                    f.write(f"**Length**: {summary.get('length', 0)} characters\n\n")
+                    f.write("**Full Translation**:\n```\n")
+                    f.write(summary.get('text', 'N/A'))
+                    f.write("\n```\n\n")
+
+                elif notification_type == "postcall_classification":
+                    f.write(f"**Category**: {summary.get('main_category')} → {summary.get('sub_category')}\n")
+                    if summary.get('sub_category_2') and summary.get('sub_category_2') != 'N/A':
+                        f.write(f"**Sub-Category 2**: {summary.get('sub_category_2')}\n")
+                    f.write(f"**Intervention**: {summary.get('intervention')}\n")
+                    f.write(f"**Priority**: {summary.get('priority')}\n")
+                    f.write(f"**Confidence**: {summary.get('confidence', 0):.1f}%\n\n")
+
+                elif notification_type == "postcall_entities":
+                    counts = summary.get('counts', {})
+                    entities = summary.get('entities', {})
+
+                    f.write("**Counts**:\n")
+                    for entity_type, count in counts.items():
+                        f.write(f"- {entity_type.title()}: {count}\n")
+                    f.write("\n")
+
+                    f.write("**Extracted Entities**:\n")
+                    for entity_type, entity_list in entities.items():
+                        if entity_list:
+                            f.write(f"- **{entity_type.title()}**: {', '.join(entity_list)}\n")
+                        else:
+                            f.write(f"- **{entity_type.title()}**: None\n")
+                    f.write("\n")
+
+                elif notification_type == "postcall_qa_scoring":
+                    f.write(f"**Metrics Evaluated**: {summary.get('total_metrics', 0)}\n")
+                    f.write(f"**Pass Rate**: {summary.get('pass_rate', 0):.1f}%\n")
+                    f.write(f"**Overall Quality**: {summary.get('overall_quality', 'N/A')}\n\n")
+
+                elif notification_type == "postcall_summary":
+                    f.write("**Summary**:\n")
+                    f.write(f"{summary.get('summary', 'N/A')}\n\n")
+
+                elif notification_type == "postcall_complete":
+                    f.write(f"**Status**: {summary.get('status', 'N/A')}\n")
+                    f.write(f"**Total Processing Time**: {summary.get('processing_time', 0):.2f}s\n\n")
+
+                else:
+                    # Unknown type - just dump the data
+                    f.write(f"**Data**: {json.dumps(summary, indent=2)}\n\n")
+
+                # Add separator
+                f.write("---\n\n")
+
+            logger.info(f"[mock] Wrote {notification_type} to {file_path}")
+
+        except Exception as e:
+            logger.error(f"[mock] Failed to write notification to file: {e}")
+
     async def _ensure_valid_token(self) -> bool:
         """Ensure we have a valid bearer token."""
         now = datetime.now()
@@ -213,7 +369,8 @@ class EnhancedNotificationService:
             logger.info(f"🔐 [token] Fetching token from: {self.auth_endpoint_url}")
             logger.info(f"🔐 [token] Headers: Authorization=Basic {self.basic_auth[:20]}..., Content-Type={headers['Content-Type']}")
 
-            response = await self.client.post(
+            # Use GET instead of POST (helpline API expects GET)
+            response = await self.client.get(
                 self.auth_endpoint_url,
                 headers=headers
             )
@@ -225,17 +382,26 @@ class EnhancedNotificationService:
                 data = response.json()
                 logger.info(f"🔐 [token] Response keys: {list(data.keys())}")
 
-                token = data.get("access_token") or data.get("token")
+                # Parse token from helpline API format: data["ss"][0][0]
+                token = None
+                if "ss" in data and isinstance(data["ss"], list) and len(data["ss"]) > 0:
+                    if isinstance(data["ss"][0], list) and len(data["ss"][0]) > 0:
+                        token = data["ss"][0][0]
+
+                # Fallback to standard token fields if not found in ss structure
+                if not token:
+                    token = data.get("access_token") or data.get("token")
 
                 if token:
                     # Set expiration (default 1 hour if not provided)
                     expires_in = data.get("expires_in", 3600)
                     self.token_expires_at = datetime.now() + timedelta(seconds=expires_in)
 
-                    logger.info("✅ Successfully fetched bearer token")
+                    logger.info(f"✅ Successfully fetched bearer token: {token[:8]}...")
                     return token
                 else:
                     logger.error(f"❌ No token found in response. Keys: {list(data.keys())}")
+                    logger.error(f"❌ Response structure: {json.dumps(data, indent=2)[:500]}")
             else:
                 # Log detailed error response
                 try:
@@ -322,10 +488,16 @@ class EnhancedNotificationService:
 
         # Log payload for UI development
         self._log_payload(data, request_body)
-        
+
+        # Check for mock notifications - skip HTTP and write to markdown instead
+        if settings.mock_notifications:
+            logger.info(f"[mock] Skipping HTTP send - writing to mock notification file")
+            await self._write_mock_notification(data)
+            return True  # Pretend send succeeded
+
         # Retry logic
-        retry_attempts = getattr(settings, 'notification_retry_attempts', 3)
-        retry_delay = getattr(settings, 'notification_retry_delay', 2)
+        retry_attempts = settings.notification_max_retries
+        retry_delay = settings.notification_retry_delay
         
         for attempt in range(retry_attempts):
             try:
@@ -421,7 +593,7 @@ class EnhancedNotificationService:
         
         return await self.send_notification(
             call_id=call_id,
-            notification_type=NotificationType.TRANSCRIPTION_UPDATE,
+            notification_type=NotificationType.STREAMING_TRANSCRIPTION,
             processing_mode=ProcessingMode.STREAMING,
             payload_data=payload_data,
             call_metadata=metadata,
@@ -451,7 +623,7 @@ class EnhancedNotificationService:
         
         return await self.send_notification(
             call_id=call_id,
-            notification_type=NotificationType.TRANSLATION_UPDATE,
+            notification_type=NotificationType.STREAMING_TRANSLATION,
             processing_mode=ProcessingMode.STREAMING,
             payload_data=payload_data,
             call_metadata=metadata,
@@ -478,7 +650,7 @@ class EnhancedNotificationService:
         
         return await self.send_notification(
             call_id=call_id,
-            notification_type=NotificationType.ENTITY_UPDATE,
+            notification_type=NotificationType.STREAMING_ENTITIES,
             processing_mode=ProcessingMode.STREAMING,
             payload_data=payload_data,
             call_metadata=metadata,
@@ -505,7 +677,7 @@ class EnhancedNotificationService:
         
         return await self.send_notification(
             call_id=call_id,
-            notification_type=NotificationType.CLASSIFICATION_UPDATE,
+            notification_type=NotificationType.STREAMING_CLASSIFICATION,
             processing_mode=ProcessingMode.STREAMING,
             payload_data=payload_data,
             call_metadata=metadata,
@@ -550,7 +722,7 @@ class EnhancedNotificationService:
         
         return await self.send_notification(
             call_id=call_id,
-            notification_type=NotificationType.POST_CALL_TRANSCRIPTION,
+            notification_type=NotificationType.POSTCALL_TRANSCRIPTION,
             processing_mode=ProcessingMode.POST_CALL,
             payload_data=payload_data,
             call_metadata=metadata
@@ -583,7 +755,7 @@ class EnhancedNotificationService:
     
         return await self.send_notification(
             call_id=call_id,
-            notification_type=NotificationType.POST_CALL_COMPLETE,
+            notification_type=NotificationType.POSTCALL_COMPLETE,
             processing_mode=ProcessingMode.POST_CALL,
             payload_data=payload_data,
             call_metadata=metadata,
@@ -607,7 +779,7 @@ class EnhancedNotificationService:
         
         return await self.send_notification(
             call_id=call_id,
-            notification_type=NotificationType.PROCESSING_PROGRESS,
+            notification_type=NotificationType.SYSTEM_PROCESSING_PROGRESS,
             processing_mode=mode,
             payload_data=payload_data,
             call_metadata=metadata,
@@ -634,7 +806,7 @@ class EnhancedNotificationService:
         
         return await self.send_notification(
             call_id=call_id,
-            notification_type=NotificationType.PROCESSING_ERROR,
+            notification_type=NotificationType.SYSTEM_PROCESSING_ERROR,
             processing_mode=mode,
             payload_data={},
             call_metadata=metadata,

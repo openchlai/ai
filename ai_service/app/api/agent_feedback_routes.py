@@ -111,10 +111,10 @@ async def update_feedback(
     except HTTPException:
         raise
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail="Invalid request")
     except Exception as e:
         logger.error(f"❌ Failed to update feedback: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to update feedback: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to update feedback")
 
 
 @router.get("/call/{call_id}", response_model=List[FeedbackResponse])
@@ -149,7 +149,7 @@ async def get_call_feedback(
         raise
     except Exception as e:
         logger.error(f"❌ Failed to retrieve feedback: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to retrieve feedback: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve feedback")
 
 
 @router.get("/statistics", response_model=FeedbackStatisticsResponse)
@@ -180,7 +180,7 @@ async def get_feedback_statistics(
         raise
     except Exception as e:
         logger.error(f"❌ Failed to get statistics: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to get statistics: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to get statistics")
 
 
 @router.get("/health")
@@ -214,4 +214,4 @@ async def health_check(db: Session = Depends(get_db)):
         
     except Exception as e:
         logger.error(f"❌ Feedback system health check failed: {e}")
-        raise HTTPException(status_code=503, detail=f"Service unhealthy: {str(e)}")
+        raise HTTPException(status_code=503, detail="Service unhealthy")

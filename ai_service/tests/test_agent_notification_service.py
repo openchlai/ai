@@ -8,8 +8,9 @@ from datetime import datetime
 # Add project root to sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+@pytest.mark.skip(reason="AgentNotificationService has been deprecated and replaced with EnhancedNotificationService")
 class TestAgentNotificationService:
-    """Unit tests for the Agent Notification Service"""
+    """Unit tests for the Agent Notification Service (DEPRECATED - use EnhancedNotificationService)"""
 
     def test_service_initialization(self):
         """Test service initialization"""

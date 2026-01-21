@@ -2,7 +2,6 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import logging
 from datetime import datetime
-from ..utils.text_utils import ClassificationChunker, ClassificationAggregator
 from ..model_scripts.model_loader import model_loader
 from ..utils.mode_detector import is_api_server_mode, get_execution_mode
 from typing import List, Dict, Optional
@@ -17,6 +16,7 @@ router = APIRouter(prefix="/classifier", tags=["classifier"])
 class ConfidenceScores(BaseModel):
     main_category: Optional[float] = None
     sub_category: Optional[float] = None
+    sub_category_2: Optional[float] = None 
     intervention: Optional[float] = None
     priority: Optional[float] = None
 
@@ -28,6 +28,7 @@ class ChunkPrediction(BaseModel):
     position_ratio: float
     main_category: str
     sub_category: str
+    sub_category_2: Optional[str] = None  
     intervention: str
     priority: str
     confidence_scores: ConfidenceScores
@@ -40,6 +41,7 @@ class ClassifierRequest(BaseModel):
 class ClassifierResponse(BaseModel):
     main_category: str
     sub_category: str
+    sub_category_2: Optional[str] = None  
     intervention: str
     priority: str
     confidence_scores: ConfidenceScores
@@ -106,7 +108,7 @@ async def classify_narrative(request: ClassifierRequest):
         
     except Exception as e:
         logger.error(f"Failed to submit classification task: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to submit task: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to submit task")
 
 
 @router.get("/task/{task_id}", response_model=ClassifierTaskStatusResponse)
@@ -135,6 +137,7 @@ async def get_classifier_task_status(task_id: str):
             classifier_response = ClassifierResponse(
                 main_category=result['main_category'],
                 sub_category=result['sub_category'],
+                sub_category_2=result.get('sub_category_2'), 
                 intervention=result['intervention'],
                 priority=result['priority'],
                 confidence_scores=ConfidenceScores(**result['confidence_scores']),
@@ -145,7 +148,6 @@ async def get_classifier_task_status(task_id: str):
                 timestamp=result['timestamp']
             )
 
-            print("============== results ========== ", classifier_response)
             return ClassifierTaskStatusResponse(
                 task_id=task_id,
                 status="success",
@@ -167,7 +169,7 @@ async def get_classifier_task_status(task_id: str):
             )
             
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error checking task: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error checking task")
 
 @router.get("/info")
 async def get_classifier_info():

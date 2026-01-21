@@ -35,7 +35,7 @@ async def get_notification_status():
         }
     except Exception as e:
         logger.error(f"❌ Failed to get notification status: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to get status: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to get status")
 
 @router.get("/modes")
 async def get_available_modes():
@@ -70,7 +70,7 @@ async def get_available_modes():
         }
     except Exception as e:
         logger.error(f"❌ Failed to get notification modes: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to get modes: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to get modes")
 
 @router.post("/configure")
 async def update_notification_mode(request: NotificationModeUpdateRequest):
@@ -94,7 +94,7 @@ async def update_notification_mode(request: NotificationModeUpdateRequest):
         raise
     except Exception as e:
         logger.error(f"❌ Failed to update notification mode: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to update mode: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to update mode")
 
 @router.get("/statistics")
 async def get_notification_statistics():
@@ -124,7 +124,7 @@ async def get_notification_statistics():
         
     except Exception as e:
         logger.error(f"❌ Failed to get notification statistics: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to get statistics: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to get statistics")
 
 @router.post("/statistics/reset")
 async def reset_notification_statistics():
@@ -138,7 +138,7 @@ async def reset_notification_statistics():
         }
     except Exception as e:
         logger.error(f"❌ Failed to reset statistics: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to reset statistics: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to reset statistics")
 
 @router.post("/test")
 async def test_notification_filtering(request: NotificationTestRequest):
@@ -199,7 +199,7 @@ async def test_notification_filtering(request: NotificationTestRequest):
         raise
     except Exception as e:
         logger.error(f"❌ Failed to test notification: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to test notification: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to test notification")
 
 @router.get("/types")
 async def get_notification_types():
@@ -209,25 +209,25 @@ async def get_notification_types():
         
         # Categorize notification types
         progress_types = [
-            NotificationType.CALL_START,
-            NotificationType.TRANSCRIPT_SEGMENT, 
-            NotificationType.TRANSLATION_PROGRESS,
-            NotificationType.PROCESSING_UPDATE
+            NotificationType.STREAMING_CALL_START,
+            NotificationType.STREAMING_TRANSCRIPTION_SEGMENT,
+            NotificationType.STREAMING_TRANSLATION_PROGRESS,
+            NotificationType.STREAMING_PROCESSING_UPDATE
         ]
-        
+
         result_types = [
-            NotificationType.TRANSLATION_COMPLETE,
-            NotificationType.ENTITY_RESULTS,
-            NotificationType.CLASSIFICATION_RESULTS,
-            NotificationType.QA_RESULTS,
-            NotificationType.SUMMARY_RESULTS,
-            NotificationType.INSIGHTS_RESULTS,
-            NotificationType.GPT_INSIGHTS_RESULTS
+            NotificationType.STREAMING_TRANSLATION,
+            NotificationType.STREAMING_ENTITIES,
+            NotificationType.STREAMING_CLASSIFICATION,
+            NotificationType.STREAMING_QA,
+            NotificationType.STREAMING_SUMMARY,
+            NotificationType.STREAMING_INSIGHTS,
+            NotificationType.POSTCALL_GPT_INSIGHTS
         ]
-        
+
         critical_types = [
-            NotificationType.CALL_END,
-            NotificationType.PROCESSING_ERROR,
+            NotificationType.STREAMING_CALL_END,
+            NotificationType.SYSTEM_PROCESSING_ERROR,
             NotificationType.UNIFIED_INSIGHT
         ]
         
@@ -248,4 +248,4 @@ async def get_notification_types():
         
     except Exception as e:
         logger.error(f"❌ Failed to get notification types: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to get types: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to get types")

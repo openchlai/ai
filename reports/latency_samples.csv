@@ -1,0 +1,6 @@
+input_file,latency_seconds
+synthetic_input_1.txt,0.050429
+synthetic_input_2.txt,0.225941
+synthetic_input_3.txt,0.404778
+synthetic_input_4.txt,0.271642
+synthetic_input_5.txt,0.164819
