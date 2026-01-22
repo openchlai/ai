@@ -1,5 +1,5 @@
 """
-Comprehensive tests for model_tasks Celery tasks to achieve 100% coverage.
+Comprehensive tests for model_tasks Celery tasks 
 """
 import pytest
 from unittest.mock import MagicMock, AsyncMock, patch
