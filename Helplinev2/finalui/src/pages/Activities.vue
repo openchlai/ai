@@ -45,22 +45,25 @@
     <div v-else>
       <!-- View Toggle Buttons and Stats Row -->
       <div class="flex justify-between items-center mb-6">
-        <!-- Total Count -->
-        <div 
+        <!-- Total Count with Pagination Info -->
+        <div
           class="flex items-center gap-2"
           :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'"
         >
-          <i-mdi-bell 
+          <i-mdi-bell
             class="w-5 h-5"
             :class="isDarkMode ? 'text-amber-500' : 'text-amber-700'"
           />
-          <span class="text-sm">Total Activities:</span>
-          <span 
+          <span class="text-sm">
+            Showing {{ activitiesStore.paginationInfo.rangeStart }} - {{ activitiesStore.paginationInfo.rangeEnd }} of
+          </span>
+          <span
             class="text-lg font-bold"
             :class="isDarkMode ? 'text-amber-500' : 'text-amber-700'"
           >
-            {{ activitiesStore.activityCount }}
+            {{ activitiesStore.paginationInfo.total }}
           </span>
+          <span class="text-sm">activities</span>
         </div>
 
         <!-- View Toggle Buttons -->
@@ -108,6 +111,19 @@
           :activities="activitiesStore.activitiesAsObjects"
         />
       </div>
+
+      <!-- Pagination Controls -->
+      <Pagination
+        :paginationInfo="activitiesStore.paginationInfo"
+        :hasNextPage="activitiesStore.hasNextPage"
+        :hasPrevPage="activitiesStore.hasPrevPage"
+        :loading="activitiesStore.loading"
+        :pageSize="selectedPageSize"
+        @prev="goToPrevPage"
+        @next="goToNextPage"
+        @goToPage="goToPage"
+        @changePageSize="changePageSize"
+      />
     </div>
 
   </div>
@@ -120,10 +136,12 @@ import { useActivitiesStore } from '@/stores/activities'
 import ActivitiesFilter from '@/components/activities/ActivitiesFilter.vue'
 import ActivitiesTable from '@/components/activities/ActivitiesTable.vue'
 import ActivitiesTimeline from '@/components/activities/ActivitiesTimeline.vue'
+import Pagination from '@/components/base/Pagination.vue'
 
 const activitiesStore = useActivitiesStore()
 const currentView = ref('timeline')
 const currentFilters = ref({ action: 'notify' })
+const selectedPageSize = ref(20)
 
 // Inject theme
 const isDarkMode = inject('isDarkMode')
@@ -146,20 +164,22 @@ const getViewButtonClass = (isActive) => {
 onMounted(async () => {
   try {
     console.log('Fetching activities...')
-    await activitiesStore.listActivities(currentFilters.value)
+    await activitiesStore.listActivities({ ...currentFilters.value, _o: 0, _c: selectedPageSize.value })
     console.log('Activities fetched:', activitiesStore.activitiesAsObjects)
+    console.log('Pagination info:', activitiesStore.paginationInfo)
   } catch (err) {
     console.error('Failed to fetch activities:', err)
     toast.error('Failed to load activities. Please try again.')
   }
 })
 
-// Apply filters and fetch activities
+// Apply filters and fetch activities (resets to first page)
 async function applyFilters(filters) {
   currentFilters.value = filters
   try {
     console.log('Applying filters:', filters)
-    await activitiesStore.listActivities(filters)
+    activitiesStore.resetPagination()
+    await activitiesStore.listActivities({ ...filters, _o: 0, _c: selectedPageSize.value })
     console.log('Filtered activities fetched:', activitiesStore.activitiesAsObjects)
   } catch (err) {
     console.error('Error fetching filtered activities:', err)
@@ -167,16 +187,59 @@ async function applyFilters(filters) {
   }
 }
 
-// Refresh activities with current filters
+// Refresh activities with current filters (maintains current page)
 async function refreshActivities() {
   try {
     console.log('Refreshing activities...')
-    await activitiesStore.listActivities(currentFilters.value)
+    await activitiesStore.listActivities({
+      ...currentFilters.value,
+      _o: activitiesStore.pagination.offset,
+      _c: activitiesStore.pagination.limit
+    })
     console.log('Activities refreshed')
     toast.success('Activities refreshed successfully!')
   } catch (err) {
     console.error('Error refreshing activities:', err)
     toast.error('Failed to refresh activities. Please try again.')
+  }
+}
+
+// Pagination handlers
+async function goToNextPage() {
+  try {
+    await activitiesStore.nextPage(currentFilters.value)
+  } catch (err) {
+    console.error('Error going to next page:', err)
+    toast.error('Failed to load next page.')
+  }
+}
+
+async function goToPrevPage() {
+  try {
+    await activitiesStore.prevPage(currentFilters.value)
+  } catch (err) {
+    console.error('Error going to previous page:', err)
+    toast.error('Failed to load previous page.')
+  }
+}
+
+async function goToPage(page) {
+  if (page === '...') return
+  try {
+    await activitiesStore.goToPage(page, currentFilters.value)
+  } catch (err) {
+    console.error('Error going to page:', err)
+    toast.error('Failed to load page.')
+  }
+}
+
+async function changePageSize(size) {
+  selectedPageSize.value = size
+  try {
+    await activitiesStore.setPageSize(size, currentFilters.value)
+  } catch (err) {
+    console.error('Error changing page size:', err)
+    toast.error('Failed to change page size.')
   }
 }
 </script>
