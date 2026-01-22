@@ -210,6 +210,13 @@ jobs:
             echo "💾 Committing COVERAGE.md to pushed branch: ${BRANCH}"
           fi
 
+          # Skip if pushing to protected branches (main, develop)
+          if [[ "${BRANCH}" == "main" ]] || [[ "${BRANCH}" == "develop" ]]; then
+            echo "⚠️ Skipping commit - ${BRANCH} is a protected branch"
+            echo "ℹ️ COVERAGE.md will be updated via pull request merges"
+            exit 0
+          fi
+
           # Configure git
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
