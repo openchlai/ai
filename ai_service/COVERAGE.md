@@ -1,10 +1,10 @@
 # 📊 Code Coverage Report - AI Service
 
 **Branch:** rogendo_test
-**Commit:** [\`f9a1216\`](https://github.com/openchlai/ai/commit/f9a12166ecc855f392bfc289ede471c0f35e16cb)
-**Generated:** 2026-01-22 14:03:55 UTC
+**Commit:** [\`041add1\`](https://github.com/openchlai/ai/commit/041add1b8305d35bc9fe5da181206cd3b172a715)
+**Generated:** 2026-01-22 14:35:25 UTC
 **Python Version:** 3.12
-**Workflow:** [\`21251070884\`](https://github.com/openchlai/ai/actions/runs/21251070884)
+**Workflow:** [\`21252013873\`](https://github.com/openchlai/ai/actions/runs/21252013873)
 
 ## 🎯 Coverage Summary
 
