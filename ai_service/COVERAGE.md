@@ -1,16 +1,16 @@
 # 📊 Code Coverage Report - AI Service
 
-**Branch:** ai-service-dev
-**Commit:** [\`b939acd\`](https://github.com/openchlai/ai/commit/b939acdc579b7b88baf56bfcf540c9a7b7bd2cf2)
-**Generated:** 2026-01-22 13:43:08 UTC
+**Branch:** rogendo_test
+**Commit:** [\`f9a1216\`](https://github.com/openchlai/ai/commit/f9a12166ecc855f392bfc289ede471c0f35e16cb)
+**Generated:** 2026-01-22 14:03:55 UTC
 **Python Version:** 3.12
-**Workflow:** [\`21250409979\`](https://github.com/openchlai/ai/actions/runs/21250409979)
+**Workflow:** [\`21251070884\`](https://github.com/openchlai/ai/actions/runs/21251070884)
 
 ## 🎯 Coverage Summary
 
-![Coverage](https://img.shields.io/badge/Coverage-77%25-yellow)
+![Coverage](https://img.shields.io/badge/Coverage-76%25-yellow)
 
-**Coverage:** 77%
+**Coverage:** 76%
 
 ## 📈 Detailed Coverage Report
 
@@ -65,7 +65,7 @@ app/models/notification_types.py                   62      0   100%
 app/services/enhanced_notification_service.py     328      4    99%   308, 524-525, 848
 app/streaming/__init__.py                           3      0   100%
 app/streaming/audio_buffer.py                      36      0   100%
-app/streaming/call_session_manager.py             550    269    51%   45-47, 65, 71-78, 90-93, 237-239, 280-284, 287-288, 322-323, 335-336, 345-349, 353-354, 356-357, 360, 385-387, 391-478, 524-526, 530-636, 640-665, 669-699, 703-762, 772-787, 791-869, 920-922, 955, 959-960, 993-995, 1003, 1015-1045
+app/streaming/call_session_manager.py             550    277    50%   45-47, 65, 71-78, 90-93, 121, 167-169, 220-221, 237-239, 280-284, 287-288, 319-323, 335-336, 345-349, 353-354, 356-357, 360, 385-387, 391-478, 524-526, 530-636, 640-665, 669-699, 703-762, 772-787, 791-869, 920-922, 955, 959-960, 993-995, 1003, 1015-1045
 app/streaming/progressive_processor.py            247     10    96%   16-18, 79, 125, 372-374, 386-387
 app/streaming/tcp_server.py                       111      4    96%   131-132, 136-137
 app/streaming/websocket_server.py                  57      0   100%
@@ -79,7 +79,7 @@ app/utils/mode_detector.py                         16      0   100%
 app/utils/scp_audio_downloader.py                 232     22    91%   45, 51, 124-126, 138-140, 239-241, 353, 360-361, 385, 438, 546-555
 app/utils/text_utils.py                           268     20    93%   90-91, 158-169, 186, 241-242, 302-316, 357-358, 560
 -----------------------------------------------------------------------------
-TOTAL                                            7166   1743    76%
+TOTAL                                            7166   1711    76%
 ```
 
 ---
