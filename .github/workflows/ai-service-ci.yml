@@ -177,7 +177,7 @@ jobs:
             COVERAGE_DETAILS="No detailed coverage data available"
           fi
 
-          printf '# 📊 Code Coverage Report - AI Service\n\n**Branch:** %s\n**Commit:** [\`%s\`](%s)\n**Generated:** %s\n**Python Version:** %s\n**Workflow:** [\`%s\`](%s)\n\n## 🎯 Coverage Summary\n\n![Coverage](https://img.shields.io/badge/Coverage-%s%%25-%s)\n\n| Metric | Value | Status |\n|--------|-------|--------|\n| **Coverage** | %s%% | %s |\n| **Threshold** | 80%% | Target |\n\n## 📈 Detailed Coverage Report\n\n```\n%s\n```\n\n---\n*Report generated automatically by GitHub Actions*\n*Access this report at: [COVERAGE.md](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/ai_service/COVERAGE.md)*\n' \
+          printf '# 📊 Code Coverage Report - AI Service\n\n**Branch:** %s\n**Commit:** [\`%s\`](%s)\n**Generated:** %s\n**Python Version:** %s\n**Workflow:** [\`%s\`](%s)\n\n## 🎯 Coverage Summary\n\n![Coverage](https://img.shields.io/badge/Coverage-%s%%25-%s)\n\n**Coverage:** %s%%\n\n## 📈 Detailed Coverage Report\n\n```\n%s\n```\n\n---\n*Report generated automatically by GitHub Actions*\n*Access this report at: [COVERAGE.md](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/ai_service/COVERAGE.md)*\n' \
             "${{ github.ref_name }}" \
             "${GITHUB_SHA:0:7}" \
             "https://github.com/${{ github.repository }}/commit/${{ github.sha }}" \
@@ -188,7 +188,6 @@ jobs:
             "${COVERAGE_PERCENTAGE:-0}" \
             "${COVERAGE_COLOR:-red}" \
             "${COVERAGE_PERCENTAGE:-0}" \
-            "$([ "${COVERAGE_PERCENTAGE:-0}" -ge 80 ] && echo "✅ Pass" || echo "❌ Fail")" \
             "${COVERAGE_DETAILS}" > COVERAGE.md
 
           if [ -f COVERAGE.md ]; then
