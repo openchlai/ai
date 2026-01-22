@@ -1,16 +1,16 @@
 # 📊 Code Coverage Report - AI Service
 
 **Branch:** rogendo_test
-**Commit:** [\`c75c0c9\`](https://github.com/openchlai/ai/commit/c75c0c906898e35a7da27a710b2eb2fdec68eb6b)
-**Generated:** 2026-01-22 12:58:53 UTC
+**Commit:** [\`2e003b8\`](https://github.com/openchlai/ai/commit/2e003b84fcbc55285dad46f479a22d36d754e7e4)
+**Generated:** 2026-01-22 13:37:16 UTC
 **Python Version:** 3.12
-**Workflow:** [\`21249060986\`](https://github.com/openchlai/ai/actions/runs/21249060986)
+**Workflow:** [\`21250218679\`](https://github.com/openchlai/ai/actions/runs/21250218679)
 
 ## 🎯 Coverage Summary
 
-![Coverage](https://img.shields.io/badge/Coverage-76%25-yellow)
+![Coverage](https://img.shields.io/badge/Coverage-77%25-yellow)
 
-**Coverage:** 76%
+**Coverage:** 77%
 
 ## 📈 Detailed Coverage Report
 
@@ -54,8 +54,8 @@ app/model_scripts/audio_processing.py               0      0   100%
 app/model_scripts/classifier_model.py             302    182    40%   20-28, 31-47, 90-91, 95-119, 128-167, 180, 183, 186-190, 207, 220-221, 274-282, 311-337, 345, 351-431, 455-462, 466, 490-505, 509-520, 535-552, 558
 app/model_scripts/model_loader.py                 249    109    56%   16-18, 24-26, 32-34, 40-42, 48-50, 56-58, 64-66, 89-125, 177, 195, 202-203, 209-212, 223-224, 260-261, 267-279, 292-293, 298-344, 395, 410, 421
 app/model_scripts/ner_model.py                    161     65    60%   14-16, 44-45, 54-70, 83-103, 120-123, 129-132, 136, 143, 163-165, 180-197, 201, 217-226, 253, 261, 272
-app/model_scripts/qa_model.py                     155     96    38%   47-54, 60-66, 94-127, 140-158, 174-228, 232-279, 287-289
-app/model_scripts/summarizer_model.py             163    100    39%   39-63, 87, 100-105, 127-129, 139-201, 205-213, 218-243, 248, 265-282, 286-298, 302-317, 341-353
+app/model_scripts/qa_model.py                     155     68    56%   60-66, 134-158, 174-228, 232-279, 287-289
+app/model_scripts/summarizer_model.py             163     88    46%   87, 100-105, 127-129, 139-201, 205-213, 218-243, 248, 265-282, 286-298, 302-317, 341-353
 app/model_scripts/translator_model.py             178     85    52%   53-57, 60-61, 73-74, 117-122, 158-160, 164-201, 207-225, 229-258, 263, 277-293, 297-308
 app/model_scripts/whisper_model.py                254     82    68%   77-78, 128-171, 196-204, 231, 267-320, 344-363, 407, 410-411, 418, 442-464, 474-475, 482-484
 app/models/__init__.py                              0      0   100%
@@ -79,7 +79,7 @@ app/utils/mode_detector.py                         16      0   100%
 app/utils/scp_audio_downloader.py                 232     22    91%   45, 51, 124-126, 138-140, 239-241, 353, 360-361, 385, 438, 546-555
 app/utils/text_utils.py                           268     20    93%   90-91, 158-169, 186, 241-242, 302-316, 357-358, 560
 -----------------------------------------------------------------------------
-TOTAL                                            7167   1685    76%
+TOTAL                                            7167   1645    77%
 ```
 
 ---
