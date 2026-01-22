@@ -50,22 +50,25 @@
     <template v-else>
       <!-- View Buttons and Total Count -->
       <div class="flex justify-between items-center mb-6">
-        <!-- Total Count -->
-        <div 
+        <!-- Total Count with Pagination Info -->
+        <div
           class="flex items-center gap-2"
           :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'"
         >
-          <i-mdi-message-text-outline 
+          <i-mdi-message-text-outline
             class="w-5 h-5"
             :class="isDarkMode ? 'text-amber-500' : 'text-amber-700'"
           />
-          <span class="text-sm">Total Messages:</span>
-          <span 
+          <span class="text-sm">
+            Showing {{ messagesStore.paginationInfo.rangeStart }} - {{ messagesStore.paginationInfo.rangeEnd }} of
+          </span>
+          <span
             class="text-lg font-bold"
             :class="isDarkMode ? 'text-amber-500' : 'text-amber-700'"
           >
-            {{ messagesStore.messageCount }}
+            {{ messagesStore.paginationInfo.total }}
           </span>
+          <span class="text-sm">messages</span>
         </div>
 
         <!-- View Toggle Buttons -->
@@ -100,8 +103,8 @@
 
       <!-- Views -->
       <Timeline
-        v-if="activeView==='timeline'" 
-        :groupedMessagesByDate="groupedMessagesByDate" 
+        v-if="activeView==='timeline'"
+        :groupedMessagesByDate="groupedMessagesByDate"
         :selectedMessageId="selectedMessageId"
         @openChat="openChatPanel"
       />
@@ -110,6 +113,19 @@
         :messages="messagesStore.pmessages"
         :selectedMessageId="selectedMessageId"
         @openChat="openChatPanel"
+      />
+
+      <!-- Pagination Controls -->
+      <Pagination
+        :paginationInfo="messagesStore.paginationInfo"
+        :hasNextPage="messagesStore.hasNextPage"
+        :hasPrevPage="messagesStore.hasPrevPage"
+        :loading="messagesStore.loading"
+        :pageSize="selectedPageSize"
+        @prev="goToPrevPage"
+        @next="goToNextPage"
+        @goToPage="goToPage"
+        @changePageSize="changePageSize"
       />
     </template>
 
@@ -131,6 +147,7 @@ import Filter from '@/components/messages/Filter.vue'
 import Timeline from '@/components/messages/Timeline.vue'
 import Table from '@/components/messages/Table.vue'
 import ChatPanel from '@/components/messages/ChatPanel.vue'
+import Pagination from '@/components/base/Pagination.vue'
 
 import { useMessagesStore } from '@/stores/messages'
 
@@ -170,6 +187,7 @@ const showChatPanel = ref(false)
 const selectedMessage = ref(null)
 const selectedMessageId = ref(null)
 const newMessage = ref("")
+const selectedPageSize = ref(20)
 
 // Group messages by date for timeline view
 const groupedMessagesByDate = computed(() => {
@@ -200,41 +218,83 @@ const groupedMessagesByDate = computed(() => {
   return groups
 })
 
-// Handle platform change from pills
-function handlePlatformChange(platformId) {
+// Handle platform change from pills (resets pagination)
+async function handlePlatformChange(platformId) {
   activePlatform.value = platformId
-  
+
   console.log('Platform changed to:', platformId)
-  
+
   try {
+    messagesStore.resetPagination()
     if (platformId === 'all') {
-      messagesStore.fetchAllMessages()
+      await messagesStore.fetchAllMessages({ _o: 0, _c: selectedPageSize.value })
     } else {
-      messagesStore.fetchMessagesBySource(platformId)
+      await messagesStore.fetchMessagesBySource(platformId, { _o: 0, _c: selectedPageSize.value })
     }
-    
-    setTimeout(() => {
-      console.log('Messages after filter:', messagesStore.pmessages?.length || 0)
-      console.log('Messages_k:', messagesStore.pmessages_k)
-    }, 500)
+
+    console.log('Messages after filter:', messagesStore.pmessages?.length || 0)
+    console.log('Pagination info:', messagesStore.paginationInfo)
   } catch (err) {
     console.error('Error filtering messages:', err)
     toast.error('Failed to filter messages. Please try again.')
   }
 }
 
-// Refresh messages
+// Refresh messages (maintains current page)
 async function refreshMessages() {
   try {
+    const params = {
+      _o: messagesStore.pagination.offset,
+      _c: messagesStore.pagination.limit
+    }
     if (activePlatform.value === 'all') {
-      await messagesStore.fetchAllMessages()
+      await messagesStore.fetchAllMessages(params)
     } else {
-      await messagesStore.fetchMessagesBySource(activePlatform.value)
+      await messagesStore.fetchMessagesBySource(activePlatform.value, params)
     }
     toast.success('Messages refreshed successfully!')
   } catch (err) {
     console.error('Error refreshing messages:', err)
     toast.error('Failed to refresh messages. Please try again.')
+  }
+}
+
+// Pagination handlers
+async function goToNextPage() {
+  try {
+    await messagesStore.nextPage({ src: activePlatform.value })
+  } catch (err) {
+    console.error('Error going to next page:', err)
+    toast.error('Failed to load next page.')
+  }
+}
+
+async function goToPrevPage() {
+  try {
+    await messagesStore.prevPage({ src: activePlatform.value })
+  } catch (err) {
+    console.error('Error going to previous page:', err)
+    toast.error('Failed to load previous page.')
+  }
+}
+
+async function goToPage(page) {
+  if (page === '...') return
+  try {
+    await messagesStore.goToPage(page, { src: activePlatform.value })
+  } catch (err) {
+    console.error('Error going to page:', err)
+    toast.error('Failed to load page.')
+  }
+}
+
+async function changePageSize(size) {
+  selectedPageSize.value = size
+  try {
+    await messagesStore.setPageSize(size, { src: activePlatform.value })
+  } catch (err) {
+    console.error('Error changing page size:', err)
+    toast.error('Failed to change page size.')
   }
 }
 
@@ -259,7 +319,9 @@ const sendMessage = (msg) => {
 
 onMounted(async () => {
   try {
-    await messagesStore.fetchAllMessages()
+    await messagesStore.fetchAllMessages({ _o: 0, _c: selectedPageSize.value })
+    console.log('Messages fetched:', messagesStore.pmessages?.length)
+    console.log('Pagination info:', messagesStore.paginationInfo)
   } catch (err) {
     console.log('Failed to fetch messages:', err)
     toast.error('Failed to load messages. Please try again.')

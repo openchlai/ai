@@ -45,22 +45,25 @@
     <div v-else>
       <!-- View Toggle Buttons and Stats Row -->
       <div class="flex justify-between items-center mb-6">
-        <!-- Total Count -->
-        <div 
+        <!-- Total Count with Pagination Info -->
+        <div
           class="flex items-center gap-2"
           :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'"
         >
-          <i-mdi-clipboard-check 
+          <i-mdi-clipboard-check
             class="w-5 h-5"
             :class="isDarkMode ? 'text-amber-500' : 'text-amber-700'"
           />
-          <span class="text-sm">Total QA Records:</span>
-          <span 
+          <span class="text-sm">
+            Showing {{ qaStore.paginationInfo.rangeStart }} - {{ qaStore.paginationInfo.rangeEnd }} of
+          </span>
+          <span
             class="text-lg font-bold"
             :class="isDarkMode ? 'text-amber-500' : 'text-amber-700'"
           >
-            {{ qaStore.qaCount }}
+            {{ qaStore.paginationInfo.total }}
           </span>
+          <span class="text-sm">QA records</span>
         </div>
 
         <!-- View Toggle Buttons -->
@@ -110,6 +113,19 @@
           :qas_k="qaStore.qas_k"
         />
       </div>
+
+      <!-- Pagination Controls -->
+      <Pagination
+        :paginationInfo="qaStore.paginationInfo"
+        :hasNextPage="qaStore.hasNextPage"
+        :hasPrevPage="qaStore.hasPrevPage"
+        :loading="qaStore.loading"
+        :pageSize="selectedPageSize"
+        @prev="goToPrevPage"
+        @next="goToNextPage"
+        @goToPage="goToPage"
+        @changePageSize="changePageSize"
+      />
     </div>
 
   </div>
@@ -122,10 +138,12 @@ import { useQAStore } from '@/stores/qas'
 import Table from '@/components/qas/Table.vue'
 import QATimeline from '@/components/qas/QATimeline.vue'
 import QAFilter from '@/components/qas/QAFilter.vue'
+import Pagination from '@/components/base/Pagination.vue'
 
 const qaStore = useQAStore()
 const currentView = ref('timeline')
 const currentFilters = ref({})
+const selectedPageSize = ref(20)
 
 // Inject theme
 const isDarkMode = inject('isDarkMode')
@@ -148,20 +166,22 @@ const getViewButtonClass = (isActive) => {
 onMounted(async () => {
   try {
     console.log('Fetching QA records...')
-    await qaStore.listQA()
+    await qaStore.listQA({ _o: 0, _c: selectedPageSize.value })
     console.log('QA records fetched:', qaStore.qas)
+    console.log('Pagination info:', qaStore.paginationInfo)
   } catch (err) {
     console.error('Failed to fetch QA records:', err)
     toast.error('Failed to load QA records. Please try again.')
   }
 })
 
-// Apply filters and fetch QA records
+// Apply filters and fetch QA records (resets to first page)
 async function applyFilters(filters) {
   currentFilters.value = filters
   try {
     console.log('Applying filters:', filters)
-    await qaStore.listQA(filters)
+    qaStore.resetPagination()
+    await qaStore.listQA({ ...filters, _o: 0, _c: selectedPageSize.value })
     console.log('Filtered QA records fetched:', qaStore.qas)
   } catch (err) {
     console.error('Error fetching filtered QA records:', err)
@@ -169,16 +189,59 @@ async function applyFilters(filters) {
   }
 }
 
-// Refresh QA with current filters
+// Refresh QA with current filters (maintains current page)
 async function refreshQA() {
   try {
     console.log('Refreshing QA records...')
-    await qaStore.listQA(currentFilters.value)
+    await qaStore.listQA({
+      ...currentFilters.value,
+      _o: qaStore.pagination.offset,
+      _c: qaStore.pagination.limit
+    })
     console.log('QA records refreshed')
     toast.success('QA records refreshed successfully!')
   } catch (err) {
     console.error('Error refreshing QA records:', err)
     toast.error('Failed to refresh QA records. Please try again.')
+  }
+}
+
+// Pagination handlers
+async function goToNextPage() {
+  try {
+    await qaStore.nextPage(currentFilters.value)
+  } catch (err) {
+    console.error('Error going to next page:', err)
+    toast.error('Failed to load next page.')
+  }
+}
+
+async function goToPrevPage() {
+  try {
+    await qaStore.prevPage(currentFilters.value)
+  } catch (err) {
+    console.error('Error going to previous page:', err)
+    toast.error('Failed to load previous page.')
+  }
+}
+
+async function goToPage(page) {
+  if (page === '...') return
+  try {
+    await qaStore.goToPage(page, currentFilters.value)
+  } catch (err) {
+    console.error('Error going to page:', err)
+    toast.error('Failed to load page.')
+  }
+}
+
+async function changePageSize(size) {
+  selectedPageSize.value = size
+  try {
+    await qaStore.setPageSize(size, currentFilters.value)
+  } catch (err) {
+    console.error('Error changing page size:', err)
+    toast.error('Failed to change page size.')
   }
 }
 </script>

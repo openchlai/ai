@@ -44,22 +44,25 @@
     <div v-else>
       <!-- View Toggle Buttons and Stats Row -->
       <div class="flex justify-between items-center mb-6">
-        <!-- Total Count -->
-        <div 
+        <!-- Total Count with Pagination Info -->
+        <div
           class="flex items-center gap-2"
           :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'"
         >
-          <i-mdi-phone-outline 
+          <i-mdi-phone-outline
             class="w-5 h-5"
             :class="isDarkMode ? 'text-amber-500' : 'text-amber-700'"
           />
-          <span class="text-sm">Total Calls:</span>
-          <span 
+          <span class="text-sm">
+            Showing {{ callsStore.paginationInfo.rangeStart }} - {{ callsStore.paginationInfo.rangeEnd }} of
+          </span>
+          <span
             class="text-lg font-bold"
             :class="isDarkMode ? 'text-amber-500' : 'text-amber-700'"
           >
-            {{ callsStore.callCount }}
+            {{ callsStore.paginationInfo.total }}
           </span>
+          <span class="text-sm">calls</span>
         </div>
 
         <!-- View Toggle Buttons -->
@@ -129,6 +132,20 @@
       <div v-if="activeView === 'sip'">
         <SipAgentView />
       </div>
+
+      <!-- Pagination Controls (not shown for SIP view) -->
+      <Pagination
+        v-if="activeView !== 'sip'"
+        :paginationInfo="callsStore.paginationInfo"
+        :hasNextPage="callsStore.hasNextPage"
+        :hasPrevPage="callsStore.hasPrevPage"
+        :loading="callsStore.loading"
+        :pageSize="selectedPageSize"
+        @prev="goToPrevPage"
+        @next="goToNextPage"
+        @goToPage="goToPage"
+        @changePageSize="changePageSize"
+      />
     </div>
 
   </div>
@@ -142,6 +159,7 @@ import Timeline from "@/components/calls/Timeline.vue"
 import Table from "@/components/calls/Table.vue"
 import CallsFilter from "@/components/calls/CallsFilter.vue"
 import SipAgentView from "@/components/calls/SipAgentView.vue"
+import Pagination from "@/components/base/Pagination.vue"
 import { useCallStore } from "@/stores/calls"
 
 // Inject theme
@@ -152,6 +170,7 @@ const callsStore = useCallStore()
 const activeView = ref("timeline")
 const selectedCallId = ref(null)
 const currentFilters = ref({})
+const selectedPageSize = ref(20)
 
 // Dynamic button class based on active state
 const getViewButtonClass = (isActive) => {
@@ -172,20 +191,24 @@ const getViewButtonClass = (isActive) => {
 onMounted(async () => {
   try {
     console.log("Fetching calls...")
-    await callsStore.listCalls()
+    // Initialize with default pagination
+    await callsStore.listCalls({ _o: 0, _c: selectedPageSize.value })
     console.log("Calls fetched:", callsStore.calls)
+    console.log("Pagination info:", callsStore.paginationInfo)
   } catch (err) {
     console.error("Error fetching calls:", err)
     toast.error('Failed to load calls. Please try again.')
   }
 })
 
-// Apply filters and fetch calls
+// Apply filters and fetch calls (resets to first page)
 async function applyFilters(filters) {
   currentFilters.value = filters
   try {
     console.log("Applying filters:", filters)
-    await callsStore.listCalls(filters)
+    // Reset pagination when filters change
+    callsStore.resetPagination()
+    await callsStore.listCalls({ ...filters, _o: 0, _c: selectedPageSize.value })
     console.log("Filtered calls fetched:", callsStore.calls)
   } catch (err) {
     console.error("Error fetching filtered calls:", err)
@@ -193,11 +216,16 @@ async function applyFilters(filters) {
   }
 }
 
-// Refresh calls with current filters
+// Refresh calls with current filters (maintains current page)
 async function refreshCalls() {
   try {
     console.log("Refreshing calls...")
-    await callsStore.listCalls(currentFilters.value)
+    // Maintain current pagination state when refreshing
+    await callsStore.listCalls({
+      ...currentFilters.value,
+      _o: callsStore.pagination.offset,
+      _c: callsStore.pagination.limit
+    })
     console.log("Calls refreshed")
     toast.success('Calls refreshed successfully!')
   } catch (err) {
@@ -246,4 +274,43 @@ const groupedCalls = computed(() => {
 
   return sorted
 })
+
+// Pagination handlers
+async function goToNextPage() {
+  try {
+    await callsStore.nextPage(currentFilters.value)
+  } catch (err) {
+    console.error("Error going to next page:", err)
+    toast.error('Failed to load next page.')
+  }
+}
+
+async function goToPrevPage() {
+  try {
+    await callsStore.prevPage(currentFilters.value)
+  } catch (err) {
+    console.error("Error going to previous page:", err)
+    toast.error('Failed to load previous page.')
+  }
+}
+
+async function goToPage(page) {
+  if (page === '...') return
+  try {
+    await callsStore.goToPage(page, currentFilters.value)
+  } catch (err) {
+    console.error("Error going to page:", err)
+    toast.error('Failed to load page.')
+  }
+}
+
+async function changePageSize(size) {
+  selectedPageSize.value = size
+  try {
+    await callsStore.setPageSize(size, currentFilters.value)
+  } catch (err) {
+    console.error("Error changing page size:", err)
+    toast.error('Failed to change page size.')
+  }
+}
 </script>
