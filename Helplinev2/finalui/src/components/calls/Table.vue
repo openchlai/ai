@@ -2,14 +2,14 @@
   <div 
     class="rounded-xl shadow-xl overflow-auto border"
     :class="isDarkMode 
-      ? 'bg-gray-800 border-transparent' 
+      ? 'bg-black border-transparent' 
       : 'bg-white border-transparent'"
   >
     <table class="min-w-full text-sm text-left">
       <thead 
         class="border-b"
         :class="isDarkMode 
-          ? 'bg-gray-900/60 border-transparent' 
+          ? 'bg-black/60 border-transparent' 
           : 'bg-gray-50 border-transparent'"
       >
         <tr>

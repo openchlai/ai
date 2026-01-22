@@ -62,7 +62,7 @@
               v-else 
               class="text-center p-5 border border-dashed rounded-lg"
               :class="isDarkMode 
-                ? 'text-gray-500 bg-gray-800 border-transparent' 
+                ? 'text-gray-500 bg-black border-transparent' 
                 : 'text-gray-500 bg-white border-transparent'"
             >
               <i-mdi-account-group class="mx-auto text-3xl mb-2 opacity-50" />
@@ -75,7 +75,7 @@
               class="self-start mt-2 px-3 py-1.5 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
               :class="isDarkMode 
                 ? 'bg-gray-600 hover:bg-gray-700' 
-                : 'bg-gray-700 hover:bg-gray-800'"
+                : 'bg-gray-700 hover:bg-black'"
               @click="$emit('open-client-modal')"
             >
               <i-mdi-plus class="w-4 h-4" />
@@ -129,7 +129,7 @@
               v-else 
               class="p-5 text-center italic border border-dashed rounded-lg"
               :class="isDarkMode 
-                ? 'text-gray-500 bg-gray-800 border-transparent' 
+                ? 'text-gray-500 bg-black border-transparent' 
                 : 'text-gray-500 bg-white border-transparent'"
             >
               <p class="text-sm m-0">No perpetrators added yet</p>
@@ -163,7 +163,7 @@
             v-if="showReferralsField" 
             class="mt-4 p-4 border rounded-lg animate-fadeIn"
             :class="isDarkMode 
-              ? 'bg-gray-800 border-transparent' 
+              ? 'bg-black border-transparent' 
               : 'bg-gray-50 border-transparent'"
           >
             <BaseOptions
@@ -180,7 +180,7 @@
             v-if="showPoliceField" 
             class="mt-4 p-4 border rounded-lg animate-fadeIn"
             :class="isDarkMode 
-              ? 'bg-gray-800 border-transparent' 
+              ? 'bg-black border-transparent' 
               : 'bg-gray-50 border-transparent'"
           >
             <label 
@@ -207,7 +207,7 @@
             v-if="showOthersField" 
             class="mt-4 p-4 border rounded-lg animate-fadeIn"
             :class="isDarkMode 
-              ? 'bg-gray-800 border-transparent' 
+              ? 'bg-black border-transparent' 
               : 'bg-gray-50 border-transparent'"
           >
             <label 

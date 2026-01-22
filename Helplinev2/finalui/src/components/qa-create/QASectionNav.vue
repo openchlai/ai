@@ -2,7 +2,7 @@
   <div 
     class="rounded-lg shadow-xl p-4 border"
     :class="isDarkMode 
-      ? 'bg-gray-800 border-transparent' 
+      ? 'bg-black border-transparent' 
       : 'bg-white border-transparent'"
   >
     <div class="flex flex-wrap gap-2">

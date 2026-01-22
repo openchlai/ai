@@ -1,34 +1,14 @@
 <template>
   <div 
-    class="min-h-screen p-6"
-    :class="isDarkMode ? 'bg-black' : 'bg-gray-50'"
+    class="space-y-6"
   >
     <div class="max-w-7xl mx-auto">
-      <!-- Page Header -->
-      <div class="mb-6">
-        <h1 
-          class="text-3xl font-bold flex items-center gap-3"
-          :class="isDarkMode ? 'text-gray-100' : 'text-gray-900'"
-        >
-          <i-mdi-chart-bar 
-            class="w-8 h-8"
-            :class="isDarkMode ? 'text-amber-500' : 'text-amber-700'"
-          />
-          Reports & Analytics
-        </h1>
-        <p 
-          class="mt-2"
-          :class="isDarkMode ? 'text-gray-400' : 'text-gray-600'"
-        >
-          Visualize and analyze your data
-        </p>
-      </div>
 
       <!-- Controls Section -->
       <div 
         class="rounded-lg shadow-xl p-6 mb-6 border"
         :class="isDarkMode 
-          ? 'bg-neutral-900 border-transparent' 
+          ? 'bg-black border-transparent' 
           : 'bg-white border-transparent'"
       >
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -165,7 +145,7 @@
       <div 
         class="rounded-lg shadow-xl p-6 mb-6 border"
         :class="isDarkMode 
-          ? 'bg-neutral-900 border-transparent' 
+          ? 'bg-black border-transparent' 
           : 'bg-white border-transparent'"
       >
         <div class="flex items-center justify-between mb-6">
@@ -238,7 +218,7 @@
           v-else 
           class="overflow-x-auto rounded-lg p-4 border"
           :class="isDarkMode 
-            ? 'bg-gray-900/40 border-transparent' 
+            ? 'bg-black/40 border-transparent' 
             : 'bg-gray-50 border-transparent'"
         >
           <div class="inline-block min-w-full">
@@ -347,7 +327,7 @@
       <div 
         class="rounded-lg shadow-xl p-6 border"
         :class="isDarkMode 
-          ? 'bg-neutral-900 border-transparent' 
+          ? 'bg-black border-transparent' 
           : 'bg-white border-transparent'"
       >
         <h2 
@@ -415,7 +395,7 @@
             :class="isDarkMode ? 'divide-gray-700' : 'divide-gray-200'"
           >
             <thead 
-              :class="isDarkMode ? 'bg-gray-900/60' : 'bg-gray-50'"
+              :class="isDarkMode ? 'bg-black/60' : 'bg-gray-50'"
             >
               <tr>
                 <!-- Dynamic filter columns -->
@@ -451,7 +431,7 @@
             <tbody 
               class="divide-y"
               :class="isDarkMode 
-                ? 'bg-gray-800 divide-gray-700' 
+                ? 'bg-black divide-gray-700' 
                 : 'bg-white divide-gray-200'"
             >
               <tr 
@@ -499,7 +479,7 @@
               <!-- Total row -->
               <tr 
                 class="font-bold"
-                :class="isDarkMode ? 'bg-gray-900/60' : 'bg-gray-100'"
+                :class="isDarkMode ? 'bg-black/60' : 'bg-gray-100'"
               >
                 <td 
                   :colspan="selectedYAxis.length"
@@ -568,7 +548,7 @@ const getYAxisButtonClass = (isDisabled) => {
       : `${baseClasses} bg-gray-200 text-gray-400 cursor-not-allowed`
   } else {
     return isDarkMode.value
-      ? `${baseClasses} bg-gray-800 text-gray-300 border border-transparent hover:border-amber-600 hover:bg-amber-900/20 cursor-pointer`
+      ? `${baseClasses} bg-black text-gray-300 border border-transparent hover:border-amber-600 hover:bg-amber-900/20 cursor-pointer`
       : `${baseClasses} bg-white text-gray-700 border border-transparent hover:border-amber-600 hover:bg-amber-50 cursor-pointer`
   }
 }

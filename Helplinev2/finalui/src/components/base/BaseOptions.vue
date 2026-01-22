@@ -89,7 +89,7 @@
         v-if="isOpen" 
         class="absolute top-full left-0 right-0 z-50 border rounded-lg shadow-xl mt-0.5 max-h-[300px] overflow-hidden"
         :class="isDarkMode 
-          ? 'bg-gray-800 border-transparent' 
+          ? 'bg-black border-transparent' 
           : 'bg-white border-transparent'"
       >
         <div 

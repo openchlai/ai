@@ -1,27 +1,7 @@
 <template>
   <div 
-    class="p-6 space-y-6 min-h-screen"
-    :class="isDarkMode ? 'bg-black' : 'bg-gray-50'"
+    class="space-y-6"
   >
-    <!-- Page Header -->
-    <div class="mb-6">
-      <h1 
-        class="text-3xl font-bold flex items-center gap-3"
-        :class="isDarkMode ? 'text-gray-100' : 'text-gray-900'"
-      >
-        <i-mdi-view-dashboard-outline 
-          class="w-8 h-8"
-          :class="isDarkMode ? 'text-amber-500' : 'text-amber-600'"
-        />
-        Dashboard
-      </h1>
-      <p 
-        class="mt-2"
-        :class="isDarkMode ? 'text-gray-400' : 'text-gray-600'"
-      >
-        Overview of case analytics and key performance metrics
-      </p>
-    </div>
 
     <!-- 🔥 Shared Filters Bar -->
     <CasesFilters @update:filters="applyFilters" />
@@ -32,7 +12,7 @@
       <div 
         class="shadow-xl rounded-lg p-4 border"
         :class="isDarkMode 
-          ? 'bg-neutral-900 border-transparent' 
+          ? 'bg-black border-transparent' 
           : 'bg-white border-transparent'"
       >
         <CaseCategories :filters="filters" />
@@ -42,7 +22,7 @@
       <div 
         class="shadow-xl rounded-lg p-4 border"
         :class="isDarkMode 
-          ? 'bg-neutral-900 border-transparent' 
+          ? 'bg-black border-transparent' 
           : 'bg-white border-transparent'"
       >
         <CaseLocations :filters="filters" />
@@ -52,7 +32,7 @@
       <div 
         class="shadow-xl rounded-lg p-4 md:col-span-2 border"
         :class="isDarkMode 
-          ? 'bg-neutral-900 border-transparent' 
+          ? 'bg-black border-transparent' 
           : 'bg-white border-transparent'"
       >
         <CasesBySourceDaily :filters="filters" />
@@ -62,7 +42,7 @@
       <div 
         class="shadow-xl rounded-lg p-4 md:col-span-2 border"
         :class="isDarkMode 
-          ? 'bg-neutral-900 border-transparent' 
+          ? 'bg-black border-transparent' 
           : 'bg-white border-transparent'"
       >
         <CaseStatusPriority :filters="filters" />

@@ -2,7 +2,7 @@
   <div 
     class="rounded-lg shadow-xl overflow-hidden border"
     :class="isDarkMode 
-      ? 'bg-neutral-900 border-transparent' 
+      ? 'bg-black border-transparent' 
       : 'bg-white border-transparent'"
   >
     <table class="w-full">

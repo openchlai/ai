@@ -1,46 +1,8 @@
 <template>
   <div 
-    class="min-h-screen py-6 px-4"
-    :class="isDarkMode ? 'bg-gray-900' : 'bg-gray-50'"
+    class="space-y-6"
   >
     <div class="max-w-[1800px] mx-auto flex flex-col gap-6">
-      <!-- Page Header -->
-      <div 
-        class="rounded-lg shadow-xl p-6 border-l-4"
-        :class="isDarkMode 
-          ? 'bg-gray-800 border-amber-500' 
-          : 'bg-white border-amber-600'"
-      >
-        <div class="flex items-center gap-4 mb-2">
-          <button 
-            @click="goBack"
-            class="p-2 rounded-lg transition-all"
-            :class="isDarkMode 
-              ? 'hover:bg-blue-900/30' 
-              : 'hover:bg-amber-100'"
-          >
-            <i-mdi-arrow-left 
-              class="w-6 h-6"
-              :class="isDarkMode ? 'text-amber-500' : 'text-amber-700'"
-            />
-          </button>
-          <div>
-            <h1 
-              class="text-3xl font-bold flex items-center gap-3"
-              :class="isDarkMode ? 'text-amber-500' : 'text-amber-700'"
-            >
-              <i-mdi-clipboard-check class="w-8 h-8" />
-              Quality Assurance Evaluation
-            </h1>
-            <p 
-              class="text-sm mt-1"
-              :class="isDarkMode ? 'text-gray-400' : 'text-gray-600'"
-            >
-              Review and evaluate call quality based on established criteria
-            </p>
-          </div>
-        </div>
-      </div>
 
       <!-- Loading State -->
       <div v-if="loading" class="flex items-center justify-center py-12">

@@ -2,37 +2,21 @@
   <div 
     class="rounded-lg shadow-xl border px-6 py-4"
     :class="isDarkMode 
-      ? 'bg-neutral-900 border-transparent' 
+      ? 'bg-black border-transparent' 
       : 'bg-white border-transparent'"
   >
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <!-- Title Section -->
-      <div class="flex-1">
-        <h1 
-          class="text-2xl font-bold mb-1 flex items-center gap-2"
-          :class="isDarkMode ? 'text-gray-100' : 'text-gray-900'"
-        >
-          <i-mdi-monitor-dashboard 
-            class="w-7 h-7"
-            :class="isDarkMode ? 'text-amber-500' : 'text-amber-600'"
-          />
-          Helpline Wallboard
-        </h1>
-        <p 
-          class="text-sm"
-          :class="isDarkMode ? 'text-gray-400' : 'text-gray-600'"
-        >
-          Real-time counselling and support monitoring
-        </p>
-      </div>
-      
-      <!-- Connection Status -->
+      <!-- Connection Status Move to Left on Mobile, Right on Desktop -->
       <div 
-        class="flex items-center gap-2 px-3 py-2 rounded-lg border"
-        :class="isDarkMode 
-          ? 'bg-black/60 border-transparent' 
-          : 'bg-gray-50 border-transparent'"
+        class="flex items-center gap-3"
       >
+        <div 
+          class="flex items-center gap-2 px-4 py-2 rounded-xl border transition-all duration-300 shadow-sm"
+          :class="isDarkMode 
+            ? 'bg-black/40 border-gray-800' 
+            : 'bg-gray-50 border-gray-200'"
+        >
         <span :class="['w-2 h-2 rounded-full flex-shrink-0', dotClass]"></span>
         <div class="flex flex-col">
           <span 
@@ -48,10 +32,11 @@
           >
             {{ lastUpdate }}
           </span>
-        </div>
       </div>
     </div>
   </div>
+</div>
+</div>
 </template>
 
 <script>

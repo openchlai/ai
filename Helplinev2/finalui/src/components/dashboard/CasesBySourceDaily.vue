@@ -150,7 +150,7 @@ watch(() => props.filters, () => {
       <!-- Bar Chart -->
       <div 
         class="w-full overflow-x-auto rounded-lg p-4"
-        :class="isDarkMode ? 'bg-gray-900/40' : 'bg-gray-50'"
+        :class="isDarkMode ? 'bg-black/40' : 'bg-gray-50'"
       >
         <svg :viewBox="`0 0 ${Math.max(600, chartData.dates.length * 100)} 280`" class="w-full" :style="`min-width: ${Math.max(600, chartData.dates.length * 100)}px;`">
           <!-- Grid lines -->
@@ -215,7 +215,7 @@ watch(() => props.filters, () => {
           v-for="serie in chartData.series" 
           :key="serie.name"
           class="flex items-center gap-2 px-3 py-1.5 rounded"
-          :class="isDarkMode ? 'bg-gray-900/40' : 'bg-gray-50'"
+          :class="isDarkMode ? 'bg-black/40' : 'bg-gray-50'"
         >
           <div 
             class="w-3 h-3 rounded-sm flex-shrink-0"

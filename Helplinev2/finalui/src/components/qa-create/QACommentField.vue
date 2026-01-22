@@ -16,7 +16,7 @@
       :required="required"
       class="px-4 py-3 border rounded-lg text-sm w-full focus:outline-none focus:ring-2 transition-all resize-y disabled:cursor-not-allowed"
       :class="isDarkMode 
-        ? 'bg-gray-700 border-transparent text-gray-100 placeholder-gray-500 focus:border-amber-500 focus:ring-amber-500/50 disabled:bg-gray-800' 
+        ? 'bg-gray-700 border-transparent text-gray-100 placeholder-gray-500 focus:border-amber-500 focus:ring-amber-500/50 disabled:bg-black' 
         : 'bg-gray-50 border-transparent text-gray-900 placeholder-gray-400 focus:border-amber-600 focus:ring-amber-600/50 disabled:bg-gray-200'"
     ></textarea>
     <div v-if="hint || (maxlength && showCharCount)" class="flex justify-between items-center mt-2">

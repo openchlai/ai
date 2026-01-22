@@ -2,7 +2,7 @@
   <div 
     class="rounded-lg shadow-xl border"
     :class="isDarkMode 
-      ? 'bg-neutral-900 border-transparent' 
+      ? 'bg-black border-transparent' 
       : 'bg-white border-transparent'"
   >
     <!-- Header -->
@@ -257,7 +257,7 @@ export default {
 }
 
 .scrollbar-dark::-webkit-scrollbar-track {
-  background: rgba(31, 41, 55, 0.5);
+  background: rgba(0, 0, 0, 0.5);
   border-radius: 3px;
 }
 

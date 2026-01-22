@@ -4,7 +4,7 @@
       'mb-6 p-6 rounded-lg border',
       containerClass,
       isDarkMode 
-        ? 'bg-gray-900/40 border-transparent' 
+        ? 'bg-black/40 border-transparent' 
         : 'bg-gray-50 border-transparent'
     ]"
   >

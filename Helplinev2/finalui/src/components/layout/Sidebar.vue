@@ -166,7 +166,7 @@
     >
       <div 
         class="flex items-center gap-3 px-4 py-3 rounded-xl mb-3"
-        :class="isDarkMode ? 'bg-neutral-900' : 'bg-gray-50'"
+        :class="isDarkMode ? 'bg-black' : 'bg-gray-50'"
       >
         <div 
           class="w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0 transition-colors"
