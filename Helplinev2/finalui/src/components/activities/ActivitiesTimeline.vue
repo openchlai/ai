@@ -5,7 +5,7 @@
       :key="date" 
       class="shadow-xl rounded-lg overflow-hidden border"
       :class="isDarkMode 
-        ? 'bg-neutral-900 border-transparent' 
+        ? 'bg-black border-transparent' 
         : 'bg-white border-transparent'"
     >
       <!-- Date Header -->
@@ -166,7 +166,7 @@
       v-if="Object.keys(groupedActivities).length === 0" 
       class="shadow-xl rounded-lg border p-12 text-center"
       :class="isDarkMode 
-        ? 'bg-neutral-900 border-transparent' 
+        ? 'bg-black border-transparent' 
         : 'bg-white border-transparent'"
     >
       <i-mdi-bell-off-outline 

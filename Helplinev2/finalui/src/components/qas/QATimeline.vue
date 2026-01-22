@@ -5,7 +5,7 @@
       :key="date" 
       class="rounded-lg shadow-xl border overflow-hidden"
       :class="isDarkMode 
-        ? 'bg-neutral-900 border-transparent' 
+        ? 'bg-black border-transparent' 
         : 'bg-white border-transparent'"
     >
       <!-- Date Header -->
@@ -161,7 +161,7 @@
       v-if="Object.keys(groupedQAs).length === 0" 
       class="rounded-lg shadow-xl border p-12 text-center"
       :class="isDarkMode 
-        ? 'bg-neutral-900 border-transparent' 
+        ? 'bg-black border-transparent' 
         : 'bg-white border-transparent'"
     >
       <i-mdi-clipboard-check-outline 

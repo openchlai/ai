@@ -79,7 +79,7 @@
           v-if="userStore.loading" 
           class="flex items-center gap-2 p-3 border rounded-lg"
           :class="isDarkMode 
-            ? 'bg-gray-800 border-transparent' 
+            ? 'bg-black border-transparent' 
             : 'bg-white border-transparent'"
         >
           <div 
@@ -102,7 +102,7 @@
           v-model="localForm.escalated_to_id" 
           class="w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-offset-0 transition-all"
           :class="isDarkMode
-            ? 'bg-gray-800 border-transparent text-gray-300 focus:ring-amber-500'
+            ? 'bg-black border-transparent text-gray-300 focus:ring-amber-500'
             : 'bg-white border-transparent text-gray-900 focus:ring-amber-500'"
           @change="handleEscalationChange"
         >
@@ -149,7 +149,7 @@
           :disabled="isSubmitting"
           class="px-6 py-3 rounded-lg font-medium transition-all duration-200 border disabled:opacity-50 disabled:cursor-not-allowed"
           :class="isDarkMode
-            ? 'bg-gray-800 text-gray-300 border-transparent hover:bg-gray-700'
+            ? 'bg-black text-gray-300 border-transparent hover:bg-gray-700'
             : 'bg-white text-gray-700 border-transparent hover:bg-gray-50'"
         >
           Cancel

@@ -16,7 +16,7 @@
         'border rounded-lg px-3 py-2.5 flex justify-between items-center cursor-pointer transition-all min-h-[20px]',
         disabled 
           ? isDarkMode
-            ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
+            ? 'bg-black text-gray-500 cursor-not-allowed'
             : 'bg-gray-200 text-gray-400 cursor-not-allowed'
           : isDarkMode
             ? 'bg-gray-700 border-transparent hover:border-amber-600 focus-within:border-amber-600 focus-within:ring-2 focus-within:ring-amber-500/50'
@@ -51,7 +51,7 @@
       v-if="isOpen" 
       class="border rounded-lg mt-1 p-1.5 max-h-[300px] overflow-y-auto shadow-xl absolute w-full z-[1000]"
       :class="isDarkMode 
-        ? 'border-transparent bg-gray-800' 
+        ? 'border-transparent bg-black' 
         : 'border-transparent bg-white'"
     >
       <!-- Breadcrumb navigation -->
@@ -130,7 +130,7 @@
           type="button" 
           class="px-3 py-1.5 rounded border cursor-pointer text-xs transition-all duration-200 flex items-center gap-1"
           :class="isDarkMode 
-            ? 'border-transparent bg-gray-800 text-gray-300 hover:bg-gray-700' 
+            ? 'border-transparent bg-black text-gray-300 hover:bg-gray-700' 
             : 'border-transparent bg-white text-gray-700 hover:bg-gray-50'"
           @click.stop="goBack"
         >
@@ -141,7 +141,7 @@
           v-if="selectedOption" 
           type="button" 
           class="px-3 py-1.5 rounded border border-red-600 cursor-pointer text-xs transition-all duration-200 text-red-400 hover:bg-red-600 hover:text-white ml-2 flex items-center gap-1"
-          :class="isDarkMode ? 'bg-gray-800' : 'bg-white'"
+          :class="isDarkMode ? 'bg-black' : 'bg-white'"
           @click.stop="clearSelection"
         >
           <i-mdi-close class="w-4 h-4" />

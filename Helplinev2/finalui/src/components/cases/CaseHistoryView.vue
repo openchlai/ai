@@ -31,7 +31,7 @@
         <div
           class="rounded-lg border p-4"
           :class="isDarkMode
-            ? 'bg-gray-800 border-transparent'
+            ? 'bg-black border-transparent'
             : 'bg-white border-transparent'"
         >
           <div class="flex items-start justify-between mb-2">
@@ -73,7 +73,7 @@
               :key="idx"
               class="text-xs flex items-center gap-2 p-2 rounded"
               :class="isDarkMode
-                ? 'bg-gray-900/50'
+                ? 'bg-black/50'
                 : 'bg-gray-50'"
             >
               <span :class="isDarkMode ? 'text-gray-500' : 'text-gray-500'">
@@ -116,7 +116,7 @@
     <div
       class="p-4 rounded-lg border"
       :class="isDarkMode
-        ? 'bg-gray-800 border-transparent'
+        ? 'bg-black border-transparent'
         : 'bg-gray-100 border-transparent'"
     >
       <div class="flex items-start gap-3">
@@ -146,7 +146,7 @@
       @click="$emit('back')"
       class="w-full px-6 py-3 rounded-lg font-medium transition-all duration-200 border flex items-center justify-center gap-2"
       :class="isDarkMode
-        ? 'bg-gray-800 text-gray-300 border-transparent hover:bg-gray-700'
+        ? 'bg-black text-gray-300 border-transparent hover:bg-gray-700'
         : 'bg-white text-gray-700 border-transparent hover:bg-gray-50'"
     >
       <i-mdi-arrow-left class="w-5 h-5" />

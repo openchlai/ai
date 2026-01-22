@@ -173,7 +173,7 @@
             v-if="showPassportField" 
             class="mt-4 p-4 border rounded-lg animate-fadeIn"
             :class="isDarkMode 
-              ? 'bg-gray-800 border-transparent' 
+              ? 'bg-black border-transparent' 
               : 'bg-gray-50 border-transparent'"
           >
             <label 

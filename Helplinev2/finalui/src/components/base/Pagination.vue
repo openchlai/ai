@@ -2,7 +2,7 @@
   <div
     v-if="paginationInfo.total > 0"
     class="flex justify-between items-center mt-6 p-4 rounded-xl"
-    :class="isDarkMode ? 'bg-gray-800' : 'bg-white shadow'"
+    :class="isDarkMode ? 'bg-black' : 'bg-white shadow'"
   >
     <!-- Page Info -->
     <div
@@ -24,7 +24,7 @@
             ? isDarkMode
               ? 'bg-gray-700 text-gray-200 hover:bg-gray-600'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            : 'opacity-50 cursor-not-allowed ' + (isDarkMode ? 'bg-gray-800 text-gray-500' : 'bg-gray-100 text-gray-400')
+            : 'opacity-50 cursor-not-allowed ' + (isDarkMode ? 'bg-black text-gray-500' : 'bg-gray-100 text-gray-400')
         ]"
       >
         <i-mdi-chevron-left class="w-5 h-5" />
@@ -71,7 +71,7 @@
             ? isDarkMode
               ? 'bg-gray-700 text-gray-200 hover:bg-gray-600'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            : 'opacity-50 cursor-not-allowed ' + (isDarkMode ? 'bg-gray-800 text-gray-500' : 'bg-gray-100 text-gray-400')
+            : 'opacity-50 cursor-not-allowed ' + (isDarkMode ? 'bg-black text-gray-500' : 'bg-gray-100 text-gray-400')
         ]"
       >
         Next

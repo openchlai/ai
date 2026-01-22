@@ -2,7 +2,7 @@
   <div 
     class="rounded-lg shadow-xl border overflow-hidden"
     :class="isDarkMode 
-      ? 'bg-gray-800 border-transparent' 
+      ? 'bg-black border-transparent' 
       : 'bg-white border-transparent'"
   >
     <div class="overflow-x-auto">
@@ -11,7 +11,7 @@
           <tr 
             class="border-b"
             :class="isDarkMode 
-              ? 'bg-gray-900/60 border-transparent' 
+              ? 'bg-black/60 border-transparent' 
               : 'bg-gray-50 border-transparent'"
           >
             <th 
@@ -131,7 +131,7 @@
         <div 
           class="rounded-lg shadow-2xl p-8 border"
           :class="isDarkMode 
-            ? 'bg-gray-800 border-transparent' 
+            ? 'bg-black border-transparent' 
             : 'bg-white border-transparent'"
         >
           <div class="flex flex-col items-center gap-4">

@@ -1,7 +1,6 @@
 <template>
   <div 
-    class="min-h-screen p-4"
-    :class="isDarkMode ? 'bg-black' : 'bg-gray-50'"
+    class="space-y-4"
   >
     <!-- Header -->
     <WallboardHeader 

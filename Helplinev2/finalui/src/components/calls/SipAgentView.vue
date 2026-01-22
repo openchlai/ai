@@ -6,7 +6,7 @@
         v-if="loadingExtension"
         class="p-6 border rounded-lg shadow-xl"
         :class="isDarkMode
-          ? 'border-transparent bg-gray-800'
+          ? 'border-transparent bg-black'
           : 'border-transparent bg-white'"
       >
         <div class="flex items-center justify-center py-8">
@@ -44,7 +44,7 @@
         v-else
         class="p-6 border rounded-lg shadow-xl"
         :class="isDarkMode
-          ? 'border-transparent bg-gray-800'
+          ? 'border-transparent bg-black'
           : 'border-transparent bg-white'"
       >
         <h3
@@ -59,7 +59,7 @@
           <div
             class="flex justify-between items-center p-3 rounded border"
             :class="isDarkMode
-              ? 'bg-gray-900/40 border-transparent'
+              ? 'bg-black/40 border-transparent'
               : 'bg-gray-50 border-transparent'"
           >
             <span
@@ -81,7 +81,7 @@
           <div
             class="flex justify-between items-center p-3 rounded border"
             :class="isDarkMode
-              ? 'bg-gray-900/40 border-transparent'
+              ? 'bg-black/40 border-transparent'
               : 'bg-gray-50 border-transparent'"
           >
             <span
@@ -104,7 +104,7 @@
           <div
             class="flex justify-between items-center p-3 rounded border"
             :class="isDarkMode
-              ? 'bg-gray-900/40 border-transparent'
+              ? 'bg-black/40 border-transparent'
               : 'bg-gray-50 border-transparent'"
           >
             <span
@@ -127,7 +127,7 @@
           <div
             class="flex justify-between items-center p-3 rounded border"
             :class="isDarkMode
-              ? 'bg-gray-900/40 border-transparent'
+              ? 'bg-black/40 border-transparent'
               : 'bg-gray-50 border-transparent'"
           >
             <span
@@ -178,7 +178,7 @@
               placeholder="Enter number to dial"
               class="flex-1 px-4 py-2 rounded-lg border focus:outline-none focus:ring-2"
               :class="isDarkMode
-                ? 'bg-gray-900 border-gray-700 text-white focus:ring-amber-600'
+                ? 'bg-black border-gray-700 text-white focus:ring-amber-600'
                 : 'bg-white border-gray-300 text-gray-900 focus:ring-amber-500'"
               @keyup.enter="makeCall"
             />
@@ -328,7 +328,7 @@
         >
           <div
             class="p-6 rounded-lg shadow-xl max-w-sm w-full mx-4"
-            :class="isDarkMode ? 'bg-gray-800' : 'bg-white'"
+            :class="isDarkMode ? 'bg-black' : 'bg-white'"
           >
             <h4
               class="text-lg font-semibold mb-4"
@@ -342,7 +342,7 @@
               placeholder="Enter extension or number"
               class="w-full px-4 py-2 rounded-lg border mb-4 focus:outline-none focus:ring-2"
               :class="isDarkMode
-                ? 'bg-gray-900 border-gray-700 text-white focus:ring-amber-600'
+                ? 'bg-black border-gray-700 text-white focus:ring-amber-600'
                 : 'bg-white border-gray-300 text-gray-900 focus:ring-amber-500'"
             />
             <div class="flex gap-2">

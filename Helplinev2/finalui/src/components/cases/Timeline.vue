@@ -9,7 +9,7 @@
       @click="selectCase(caseItem)"
       class="relative shadow-xl rounded-lg p-6 border cursor-pointer transition-all duration-200"
       :class="isDarkMode 
-        ? 'bg-neutral-900 border-transparent hover:bg-neutral-800' 
+        ? 'bg-black border-transparent hover:bg-neutral-800' 
         : 'bg-white border-transparent hover:bg-gray-50'"
     >
       <!-- Timeline Dot - Hollow Circle Split by Line -->
