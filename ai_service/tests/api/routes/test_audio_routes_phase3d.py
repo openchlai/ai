@@ -1,7 +1,6 @@
 """
-Phase 3D: Comprehensive API route coverage tests
+Comprehensive API route coverage tests
 Targets missing lines in audio_routes.py, call_session_routes.py, health_routes.py
-Focus on error handling, validation, and edge cases
 """
 import pytest
 from fastapi.testclient import TestClient

@@ -1,6 +1,5 @@
 """
 Comprehensive tests for audio_tasks.py worker initialization and core functions
-Focus: Achieving 95% coverage by testing worker init, task processing, and error handling
 """
 import pytest
 import os
