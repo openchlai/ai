@@ -25,33 +25,25 @@ class SummarizationModel:
         self.load_time = None
         self.error = None
         self.max_length = 512  # Model's maximum input token limit
+        
+        # Hugging Face repo support (hub-first)
+        self.hf_repo_id = os.getenv("SUMMARIZATION_HF_REPO_ID") or getattr(settings, "hf_summarizer_model", None)
 
     def load(self) -> bool:
         try:
-            logger.info(f"📦 Loading summarization model from {self.model_path}")
+            logger.info(f"📦 Initializing summarization model loader")
             start_time = datetime.now()
             
-            # Check if model path exists
-            if not os.path.exists(self.model_path):
-                raise FileNotFoundError(f"Summarization model path not found: {self.model_path}")
+            if not self.hf_repo_id:
+                raise RuntimeError("SUMMARIZATION_HF_REPO_ID or settings.hf_summarizer_model must be set for hub loading")
+            logger.info(f"📦 Loading summarization model from Hugging Face Hub: {self.hf_repo_id} (ignoring local path {self.model_path})")
             
-            # Check for required model files
-            required_files = ["config.json"]
-            for file in required_files:
-                file_path = os.path.join(self.model_path, file)
-                if not os.path.exists(file_path):
-                    raise FileNotFoundError(f"Required model file not found: {file_path}")
+            # Get HF authentication kwargs
+            from ..config.settings import settings
+            hf_kwargs = settings.get_hf_model_kwargs()
             
-            # Load tokenizer and model with local_files_only
-            self.tokenizer = AutoTokenizer.from_pretrained(
-                self.model_path, 
-                local_files_only=True  # Force local loading
-            )
-            
-            self.model = AutoModelForSeq2SeqLM.from_pretrained(
-                self.model_path, 
-                local_files_only=True  # Force local loading
-            )
+            self.tokenizer = AutoTokenizer.from_pretrained(self.hf_repo_id, local_files_only=False, **hf_kwargs)
+            self.model = AutoModelForSeq2SeqLM.from_pretrained(self.hf_repo_id, local_files_only=False, **hf_kwargs)
             
             self.model.to(self.device)
             
@@ -67,7 +59,7 @@ class SummarizationModel:
             self.load_time = datetime.now()
             load_duration = (self.load_time - start_time).total_seconds()
             
-            logger.info(f"✅ Summarization model loaded successfully in {load_duration:.2f}s")
+            logger.info(f"✅ Summarization model loaded from Hugging Face Hub ({self.hf_repo_id}) in {load_duration:.2f}s on {self.device}")
             return True
             
         except Exception as e:
@@ -331,19 +323,36 @@ class SummarizationModel:
             }
 
     def get_model_info(self) -> Dict:
-        return {
+        """Get standardized model information"""
+        
+        # Basic information
+        info = {
+            "model_type": "summarizer",
             "model_path": self.model_path,
-            "device": str(self.device),
+            "hf_repo_id": self.hf_repo_id,
             "loaded": self.loaded,
             "load_time": self.load_time.isoformat() if self.load_time else None,
+            "device": str(self.device),
             "error": self.error,
-            "task": "text-summarization",
-            "framework": "transformers",
-            "max_length": self.max_length,
-            "chunking_supported": True,
-            "summarization_strategies": ["single_pass", "hierarchical"],
-            "fallback_strategy": "extractive_summary"
         }
+
+        # Detailed model-specific information
+        if self.loaded and self.model:
+            details = {
+                "model_class": type(self.model).__name__,
+                "tokenizer_class": type(self.tokenizer).__name__,
+                "max_length": self.max_length,
+                "task": "text-summarization",
+                "framework": "transformers",
+                "chunking": {
+                    "supported": True,
+                    "strategies": ["single_pass", "hierarchical"],
+                },
+                "fallback_strategy": "extractive_summary",
+            }
+            info["details"] = details
+        
+        return info
 
 # Global instance
 summarization_model = SummarizationModel()

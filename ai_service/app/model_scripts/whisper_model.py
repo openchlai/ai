@@ -9,20 +9,23 @@ from typing import Optional, Dict, Any
 logger = logging.getLogger(__name__)
 
 class WhisperModel:
-    """HuggingFace Whisper Large V3 Turbo model for speech recognition"""
-    
+    """HuggingFace Whisper model for transcription only"""
+
     def __init__(self, model_path: str = None):
         from ..config.settings import settings
-        
+
+        self.settings = settings
         self.model_path = model_path or settings.get_model_path("whisper")
-        self.fallback_model_id = "openai/whisper-large-v3-turbo"
+        self.fallback_model_id = self.settings.hf_asr_model
+        self.model_version = "whisper-asr"
+
         self.model = None
         self.processor = None
-        self.pipe = None
         self.device = None
         self.torch_dtype = None
         self.is_loaded = False
         self.error = None
+        self.current_model_id = None
         
         # Supported language codes for Whisper
         self.supported_languages = {
@@ -58,16 +61,13 @@ class WhisperModel:
         if not os.path.exists(self.model_path):
             return False
         
-        # Check for essential Whisper model files
         required_files = ["config.json"]
         optional_files = ["model.safetensors", "pytorch_model.bin"]
         
-        # At least config.json must exist
         config_path = os.path.join(self.model_path, "config.json")
         if not os.path.exists(config_path):
             return False
         
-        # At least one model file must exist
         model_file_exists = any(
             os.path.exists(os.path.join(self.model_path, file)) 
             for file in optional_files
@@ -77,118 +77,141 @@ class WhisperModel:
             logger.warning(f"Config found but no model files in {self.model_path}")
             return False
         
-        logger.info(f"✅ Local Whisper model files detected in {self.model_path}")
+        logger.info(f"Local Whisper model files detected in {self.model_path}")
         return True
         
     def load(self) -> bool:
-        """Load Whisper model with local-first approach"""
+        """Load Whisper model with HuggingFace Hub support - NO AUTHENTICATION"""
         try:
-            logger.info(f"🎙️ Loading Whisper model...")
+            logger.info(f"Loading Whisper model...")
             
-            from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
+            from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor
             
             self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
             self.torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+
+            logger.info(f"Using device: {self.device}, dtype: {self.torch_dtype}")
+            logger.info(f"Whisper model for transcription: {self.model_version}")
             
-            logger.info(f"🎙️ Using device: {self.device}, dtype: {self.torch_dtype}")
-            
-            # Try loading from local path first
-            if self._check_local_model_exists():
+            if self.settings.use_hf_models:
+                # Use HuggingFace Hub models WITHOUT authentication
+                model_id = self.settings.hf_asr_model
+                logger.info(f"Loading Whisper model from HuggingFace Hub (public): {model_id}")
+                
                 try:
-                    logger.info(f"🎙️ Loading local Whisper model from {self.model_path}")
-                    
+                    # Load with authentication kwargs from settings
+                    hf_kwargs = self.settings.get_hf_model_kwargs()
                     self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
-                        self.model_path,
-                        local_files_only=True,  # Force local loading
+                        model_id,
                         torch_dtype=self.torch_dtype, 
                         low_cpu_mem_usage=True, 
-                        use_safetensors=True
+                        use_safetensors=True,
+                        **hf_kwargs
                     )
                     
-                    self.processor = AutoProcessor.from_pretrained(
-                        self.model_path,
-                        local_files_only=True  # Force local loading
-                    )
-                    
-                    logger.info(f"✅ Local Whisper model loaded successfully")
+                    self.processor = AutoProcessor.from_pretrained(model_id, **hf_kwargs)
+                    self.current_model_id = model_id
+                    logger.info(f"HuggingFace Whisper model loaded successfully")
                     
                 except Exception as e:
-                    logger.warning(f"⚠️ Failed to load local model: {e}")
-                    logger.info(f"🌐 Falling back to HuggingFace Hub download")
-                    raise  # Re-raise to trigger fallback
+                    logger.warning(f"Failed to load HF model {model_id}: {e}")
+                    logger.info(f"Falling back to default HuggingFace model: {self.fallback_model_id}")
                     
-            else:
-                # No local model, use fallback
-                logger.info(f"🌐 Local model not found, downloading from HuggingFace Hub: {self.fallback_model_id}")
-                
-                self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
-                    self.fallback_model_id, 
-                    torch_dtype=self.torch_dtype, 
-                    low_cpu_mem_usage=True, 
-                    use_safetensors=True
-                )
-                
-                self.processor = AutoProcessor.from_pretrained(self.fallback_model_id)
-            
-            # Move model to device
-            self.model.to(self.device)
-            
-            # Create pipeline
-            self.pipe = pipeline(
-                "automatic-speech-recognition",
-                model=self.model,
-                tokenizer=self.processor.tokenizer,
-                feature_extractor=self.processor.feature_extractor,
-                torch_dtype=self.torch_dtype,
-                device=self.device,
-            )
-            
-            self.is_loaded = True
-            self.error = None
-            logger.info(f"✅ Whisper model loaded successfully on {self.device}")
-            return True
-            
-        except Exception as e:
-            # If local loading failed, try fallback
-            if "local_files_only" in str(e) or "not found" in str(e).lower():
-                try:
-                    logger.info(f"🌐 Local loading failed, downloading from HuggingFace Hub: {self.fallback_model_id}")
-                    
-                    from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
-                    
+                    hf_kwargs = self.settings.get_hf_model_kwargs()
                     self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
                         self.fallback_model_id, 
                         torch_dtype=self.torch_dtype, 
                         low_cpu_mem_usage=True, 
-                        use_safetensors=True
+                        use_safetensors=True,
+                        **hf_kwargs
+                    )
+                    self.processor = AutoProcessor.from_pretrained(self.fallback_model_id, **hf_kwargs)
+                    self.current_model_id = self.fallback_model_id
+                    
+            else:
+                # Use local models with fallback to HuggingFace
+                if self._check_local_model_exists():
+                    try:
+                        logger.info(f"Loading local Whisper model from {self.model_path}")
+                        
+                        self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
+                            self.model_path,
+                            local_files_only=True,
+                            torch_dtype=self.torch_dtype, 
+                            low_cpu_mem_usage=True, 
+                            use_safetensors=True
+                        )
+                        
+                        self.processor = AutoProcessor.from_pretrained(
+                            self.model_path,
+                            local_files_only=True
+                        )
+                        
+                        self.current_model_id = self.model_path
+                        logger.info(f"Local Whisper model loaded successfully")
+                        
+                    except Exception as e:
+                        logger.warning(f"Failed to load local model: {e}")
+                        logger.info(f"Falling back to HuggingFace Hub download")
+                        raise
+                        
+                else:
+                    logger.info(f"Local model not found, downloading from HuggingFace Hub: {self.fallback_model_id}")
+                    
+                    hf_kwargs = self.settings.get_hf_model_kwargs()
+                    self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
+                        self.fallback_model_id, 
+                        torch_dtype=self.torch_dtype, 
+                        low_cpu_mem_usage=True, 
+                        use_safetensors=True,
+                        **hf_kwargs
+                    )
+                    
+                    self.processor = AutoProcessor.from_pretrained(self.fallback_model_id, **hf_kwargs)
+                    self.current_model_id = self.fallback_model_id
+            
+            # Move model to device
+            self.model.to(self.device)
+            
+            self.is_loaded = True
+            self.error = None
+            logger.info(f"Whisper model loaded successfully on {self.device}")
+            return True
+            
+        except Exception as e:
+            if "local_files_only" in str(e) or "not found" in str(e).lower():
+                try:
+                    logger.info(f"Local loading failed, downloading from HuggingFace Hub: {self.fallback_model_id}")
+                    
+                    from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor
+                    
+                    hf_kwargs = self.settings.get_hf_model_kwargs()
+                    self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
+                        self.fallback_model_id, 
+                        torch_dtype=self.torch_dtype, 
+                        low_cpu_mem_usage=True, 
+                        use_safetensors=True,
+                        **hf_kwargs
                     )
                     self.model.to(self.device)
                     
-                    self.processor = AutoProcessor.from_pretrained(self.fallback_model_id)
-                    
-                    self.pipe = pipeline(
-                        "automatic-speech-recognition",
-                        model=self.model,
-                        tokenizer=self.processor.tokenizer,
-                        feature_extractor=self.processor.feature_extractor,
-                        torch_dtype=self.torch_dtype,
-                        device=self.device,
-                    )
+                    self.processor = AutoProcessor.from_pretrained(self.fallback_model_id, **hf_kwargs)
+                    self.current_model_id = self.fallback_model_id
                     
                     self.is_loaded = True
                     self.error = None
-                    logger.info(f"✅ Whisper model loaded successfully via fallback on {self.device}")
+                    logger.info(f"Whisper model loaded from Hugging Face Hub via fallback on {self.device}")
                     return True
                     
                 except Exception as fallback_error:
                     error_msg = f"Failed to load Whisper model (local and fallback): {fallback_error}"
-                    logger.error(f"❌ {error_msg}")
+                    logger.error(f"{error_msg}")
                     self.error = error_msg
                     self.is_loaded = False
                     return False
             else:
                 error_msg = f"Failed to load Whisper model: {e}"
-                logger.error(f"❌ {error_msg}")
+                logger.error(f"{error_msg}")
                 self.error = error_msg
                 self.is_loaded = False
                 return False
@@ -196,139 +219,311 @@ class WhisperModel:
     def _validate_language(self, language: Optional[str]) -> Optional[str]:
         """Validate and normalize language code"""
         if not language or language.lower() in ["auto", "none", ""]:
-            return None  # Auto-detect
+            return None
         
-        # Normalize language code
         lang_code = language.lower().strip()
         
-        # Check if it's a supported language
         if lang_code in self.supported_languages:
             return lang_code
         
-        # Try to find by language name
         for code, name in self.supported_languages.items():
             if name.lower() == lang_code:
                 return code
         
-        # If not found, log warning but continue (Whisper supports many languages)
-        logger.warning(f"⚠️ Language '{language}' not in known list, but will attempt transcription")
+        logger.warning(f"Language '{language}' not in known list, but will attempt transcription")
         return lang_code
     
     def transcribe_audio_file(self, audio_file_path: str, language: Optional[str] = None) -> str:
         """Transcribe audio file to text with support for long audio"""
         if not self.is_loaded:
             raise RuntimeError("Whisper model not loaded")
-        
+
         try:
-            logger.info(f"🎙️ Transcribing audio file: {Path(audio_file_path).name}")
-            
-            # Validate and normalize language
+            logger.info(f"Transcribing audio file: {Path(audio_file_path).name}")
+
             validated_language = self._validate_language(language)
             if validated_language:
-                logger.info(f"🎙️ Target language: {validated_language} ({self.supported_languages.get(validated_language, 'Unknown')})")
+                logger.info(f"Transcribing in: {validated_language} ({self.supported_languages.get(validated_language, 'Unknown')})")
             else:
-                logger.info("🎙️ Language: Auto-detect")
-            
-            # Load audio with librosa (handles multiple formats)
+                logger.info("Transcribing with auto-detected language")
+
             audio_array, sample_rate = librosa.load(audio_file_path, sr=16000, mono=True)
-            
-            # Calculate audio duration
+
             duration = len(audio_array) / sample_rate
-            logger.info(f"🎙️ Audio duration: {duration:.1f} seconds")
-            
-            # Prepare pipeline kwargs - EXPLICITLY set task to transcribe
-            generate_kwargs = {
-                "task": "transcribe"  # Explicitly set to transcribe (not translate)
-            }
-            
-            # Add language if specified
+            logger.info(f"Audio duration: {duration:.1f} seconds")
+
+            generate_kwargs = {}
+
             if validated_language:
                 generate_kwargs["language"] = validated_language
             
-            # For audio longer than 30 seconds, enable timestamps and chunking
+            transcriptions = []
+            
+            chunk_duration = 30
+            chunk_samples = chunk_duration * sample_rate
+            audio_length = len(audio_array)
+            
             if duration > 30:
-                logger.info("🎙️ Long audio detected (>30s) - using chunked transcription")
-                result = self.pipe(
-                    audio_array,
-                    generate_kwargs=generate_kwargs,
-                    return_timestamps=True,  # Required for long-form audio
-                    chunk_length_s=30,      # Process in 30-second chunks
-                    stride_length_s=5       # 5-second overlap between chunks
-                )
+                logger.info(f"Long audio detected ({duration:.1f}s) - using chunked transcription")
+                
+                for i in range(0, audio_length, chunk_samples):
+                    chunk_end = min(i + chunk_samples, audio_length)
+                    audio_chunk = audio_array[i:chunk_end]
+                    chunk_time = i / sample_rate
+                    chunk_num = i // chunk_samples + 1
+                    total_chunks = (audio_length + chunk_samples - 1) // chunk_samples
+                    
+                    logger.info(f"Processing chunk {chunk_num}/{total_chunks} (time: {chunk_time:.1f}s)")
+                    
+                    inputs = self.processor(audio_chunk, sampling_rate=sample_rate, return_tensors="pt")
+                    input_features = inputs.input_features.to(device=self.device, dtype=self.torch_dtype)
+                    
+                    attention_mask = torch.ones(input_features.shape[:-1], dtype=torch.long, device=self.device)
+                    
+                    try:
+                        with torch.no_grad():
+                            predicted_ids = self.model.generate(
+                                input_features,
+                                attention_mask=attention_mask,
+                                max_length=448,
+                                num_beams=5,
+                                repetition_penalty=1.1,
+                                no_repeat_ngram_size=3,
+                                **generate_kwargs
+                            )
+                        
+                        chunk_transcription = self.processor.batch_decode(predicted_ids, skip_special_tokens=True)[0]
+                        transcriptions.append(chunk_transcription.strip())
+                        
+                    except torch.cuda.OutOfMemoryError:
+                        logger.warning("CUDA out of memory, falling back to CPU for this chunk...")
+                        self.model.to("cpu")
+                        input_features = input_features.to(device="cpu", dtype=torch.float32)
+                        attention_mask = attention_mask.to("cpu")
+                        
+                        with torch.no_grad():
+                            predicted_ids = self.model.generate(
+                                input_features,
+                                attention_mask=attention_mask,
+                                max_length=448,
+                                num_beams=5,
+                                repetition_penalty=1.1,
+                                no_repeat_ngram_size=3,
+                                **generate_kwargs
+                            )
+                        
+                        chunk_transcription = self.processor.batch_decode(predicted_ids, skip_special_tokens=True)[0]
+                        transcriptions.append(chunk_transcription.strip())
+                        
+                        self.model.to(self.device)
+                
+                transcript = " ".join(transcriptions)
+                
             else:
-                logger.info("🎙️ Short audio detected (≤30s) - using standard transcription")
-                result = self.pipe(
-                    audio_array,
-                    generate_kwargs=generate_kwargs,
-                    return_timestamps=False
-                )
-            
-            # Extract text from result
-            if isinstance(result, dict):
-                transcript = result["text"].strip()
-            elif isinstance(result, list):
-                # For chunked results, concatenate all text
-                transcript = " ".join([chunk["text"] for chunk in result]).strip()
-            else:
-                transcript = str(result).strip()
-            
-            logger.info(f"✅ Transcription completed: {len(transcript)} characters")
-            
+                logger.info("Short audio detected (<=30s) - using standard transcription")
+                
+                inputs = self.processor(audio_array, sampling_rate=sample_rate, return_tensors="pt")
+                input_features = inputs.input_features.to(device=self.device, dtype=self.torch_dtype)
+                
+                attention_mask = torch.ones(input_features.shape[:-1], dtype=torch.long, device=self.device)
+                
+                try:
+                    with torch.no_grad():
+                        predicted_ids = self.model.generate(
+                            input_features,
+                            attention_mask=attention_mask,
+                            max_length=448,
+                            num_beams=5,
+                            repetition_penalty=1.1,
+                            no_repeat_ngram_size=3,
+                            **generate_kwargs
+                        )
+                    
+                    transcript = self.processor.batch_decode(predicted_ids, skip_special_tokens=True)[0].strip()
+                    
+                except torch.cuda.OutOfMemoryError:
+                    logger.warning("CUDA out of memory, falling back to CPU...")
+                    self.model.to("cpu")
+                    input_features = input_features.to(device="cpu", dtype=torch.float32)
+                    attention_mask = attention_mask.to("cpu")
+                    
+                    with torch.no_grad():
+                        predicted_ids = self.model.generate(
+                            input_features,
+                            attention_mask=attention_mask,
+                            max_length=448,
+                            num_beams=5,
+                            repetition_penalty=1.1,
+                            no_repeat_ngram_size=3,
+                            **generate_kwargs
+                        )
+                    
+                    transcript = self.processor.batch_decode(predicted_ids, skip_special_tokens=True)[0].strip()
+
+                    self.model.to(self.device)
+
+            logger.info(f"Transcription completed: {len(transcript)} characters")
+
             return transcript
-            
+
         except Exception as e:
-            logger.error(f"❌ Transcription failed: {e}")
+            logger.error(f"Transcription failed: {e}")
             raise RuntimeError(f"Transcription failed: {str(e)}")
     
     def transcribe_audio_bytes(self, audio_bytes: bytes, language: Optional[str] = None) -> str:
-        """Transcribe audio from bytes (for uploaded files)"""
+        """Transcribe audio from bytes"""
         if not self.is_loaded:
             raise RuntimeError("Whisper model not loaded")
-        
+
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_file:
             try:
                 temp_file.write(audio_bytes)
                 temp_file.flush()
-                
+
                 result = self.transcribe_audio_file(temp_file.name, language)
                 return result
-                
+
             finally:
                 try:
                     os.unlink(temp_file.name)
                 except:
                     pass
     
+    def transcribe_pcm_audio(self, pcm_bytes: bytes, sample_rate: int = 16000, language: Optional[str] = None) -> str:
+        """Transcribe PCM audio data directly from bytes"""
+        if not self.is_loaded:
+            raise RuntimeError("Whisper model not loaded")
+
+        try:
+            import numpy as np
+
+            audio_array = np.frombuffer(pcm_bytes, dtype=np.int16).astype(np.float32)
+            audio_array = audio_array / 32768.0
+
+            audio_energy = np.mean(np.abs(audio_array))
+            silence_threshold = 0.001
+
+            if audio_energy < silence_threshold:
+                return ""
+
+            if sample_rate != 16000:
+                audio_array = librosa.resample(audio_array, orig_sr=sample_rate, target_sr=16000)
+                sample_rate = 16000
+
+            validated_language = self._validate_language(language)
+
+            generate_kwargs = {}
+
+            if validated_language:
+                generate_kwargs["language"] = validated_language
+            
+            inputs = self.processor(audio_array, sampling_rate=sample_rate, return_tensors="pt")
+            input_features = inputs.input_features.to(device=self.device, dtype=self.torch_dtype)
+            
+            attention_mask = torch.ones(input_features.shape[:-1], dtype=torch.long, device=self.device)
+            
+            try:
+                with torch.no_grad():
+                    predicted_ids = self.model.generate(
+                        input_features,
+                        attention_mask=attention_mask,
+                        max_length=448,
+                        num_beams=5,
+                        repetition_penalty=1.1,
+                        no_repeat_ngram_size=3,
+                        length_penalty=1.0,
+                        early_stopping=True,
+                        do_sample=False,
+                        **generate_kwargs
+                    )
+                
+                transcript = self.processor.batch_decode(predicted_ids, skip_special_tokens=True)[0].strip()
+                
+            except torch.cuda.OutOfMemoryError:
+                logger.warning("CUDA out of memory, falling back to CPU...")
+                self.model.to("cpu")
+                input_features = input_features.to(device="cpu", dtype=torch.float32)
+                attention_mask = attention_mask.to("cpu")
+                
+                with torch.no_grad():
+                    predicted_ids = self.model.generate(
+                        input_features,
+                        attention_mask=attention_mask,
+                        max_length=448,
+                        num_beams=5,
+                        repetition_penalty=1.1,
+                        no_repeat_ngram_size=3,
+                        length_penalty=1.0,
+                        early_stopping=True,
+                        do_sample=False,
+                        **generate_kwargs
+                    )
+                
+                transcript = self.processor.batch_decode(predicted_ids, skip_special_tokens=True)[0].strip()
+                
+                self.model.to(self.device)
+            
+            common_hallucinations = [
+                "Thank you.", "Thanks.", "Okay.", "OK.", "Hello.", "Hi.", 
+                "Thank you for watching.", "Thanks for watching.",
+                "Thank you for your attention.", "See you next time.",
+                "Bye.", "Goodbye.", ""
+            ]
+            
+            if audio_energy < 0.005 and transcript in common_hallucinations:
+                logger.info(f"Filtered hallucination: '{transcript}'")
+                return ""
+            
+            if transcript:
+                logger.debug(f"PCM: {len(transcript)} chars")
+
+            return transcript
+
+        except Exception as e:
+            logger.error(f"PCM transcription failed: {e}")
+            raise RuntimeError(f"PCM transcription failed: {str(e)}")
+    
     def get_supported_languages(self) -> Dict[str, str]:
         """Get dictionary of supported language codes and names"""
         return self.supported_languages.copy()
     
     def get_model_info(self) -> Dict[str, Any]:
-        """Get model information"""
-        return {
-            "model_name": "whisper",
+        """Get standardized model information"""
+
+        # Basic information
+        info = {
+            "model_type": "whisper",
             "model_path": self.model_path,
-            "fallback_model_id": self.fallback_model_id,
-            "model_type": "speech-to-text",
-            "framework": "transformers",
+            "hf_repo_id": self.fallback_model_id,
+            "loaded": self.is_loaded,
+            "load_time": None,
             "device": str(self.device) if self.device else None,
-            "torch_dtype": str(self.torch_dtype) if self.torch_dtype else None,
-            "is_loaded": self.is_loaded,
             "error": self.error,
+        }
+
+        # Detailed model-specific information
+        details = {
+            "model_name": "whisper",
+            "model_version": self.model_version,
+            "current_model_id": self.current_model_id,
+            "framework": "transformers",
+            "torch_dtype": str(self.torch_dtype) if self.torch_dtype else None,
             "supported_formats": ["wav", "mp3", "flac", "m4a", "ogg"],
             "max_audio_length": "unlimited (chunked processing)",
             "sample_rate": "16kHz",
-            "task": "transcribe",  # Explicitly transcribe only
+            "tasks_supported": ["transcribe"],
             "languages": "multilingual (99+ languages)",
-            "version": "large-v3-turbo",
             "long_form_support": True,
+            "local_model_available": self._check_local_model_exists(),
             "supported_language_codes": list(self.supported_languages.keys()),
-            "local_model_available": self._check_local_model_exists()
         }
+        info["details"] = details
+
+        return info
     
     def is_ready(self) -> bool:
         """Check if model is ready for inference"""
-        return self.is_loaded and self.model is not None and self.pipe is not None
+        return self.is_loaded and self.model is not None and self.processor is not None
 
-# Global instance following your pattern
+# Global instance
 whisper_model = WhisperModel()

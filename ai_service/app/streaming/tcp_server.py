@@ -14,8 +14,9 @@ logger = logging.getLogger(__name__)
 class AsteriskTCPServer:
     """TCP server for Asterisk audio input - uses Celery workers"""
     
-    def __init__(self, model_loader=None):
-        # Don't need model_loader anymore - we'll use Celery
+    def __init__(self, host: str = "0.0.0.0", port: int = 8300):
+        self.host = host
+        self.port = port
         self.active_connections: Dict[str, Dict] = {}  # Maps call_id to connection info
         self.server = None
         
@@ -124,6 +125,17 @@ class AsteriskTCPServer:
     async def _submit_transcription(self, audio_array: np.ndarray, call_id: str):
         """Submit transcription to Celery worker with call session tracking"""
         try:
+            # Check if real-time processing is enabled for this session
+            session = await call_session_manager.get_session(call_id)
+            if not session:
+                logger.debug(f"⚠️ [tcp] No session found for call {call_id}, skipping transcription")
+                return
+            
+            realtime_enabled = session.processing_plan.get("realtime_processing", {}).get("enabled", False)
+            if not realtime_enabled:
+                logger.debug(f"⏭️ [tcp] Real-time processing disabled for call {call_id} (mode: {session.processing_mode}), skipping chunk transcription")
+                return
+            
             # Convert numpy array to bytes for Celery
             audio_bytes = (audio_array * 32768.0).astype(np.int16).tobytes()
             
@@ -147,16 +159,16 @@ class AsteriskTCPServer:
         except Exception as e:
             logger.error(f"❌ Failed to submit transcription for call {call_id}: {e}")
             
-    async def start_server(self, host: str = "0.0.0.0", port: int = 8300):
+    async def start_server(self):
         """Start TCP server"""
         try:
             self.server = await asyncio.start_server(
                 self.handle_connection, 
-                host, 
-                port
+                self.host, 
+                self.port
             )
             
-            logger.info(f"🚀 [Main] Asterisk TCP server listening on {host}:{port}")
+            logger.info(f"🚀 [Main] Asterisk TCP server listening on {self.host}:{self.port}")
             async with self.server:
                 await self.server.serve_forever()
                 
@@ -188,5 +200,5 @@ class AsteriskTCPServer:
             "active_connections": len(self.active_connections),
             "call_sessions": connection_stats,
             "transcription_method": "celery_workers",
-            "tcp_port": 8300
+            "tcp_port": self.port
         }

@@ -1,11 +1,10 @@
 # app/api/audio_routes.py (Updated for Celery)
 import asyncio
 import json
-from socket import socket
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict
 import logging
 from datetime import datetime
 import os
@@ -30,15 +29,28 @@ class TaskResponse(BaseModel):
 @router.post("/process", response_model=TaskResponse)
 async def process_audio_complete(
     audio: UploadFile = File(...),
-    language: Optional[str] = Form(None),
+    language: Optional[str] = Form(None, description="Language code: 'sw' (Swahili), 'en' (English), 'auto' for auto-detect. Leave empty for Swahili.", example="sw"),
     include_translation: bool = Form(True),
     include_insights: bool = Form(True),
     background: bool = Form(True)
 ):
     """
     Complete audio-to-insights pipeline with Celery
+
+    Args:
+        audio: Audio file to process
+        language: Language code (e.g., 'sw' for Swahili, 'en' for English).
+                  Defaults to 'sw' if not specified. Use 'auto' for auto-detection. Examples: 'sw', 'en', 'fr', 'auto'
+        include_translation: Include translation to English
+        include_insights: Include NER, classification, and other insights
+        background: Process in background (async) or synchronously
     """
-    
+
+    # Default language to Swahili if not specified
+    if language is None or language.strip() == "" or language.strip().lower() == "string":
+        language = "sw"
+        logger.info(f" No valid language specified, defaulting to 'sw' (Swahili)")
+
     # Validate audio file
     if not audio.filename:
         raise HTTPException(status_code=400, detail="No audio file provided")
@@ -100,13 +112,23 @@ async def process_audio_complete(
 @router.post("/analyze", response_model=TaskResponse)
 async def quick_audio_analysis(
     audio: UploadFile = File(...),
-    language: Optional[str] = Form(None),
+    language: Optional[str] = Form(None, description="Language code: 'sw' (Swahili), 'en' (English), 'auto' for auto-detect. Leave empty for Swahili.", example="sw"),
     background: bool = Form(True)
 ):
     """
     Quick audio analysis with Celery
+
+    Args:
+        audio: Audio file to analyze
+        language: Language code (defaults to 'sw' for Swahili if not specified). Examples: 'sw', 'en', 'fr', 'auto'
+        background: Process asynchronously
     """
-    
+
+    # Default language to Swahili if not specified
+    if language is None or language.strip() == "" or language.strip().lower() == "string":
+        language = "sw"
+        logger.info(f" No valid language specified, defaulting to 'sw' (Swahili)")
+
     if not audio.filename:
         raise HTTPException(status_code=400, detail="No audio file provided")
     
@@ -148,7 +170,7 @@ async def quick_audio_analysis(
             
     except Exception as e:
         logger.error(f"❌ Quick analysis failed for {audio.filename}: {e}")
-        raise HTTPException(status_code=500, detail=f"Quick analysis failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Quick analysis failed")
 
 @router.get("/task/{task_id}")
 async def get_task_status(task_id: str):

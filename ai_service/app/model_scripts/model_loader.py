@@ -2,6 +2,7 @@ import logging
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 import os
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +80,51 @@ class ModelStatus:
 class ModelLoader:
     """Manages loading and status of all models with optional dependencies"""
     
+        
+    def load_all_models_sync(self):
+        """
+        Synchronous wrapper for load_all_models() 
+        Use this in Celery worker initialization
+        """
+        try:
+            # Try to use existing event loop
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # If loop is running, we can't use run_until_complete
+                # Create new loop in separate thread
+                import threading
+                result_container = {'success': False}
+                
+                def run_async_load():
+                    new_loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(new_loop)
+                    try:
+                        new_loop.run_until_complete(self.load_all_models())
+                        result_container['success'] = True
+                    except Exception as e:
+                        logger.error(f"Error loading models in thread: {e}")
+                    finally:
+                        new_loop.close()
+                
+                thread = threading.Thread(target=run_async_load)
+                thread.start()
+                thread.join(timeout=300)  # 5 minute timeout
+                
+                return result_container['success']
+            else:
+                # Use existing loop
+                loop.run_until_complete(self.load_all_models())
+                return True
+                
+        except RuntimeError:
+            # No event loop exists, create new one
+            asyncio.run(self.load_all_models())
+            return True
+        except Exception as e:
+            logger.error(f"Failed to load models synchronously: {e}")
+            return False
+        
+        
     def __init__(self, models_path: str = None):
         # Import settings here to avoid circular imports
         from ..config.settings import settings
@@ -110,6 +156,10 @@ class ModelLoader:
             "summarizer": {
                 "required": ["torch", "transformers", "numpy"],
                 "description": "Text summarization"
+            },
+            "qa": {
+                "required": ["torch", "transformers", "numpy"],
+                "description": "QA scoring"
             }
         }
         
@@ -174,19 +224,25 @@ class ModelLoader:
                 return
             
             if model_name == "whisper":
-                from .whisper_model import whisper_model
-                
-                success = whisper_model.load()
-                if success:
-                    model_status.loaded = True
-                    model_status.error = None
-                    model_status.model_info = whisper_model.get_model_info()
-                    self.models[model_name] = whisper_model
-                    logger.info("✅ Whisper model loaded successfully")
-                else:
-                    model_status.error = whisper_model.error or "Failed to load Whisper model"
-                    logger.error(f"❌ Whisper model failed to load: {model_status.error}")
-                
+                # Load Whisper model directly for transcription
+                from .whisper_model import WhisperModel
+
+                try:
+                    whisper_model = WhisperModel()
+                    success = whisper_model.load()
+                    if success:
+                        model_status.loaded = True
+                        model_status.error = None
+                        model_status.model_info = whisper_model.get_model_info()
+                        self.models[model_name] = whisper_model
+                        logger.info(f"✅ Whisper model loaded successfully for transcription")
+                    else:
+                        model_status.error = "Failed to load Whisper model"
+                        logger.error(f"❌ Whisper model failed to load: {model_status.error}")
+                except Exception as e:
+                    model_status.error = f"Whisper loading error: {str(e)}"
+                    logger.error(f"❌ Whisper model loading failed: {model_status.error}")
+
                 model_status.load_time = datetime.now()
                 return
             
@@ -253,6 +309,21 @@ class ModelLoader:
                     model_status.error = summarization_model.error or "Failed to load summarization model"
                     logger.error(f"❌ Summarization model failed to load: {model_status.error}")
 
+                model_status.load_time = datetime.now()
+                return
+            
+            if model_name == "qa":
+                from .qa_model import qa_model
+                success = qa_model.load()
+                if success:
+                    model_status.loaded = True
+                    model_status.error = None
+                    model_status.model_info = qa_model.get_model_info()
+                    self.models[model_name] = qa_model
+                    logger.info("✅ QA model loaded successfully")
+                else:
+                    model_status.error = qa_model.error or "Failed to load QA model"
+                    logger.error(f"❌ QA model failed to load: {model_status.error}")
                 model_status.load_time = datetime.now()
                 return
             
@@ -324,11 +395,6 @@ class ModelLoader:
         return (model_name in self.model_status and 
                 self.model_status[model_name].dependencies_available)
     
-    def get_ready_models(self) -> List[str]:
-        """Get list of ready models"""
-        return [name for name, status in self.model_status.items() 
-                if status.loaded and status.error is None]
-    
     def get_implementable_models(self) -> List[str]:
         """Get list of models that can be implemented (have dependencies)"""
         return [name for name, status in self.model_status.items() 
@@ -341,14 +407,19 @@ class ModelLoader:
     
     def get_missing_dependencies_summary(self) -> Dict[str, List[str]]:
         """Get summary of missing dependencies per model"""
-        return {name: status.missing_dependencies 
-                for name, status in self.model_status.items() 
+        return {name: status.missing_dependencies
+                for name, status in self.model_status.items()
                 if not status.dependencies_available}
 
+    def get_ready_models(self) -> List[str]:
+        """Get list of models that are loaded and ready for inference"""
+        return [name for name, status in self.model_status.items()
+                if status.loaded and status.error is None]
+
     def get_failed_models(self) -> List[str]:
-        """Get list of failed models"""
-        return [name for name, status in self.model_status.items() 
-                if status.error is not None and status.dependencies_available]
+        """Get list of models that failed to load"""
+        return [name for name, status in self.model_status.items()
+                if status.error is not None and not status.loaded]
 
 # Global model loader instance
 model_loader = ModelLoader()

@@ -1,0 +1,236 @@
+{
+  "original_file": "synthetic_helpline_qa_scoring_v1.json",
+  "file_size_bytes": 97828,
+  "fixes_applied": [],
+  "total_records": 102,
+  "processed_records": 102,
+  "failed_records": 6,
+  "structure_errors_count": 0,
+  "text_errors_count": 3,
+  "label_structure_errors_count": 0,
+  "label_value_errors_count": 0,
+  "token_length_warnings_count": 3,
+  "label_distribution_warnings_count": 326,
+  "pii_warnings_count": 3,
+  "structure_errors": [],
+  "text_errors": [
+    {
+      "record_id": "record_4",
+      "record_idx": 4,
+      "issues": [
+        "text appears too short for a conversation"
+      ]
+    },
+    {
+      "record_id": "record_20",
+      "record_idx": 20,
+      "issues": [
+        "text appears too short for a conversation"
+      ]
+    },
+    {
+      "record_id": "record_63",
+      "record_idx": 63,
+      "issues": [
+        "text appears too short for a conversation"
+      ]
+    }
+  ],
+  "label_structure_errors": [],
+  "label_value_errors": [],
+  "token_length_warnings": [
+    {
+      "record_id": "record_11",
+      "record_idx": 11,
+      "token_count": 704,
+      "max_token_length": 512,
+      "overflow": 192
+    },
+    {
+      "record_id": "record_39",
+      "record_idx": 39,
+      "token_count": 704,
+      "max_token_length": 512,
+      "overflow": 192
+    },
+    {
+      "record_id": "record_70",
+      "record_idx": 70,
+      "token_count": 704,
+      "max_token_length": 512,
+      "overflow": 192
+    }
+  ],
+  "label_distribution_warnings": [
+    {
+      "record_id": "record_0",
+      "record_idx": 0,
+      "label": "hold",
+      "warning": "all scores are 0 (potential annotation issue)"
+    },
+    {
+      "record_id": "record_1",
+      "record_idx": 1,
+      "label": "resolution",
+      "warning": "all scores are 0 (potential annotation issue)"
+    },
+    {
+      "record_id": "record_1",
+      "record_idx": 1,
+      "label": "proactiveness",
+      "warning": "all scores are 0 (potential annotation issue)"
+    },
+    {
+      "record_id": "record_1",
+      "record_idx": 1,
+      "label": "opening",
+      "warning": "all scores are 0 (potential annotation issue)"
+    },
+    {
+      "record_id": "record_1",
+      "record_idx": 1,
+      "label": "closing",
+      "warning": "all scores are 0 (potential annotation issue)"
+    },
+    {
+      "record_id": "record_1",
+      "record_idx": 1,
+      "label": "listening",
+      "warning": "all scores are 0 (potential annotation issue)"
+    },
+    {
+      "record_id": "record_1",
+      "record_idx": 1,
+      "label": "hold",
+      "warning": "all scores are 0 (potential annotation issue)"
+    },
+    {
+      "record_id": "record_2",
+      "record_idx": 2,
+      "label": "resolution",
+      "warning": "all scores are 1 (potential annotation issue)"
+    },
+    {
+      "record_id": "record_2",
+      "record_idx": 2,
+      "label": "opening",
+      "warning": "all scores are 0 (potential annotation issue)"
+    },
+    {
+      "record_id": "record_2",
+      "record_idx": 2,
+      "label": "listening",
+      "warning": "all scores are 1 (potential annotation issue)"
+    }
+  ],
+  "pii_warnings": [
+    {
+      "record_id": "record_11",
+      "record_idx": 11,
+      "pii_types": [
+        "phone_number"
+      ],
+      "text_preview": "Hello and welcome to our helpline. My name is Faith. How can I support you today?  I'm feeling overw..."
+    },
+    {
+      "record_id": "record_39",
+      "record_idx": 39,
+      "pii_types": [
+        "phone_number"
+      ],
+      "text_preview": "Hello and welcome to our helpline. My name is Faith. How can I support you today?  I'm feeling overw..."
+    },
+    {
+      "record_id": "record_70",
+      "record_idx": 70,
+      "pii_types": [
+        "phone_number"
+      ],
+      "text_preview": "Hello and welcome to our helpline. My name is Faith. How can I support you today?  I'm feeling overw..."
+    }
+  ],
+  "text_length_stats": {
+    "mean": 687.81,
+    "median": 665.0,
+    "min": 40,
+    "max": 2780
+  },
+  "word_count_stats": {
+    "mean": 125.29,
+    "median": 117.0,
+    "min": 7,
+    "max": 542
+  },
+  "token_count_stats": {
+    "mean": 162.5,
+    "median": 152.0,
+    "min": 9,
+    "max": 704,
+    "exceeding_limit": 3
+  },
+  "label_statistics": {
+    "resolution": {
+      "total_annotations": 510,
+      "avg_score": 0.624,
+      "score_std": 0.485,
+      "avg_count_per_record": 5.0,
+      "score_distribution": {
+        "1": 318,
+        "0": 192
+      }
+    },
+    "proactiveness": {
+      "total_annotations": 306,
+      "avg_score": 0.389,
+      "score_std": 0.487,
+      "avg_count_per_record": 3.0,
+      "score_distribution": {
+        "1": 119,
+        "0": 187
+      }
+    },
+    "opening": {
+      "total_annotations": 102,
+      "avg_score": 0.549,
+      "score_std": 0.498,
+      "avg_count_per_record": 1.0,
+      "score_distribution": {
+        "1": 56,
+        "0": 46
+      }
+    },
+    "closing": {
+      "total_annotations": 102,
+      "avg_score": 0.549,
+      "score_std": 0.498,
+      "avg_count_per_record": 1.0,
+      "score_distribution": {
+        "1": 56,
+        "0": 46
+      }
+    },
+    "listening": {
+      "total_annotations": 510,
+      "avg_score": 0.671,
+      "score_std": 0.47,
+      "avg_count_per_record": 5.0,
+      "score_distribution": {
+        "1": 342,
+        "0": 168
+      }
+    },
+    "hold": {
+      "total_annotations": 204,
+      "avg_score": 0.196,
+      "score_std": 0.397,
+      "avg_count_per_record": 2.0,
+      "score_distribution": {
+        "0": 164,
+        "1": 40
+      }
+    }
+  },
+  "profile_html": "synthetic_helpline_qa_scoring_v1_profile.html",
+  "failed_records_csv": "synthetic_helpline_qa_scoring_v1_failed.csv",
+  "qc_score": 67
+}
