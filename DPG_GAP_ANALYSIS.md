@@ -10,7 +10,7 @@
 | DPG Area | Requirement | Current State | Evidence (Link / Doc) | Gap Identified? (Y/N) | Corrective Action Required | Owner | Deadline | Review Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Licensing** | OSI-approved license applied | ✅ Present | [`LICENSE`](./LICENSE) | N | None | - | - | Ready |
-| **Licensing** | License compatibility across dependencies | ⚠️ Unverified | - | Y | Run dependency license audit & generate report | Tech Lead | TBD | Pending |
+| **Licensing** | License compatibility across dependencies | ✅ Verified | [`LICENSE_AUDIT.md`](./LICENSE_AUDIT.md) | N | None (Audit Complete) | Tech Lead | - | Ready |
 | **Accessibility** | Public repository accessible | ✅ Present | [GitHub Repository](https://github.com/openchlai/ai) | N | None | - | - | Ready |
 | **Accessibility** | Repo accessible without login/paywall | ✅ Verified | [GitHub Repository](https://github.com/openchlai/ai) | N | None | - | - | Ready |
 | **Interoperability** | Uses open standards (APIs, formats) | ⚠️ Partial | [`ai_docs/docs/developer-documentation/api.md`](./ai_docs/docs/developer-documentation/api.md) | Y | Create `ARCHITECTURE.md` with diagrams | Architect | TBD | Pending |
@@ -42,3 +42,14 @@
 You are DPG-Review Ready only if:
 - All rows show **Gap Identified = No**
 - Final sign-off recorded by DPG Compliance Lead
+
+## 📝 Tech Lead To-Do List (Next Steps)
+
+This section tracks the remaining critical actions for the Tech Lead to ensure DPG Readiness.
+
+- [ ] **Architecture Documentation**: Create `ARCHITECTURE.md` including a system diagram to prove interoperability.
+- [ ] **Test Coverage**: Work with QA Lead to increase test coverage from **75%** to the required **80%**.
+- [ ] **Data Flow & Privacy**: Assist Data Lead in mapping data flows to demonstrate data minimization (Privacy Map).
+- [ ] **Model Cards**: Ensure `models/README.md` or specific Model Cards are created for all AI models (Ethical AI requirement).
+- [ ] **Roadmap**: Create or enable a public `ROADMAP.md` or confirm the public Project Board URL.
+- [ ] **Final Sign-Off**: Review and sign `LICENSE_AUDIT.md` and this Gap Analysis.
