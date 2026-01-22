@@ -24,10 +24,10 @@ export default defineConfig({
     cors: true, // important for dev CORS
     proxy: {
       '/api-proxy': {
-        target: 'https://demo-openchs.bitz-itc.com',
+        target: process.env.VITE_BACKEND_URL || 'https://demo-openchs.bitz-itc.com',
         changeOrigin: true, // rewrite Host header
         secure: false,      // allow self-signed SSL
-        rewrite: (path) => path.replace(/^\/api-proxy/, '/helpline'),
+        rewrite: (path) => path.replace(/^\/api-proxy/, process.env.VITE_BACKEND_PATH || '/helpline'),
         configure: (proxy) => {
           proxy.on('proxyReq', (_proxyReq, req) => {
             console.log(`[proxy] ${req.method} ${req.url} -> ${proxy.target}${req.url}`);
