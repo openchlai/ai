@@ -22,17 +22,22 @@ class TestQAModelBasic:
 
     def test_qa_load_success(self):
         """Test successful QA loading"""
-        with patch("transformers.AutoTokenizer.from_pretrained") as mock_tok, \
-             patch("transformers.AutoModelForQuestionAnswering.from_pretrained") as mock_model, \
-             patch("os.path.exists", return_value=True):
-            
+        with patch("transformers.DistilBertTokenizer.from_pretrained") as mock_tok, \
+             patch("transformers.DistilBertModel.from_pretrained") as mock_distilbert, \
+             patch("huggingface_hub.hf_hub_download") as mock_hf_download, \
+             patch("torch.load") as mock_torch_load:
+
             mock_tok.return_value = MagicMock()
-            mock_model.return_value = MagicMock()
-            
+            mock_distilbert.return_value = MagicMock()
+            mock_hf_download.return_value = "/fake/model/path.bin"
+            mock_torch_load.return_value = {}
+
             from app.model_scripts.qa_model import QAModel
             model = QAModel()
+            # Mock the settings attribute directly
+            model.settings.hf_qa_model = "openchs/qa-helpline-distilbert-v1"
             result = model.load()
-            
+
             assert result is True
             assert model.loaded is True
 
@@ -48,10 +53,11 @@ class TestQAModelBasic:
 
     def test_qa_basic_methods(self):
         """Test basic QA methods"""
-        with patch("transformers.AutoTokenizer.from_pretrained") as mock_tok, \
-             patch("transformers.AutoModelForQuestionAnswering.from_pretrained") as mock_model, \
-             patch("os.path.exists", return_value=True):
-            
+        with patch("transformers.DistilBertTokenizer.from_pretrained") as mock_tok, \
+             patch("transformers.DistilBertModel.from_pretrained") as mock_distilbert, \
+             patch("huggingface_hub.hf_hub_download") as mock_hf_download, \
+             patch("torch.load") as mock_torch_load:
+
             mock_tokenizer = MagicMock()
             mock_tokenizer.encode_plus.return_value = {
                 'input_ids': [[1, 2, 3]],
@@ -59,18 +65,20 @@ class TestQAModelBasic:
             }
             mock_tokenizer.decode.return_value = "Answer text"
             mock_tok.return_value = mock_tokenizer
-            
-            mock_model_instance = MagicMock()
-            mock_model_instance.return_value = MagicMock(start_logits=[1, 2, 3], end_logits=[1, 2, 3])
-            mock_model.return_value = mock_model_instance
-            
+
+            mock_distilbert.return_value = MagicMock()
+            mock_hf_download.return_value = "/fake/model/path.bin"
+            mock_torch_load.return_value = {}
+
             from app.model_scripts.qa_model import QAModel
             model = QAModel()
+            # Mock the settings attribute directly
+            model.settings.hf_qa_model = "openchs/qa-helpline-distilbert-v1"
             model.load()
-            
+
             # Test is_ready
             assert model.is_ready() is True
-            
+
             # Test get_model_info
             info = model.get_model_info()
             assert isinstance(info, dict)

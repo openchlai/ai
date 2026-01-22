@@ -28,9 +28,18 @@ class TestTranslatorModelLoading:
     @patch('app.model_scripts.translator_model.AutoTokenizer')
     @patch('app.model_scripts.translator_model.AutoModelForSeq2SeqLM')
     @patch('os.path.exists')
-    def test_load_translator_success(self, mock_exists, mock_model_class, mock_tokenizer_class):
+    @patch('os.getenv')
+    def test_load_translator_success(self, mock_getenv, mock_exists, mock_model_class, mock_tokenizer_class):
         """Test successful translator loading"""
+        import os as os_module
         from app.model_scripts.translator_model import TranslationModel
+
+        # Mock environment variable for HuggingFace model
+        def getenv_side_effect(key, default=None):
+            if key == "TRANSLATION_HF_REPO_ID":
+                return "openchs/sw-en-opus-mt-mul-en-v1"
+            return os_module.environ.get(key, default)
+        mock_getenv.side_effect = getenv_side_effect
 
         mock_exists.return_value = True
 

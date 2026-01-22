@@ -30,9 +30,18 @@ class TestSummarizerModelLoading:
     @patch('app.model_scripts.summarizer_model.AutoModelForSeq2SeqLM')
     @patch('app.model_scripts.summarizer_model.AutoTokenizer')
     @patch('os.makedirs')
-    def test_load_summarizer_success(self, mock_makedirs, mock_tokenizer_class, mock_model_class, mock_pipeline, mock_exists):
+    @patch('os.getenv')
+    def test_load_summarizer_success(self, mock_getenv, mock_makedirs, mock_tokenizer_class, mock_model_class, mock_pipeline, mock_exists):
         """Test successful summarizer loading"""
+        import os as os_module
         from app.model_scripts.summarizer_model import SummarizationModel
+
+        # Mock environment variable for HuggingFace model
+        def getenv_side_effect(key, default=None):
+            if key == "SUMMARIZATION_HF_REPO_ID":
+                return "openchs/sum-flan-t5-base-synthetic-v1"
+            return os_module.environ.get(key, default)
+        mock_getenv.side_effect = getenv_side_effect
 
         mock_exists.return_value = True
 
