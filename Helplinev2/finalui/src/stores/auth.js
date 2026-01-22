@@ -109,9 +109,12 @@ export const useAuthStore = defineStore('auth', {
 
         const credentials = btoa(`${username}:${password}`)
 
-        const response = await axiosInstance.get('/api/', {
+        // Use POST request with Basic Auth (matching control UI)
+        // Send empty body (not null) to avoid "Invalid Request" error
+        const response = await axiosInstance.post('/api/', '', {
           headers: {
             'Authorization': `Basic ${credentials}`,
+            'Content-Type': 'text/plain',
           },
         })
 

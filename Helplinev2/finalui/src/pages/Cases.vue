@@ -45,22 +45,25 @@
     <div v-else>
       <!-- View Toggle Buttons and Stats Row -->
       <div class="flex justify-between items-center mb-6">
-        <!-- Total Count -->
-        <div 
+        <!-- Total Count with Pagination Info -->
+        <div
           class="flex items-center gap-2"
           :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'"
         >
-          <i-mdi-folder-outline 
+          <i-mdi-folder-outline
             class="w-5 h-5"
             :class="isDarkMode ? 'text-amber-500' : 'text-amber-600'"
           />
-          <span class="text-sm">Total Cases:</span>
-          <span 
+          <span class="text-sm">
+            Showing {{ casesStore.paginationInfo.rangeStart }} - {{ casesStore.paginationInfo.rangeEnd }} of
+          </span>
+          <span
             class="text-lg font-bold"
             :class="isDarkMode ? 'text-amber-500' : 'text-amber-600'"
           >
-            {{ casesStore.caseCount }}
+            {{ casesStore.paginationInfo.total }}
           </span>
+          <span class="text-sm">cases</span>
         </div>
 
         <!-- View Toggle Buttons -->
@@ -120,6 +123,19 @@
           @select-case="handleCaseSelect"
         />
       </div>
+
+      <!-- Pagination Controls -->
+      <Pagination
+        :paginationInfo="casesStore.paginationInfo"
+        :hasNextPage="casesStore.hasNextPage"
+        :hasPrevPage="casesStore.hasPrevPage"
+        :loading="casesStore.loading"
+        :pageSize="selectedPageSize"
+        @prev="goToPrevPage"
+        @next="goToNextPage"
+        @goToPage="goToPage"
+        @changePageSize="changePageSize"
+      />
     </div>
 
     <!-- Case Details Panel -->
@@ -146,12 +162,14 @@ import Table from '@/components/cases/Table.vue'
 import Timeline from '@/components/cases/Timeline.vue'
 import CasesFilter from '@/components/cases/CasesFilter.vue'
 import CaseDetailsPanel from '@/components/cases/CaseDetailsPanel.vue'
+import Pagination from '@/components/base/Pagination.vue'
 
 const router = useRouter()
 const casesStore = useCaseStore()
 const authStore = useAuthStore()
 const currentView = ref('timeline')
 const currentFilters = ref({})
+const selectedPageSize = ref(20)
 
 // ✅ FIXED: Case details panel state
 const showDetailsPanel = ref(false)
@@ -201,20 +219,22 @@ const getViewButtonClass = (isActive) => {
 onMounted(async () => {
   try {
     console.log('Fetching cases...')
-    await casesStore.listCases({ limit: 50 })
+    await casesStore.listCases({ _o: 0, _c: selectedPageSize.value })
     console.log('Cases fetched:', casesStore.cases)
+    console.log('Pagination info:', casesStore.paginationInfo)
   } catch (err) {
     console.error('Failed to fetch cases:', err)
     toast.error('Failed to load cases')
   }
 })
 
-// Apply filters and fetch cases
+// Apply filters and fetch cases (resets to first page)
 async function applyFilters(filters) {
   currentFilters.value = filters
   try {
     console.log('Applying filters:', filters)
-    await casesStore.listCases({ ...filters, limit: 50 })
+    casesStore.resetPagination()
+    await casesStore.listCases({ ...filters, _o: 0, _c: selectedPageSize.value })
     console.log('Filtered cases fetched:', casesStore.cases)
   } catch (err) {
     console.error('Error fetching filtered cases:', err)
@@ -222,16 +242,59 @@ async function applyFilters(filters) {
   }
 }
 
-// Refresh cases with current filters
+// Refresh cases with current filters (maintains current page)
 async function refreshCases() {
   try {
     console.log('Refreshing cases...')
-    await casesStore.listCases({ ...currentFilters.value, limit: 50 })
+    await casesStore.listCases({
+      ...currentFilters.value,
+      _o: casesStore.pagination.offset,
+      _c: casesStore.pagination.limit
+    })
     console.log('Cases refreshed')
     toast.success('Cases refreshed successfully!')
   } catch (err) {
     console.error('Error refreshing cases:', err)
     toast.error('Failed to refresh cases')
+  }
+}
+
+// Pagination handlers
+async function goToNextPage() {
+  try {
+    await casesStore.nextPage(currentFilters.value)
+  } catch (err) {
+    console.error('Error going to next page:', err)
+    toast.error('Failed to load next page.')
+  }
+}
+
+async function goToPrevPage() {
+  try {
+    await casesStore.prevPage(currentFilters.value)
+  } catch (err) {
+    console.error('Error going to previous page:', err)
+    toast.error('Failed to load previous page.')
+  }
+}
+
+async function goToPage(page) {
+  if (page === '...') return
+  try {
+    await casesStore.goToPage(page, currentFilters.value)
+  } catch (err) {
+    console.error('Error going to page:', err)
+    toast.error('Failed to load page.')
+  }
+}
+
+async function changePageSize(size) {
+  selectedPageSize.value = size
+  try {
+    await casesStore.setPageSize(size, currentFilters.value)
+  } catch (err) {
+    console.error('Error changing page size:', err)
+    toast.error('Failed to change page size.')
   }
 }
 
