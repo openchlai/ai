@@ -1,16 +1,18 @@
 # app/tasks/audio_tasks.py (Updated)
 import json
 import os
-import socket
-from celery import current_task
 from celery.signals import worker_init
-import numpy as np
 from ..celery_app import celery_app
 import logging
 import asyncio
 from typing import Dict, Any, Optional
 from datetime import datetime
 from ..config.settings import redis_task_client
+from ..core.metrics import (
+    celery_task_duration_seconds,
+    celery_tasks_total,
+    record_upload_size
+)
 
 
 logger = logging.getLogger(__name__)
@@ -18,35 +20,6 @@ logger = logging.getLogger(__name__)
 # Global model loader for Celery worker
 worker_model_loader = None
 
-@worker_init.connect
-def debug_worker_init(**kwargs):
-    """Debug worker initialization paths"""
-    logger.info("🔍 DEBUG: Worker initialization starting...")
-    
-    try:
-        # Debug current working directory
-        cwd = os.getcwd()
-        logger.info(f"🔍 Worker CWD: {cwd}")
-        
-        # Debug settings import
-        from ..config.settings import settings
-        logger.info(f"🔍 Worker models_path: {settings.models_path}")
-        logger.info(f"🔍 Worker models exists: {os.path.exists(settings.models_path)}")
-        
-        if os.path.exists(settings.models_path):
-            contents = os.listdir(settings.models_path)
-            logger.info(f"🔍 Worker models contents: {contents}")
-        else:
-            logger.error(f"🔍 Worker models directory NOT FOUND: {settings.models_path}")
-            
-            # Check if we can find it relatively
-            for possible_path in ["./models", "../models", "models"]:
-                if os.path.exists(possible_path):
-                    logger.info(f"🔍 Found models at relative path: {os.path.abspath(possible_path)}")
-                    
-    except Exception as e:
-        logger.error(f"🔍 Debug failed: {e}")
-        
 @worker_init.connect
 def init_worker(**kwargs):
     """Initialize models and connections when Celery worker starts"""
@@ -228,23 +201,208 @@ def get_worker_status():
             "worker_pid": os.getpid()
         }
 
+def _send_pipeline_notifications(filename: str, result: Dict[str, Any], task_id: str):
+    """
+    Send notifications to the agent system after pipeline processing completes.
+    This runs synchronously in the Celery worker.
+    """
+    try:
+        # Extract call_id from filename (e.g., "call_1763027988.14_20251113_125949.wav16")
+        call_id = None
+        if filename and "call_" in filename:
+            parts = filename.replace("call_", "").split("_")
+            if parts:
+                call_id = parts[0]  # e.g., "1763027988.14"
+
+        if not call_id:
+            logger.warning(f"Could not extract call_id from filename: {filename}")
+            return
+
+        logger.info(f"📤 Sending pipeline notifications for call {call_id}")
+
+        # Import notification service
+        from ..services.enhanced_notification_service import (
+            notification_service as enhanced_notification_service,
+            NotificationType,
+            ProcessingMode,
+            NotificationStatus
+        )
+
+        # Determine processing mode (default to post_call if not specified)
+        processing_mode_value = "post_call"  # Default
+
+        # Create async loop for sending notifications
+        loop = None
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            # No running loop, create a new one
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        async def send_notifications():
+            """Send all post-call notifications"""
+
+            # 1. Send transcription notification
+            if result.get('transcript'):
+                success = await enhanced_notification_service.send_notification(
+                    call_id=call_id,
+                    notification_type=NotificationType.POSTCALL_TRANSCRIPTION,
+                    processing_mode=ProcessingMode(processing_mode_value),
+                    payload_data={
+                        "transcript": result['transcript'],
+                        "language": result.get('audio_info', {}).get('language_specified', 'sw'),
+                        "transcript_length": len(result['transcript'])
+                    }
+                )
+                if success:
+                    logger.info(f"✅ Sent transcription notification for {call_id}")
+                else:
+                    logger.warning(f"⚠️ Failed to send transcription notification for {call_id}")
+
+            # 2. Send translation notification
+            if result.get('translation'):
+                success = await enhanced_notification_service.send_notification(
+                    call_id=call_id,
+                    notification_type=NotificationType.POSTCALL_TRANSLATION,
+                    processing_mode=ProcessingMode(processing_mode_value),
+                    payload_data={
+                        "translation": result['translation'],
+                        "source_language": "sw",
+                        "target_language": "en",
+                        "translation_length": len(result['translation'])
+                    }
+                )
+                if success:
+                    logger.info(f"✅ Sent translation notification for {call_id}")
+                else:
+                    logger.warning(f"⚠️ Failed to send translation notification for {call_id}")
+
+            # 3. Send entities notification
+            if result.get('entities'):
+                success = await enhanced_notification_service.send_notification(
+                    call_id=call_id,
+                    notification_type=NotificationType.POSTCALL_ENTITIES,
+                    processing_mode=ProcessingMode(processing_mode_value),
+                    payload_data={
+                        "entities": result['entities'],
+                        "entities_count": len(result['entities'])
+                    }
+                )
+                if success:
+                    logger.info(f"✅ Sent entities notification for {call_id}")
+                else:
+                    logger.warning(f"⚠️ Failed to send entities notification for {call_id}")
+
+            # 4. Send classification notification
+            if result.get('classification'):
+                success = await enhanced_notification_service.send_notification(
+                    call_id=call_id,
+                    notification_type=NotificationType.POSTCALL_CLASSIFICATION,
+                    processing_mode=ProcessingMode(processing_mode_value),
+                    payload_data={
+                        "classification": result['classification']
+                    }
+                )
+                if success:
+                    logger.info(f"✅ Sent classification notification for {call_id}")
+                else:
+                    logger.warning(f"⚠️ Failed to send classification notification for {call_id}")
+
+            # 5. Send QA scoring notification
+            if result.get('qa_scores'):
+                success = await enhanced_notification_service.send_notification(
+                    call_id=call_id,
+                    notification_type=NotificationType.POSTCALL_QA_SCORING,
+                    processing_mode=ProcessingMode(processing_mode_value),
+                    payload_data={
+                        "qa_scores": result['qa_scores']
+                    }
+                )
+                if success:
+                    logger.info(f"✅ Sent QA scoring notification for {call_id}")
+                else:
+                    logger.warning(f"⚠️ Failed to send QA scoring notification for {call_id}")
+
+            # 6. Send summary notification
+            if result.get('summary'):
+                success = await enhanced_notification_service.send_notification(
+                    call_id=call_id,
+                    notification_type=NotificationType.POSTCALL_SUMMARY,
+                    processing_mode=ProcessingMode(processing_mode_value),
+                    payload_data={
+                        "summary": result['summary'],
+                        "insights": result.get('insights')
+                    }
+                )
+                if success:
+                    logger.info(f"✅ Sent summary notification for {call_id}")
+                else:
+                    logger.warning(f"⚠️ Failed to send summary notification for {call_id}")
+
+            # 7. Send final completion notification
+            success = await enhanced_notification_service.send_notification(
+                call_id=call_id,
+                notification_type=NotificationType.POSTCALL_COMPLETE,
+                processing_mode=ProcessingMode(processing_mode_value),
+                payload_data={
+                    "processing_time": result.get('pipeline_info', {}).get('total_time', 0),
+                    "models_used": result.get('pipeline_info', {}).get('models_used', []),
+                    "status": "completed"
+                },
+                status=NotificationStatus.SUCCESS
+            )
+            if success:
+                logger.info(f"✅ Sent completion notification for {call_id}")
+            else:
+                logger.warning(f"⚠️ Failed to send completion notification for {call_id}")
+
+            # 8. Create agent feedback entries for all completed tasks
+            await enhanced_notification_service.create_feedback_entries(
+                call_id=call_id,
+                pipeline_results=result,
+                processing_mode=processing_mode_value
+            )
+            logger.info(f"✅ Created feedback entries for {call_id}")
+
+        # Run the async function
+        if loop.is_running():
+            # If event loop is already running (shouldn't happen in Celery worker)
+            asyncio.create_task(send_notifications())
+        else:
+            # Run until complete
+            loop.run_until_complete(send_notifications())
+
+        logger.info(f"📤 All notifications sent successfully for call {call_id}")
+
+    except Exception as e:
+        logger.error(f"Failed to send pipeline notifications: {e}", exc_info=True)
+
 @celery_app.task(bind=True, name="process_audio_task")
-def process_audio_task(self, audio_bytes, filename, language=None, include_translation=True, include_insights=True):
+def process_audio_task(self, audio_bytes, filename, language=None, include_translation=True, include_insights=True, processing_mode=None):
     """Simplified error handling to avoid serialization issues"""
-    
+
+    start_time = datetime.now()
+
+    # Track upload size
+    try:
+        record_upload_size("/audio/process", len(audio_bytes))
+    except Exception:
+        pass
+
     # Store basic task info in Redis (not complex objects)
     task_info = {
         "task_id": self.request.id,
         "filename": filename,
-        "started": datetime.now().isoformat(),
+        "started": start_time.isoformat(),
         "status": "processing"
     }
-    
+
     try:
         redis_task_client.hset("active_audio_tasks", self.request.id, json.dumps(task_info))
     except Exception:
         pass  # Don't fail if Redis logging fails
-    
+
     try:
         # MINIMAL state updates - only basic progress
         self.update_state(state="PROCESSING", meta={"progress": 10, "step": "starting"})
@@ -266,26 +424,36 @@ def process_audio_task(self, audio_bytes, filename, language=None, include_trans
             redis_task_client.hdel("active_audio_tasks", self.request.id)
         except Exception:
             pass
-        
+
+        # Track metrics
+        task_duration = (datetime.now() - start_time).total_seconds()
+        celery_task_duration_seconds.labels(task="process_audio", state="SUCCESS").observe(task_duration)
+        celery_tasks_total.labels(task="process_audio", state="SUCCESS").inc()
+
         # Return simple result - no complex nested objects
         return {
             "status": "completed",
             "filename": filename,
             "result": result  # Make sure this is JSON-serializable
         }
-        
+
     except Exception as e:
         logger.error(f"Audio processing failed: {e}")
-        
+
+        # Track metrics
+        task_duration = (datetime.now() - start_time).total_seconds()
+        celery_task_duration_seconds.labels(task="process_audio", state="FAILURE").observe(task_duration)
+        celery_tasks_total.labels(task="process_audio", state="FAILURE").inc()
+
         # Clean up Redis
         try:
             redis_task_client.hdel("active_audio_tasks", self.request.id)
         except Exception:
             pass
-        
+
         # SIMPLE error handling - no complex state updates
         error_msg = str(e)[:500]  # Limit error message length
-        
+
         # Let Celery handle the failure automatically
         raise RuntimeError(error_msg)
 
@@ -311,6 +479,10 @@ def _process_audio_sync_worker(
     transcript = None
     is_pretranscribed = False
     try:
+        # Validate audio_bytes first
+        if audio_bytes is None:
+            raise ValueError("Audio bytes cannot be None - check if audio data is being passed correctly to the task")
+        
         # Try to decode as JSON to check for pre-transcribed flag
         data_str = audio_bytes.decode('utf-8')
         transcript_data = json.loads(data_str)
@@ -331,8 +503,6 @@ def _process_audio_sync_worker(
         try:
             # Use synchronous Redis client for Celery worker compatibility
             import redis
-            import json
-            from datetime import datetime
             from ..config.settings import get_redis_url
             
             # Create synchronous Redis client
@@ -367,15 +537,18 @@ def _process_audio_sync_worker(
     
     # Publish initial start
     publish_update("started", 5, f"Starting audio processing for {filename}")
-    
-    # Step 1: Transcription
+
+    # Initialize variables
+    translation = None
+
+    # Step 1: Audio Processing (Transcription ONLY)
     task_instance.update_state(
         state="PROCESSING",
         meta={"step": "transcription", "progress": 10}
     )
-    
+
     step_start = datetime.now()
-    
+
     if is_pretranscribed:
         # Skip transcription for pre-transcribed text
         publish_update("transcription", 30, "Using pre-transcribed text...")
@@ -384,12 +557,12 @@ def _process_audio_sync_worker(
     else:
         # Normal audio transcription
         publish_update("transcription", 10, "Starting audio transcription...")
-        
+
         whisper_model = models.models.get("whisper")
         if not whisper_model:
             publish_update("transcription_error", 10, "Whisper model not available")
             raise RuntimeError("Whisper model not available in worker")
-        
+
         # Check if model supports streaming transcription
         if hasattr(whisper_model, 'transcribe_streaming'):
             # Stream partial transcription results
@@ -398,49 +571,51 @@ def _process_audio_sync_worker(
                 transcript = partial_transcript
                 stream_progress = 10 + int(progress_pct * 0.2)  # 10-30% range
                 publish_update(
-                    "transcription", 
-                    stream_progress, 
+                    "transcription",
+                    stream_progress,
                     f"Transcribing... ({progress_pct:.1f}%)",
                     partial_result={"transcript": transcript, "is_final": False}
                 )
         else:
-            # Fallback to regular transcription
+            # Fallback to regular transcription (no task parameter)
             transcript = whisper_model.transcribe_audio_bytes(audio_bytes, language=language)
-        
+
         # Calculate transcription duration for normal processing
         transcription_duration = (datetime.now() - step_start).total_seconds()
-    
+
     # Publish final transcription
     publish_update(
-        "transcription_complete", 
-        30, 
+        "transcription_complete",
+        30,
         "Transcription completed",
         partial_result={"transcript": transcript, "is_final": True},
         metadata={"duration": transcription_duration}
     )
-    
+
     processing_steps["transcription"] = {
         "duration": transcription_duration,
         "status": "completed",
         "output_length": len(transcript)
     }
     
-    # Step 2: Translation (if enabled)
-    translation = None
+    # Step 2: Translation (if enabled, always use custom translator)
     if include_translation:
         task_instance.update_state(
             state="PROCESSING",
             meta={"step": "translation", "progress": 35}
         )
-        publish_update("translation", 35, "Starting translation...")
-        
+
         step_start = datetime.now()
+
+        # Always use custom translation model
+        publish_update("translation", 35, "Starting translation...")
+
         try:
             translator_model = models.models.get("translator")
             if not translator_model:
                 publish_update("translation_error", 35, "Translator model not available")
                 raise RuntimeError("Translator model not available")
-            
+
             # Check if model supports streaming translation
             if hasattr(translator_model, 'translate_streaming'):
                 # Stream partial translation results
@@ -449,16 +624,34 @@ def _process_audio_sync_worker(
                     translation = partial_translation
                     stream_progress = 35 + int(progress_pct * 0.15)  # 35-50% range
                     publish_update(
-                        "translation", 
-                        stream_progress, 
+                        "translation",
+                        stream_progress,
                         f"Translating... ({progress_pct:.1f}%)",
                         partial_result={"translation": translation, "is_final": False}
                     )
             else:
                 # Fallback to regular translation
                 translation = translator_model.translate(transcript)
-            
-            # Publish final translation
+
+            processing_steps["translation"] = {
+                "duration": (datetime.now() - step_start).total_seconds(),
+                "status": "completed",
+                "method": "custom_model",
+                "output_length": len(translation)
+            }
+
+        except Exception as e:
+            logger.error(f"❌ Translation failed: {e}")
+            translation = None
+            processing_steps["translation"] = {
+                "duration": (datetime.now() - step_start).total_seconds(),
+                "status": "failed",
+                "method": "custom_model",
+                "error": str(e)
+            }
+
+        # Publish final translation result (if any translation was successful)
+        if translation:
             translation_duration = (datetime.now() - step_start).total_seconds()
             publish_update(
                 "translation_complete", 
@@ -468,71 +661,10 @@ def _process_audio_sync_worker(
                 metadata={"duration": translation_duration}
             )
             
-            processing_steps["translation"] = {
-                "duration": translation_duration,
-                "status": "completed",
-                "output_length": len(translation)
-            }
-            
-            # Run QA analysis immediately after translation since translation is the input for QA
-            if translation and translation.strip():
-                try:
-                    publish_update("qa_analysis", 52, "Running QA analysis on translation...")
-                    qa_start = datetime.now()
-                    
-                    qa_score_model = models.models.get("all_qa_distilbert_v1")
-                    if qa_score_model:
-                        qa_score = qa_score_model.predict(translation, threshold=threshold, return_raw=return_raw)
-                        qa_duration = (datetime.now() - qa_start).total_seconds()
-                        
-                        # Send QA update notification to agent immediately
-                        try:
-                            from ..services.agent_notification_service import agent_notification_service
-                            # Extract call_id from filename or use task_id as fallback
-                            call_id = filename.replace('.wav', '').replace('.mp3', '') if filename else task_id
-                            processing_info = {
-                                "duration": qa_duration,
-                                "model_used": "all_qa_distilbert_v1",
-                                "threshold": threshold,
-                                "input_source": "translated_text",
-                                "input_length": len(translation)
-                            }
-                            # Run async notification in event loop for Celery worker
-                            try:
-                                loop = asyncio.get_event_loop()
-                                if loop.is_running():
-                                    # Event loop is running, create task
-                                    asyncio.create_task(
-                                        agent_notification_service.send_qa_update(call_id, qa_score, processing_info)
-                                    )
-                                else:
-                                    # No running loop, run directly
-                                    loop.run_until_complete(
-                                        agent_notification_service.send_qa_update(call_id, qa_score, processing_info)
-                                    )
-                            except RuntimeError:
-                                # No event loop exists, create one
-                                asyncio.run(
-                                    agent_notification_service.send_qa_update(call_id, qa_score, processing_info)
-                                )
-                            logger.info(f"📤 Sent QA update notification for call {call_id} after translation")
-                            publish_update("qa_complete", 55, "QA analysis completed and sent to agent")
-                        except Exception as notify_error:
-                            logger.error(f"❌ Failed to send QA notification for call {call_id}: {notify_error}")
-                    else:
-                        logger.warning("QA model not available for immediate analysis")
-                except Exception as qa_error:
-                    logger.error(f"❌ QA analysis failed after translation: {qa_error}")
-                    
-        except Exception as e:
-            translation_duration = (datetime.now() - step_start).total_seconds()
-            publish_update("translation_error", 35, f"Translation failed: {str(e)}")
-            processing_steps["translation"] = {
-                "duration": translation_duration,
-                "status": "failed",
-                "error": str(e)
-            }
-            translation = None
+    else:
+        # Translation not requested
+        logger.info("ℹ️ Translation skipped (not requested)")
+        processing_steps["translation"] = {"status": "skipped"}
     
     # Step 3: NLP Processing
     task_instance.update_state(
@@ -661,30 +793,44 @@ def _process_audio_sync_worker(
         state="PROCESSING",
         meta={"step": "qa_scoring", "progress": 90}
     )
+    publish_update("qa_scoring", 90, "Running quality assurance evaluation...")
+
     step_start = datetime.now()
     try:
+        # ← FIXED: Import QA model directly (same as standalone QA endpoint)
+        from ..model_scripts.qa_model import qa_model
+        
+        if not qa_model.is_ready():
+            raise RuntimeError("QA model not ready")
+        
+        qa_score = qa_model.predict(nlp_text, threshold=threshold, return_raw=return_raw)
 
-    
-        qa_score_model = models.models.get("all_qa_distilbert_v1")
-        if not qa_score_model:
-            raise RuntimeError("QA model not available")
-        # threshold = 0.5  # Default threshold
-        # return_raw  = False  # Default to not return raw scores
-        qa_score = qa_score_model.predict(nlp_text, threshold=threshold, return_raw=return_raw)
-        print(f"QA Score: {qa_score}")
-        logger.info(f"QA Score: {qa_score}")
-        logger.info(".........................................................................................................")
+        qa_duration = (datetime.now() - step_start).total_seconds()
+        
+        publish_update(
+            "qa_scoring_complete", 
+            92, 
+            "Quality assurance evaluation completed",
+            partial_result={"qa_scores": qa_score},
+            metadata={"duration": qa_duration}
+        )
+        
+        logger.info(f"✅ QA Scoring completed in {qa_duration:.3f}s")
+        
         qa_status = {
             "result": qa_score,
-            "duration": (datetime.now() - step_start).total_seconds(),
+            "duration": qa_duration,
             "status": "completed"
         }
 
-
     except Exception as e:
+        qa_duration = (datetime.now() - step_start).total_seconds()
+        publish_update("qa_scoring_error", 90, f"QA scoring failed: {str(e)}")
+        logger.error(f"❌ QA scoring failed: {e}")
+        
         qa_status = {
             "result": {},
-            "duration": (datetime.now() - step_start).total_seconds(),
+            "duration": qa_duration,
             "status": "failed",
             "error": str(e)
         }
@@ -751,6 +897,12 @@ def _process_audio_sync_worker(
                 "status": classifier_status["status"],
                 "confidence": classifier_status["result"].get("confidence", 0) if classifier_status["result"] else 0
             },
+
+            "qa_scoring": {  
+                "duration": qa_status["duration"],
+                "status": qa_status["status"],
+                "evaluations_count": len(qa_status["result"]) if qa_status["result"] else 0
+            },
             "summarization": {
                 "duration": summary_status["duration"],
                 "status": summary_status["status"],
@@ -768,13 +920,19 @@ def _process_audio_sync_worker(
     
     # Publish final result
     publish_update(
-        "completed", 
-        100, 
+        "completed",
+        100,
         f"Audio processing completed in {total_processing_time:.2f}s",
         partial_result=result,
         metadata={"total_duration": total_processing_time}
     )
-    
+
+    # Send notifications to agent system
+    try:
+        _send_pipeline_notifications(filename, result, task_id)
+    except Exception as e:
+        logger.error(f"Failed to send pipeline notifications: {e}")
+
     return result
 
 # Add the quick task with similar pattern
@@ -847,7 +1005,7 @@ def process_audio_quick_task(
 
 def _generate_insights(transcript: str, translation: Optional[str], 
                       entities: Dict, classification: Dict, summary: str, qa_scores: Dict) -> Dict[str, Any]:
-    """Generate basic insights from processed data"""
+    """Generate basic insights from processed data including QA evaluation"""
     
     persons = entities.get("PERSON", [])
     locations = entities.get("LOC", []) + entities.get("GPE", [])
@@ -859,6 +1017,29 @@ def _generate_insights(transcript: str, translation: Optional[str],
     # Basic risk assessment
     risk_keywords = ["suicide", "abuse", "violence", "threat", "danger", "crisis", "emergency"]
     risk_score = sum(1 for keyword in risk_keywords if keyword.lower() in primary_text.lower())
+    
+    # Calculate QA summary metrics if QA scores are available
+    qa_summary = None
+    if qa_scores and isinstance(qa_scores, dict):
+        total_metrics = 0
+        passed_metrics = 0
+        
+        for category, metrics in qa_scores.items():
+            if isinstance(metrics, list):
+                for metric in metrics:
+                    total_metrics += 1
+                    if metric.get("prediction", False):
+                        passed_metrics += 1
+        
+        if total_metrics > 0:
+            pass_rate = (passed_metrics / total_metrics) * 100
+            qa_summary = {
+                "total_metrics_evaluated": total_metrics,
+                "metrics_passed": passed_metrics,
+                "metrics_failed": total_metrics - passed_metrics,
+                "pass_rate_percentage": round(pass_rate, 1),
+                "overall_quality": "excellent" if pass_rate >= 80 else "good" if pass_rate >= 60 else "fair" if pass_rate >= 40 else "needs_improvement"
+            }
     
     return {
         "case_overview": {
@@ -887,9 +1068,11 @@ def _generate_insights(transcript: str, translation: Optional[str],
             "persons": persons[:5],
             "locations": locations[:3],
             "organizations": organizations[:3],
-            "key_dates": dates[:3],
-            # "qa_scores": qa_scores if qa_scores else {}
-
+            "key_dates": dates[:3]
+        },
+        "quality_assurance": qa_summary if qa_summary else {
+            "status": "not_evaluated",
+            "message": "QA evaluation not available"
         }
     }
     
@@ -920,16 +1103,19 @@ def process_streaming_audio_task(
         
         start_time = datetime.now()
         call_id = connection_id  # connection_id is now actually call_id
-        
-        # Quick transcription only (no full pipeline for speed)
+
+        # Quick processing (transcription only)
         whisper_model = models.models.get("whisper")
-        if whisper_model: 
-            # Use the PCM transcription method for raw audio bytes
+        if whisper_model:
+            # Use the PCM processing method for transcription only
             transcript = whisper_model.transcribe_pcm_audio(
                 audio_bytes,
                 sample_rate=sample_rate,
                 language=language
             )
+
+            # No translation in streaming mode
+            translation = None
             
             processing_duration = (datetime.now() - start_time).total_seconds()
             
@@ -947,14 +1133,7 @@ def process_streaming_audio_task(
                 # Import session manager and add transcription
                 from ..streaming.call_session_manager import call_session_manager
                 
-                # Debug: Check Redis client availability
-                logger.info(f"🔍 [debug] Celery worker Redis client available: {call_session_manager.redis_client is not None}")
-                if call_session_manager.redis_client:
-                    try:
-                        call_session_manager.redis_client.ping()
-                        logger.info(f"🔍 [debug] Redis ping successful")
-                    except Exception as e:
-                        logger.error(f"🔍 [debug] Redis ping failed: {e}")
+                # Skip Redis debug logs for streaming to reduce verbosity
                 
                 # Add to call session with metadata
                 metadata = {
@@ -964,30 +1143,51 @@ def process_streaming_audio_task(
                     'sample_rate': sample_rate
                 }
                 
-                # Run async operation in sync context
-                updated_session = loop.run_until_complete(
-                    call_session_manager.add_transcription(
-                        call_id, 
-                        transcript, 
-                        duration_seconds, 
-                        metadata
-                    )
-                )
-                
-                # Enhanced logging with session info
-                if updated_session:
-                    logger.info(f"🎵 {processing_duration:<6.2f}s | {duration_seconds:<3.0f}s | {call_id} | "
-                               f"Segment {updated_session.segment_count} | {transcript}")
-                    logger.info(f"📊 Call {call_id}: {updated_session.total_audio_duration:.1f}s total, "
-                               f"{len(updated_session.cumulative_transcript)} chars")
+                # Only add to session if we have actual content (not empty/filtered)
+                if transcript:  # Only process non-empty content
+                    # Run async operation in sync context with retry for race condition
+                    updated_session = None
+                    for retry in range(3):  # Try up to 3 times
+                        try:
+                            updated_session = loop.run_until_complete(
+                                call_session_manager.add_transcription(
+                                    call_id,
+                                    transcript,
+                                    duration_seconds,
+                                    metadata
+                                )
+                            )
+                            if updated_session:
+                                break
+                            
+                            # If session not found and this is first attempt, wait briefly for session creation
+                            if retry < 2:
+                                logger.debug(f"🔄 Session {call_id} not ready, retry {retry + 1}/3 after 500ms")
+                                import time
+                                time.sleep(0.5)
+                                
+                        except Exception as session_error:
+                            logger.error(f"❌ Session operation failed for {call_id} (retry {retry + 1}/3): {session_error}")
+                            if retry == 2:  # Last attempt
+                                raise
+                            import time
+                            time.sleep(0.5)
                 else:
-                    logger.warning(f"⚠️ Could not add to session {call_id}, logging standalone")
-                    logger.info(f"🎵 {processing_duration:<6.2f}s | {duration_seconds:<3.0f}s | {call_id} | {transcript}")
+                    logger.debug(f"📭 Skipping empty content for call {call_id}")
+                    updated_session = None
+                
+                # Concise logging for streaming chunks
+                if updated_session:
+                    if transcript:  # Only log non-empty content
+                        logger.info(f"📡 {call_id} {updated_session.segment_count}/{updated_session.total_audio_duration:.0f}s: {transcript}")
+                    else:
+                        logger.debug(f"📡 {call_id} {updated_session.segment_count}: (silent)")
+                elif transcript:  # Only warn if we had content but couldn't add to session
+                    logger.warning(f"⚠️ Could not add to session {call_id}")
+                # If no content and no session update, that's expected - no warning needed
                 
             except Exception as session_error:
                 logger.error(f"❌ Session update failed for {call_id}: {session_error}")
-                # Fallback logging
-                logger.info(f"🎵 {processing_duration:<6.2f}s | {duration_seconds:<3.0f}s | {call_id} | {transcript}")
             
             return {
                 "call_id": call_id,
@@ -1004,3 +1204,9 @@ def process_streaming_audio_task(
     except Exception as e:
         logger.error(f"❌ Streaming transcription failed: {e}")
         raise
+
+def handle_task_error(self, error_msg, call_id=None):
+    """Consistent error handling for all Celery tasks"""
+    logger.error(error_msg)
+    # log and re-raise - let Celery handle the state
+    raise RuntimeError(error_msg)

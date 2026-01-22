@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  helpline-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: helpline-ui
+    ports:
+      - "8098:80"
+    restart: unless-stopped
+    networks:
+      - helpline-network
+
+networks:
+  helpline-network:
+    driver: bridge

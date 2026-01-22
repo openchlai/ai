@@ -7,12 +7,12 @@ import logging
 from ..streaming.call_session_manager import call_session_manager
 from ..streaming.progressive_processor import progressive_processor
 
-# Import agent notification service for health checks
+# Import enhanced notification service for health checks
 try:
-    from ..services.agent_notification_service import agent_notification_service
-    AGENT_SERVICE_AVAILABLE = True
+    from ..services.enhanced_notification_service import enhanced_notification_service
+    ENHANCED_SERVICE_AVAILABLE = True
 except ImportError:
-    AGENT_SERVICE_AVAILABLE = False
+    ENHANCED_SERVICE_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -309,55 +309,77 @@ async def get_classification_evolution(call_id: str):
 
 @router.get("/agent-service/health", response_model=Dict[str, Any])
 async def get_agent_service_health():
-    """Get health status of agent notification service"""
-    if not AGENT_SERVICE_AVAILABLE:
-        raise HTTPException(status_code=503, detail="Agent notification service not available")
-    
+    """Get health status of enhanced notification service"""
+    if not ENHANCED_SERVICE_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Enhanced notification service not available")
+
     try:
-        health_status = await agent_notification_service.get_health_status()
+        # EnhancedNotificationService doesn't have get_health_status method,
+        # return basic status info instead
+        health_status = {
+            "service": "enhanced_notification_service",
+            "status": "healthy",
+            "endpoint": enhanced_notification_service.endpoint_url,
+            "auth_endpoint": enhanced_notification_service.auth_endpoint_url,
+            "use_base64_encoding": enhanced_notification_service.use_base64,
+            "site_id": enhanced_notification_service.site_id,
+            "token_status": {
+                "has_token": enhanced_notification_service.bearer_token is not None,
+                "token_preview": enhanced_notification_service.bearer_token[:8] + "..." if enhanced_notification_service.bearer_token else None,
+                "expires_at": enhanced_notification_service.token_expires_at.isoformat() if enhanced_notification_service.token_expires_at else None
+            }
+        }
         return health_status
     except Exception as e:
-        logger.error(f"Failed to get agent service health: {e}")
-        raise HTTPException(status_code=500, detail="Failed to retrieve agent service health")
+        logger.error(f"Failed to get enhanced service health: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve enhanced service health")
 
 @router.post("/agent-service/test-auth", response_model=Dict[str, Any])
 async def test_agent_auth():
     """Test authentication token retrieval"""
-    if not AGENT_SERVICE_AVAILABLE:
-        raise HTTPException(status_code=503, detail="Agent notification service not available")
-    
+    if not ENHANCED_SERVICE_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Enhanced notification service not available")
+
     try:
         # Force token refresh
-        agent_notification_service.bearer_token = None
-        token_valid = await agent_notification_service._ensure_valid_token()
-        
+        enhanced_notification_service.bearer_token = None
+        token_valid = await enhanced_notification_service._ensure_valid_token()
+
         return {
             "test_type": "auth_token_fetch",
             "success": token_valid,
-            "token_preview": agent_notification_service.bearer_token[:8] + "..." if agent_notification_service.bearer_token else None,
-            "expires_at": agent_notification_service.token_expires_at.isoformat() if agent_notification_service.token_expires_at else None,
+            "token_preview": enhanced_notification_service.bearer_token[:8] + "..." if enhanced_notification_service.bearer_token else None,
+            "expires_at": enhanced_notification_service.token_expires_at.isoformat() if enhanced_notification_service.token_expires_at else None,
             "message": "Successfully fetched auth token" if token_valid else "Failed to fetch auth token"
         }
     except Exception as e:
         logger.error(f"Failed to test agent auth: {e}")
-        raise HTTPException(status_code=500, detail=f"Auth test failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Auth test failed")
 
 @router.post("/agent-service/test-notification", response_model=Dict[str, Any])
 async def test_agent_notification(call_id: str = "test_call_123"):
     """Test sending a notification to agent endpoint"""
-    if not AGENT_SERVICE_AVAILABLE:
-        raise HTTPException(status_code=503, detail="Agent notification service not available")
-    
+    if not ENHANCED_SERVICE_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Enhanced notification service not available")
+
     try:
-        # Send a test notification
-        test_connection_info = {
+        # Send a test notification using enhanced service
+        from ..models.notification_types import NotificationType, ProcessingMode
+
+        test_payload = {
             "test": True,
             "timestamp": datetime.now().isoformat(),
-            "source": "api_test"
+            "source": "api_test",
+            "message": "Test notification from enhanced service"
         }
-        
-        success = await agent_notification_service.send_call_start(call_id, test_connection_info)
-        
+
+        success = await enhanced_notification_service.send_notification(
+            call_id=call_id,
+            notification_type=NotificationType.STREAMING_CALL_START,
+            processing_mode=ProcessingMode.STREAMING,
+            payload_data=test_payload
+        )
+
         return {
             "test_type": "notification_send",
             "call_id": call_id,
@@ -366,7 +388,7 @@ async def test_agent_notification(call_id: str = "test_call_123"):
         }
     except Exception as e:
         logger.error(f"Failed to test agent notification: {e}")
-        raise HTTPException(status_code=500, detail=f"Notification test failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Notification test failed")
 
 
 # Progressive Processing Endpoints

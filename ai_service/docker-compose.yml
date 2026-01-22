@@ -1,45 +1,101 @@
 services:
-  # Redis for Celery backend
-  redis:
-    image: redis:7-alpine
-    restart: unless-stopped
-    volumes:
-      - redis_data:/data
-      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
-    command: redis-server /usr/local/etc/redis/redis.conf
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 3
+  # Redis for Celery backend (DISABLED - using host Redis)
+  # The host network mode means containers connect to host Redis at localhost:6379
+  # redis:
+  #   image: redis:7-alpine
+  #   network_mode: host
+  #   restart: unless-stopped
+  #   volumes:
+  #     - redis_data:/data
+  #     - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+  #   command: redis-server /usr/local/etc/redis/redis.conf
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 10s
+  #     timeout: 3s
+  #     retries: 3
 
   # Main FastAPI application
   ai-pipeline:
     build: .
-    ports:
-      - "8123:8123"
-      - "8300:8300"
-    depends_on:
-      redis:
-        condition: service_healthy
+    network_mode: host
     environment:
-      - DEBUG=true
-      - LOG_LEVEL=INFO
-      - SITE_ID=dev-local
+      - APP_PORT=${APP_PORT:-8125}
+      - DEBUG=${DEBUG:-true}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - SITE_ID=${SITE_ID:-dev-local}
+      - DATABASE_URL=${DATABASE_URL:-mysql+pymysql://ai_service_user:AiService%402024%21Secure@192.168.8.13:3306/ai_service}
+      - MYSQL_HOST=${MYSQL_HOST:-192.168.8.13}
+      - MYSQL_PORT=${MYSQL_PORT:-3306}
+      - MYSQL_USER=${MYSQL_USER:-ai_service_user}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-AiService@2024!Secure}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-ai_service}
       - ENABLE_MODEL_LOADING=false  # API server doesn't need models
-      - REDIS_URL=redis://redis:6379/0
-      - REDIS_TASK_DB=1
+      - ENABLE_METRICS=true  # Enable Prometheus metrics
+      - REDIS_URL=redis://localhost:6379/0
+      - REDIS_TASK_DB=${REDIS_TASK_DB:-1}
       - DOCKER_CONTAINER=true
       - ENABLE_STREAMING=${ENABLE_STREAMING:-false}
       - MAX_STREAMING_SLOTS=${MAX_STREAMING_SLOTS:-2}
       - MAX_BATCH_SLOTS=${MAX_BATCH_SLOTS:-1}
-      - STREAMING_PORT=${STREAMING_PORT:-8300}
+      - STREAMING_PORT=${STREAMING_PORT:-8301}
       - STREAMING_HOST=${STREAMING_HOST:-0.0.0.0}
-      - REDIS_STREAMING_DB=${REDIS_STREAMING_DB:-2}  # Separate Redis DB for streaming
+      - REDIS_STREAMING_DB=${REDIS_STREAMING_DB:-2}
+      # SCP Audio Download Configuration
+      - SCP_USER=${SCP_USER}
+      - SCP_SERVER=${SCP_SERVER}
+      - SCP_PASSWORD=${SCP_PASSWORD}
+      - SCP_REMOTE_PATH_TEMPLATE=${SCP_REMOTE_PATH_TEMPLATE}
+      - SCP_TIMEOUT_SECONDS=${SCP_TIMEOUT_SECONDS}
+      # HuggingFace Configuration
+      - HF_TOKEN=${HF_TOKEN}
+      - USE_HF_MODELS=${USE_HF_MODELS:-true}
+      - HF_ORGANIZATION=${HF_ORGANIZATION:-openchs}
+      - HF_ASR_MODEL=${HF_ASR_MODEL}
+      - HF_CLASSIFIER_MODEL=${HF_CLASSIFIER_MODEL}
+      - HF_NER_MODEL=${HF_NER_MODEL}
+      - HF_TRANSLATOR_MODEL=${HF_TRANSLATOR_MODEL}
+      - HF_SUMMARIZER_MODEL=${HF_SUMMARIZER_MODEL}
+      - HF_QA_MODEL=${HF_QA_MODEL}
+      - HF_HOME=/app/.cache/huggingface
+      # Processing Mode Configuration
+      - DEFAULT_PROCESSING_MODE=${DEFAULT_PROCESSING_MODE:-post_call}
+      - ENABLE_STREAMING_PROCESSING=${ENABLE_STREAMING_PROCESSING:-false}
+      - ENABLE_POSTCALL_PROCESSING=${ENABLE_POSTCALL_PROCESSING:-true}
+      - ENABLE_SCP_AUDIO_DOWNLOAD=${ENABLE_SCP_AUDIO_DOWNLOAD:-true}
+      # SCP Audio Download Configuration
+      - SCP_USER=${SCP_USER:-administrator}
+      - SCP_SERVER=${SCP_SERVER:-192.168.8.13}
+      - SCP_PASSWORD=${SCP_PASSWORD}
+      - SCP_REMOTE_PATH_TEMPLATE=${SCP_REMOTE_PATH_TEMPLATE:-/home/dat/helpline/calls/{call_id}.wav16}
+      - SCP_TIMEOUT_SECONDS=${SCP_TIMEOUT_SECONDS:-30}
+      # Post-call Processing Settings
+      - POSTCALL_AUDIO_DOWNLOAD_METHOD=${POSTCALL_AUDIO_DOWNLOAD_METHOD:-scp}
+      - POSTCALL_ENABLE_FULL_PIPELINE=${POSTCALL_ENABLE_FULL_PIPELINE:-true}
+      - POSTCALL_CONVERT_TO_WAV=${POSTCALL_CONVERT_TO_WAV:-true}
+      - POSTCALL_DOWNLOAD_TIMEOUT_SECONDS=${POSTCALL_DOWNLOAD_TIMEOUT_SECONDS:-60}
+      # Agent Notification Configuration
+      - ENABLE_AGENT_NOTIFICATIONS=${ENABLE_AGENT_NOTIFICATIONS:-true}
+      - NOTIFICATION_MODE=${NOTIFICATION_MODE:-results_only}
+      - NOTIFICATION_ENDPOINT_URL=${NOTIFICATION_ENDPOINT_URL}
+      - NOTIFICATION_AUTH_ENDPOINT_URL=${NOTIFICATION_AUTH_ENDPOINT_URL}
+      - NOTIFICATION_BASIC_AUTH=${NOTIFICATION_BASIC_AUTH}
+      - NOTIFICATION_REQUEST_TIMEOUT=${NOTIFICATION_REQUEST_TIMEOUT:-10}
+      - NOTIFICATION_MAX_RETRIES=${NOTIFICATION_MAX_RETRIES:-3}
+      - USE_BASE64_ENCODING=${USE_BASE64_ENCODING:-true}
+      # Asterisk Configuration
+      - ASTERISK_SERVER_IP=${ASTERISK_SERVER_IP:-192.168.8.13}
+      # Mock/Debug Settings
+      - MOCK_ENABLED=${MOCK_ENABLED:-false}
+      - MOCK_AUDIO_FOLDER=${MOCK_AUDIO_FOLDER:-./test_audio}
+      - MOCK_USE_FOLDER_FILES=${MOCK_USE_FOLDER_FILES:-true}
+      - MOCK_NOTIFICATIONS=${MOCK_NOTIFICATIONS:-false}
+      - MOCK_SKIP_SCP_DOWNLOAD=${MOCK_SKIP_SCP_DOWNLOAD:-true}
     volumes:
       - ./logs:/app/logs
       - ./temp:/app/temp
       - ./logs/streaming:/app/logs/streaming
+      - db_data:/app/db
     command: >
       sh -c "
         echo 'Container Environment Check:';
@@ -55,7 +111,7 @@ services:
       "
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8123/health"]
+      test: ["CMD", "sh", "-c", "curl -f http://localhost:$${APP_PORT:-8125}/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -63,28 +119,86 @@ services:
   # Celery worker for processing tasks
   celery-worker:
     build: .
-    depends_on:
-      redis:
-        condition: service_healthy
+    network_mode: host
+    user: "1003:1004"  # Run as franklin user to access local cache
     environment:
-      - DEBUG=true
-      - LOG_LEVEL=INFO
-      - ENABLE_MODEL_LOADING=true  # Worker needs models
-      - NUMBA_CACHE_DIR=/tmp/numba_cache  # Writable cache location
-      - NUMBA_DISABLE_JIT=0               # Keep JIT enabled
-      - NUMBA_DISABLE_CACHING=1           # Disable persistent caching 
-      - REDIS_URL=redis://redis:6379/0
-      - REDIS_TASK_DB=1
+      - DEBUG=${DEBUG:-true}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DATABASE_URL=${DATABASE_URL:-mysql+pymysql://ai_service_user:AiService%402024%21Secure@192.168.8.13:3306/ai_service}
+      - MYSQL_HOST=${MYSQL_HOST:-192.168.8.13}
+      - MYSQL_PORT=${MYSQL_PORT:-3306}
+      - MYSQL_USER=${MYSQL_USER:-ai_service_user}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-AiService@2024!Secure}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-ai_service}
+      - ENABLE_MODEL_LOADING=true  # Worker needs to load models
+      - NUMBA_CACHE_DIR=/tmp/numba_cache
+      - NUMBA_DISABLE_JIT=0
+      - NUMBA_DISABLE_CACHING=1
+      - REDIS_URL=redis://localhost:6379/0
+      - REDIS_TASK_DB=${REDIS_TASK_DB:-1}
       - DOCKER_CONTAINER=true
+      # SCP Audio Download Configuration
+      - SCP_USER=${SCP_USER}
+      - SCP_SERVER=${SCP_SERVER}
+      - SCP_PASSWORD=${SCP_PASSWORD}
+      - SCP_REMOTE_PATH_TEMPLATE=${SCP_REMOTE_PATH_TEMPLATE}
+      - SCP_TIMEOUT_SECONDS=${SCP_TIMEOUT_SECONDS}
+      # HuggingFace Configuration
+      - HF_TOKEN=${HF_TOKEN}
+      - USE_HF_MODELS=${USE_HF_MODELS:-true}
+      - HF_ORGANIZATION=${HF_ORGANIZATION:-openchs}
+      - HF_ASR_MODEL=${HF_ASR_MODEL}
+      - HF_CLASSIFIER_MODEL=${HF_CLASSIFIER_MODEL}
+      - HF_NER_MODEL=${HF_NER_MODEL}
+      - HF_TRANSLATOR_MODEL=${HF_TRANSLATOR_MODEL}
+      - HF_SUMMARIZER_MODEL=${HF_SUMMARIZER_MODEL}
+      - HF_QA_MODEL=${HF_QA_MODEL}
+      - HF_HOME=/app/.cache/huggingface
+      # Processing Mode Configuration
+      - DEFAULT_PROCESSING_MODE=${DEFAULT_PROCESSING_MODE:-post_call}
+      - ENABLE_STREAMING_PROCESSING=${ENABLE_STREAMING_PROCESSING:-false}
+      - ENABLE_POSTCALL_PROCESSING=${ENABLE_POSTCALL_PROCESSING:-true}
+      - ENABLE_SCP_AUDIO_DOWNLOAD=${ENABLE_SCP_AUDIO_DOWNLOAD:-true}
+      # SCP Audio Download Configuration
+      - SCP_USER=${SCP_USER:-administrator}
+      - SCP_SERVER=${SCP_SERVER:-192.168.8.13}
+      - SCP_PASSWORD=${SCP_PASSWORD}
+      - SCP_REMOTE_PATH_TEMPLATE=${SCP_REMOTE_PATH_TEMPLATE:-/home/dat/helpline/calls/{call_id}.wav16}
+      - SCP_TIMEOUT_SECONDS=${SCP_TIMEOUT_SECONDS:-30}
+      # Post-call Processing Settings
+      - POSTCALL_AUDIO_DOWNLOAD_METHOD=${POSTCALL_AUDIO_DOWNLOAD_METHOD:-scp}
+      - POSTCALL_ENABLE_FULL_PIPELINE=${POSTCALL_ENABLE_FULL_PIPELINE:-true}
+      - POSTCALL_CONVERT_TO_WAV=${POSTCALL_CONVERT_TO_WAV:-true}
+      - POSTCALL_DOWNLOAD_TIMEOUT_SECONDS=${POSTCALL_DOWNLOAD_TIMEOUT_SECONDS:-60}
+      # Agent Notification Configuration
+      - ENABLE_AGENT_NOTIFICATIONS=${ENABLE_AGENT_NOTIFICATIONS:-true}
+      - NOTIFICATION_MODE=${NOTIFICATION_MODE:-results_only}
+      - NOTIFICATION_ENDPOINT_URL=${NOTIFICATION_ENDPOINT_URL}
+      - NOTIFICATION_AUTH_ENDPOINT_URL=${NOTIFICATION_AUTH_ENDPOINT_URL}
+      - NOTIFICATION_BASIC_AUTH=${NOTIFICATION_BASIC_AUTH}
+      - NOTIFICATION_REQUEST_TIMEOUT=${NOTIFICATION_REQUEST_TIMEOUT:-10}
+      - NOTIFICATION_MAX_RETRIES=${NOTIFICATION_MAX_RETRIES:-3}
+      - USE_BASE64_ENCODING=${USE_BASE64_ENCODING:-true}
+      # Asterisk Configuration
+      - ASTERISK_SERVER_IP=${ASTERISK_SERVER_IP:-192.168.8.13}
+      # Mock/Debug Settings
+      - MOCK_ENABLED=${MOCK_ENABLED:-false}
+      - MOCK_AUDIO_FOLDER=${MOCK_AUDIO_FOLDER:-./test_audio}
+      - MOCK_USE_FOLDER_FILES=${MOCK_USE_FOLDER_FILES:-true}
+      - MOCK_NOTIFICATIONS=${MOCK_NOTIFICATIONS:-false}
+      - MOCK_SKIP_SCP_DOWNLOAD=${MOCK_SKIP_SCP_DOWNLOAD:-true}
     volumes:
       - ./logs:/app/logs
       - ./temp:/app/temp
-    command: celery -A app.celery_app worker --loglevel=info -E --pool=solo --hostname=worker@%h
+      - /home/franklin/.cache/huggingface:/app/.cache/huggingface  # Mount local HuggingFace cache
+      - db_data:/app/db
+    # IMPORTANT: Must specify -Q model_processing,celery to consume from correct queues
+    command: celery -A app.celery_app worker --loglevel=info -E --pool=solo -Q model_processing,celery --hostname=worker@%h
     # Production command with concurrency and GPU support
-    # command: celery -A app.celery_app worker --loglevel=info -E --pool=prefork --concurrency=2 --hostname=worker@%h
+    # command: celery -A app.celery_app worker --loglevel=info -E --pool=prefork --concurrency=2 -Q model_processing,celery --hostname=worker@%h
     restart: unless-stopped
     deploy:
-      replicas: 3  # This sets the default number of worker replicas to 3
+      replicas: 1  # This sets the default number of worker replicas to 3
       resources:
         reservations:
           devices:
@@ -102,15 +216,130 @@ services:
   # Optional: Celery monitoring (Flower)
   flower:
     build: .
-    depends_on:
-      - redis
-      - celery-worker
+    network_mode: host
     environment:
-      - REDIS_URL=redis://redis:6379/0
-    ports:
-      - "5555:5555"
+      - REDIS_URL=redis://localhost:6379/0
+      - REDIS_TASK_DB=${REDIS_TASK_DB:-1}
+      - DOCKER_CONTAINER=true
+      # HuggingFace Configuration (needed for task module imports)
+      - HF_TOKEN=${HF_TOKEN}
+      - USE_HF_MODELS=${USE_HF_MODELS:-true}
+      - HF_ORGANIZATION=${HF_ORGANIZATION:-openchs}
+      - HF_ASR_MODEL=${HF_ASR_MODEL}
+      - HF_CLASSIFIER_MODEL=${HF_CLASSIFIER_MODEL}
+      - HF_NER_MODEL=${HF_NER_MODEL}
+      - HF_TRANSLATOR_MODEL=${HF_TRANSLATOR_MODEL}
+      - HF_SUMMARIZER_MODEL=${HF_SUMMARIZER_MODEL}
+      - HF_QA_MODEL=${HF_QA_MODEL}
+      - HF_HOME=/app/.cache/huggingface
     command: celery -A app.celery_app flower --port=5555
+    restart: unless-stopped
+
+  # ============================================
+  # MONITORING STACK
+  # ============================================
+
+  # Prometheus - Metrics Collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/alerts.yml:/etc/prometheus/alerts.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/consoles'
+      - '--web.console.templates=/usr/share/prometheus/console_libraries'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    networks:
+      - default
+
+  # Grafana - Visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    networks:
+      - default
+
+  # Node Exporter - System Metrics
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    ports:
+      - "9100:9100"
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    restart: unless-stopped
+    networks:
+      - default
+
+  # Redis Exporter - Redis Metrics
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: redis-exporter
+    network_mode: host
+    environment:
+      - REDIS_ADDR=redis://localhost:6379
+    restart: unless-stopped
+
+  # NVIDIA DCGM Exporter - GPU Metrics (Official NVIDIA)
+  dcgm-exporter:
+    image: nvcr.io/nvidia/k8s/dcgm-exporter:3.3.5-3.4.0-ubuntu22.04
+    container_name: dcgm-exporter
+    ports:
+      - "9400:9400"
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    cap_add:
+      - SYS_ADMIN
+    networks:
+      - default
+
+  # Celery Exporter - Task Queue Metrics
+  celery-exporter:
+    image: danihodovic/celery-exporter:latest
+    container_name: celery-exporter
+    network_mode: host
+    command: --broker-url=redis://localhost:6379/0
     restart: unless-stopped
 
 volumes:
   redis_data:
+  huggingface_cache:
+  prometheus_data:
+  grafana_data:
+  db_data:

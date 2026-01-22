@@ -1,5 +1,4 @@
 from fastapi import APIRouter, HTTPException
-from typing import Dict, Any
 import logging
 from datetime import datetime
 
@@ -8,8 +7,8 @@ from app.core.celery_monitor import celery_monitor
 
 from ..core.resource_manager import resource_manager
 from ..model_scripts.model_loader import model_loader
-from ..core.resource_manager import unified_resource_manager
 from ..config.settings import settings
+from ..utils.mode_detector import is_api_server_mode, get_execution_mode
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/health", tags=["health"])
@@ -90,28 +89,85 @@ async def detailed_health():
 @router.get("/models")
 async def models_health():
     """Get detailed model status with dependency info"""
-    model_status = model_loader.get_model_status()
-    system_capabilities = model_loader.get_system_capabilities()
-    ready_models = model_loader.get_ready_models()
-    implementable_models = model_loader.get_implementable_models()
-    blocked_models = model_loader.get_blocked_models()
-    missing_deps = model_loader.get_missing_dependencies_summary()
+    mode = get_execution_mode()
     
-    return {
-        "timestamp": datetime.now().isoformat(),
-        "system_capabilities": system_capabilities,
-        "summary": {
-            "total": len(model_status),
-            "ready": len(ready_models),
-            "implementable": len(implementable_models),
-            "blocked": len(blocked_models)
-        },
-        "ready_models": ready_models,
-        "implementable_models": implementable_models,
-        "blocked_models": blocked_models,
-        "missing_dependencies": missing_deps,
-        "details": model_status
-    }
+    if is_api_server_mode():
+        # API Server mode - check Celery workers for model status
+        try:
+            # Check if Celery is responsive
+            inspect = celery_app.control.inspect(timeout=5.0)
+            active_workers = inspect.active()
+            
+            if not active_workers:
+                return {
+                    "timestamp": datetime.now().isoformat(),
+                    "mode": mode,
+                    "status": "unhealthy",
+                    "reason": "No Celery workers available",
+                    "celery_workers": [],
+                    "models": {}
+                }
+            
+            # Check models on workers using our health check task
+            from ..tasks.health_tasks import health_check_models
+            task = health_check_models.delay()
+            worker_health = task.get(timeout=10)
+            
+            return {
+                "timestamp": datetime.now().isoformat(),
+                "mode": mode,
+                "status": "healthy",
+                "celery_workers": list(active_workers.keys()),
+                "worker_model_status": worker_health,
+                "models": {
+                    "qa": worker_health["models_loaded"]["qa"],
+                    "classifier": worker_health["models_loaded"]["classifier"],
+                    "ner": worker_health["models_loaded"]["ner"],
+                    "summarizer": worker_health["models_loaded"]["summarizer"],
+                    "translator": worker_health["models_loaded"]["translator"],
+                    "whisper": worker_health["models_loaded"]["whisper"]
+                },
+                "summary": {
+                    "total_ready_models": worker_health["total_ready_models"],
+                    "worker_host": worker_health["worker_host"]
+                }
+            }
+            
+        except Exception as e:
+            return {
+                "timestamp": datetime.now().isoformat(),
+                "mode": mode,
+                "status": "error",
+                "error": str(e),
+                "celery_workers": [],
+                "models": {}
+            }
+    else:
+        # Standalone mode - check local models
+        model_status = model_loader.get_model_status()
+        system_capabilities = model_loader.get_system_capabilities()
+        ready_models = model_loader.get_ready_models()
+        implementable_models = model_loader.get_implementable_models()
+        blocked_models = model_loader.get_blocked_models()
+        missing_deps = model_loader.get_missing_dependencies_summary()
+        
+        return {
+            "timestamp": datetime.now().isoformat(),
+            "mode": mode,
+            "status": "healthy",
+            "system_capabilities": system_capabilities,
+            "summary": {
+                "total": len(model_status),
+                "ready": len(ready_models),
+                "implementable": len(implementable_models),
+                "blocked": len(blocked_models)
+            },
+            "ready_models": ready_models,
+            "implementable_models": implementable_models,
+            "blocked_models": blocked_models,
+            "missing_dependencies": missing_deps,
+            "details": model_status
+        }
 
 @router.get("/capabilities")
 async def system_capabilities():

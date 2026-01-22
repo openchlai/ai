@@ -1,6 +1,8 @@
 # Python virtual environments
 .venv/
 venv/
+ai_service/MagicMock/
+./ai_service/MagicMock/
 
 # Environment variables
 .env
@@ -51,6 +53,7 @@ coverage.xml
 
 # Local test databases
 db.sqlite3
+ai/ai_service/ai_service.db
 
 # Logs
 *.log
@@ -62,3 +65,17 @@ db.sqlite3
 *.onnx
 *.pt
 *.pth
+# Load test results
+load_test_*.html
+load_test_*.txt
+load_test_results_*/
+LOAD_TEST_SUMMARY.md
+
+# Monitoring data
+monitoring/grafana/data/
+monitoring/prometheus/data/
+
+# Mock testing folders
+mock_notifications/
+test_audio/
+ai_service.db

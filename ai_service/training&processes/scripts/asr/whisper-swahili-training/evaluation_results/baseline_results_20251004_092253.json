@@ -1,0 +1,8 @@
+{
+  "model": "openai/whisper-large-v2",
+  "language": "sw",
+  "dataset": "mozilla-foundation/common_voice_17_0",
+  "num_samples": 2000,
+  "wer": 89.05,
+  "timestamp": "2025-10-04T09:22:53.223385"
+}

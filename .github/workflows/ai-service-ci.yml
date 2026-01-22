@@ -177,7 +177,7 @@ jobs:
             COVERAGE_DETAILS="No detailed coverage data available"
           fi
 
-          printf '# 📊 Code Coverage Report - AI Service\n\n**Branch:** %s\n**Commit:** [\`%s\`](%s)\n**Generated:** %s\n**Python Version:** %s\n**Workflow:** [\`%s\`](%s)\n\n## 🎯 Coverage Summary\n\n![Coverage](https://img.shields.io/badge/Coverage-%s%%25-%s)\n\n| Metric | Value | Status |\n|--------|-------|--------|\n| **Coverage** | %s%% | %s |\n| **Threshold** | 80%% | Target |\n\n## 📈 Detailed Coverage Report\n\n```\n%s\n```\n\n---\n*Report generated automatically by GitHub Actions*\n*Access this report at: [COVERAGE.md](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/ai_service/COVERAGE.md)*\n' \
+          printf '# 📊 Code Coverage Report - AI Service\n\n**Branch:** %s\n**Commit:** [\`%s\`](%s)\n**Generated:** %s\n**Python Version:** %s\n**Workflow:** [\`%s\`](%s)\n\n## 🎯 Coverage Summary\n\n![Coverage](https://img.shields.io/badge/Coverage-%s%%25-%s)\n\n**Coverage:** %s%%\n\n## 📈 Detailed Coverage Report\n\n```\n%s\n```\n\n---\n*Report generated automatically by GitHub Actions*\n*Access this report at: [COVERAGE.md](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/ai_service/COVERAGE.md)*\n' \
             "${{ github.ref_name }}" \
             "${GITHUB_SHA:0:7}" \
             "https://github.com/${{ github.repository }}/commit/${{ github.sha }}" \
@@ -188,7 +188,6 @@ jobs:
             "${COVERAGE_PERCENTAGE:-0}" \
             "${COVERAGE_COLOR:-red}" \
             "${COVERAGE_PERCENTAGE:-0}" \
-            "$([ "${COVERAGE_PERCENTAGE:-0}" -ge 80 ] && echo "✅ Pass" || echo "❌ Fail")" \
             "${COVERAGE_DETAILS}" > COVERAGE.md
 
           if [ -f COVERAGE.md ]; then
@@ -198,27 +197,55 @@ jobs:
             exit 1
           fi
 
-          echo "COVERAGE_MD_LINK=https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/ai_service/COVERAGE.md" >> $GITHUB_ENV
-
-      - name: 💾 Commit COVERAGE.md to PR branch
-        if: github.event_name == 'pull_request' && matrix.python-version == '3.12'
+      - name: 💾 Commit COVERAGE.md to branch
+        if: matrix.python-version == '3.12'
         working-directory: ai_service
         run: |
-          echo "💾 Committing COVERAGE.md to PR branch ${GITHUB_HEAD_REF}..."
+          # Determine which branch to commit to
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            BRANCH="${GITHUB_HEAD_REF}"
+            echo "💾 Committing COVERAGE.md to PR branch: ${BRANCH}"
+          else
+            BRANCH="${GITHUB_REF_NAME}"
+            echo "💾 Committing COVERAGE.md to pushed branch: ${BRANCH}"
+          fi
+
+          # Skip if pushing to protected branches (main, develop)
+          if [[ "${BRANCH}" == "main" ]] || [[ "${BRANCH}" == "develop" ]]; then
+            echo "⚠️ Skipping commit - ${BRANCH} is a protected branch"
+            echo "ℹ️ COVERAGE.md will be updated via pull request merges"
+            exit 0
+          fi
+
+          # Configure git
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # Ensure we’re on the PR’s HEAD
-          git fetch origin "${GITHUB_HEAD_REF}:${GITHUB_HEAD_REF}" || true
-          git checkout "${GITHUB_HEAD_REF}" || true
+          # Fetch and checkout the correct branch
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            git fetch origin "${BRANCH}:${BRANCH}" || true
+            git checkout "${BRANCH}" || true
+          fi
 
+          # Add and commit the file
           git add COVERAGE.md
           git status --porcelain
-          git commit -m "📊 Update coverage report [skip ci]" || echo "ℹ️ No changes to commit"
-          git push origin HEAD:${GITHUB_HEAD_REF}
-          echo "✅ Pushed COVERAGE.md to PR branch."
 
-
+          # Check if there are changes to commit
+          if git diff --staged --quiet; then
+            echo "ℹ️ No changes to commit - COVERAGE.md is up to date"
+          else
+            git commit -m "📊 Update coverage report [skip ci]"
+            
+            # Push to the appropriate branch
+            if [ "${{ github.event_name }}" == "pull_request" ]; then
+              git push origin HEAD:${BRANCH}
+              echo "✅ Pushed COVERAGE.md to PR branch: ${BRANCH}"
+            else
+              git push origin HEAD:${BRANCH}
+              echo "✅ Pushed COVERAGE.md to branch: ${BRANCH}"
+            fi
+          fi
 
       - name: 📤 Upload Coverage to Codecov
         if: always()
@@ -280,10 +307,5 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📊 Coverage Reports" >> $GITHUB_STEP_SUMMARY
           echo "- Coverage reports have been generated and uploaded as artifacts" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ github.event_name }}" == "push" ]; then
-            echo "- Markdown coverage report committed to a new branch and PR created" >> $GITHUB_STEP_SUMMARY
-            echo "- Access the coverage report at: [COVERAGE.md](${{ env.COVERAGE_MD_LINK }})" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "- Modify this Markdown coverage report committed to PR branch" >> $GITHUB_STEP_SUMMARY
-            echo "- Access the coverage report at: [COVERAGE.md](${{ env.COVERAGE_MD_PR_LINK }})" >> $GITHUB_STEP_SUMMARY
-          fi
+          echo "- COVERAGE.md has been committed to your branch" >> $GITHUB_STEP_SUMMARY
+          echo "- View the report at: \`ai_service/COVERAGE.md\` in your repository" >> $GITHUB_STEP_SUMMARY

@@ -47,13 +47,15 @@ def check_configuration():
         print(f"🔌 Streaming Port: {settings.streaming_port}")
         print(f"🌐 Streaming Host: {settings.streaming_host}")
         
-        # Check agent notification service
-        print("\n🤖 Testing agent notification service...")
-        from app.services.agent_notification_service import agent_notification_service
-        
-        print(f"✅ Agent notification service imported")
-        print(f"📡 Auth endpoint: {agent_notification_service.auth_endpoint_url}")
-        print(f"📤 Message endpoint: {agent_notification_service.endpoint_url}")
+        # Check enhanced notification service
+        print("\n🤖 Testing enhanced notification service...")
+        from app.services.enhanced_notification_service import enhanced_notification_service
+
+        print(f"✅ Enhanced notification service imported")
+        print(f"📡 Auth endpoint: {enhanced_notification_service.auth_endpoint_url}")
+        print(f"📤 Message endpoint: {enhanced_notification_service.endpoint_url}")
+        print(f"🔧 Use Base64: {enhanced_notification_service.use_base64}")
+        print(f"🏢 Site ID: {enhanced_notification_service.site_id}")
         
         return True
         

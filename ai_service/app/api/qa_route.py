@@ -1,20 +1,23 @@
 import logging
 from datetime import datetime
 from typing import Dict, List, Optional
-
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-
+from celery.result import AsyncResult
+from ..tasks.model_tasks import qa_evaluate_task
+from ..model_scripts.model_loader import model_loader
 from ..model_scripts.qa_model import qa_model
+from ..utils.mode_detector import is_api_server_mode
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/qa", tags=["quality_assurance"])
 
-# --- Pydantic Models ---
+
 class QARequest(BaseModel):
-    transcript: str = Field(..., min_length=10, description="The call center transcript to be evaluated.")
-    threshold: Optional[float] = Field(None, ge=0.0, le=1.0, description="Classification threshold. Uses model default if not provided.")
-    return_raw: bool = Field(False, description="If true, include raw prediction probabilities in the response.")
+    transcript: str = Field(..., min_length=10)
+    threshold: Optional[float] = Field(None, ge=0.0, le=1.0)
+    return_raw: bool = Field(False)
+
 
 class SubmetricResult(BaseModel):
     submetric: str
@@ -22,66 +25,140 @@ class SubmetricResult(BaseModel):
     score: str
     probability: Optional[float] = None
 
+
 class QAResponse(BaseModel):
     evaluations: Dict[str, List[SubmetricResult]]
     processing_time: float
     model_info: dict
     timestamp: str
+    # chunk_info: Optional[Dict] = None
 
-# --- API Endpoints ---
-@router.post("/evaluate", response_model=QAResponse)
+
+class QATaskResponse(BaseModel):
+    task_id: str
+    status: str
+    message: str
+    estimated_time: str
+    status_endpoint: str
+
+
+class QATaskStatusResponse(BaseModel):
+    task_id: str
+    status: str
+    result: Optional[QAResponse] = None
+    error: Optional[str] = None
+    progress: Optional[Dict] = None
+
+
+@router.post("/evaluate", response_model=QATaskResponse)
 async def evaluate_transcript(request: QARequest):
-    """Evaluate call center transcript against QA metrics"""
+    """Evaluate transcript (async via Celery)"""
     
-    if not qa_model.is_ready():
-        raise HTTPException(
-            status_code=503, 
-            detail="QA model not ready. Check /health/models for status."
-        )
+    if is_api_server_mode():
+        # API Server mode - delegate to Celery worker
+        # Skip local model check as models are on workers
+        pass
+    else:
+        # Standalone mode - check local model
+        from ..model_scripts.qa_model import qa_model
+        if not qa_model.is_ready():
+            raise HTTPException(
+                status_code=503, 
+                detail="QA model not ready. Check /health/models for status."
+            )
     
     if not request.transcript.strip():
-        raise HTTPException(
-            status_code=400,
-            detail="Transcript cannot be empty"
-        )
+        raise HTTPException(status_code=400, detail="Transcript cannot be empty")
     
     try:
-        start_time = datetime.now()
-        
-        evaluation = qa_model.predict(
-            request.transcript,
-            threshold=request.threshold,
-            return_raw=request.return_raw
+        task = qa_evaluate_task.apply_async(
+            args=[request.transcript, request.threshold, request.return_raw],
+            queue='model_processing'
         )
         
-        processing_time = (datetime.now() - start_time).total_seconds()
-        model_info = qa_model.get_model_info()
+        logger.info(f"📤 QA evaluation task submitted: {task.id}")
         
-        # logger.info(f"QA evaluation processed {len(request.transcript)} chars in {processing_time:.3f}s")
-        
-        return QAResponse(
-            evaluations=evaluation,
-            processing_time=processing_time,
-            model_info=model_info,
-            timestamp=datetime.now().isoformat()
+        return QATaskResponse(
+            task_id=task.id,
+            status="queued",
+            message="QA evaluation started. Check status at /qa/task/{task_id}",
+            estimated_time="15-45 seconds",
+            status_endpoint=f"/qa/task/{task.id}"
         )
         
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"QA evaluation failed: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail=f"Evaluation failed: {str(e)}"
-        )
-    
+        logger.error(f"Failed to submit QA task: {e}")
+        raise HTTPException(status_code=500, detail="Failed to submit task")
+
+
+@router.get("/task/{task_id}", response_model=QATaskStatusResponse)
+async def get_qa_task_status(task_id: str):
+    """Get QA evaluation task status"""
+    try:
+        task_result = AsyncResult(task_id)
+        
+        if task_result.state == 'PENDING':
+            return QATaskStatusResponse(
+                task_id=task_id,
+                status="pending",
+                progress={"message": "Task is queued"}
+            )
+        
+        elif task_result.state == 'PROCESSING':
+            return QATaskStatusResponse(
+                task_id=task_id,
+                status="processing",
+                progress=task_result.info or {}
+            )
+        
+        elif task_result.state == 'SUCCESS':
+            result = task_result.result
+            
+            qa_response = QAResponse(
+                evaluations=result['evaluations'],
+                processing_time=result['processing_time'],
+                model_info=result['model_info'],
+                timestamp=result['timestamp'],
+                # chunk_info=result.get('chunk_info')
+            )
+            
+            return QATaskStatusResponse(
+                task_id=task_id,
+                status="success",
+                result=qa_response
+            )
+        
+        elif task_result.state == 'FAILURE':
+            return QATaskStatusResponse(
+                task_id=task_id,
+                status="failed",
+                error=str(task_result.info) if task_result.info else "Unknown task error"
+            )
+        
+        else:
+            return QATaskStatusResponse(
+                task_id=task_id,
+                status=task_result.state.lower(),
+                progress={"message": f"Task state: {task_result.state}"}
+            )
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Error checking task")
 
 @router.get("/info")
 async def get_qa_info():
     """Get QA model information"""
-    if not qa_model.is_ready():
-        # Return the error from the model if loading failed
-        return {"status": "not_ready", "message": "QA model not loaded", "error": qa_model.error}
-
-    return {"status": "ready", "model_info": qa_model.get_model_info()}
+    if is_api_server_mode():
+        # API Server mode - models are on Celery workers
+        return {"status": "api_server_mode", "message": "QA model loaded on Celery workers", "model_info": {"mode": "api_server"}}
+    else:
+        # Standalone mode - check local model
+        if not qa_model.is_ready():
+            # Return the error from the model if loading failed
+            return {"status": "not_ready", "message": "QA model not loaded", "model_info": qa_model.get_model_info()}
+        return {"status": "ready", "model_info": qa_model.get_model_info()}
 
 @router.post("/demo")
 async def qa_demo():

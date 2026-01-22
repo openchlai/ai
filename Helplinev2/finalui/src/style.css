@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+@layer utilities {
+    .rounded-squircle {
+        mask-image: paint(squircle);
+        --squircle-radius: 20px;
+        --squircle-smooth: 1;
+        -webkit-mask-image: paint(squircle);
+        border-radius: 9999px;
+        /* Fallback */
+    }
+
+    .rounded-apple {
+        border-radius: 12px;
+        /* Apple-style */
+    }
+}

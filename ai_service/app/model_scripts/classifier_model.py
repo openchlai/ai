@@ -1,4 +1,3 @@
-# app/models/classifier_model.py (Fixed)
 import logging
 from typing import Dict, List, Optional
 from datetime import datetime
@@ -48,11 +47,12 @@ class MultiTaskDistilBert(DistilBertPreTrainedModel):
         return (logits_main, logits_sub, logits_interv, logits_priority)
 
 class ClassifierModel:
-    """Multi-task classifier with intelligent chunking support"""
+    """Multi-task classifier with intelligent chunking support and top-2 subcategory predictions"""
     
     def __init__(self, model_path: str = None):
         from ..config.settings import settings
         
+        self.settings = settings
         self.model_path = model_path or settings.get_model_path("classifier")
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.tokenizer = None
@@ -60,9 +60,13 @@ class ClassifierModel:
         self.loaded = False
         self.load_time = None
         self.error = None
-        self.max_length = 256  # Model's maximum token limit
+        self.max_length = 512
         
-        # Category configs - will be loaded in load() method
+        # Hugging Face repo configuration
+        from ..config.settings import settings as _settings
+        self.hf_repo_id = os.getenv("CLASSIFIER_HF_REPO_ID") or getattr(settings, "hf_classifier_model", None)
+        
+        # Category configs
         self.category_info = {}
         self.main_categories = []
         self.sub_categories = []
@@ -82,13 +86,23 @@ class ClassifierModel:
             configs = {}
             for config_name, filename in config_files.items():
                 config_file_path = os.path.join(self.model_path, filename)
-                if not os.path.exists(config_file_path):
-                    raise FileNotFoundError(f"Config file not found: {config_file_path}")
-                
-                with open(config_file_path) as f:
-                    configs[config_name] = json.load(f)
+                if os.path.exists(config_file_path):
+                    with open(config_file_path) as f:
+                        configs[config_name] = json.load(f)
+                else:
+                    if not self.hf_repo_id:
+                        raise FileNotFoundError(f"Config file not found: {config_file_path}")
+                    try:
+                        from huggingface_hub import hf_hub_download
+                        download_path = hf_hub_download(
+                            repo_id=self.hf_repo_id,
+                            filename=filename
+                        )
+                        with open(download_path) as f:
+                            configs[config_name] = json.load(f)
+                    except Exception as hf_err:
+                        raise FileNotFoundError(f"Failed to fetch {filename} from HF repo {self.hf_repo_id}: {hf_err}")
             
-            # Set the category lists
             self.main_categories = configs["main_categories"]
             self.sub_categories = configs["sub_categories"]
             self.interventions = configs["interventions"]
@@ -101,41 +115,41 @@ class ClassifierModel:
                 "priorities": self.priorities
             }
             
-            logger.info(f"✅ Loaded classifier configs: {len(self.main_categories)} main categories, {len(self.sub_categories)} sub categories")
+            logger.info(f" Loaded classifier configs: {len(self.main_categories)} main categories, {len(self.sub_categories)} sub categories")
             return True
             
         except Exception as e:
-            logger.error(f"❌ Failed to load classifier configs: {e}")
+            logger.error(f" Failed to load classifier configs: {e}")
             self.error = f"Config loading failed: {str(e)}"
             return False
 
-    def load(self) -> bool:
-        """Load model and tokenizer"""
+    def _load_category_configs_from_hf(self, model_id: str) -> bool:
+        """Load category configs from HuggingFace model repository"""
         try:
-            logger.info(f"Loading classifier model: {self.model_path}")
+            logger.info(f" Initializing classifier model loader")
             start_time = datetime.now()
             
-            # First load the category configs
-            if not self._load_category_configs():
-                return False
+            if not self.hf_repo_id:
+                raise RuntimeError("CLASSIFIER_HF_REPO_ID or settings.hf_classifier_model must be set for hub loading")
+            logger.info(f" Loading classifier model from Hugging Face Hub: {self.hf_repo_id}")
             
-            # Load tokenizer and model from local path
-            model_files_path = os.path.join(self.model_path, "multitask_distilbert")
-            if not os.path.exists(model_files_path):
-                raise FileNotFoundError(f"Model files not found at: {model_files_path}")
+            from ..config.settings import settings
+            hf_kwargs = settings.get_hf_model_kwargs()
             
             self.tokenizer = AutoTokenizer.from_pretrained(
-                model_files_path,
-                local_files_only=True  # Force local loading
+                self.hf_repo_id,
+                local_files_only=False,
+                **hf_kwargs
             )
             
             self.model = MultiTaskDistilBert.from_pretrained(
-                model_files_path,
-                local_files_only=True,  # Force local loading
+                self.hf_repo_id,
                 num_main=len(self.main_categories),
                 num_sub=len(self.sub_categories),
                 num_interv=len(self.interventions),
-                num_priority=len(self.priorities)
+                num_priority=len(self.priorities),
+                local_files_only=False,
+                **hf_kwargs
             )
             self.model = self.model.to(self.device)
             self.model.eval()
@@ -143,29 +157,48 @@ class ClassifierModel:
             self.loaded = True
             self.load_time = datetime.now()
             load_duration = (self.load_time - start_time).total_seconds()
-            logger.info(f"✅ Classifier model loaded successfully in {load_duration:.2f}s")
+            logger.info(f" Classifier model loaded from Hugging Face Hub ({self.hf_repo_id}) in {load_duration:.2f}s on {self.device}")
             return True
             
         except Exception as e:
             self.error = str(e)
             self.load_time = datetime.now()
-            logger.error(f"❌ Failed to load classifier model: {e}")
+            logger.error(f" Failed to load classifier model: {e}")
             return False
 
     def preprocess_text(self, text: str) -> str:
         """Clean and normalize input text"""
         text = text.lower().strip()
         return re.sub(r'[^a-z0-9\s]', '', text)
+
+    def load(self) -> bool:
+        """Load tokenizer, model weights, and category configs from HF Hub or local files"""
+        try:
+            if not self._load_category_configs():
+                return False
+            if not self.hf_repo_id:
+                raise RuntimeError("HF repo id not configured for classifier")
+            ok = self._load_category_configs_from_hf(self.hf_repo_id)
+            if not ok:
+                return False
+            self.loaded = True
+            return True
+        except Exception as e:
+            logger.error(f" Failed to load classifier: {e}")
+            self.error = str(e)
+            self.loaded = False
+            return False
     
-    def classify(self, narrative: str) -> Dict[str, str]:
+    def classify(self, narrative: str, return_top_k_subcategories: bool = True) -> Dict[str, str]:
         """
         Classify case narrative with automatic chunking for long inputs
         
         Args:
             narrative: Input case description
+            return_top_k_subcategories: If True, return top 2 subcategories
             
         Returns:
-            Dict: Classification results with confidence scores
+            Dict: Classification results with confidence scores and top 2 subcategories
         """
         if not self.loaded or not self.tokenizer or not self.model:
             raise RuntimeError("Classifier model not loaded. Call load() first.")
@@ -176,27 +209,31 @@ class ClassifierModel:
         narrative = narrative.strip()
         
         try:
-            # Check if text needs chunking
             clean_text = self.preprocess_text(narrative)
             token_count = len(self.tokenizer.encode(clean_text, add_special_tokens=True))
             
-            if token_count <= self.max_length - 10:  # Leave buffer
-                # Single classification
-                return self._classify_single(clean_text)
+            if token_count <= self.max_length - 10:
+                # Single classification with top-k
+                return self._classify_single(clean_text, return_top_k=return_top_k_subcategories)
             else:
                 # Chunked classification with aggregation
-                logger.info(f"🔄 Text too long ({token_count} tokens), using chunked classification")
-                return self._classify_chunked(clean_text)
+                logger.info(f" Text too long ({token_count} tokens), using chunked classification")
+                return self._classify_chunked(clean_text, return_top_k=return_top_k_subcategories)
                 
         except Exception as e:
             logger.error(f"Classification failed: {e}")
             raise RuntimeError(f"Classification failed: {str(e)}")
         finally:
-            # Clean up GPU memory
             self._cleanup_memory()
 
-    def _classify_single(self, text: str) -> Dict[str, str]:
-        """Classify a single text chunk"""
+    def _classify_single(self, text: str, return_top_k: bool = True) -> Dict[str, str]:
+        """
+        Classify a single text chunk with optional top-k subcategories
+        
+        Args:
+            text: Preprocessed text
+            return_top_k: If True, return top 2 subcategories
+        """
         try:
             inputs = self.tokenizer(
                 text,
@@ -210,43 +247,71 @@ class ClassifierModel:
                 logits = self.model(**inputs)
                 logits_main, logits_sub, logits_interv, logits_priority = logits
             
-            # Get predictions
+            # Get top-1 predictions for main_category, intervention, priority
             preds_main = torch.argmax(logits_main, dim=1).item()
-            preds_sub = torch.argmax(logits_sub, dim=1).item()
             preds_interv = torch.argmax(logits_interv, dim=1).item()
             preds_priority = torch.argmax(logits_priority, dim=1).item()
             
             # Calculate confidence scores
             main_conf = torch.softmax(logits_main, dim=1).max().item()
-            sub_conf = torch.softmax(logits_sub, dim=1).max().item()
             interv_conf = torch.softmax(logits_interv, dim=1).max().item()
             priority_conf = torch.softmax(logits_priority, dim=1).max().item()
             
-            return {
+            # Get top-k subcategories
+            if return_top_k:
+                sub_probs = torch.softmax(logits_sub, dim=1)
+                top_k_probs, top_k_indices = torch.topk(sub_probs, k=min(2, len(self.sub_categories)), dim=1)
+                
+                # Extract top 2
+                sub_category_1 = self.sub_categories[top_k_indices[0][0].item()]
+                sub_conf_1 = top_k_probs[0][0].item()
+                
+                # Check if we have a second subcategory
+                if top_k_indices.shape[1] > 1:
+                    sub_category_2 = self.sub_categories[top_k_indices[0][1].item()]
+                    sub_conf_2 = top_k_probs[0][1].item()
+                else:
+                    sub_category_2 = None
+                    sub_conf_2 = 0.0
+            else:
+                # Fallback to top-1 only
+                preds_sub = torch.argmax(logits_sub, dim=1).item()
+                sub_category_1 = self.sub_categories[preds_sub]
+                sub_conf_1 = torch.softmax(logits_sub, dim=1).max().item()
+                sub_category_2 = None
+                sub_conf_2 = 0.0
+            
+            # Calculate overall confidence
+            overall_conf = (main_conf + sub_conf_1 + interv_conf + priority_conf) / 4
+            
+            result = {
                 "main_category": self.main_categories[preds_main],
-                "sub_category": self.sub_categories[preds_sub],
+                "sub_category": sub_category_1,
+                "sub_category_2": sub_category_2,
                 "intervention": self.interventions[preds_interv],
                 "priority": str(self.priorities[preds_priority]),
-                "confidence": round((main_conf + sub_conf + interv_conf + priority_conf) / 4, 3),
+                "confidence": round(overall_conf, 3),
                 "confidence_breakdown": {
                     "main_category": round(main_conf, 3),
-                    "sub_category": round(sub_conf, 3),
+                    "sub_category": round(sub_conf_1, 3),
+                    "sub_category_2": round(sub_conf_2, 3),
                     "intervention": round(interv_conf, 3),
                     "priority": round(priority_conf, 3)
                 }
             }
             
+            return result
+            
         except Exception as e:
             logger.error(f"Single classification failed: {e}")
             raise
 
-    def _classify_chunked(self, text: str) -> Dict[str, str]:
+    def _classify_chunked(self, text: str, return_top_k: bool = True) -> Dict[str, str]:
         """Classify text using intelligent chunking and result aggregation"""
         from ..core.text_chunker import text_chunker
         
-        # Get chunks optimized for classification
         chunks = text_chunker.chunk_text(text, strategy="classification")
-        logger.info(f"🔄 Processing {len(chunks)} classification chunks")
+        logger.info(f" Processing {len(chunks)} classification chunks")
         
         chunk_results = []
         
@@ -254,82 +319,139 @@ class ClassifierModel:
             try:
                 logger.debug(f"Classifying chunk {i+1}/{len(chunks)} ({chunk.token_count} tokens)")
                 
-                # Classify individual chunk
-                chunk_result = self._classify_single(chunk.text)
+                # Classify individual chunk with top-k
+                chunk_result = self._classify_single(chunk.text, return_top_k=return_top_k)
                 chunk_results.append(chunk_result)
                 
-                # Clean up between chunks
-                if i % 5 == 0:  # Every 5 chunks
+                if i % 5 == 0:
                     self._cleanup_memory()
                     
             except Exception as e:
                 logger.error(f"Failed to classify chunk {i+1}: {e}")
-                # Use default classification for failed chunk
                 chunk_results.append(self._get_default_classification())
         
         # Aggregate results from all chunks
         aggregated_result = self._aggregate_classification_results(chunk_results, chunks)
-        logger.info(f"✅ Chunked classification completed with {len(chunk_results)} chunks")
+        logger.info(f" Chunked classification completed with {len(chunk_results)} chunks")
         
         return aggregated_result
-
+    
     def _aggregate_classification_results(self, chunk_results: List[Dict], chunks) -> Dict[str, str]:
-        """Aggregate classification results from multiple chunks"""
+        """
+        Aggregate classification results from multiple chunks
+        Now collects ALL subcategory predictions (both top-1 and top-2) for better aggregation
+        """
         if not chunk_results:
             return self._get_default_classification()
         
         if len(chunk_results) == 1:
             return chunk_results[0]
         
-        # Collect all predictions with weights based on chunk size and confidence
+        # Collect votes with weights
         main_votes = Counter()
-        sub_votes = Counter()
+        sub_votes = Counter()  # Will collect BOTH sub_category and sub_category_2
         interv_votes = Counter()
         priority_votes = Counter()
         
         total_weight = 0
         confidence_scores = []
         
+        main_confidences = []
+        sub_confidences = {}  # Track confidences per subcategory
+        interv_confidences = []
+        priority_confidences = []
+        
         for i, result in enumerate(chunk_results):
-            # Weight by chunk size and confidence
             chunk_weight = chunks[i].token_count * result.get("confidence", 0.5)
             total_weight += chunk_weight
             
+            # Standard voting
             main_votes[result["main_category"]] += chunk_weight
-            sub_votes[result["sub_category"]] += chunk_weight
             interv_votes[result["intervention"]] += chunk_weight
             priority_votes[result["priority"]] += chunk_weight
             
             confidence_scores.append(result.get("confidence", 0.5))
+            
+            breakdown = result.get("confidence_breakdown", {})
+            main_confidences.append(breakdown.get("main_category", 0.5))
+            interv_confidences.append(breakdown.get("intervention", 0.5))
+            priority_confidences.append(breakdown.get("priority", 0.5))
+            
+            # COLLECT BOTH TOP-1 AND TOP-2 SUBCATEGORIES
+            sub_cat_1 = result.get("sub_category")
+            sub_cat_2 = result.get("sub_category_2")
+            sub_conf_1 = breakdown.get("sub_category", 0.5)
+            sub_conf_2 = breakdown.get("sub_category_2", 0.0)
+            
+            if sub_cat_1:
+                sub_votes[sub_cat_1] += chunk_weight * sub_conf_1  # Weight by confidence
+                if sub_cat_1 not in sub_confidences:
+                    sub_confidences[sub_cat_1] = []
+                sub_confidences[sub_cat_1].append(sub_conf_1)
+            
+            if sub_cat_2:  # Add second subcategory if present
+                sub_votes[sub_cat_2] += chunk_weight * sub_conf_2
+                if sub_cat_2 not in sub_confidences:
+                    sub_confidences[sub_cat_2] = []
+                sub_confidences[sub_cat_2].append(sub_conf_2)
         
         # Get most common predictions
         final_main = main_votes.most_common(1)[0][0]
-        final_sub = sub_votes.most_common(1)[0][0]
         final_interv = interv_votes.most_common(1)[0][0]
         final_priority = priority_votes.most_common(1)[0][0]
         
-        # Calculate aggregated confidence
-        final_confidence = sum(confidence_scores) / len(confidence_scores)
+        # Get TOP 2 SUBCATEGORIES from aggregated votes
+        sorted_sub_votes = sub_votes.most_common()
         
-        # Apply business logic for priority escalation
+        if len(sorted_sub_votes) >= 2:
+            final_sub_1 = sorted_sub_votes[0][0]
+            final_sub_2 = sorted_sub_votes[1][0]
+            final_sub_conf_1 = sum(sub_confidences[final_sub_1]) / len(sub_confidences[final_sub_1])
+            final_sub_conf_2 = sum(sub_confidences[final_sub_2]) / len(sub_confidences[final_sub_2])
+        elif len(sorted_sub_votes) == 1:
+            final_sub_1 = sorted_sub_votes[0][0]
+            final_sub_2 = None
+            final_sub_conf_1 = sum(sub_confidences[final_sub_1]) / len(sub_confidences[final_sub_1])
+            final_sub_conf_2 = 0.0
+        else:
+            final_sub_1 = "assessment_needed"
+            final_sub_2 = None
+            final_sub_conf_1 = 0.5
+            final_sub_conf_2 = 0.0
+        
+        # Calculate aggregated confidences
+        final_confidence = sum(confidence_scores) / len(confidence_scores)
+        avg_main_conf = sum(main_confidences) / len(main_confidences)
+        avg_interv_conf = sum(interv_confidences) / len(interv_confidences)
+        avg_priority_conf = sum(priority_confidences) / len(priority_confidences)
+        
+        # Apply priority escalation
         final_priority = self._apply_priority_escalation(chunk_results, final_priority)
         
         return {
             "main_category": final_main,
-            "sub_category": final_sub,
+            "sub_category": final_sub_1,
+            "sub_category_2": final_sub_2,
             "intervention": final_interv,
             "priority": final_priority,
             "confidence": round(final_confidence, 3),
+            "confidence_breakdown": {
+                "main_category": round(avg_main_conf, 3),
+                "sub_category": round(final_sub_conf_1, 3),
+                "sub_category_2": round(final_sub_conf_2, 3),
+                "intervention": round(avg_interv_conf, 3),
+                "priority": round(avg_priority_conf, 3)
+            },
             "aggregation_info": {
                 "chunks_processed": len(chunk_results),
-                "aggregation_method": "weighted_voting",
-                "total_weight": round(total_weight, 2)
+                "aggregation_method": "weighted_voting_top_k",
+                "total_weight": round(total_weight, 2),
+                "unique_subcategories_found": len(sorted_sub_votes)
             }
         }
 
     def _apply_priority_escalation(self, chunk_results: List[Dict], default_priority: str) -> str:
         """Apply priority escalation logic for critical cases"""
-        # If any chunk indicates high priority, escalate
         priorities_seen = [result.get("priority", "medium") for result in chunk_results]
         
         if "high" in priorities_seen:
@@ -344,9 +466,17 @@ class ClassifierModel:
         return {
             "main_category": "general_inquiry",
             "sub_category": "assessment_needed",
+            "sub_category_2": None,
             "intervention": "initial_assessment",
             "priority": "medium",
-            "confidence": 0.0
+            "confidence": 0.0,
+            "confidence_breakdown": {
+                "main_category": 0.0,
+                "sub_category": 0.0,
+                "sub_category_2": 0.0,
+                "intervention": 0.0,
+                "priority": 0.0
+            }
         }
 
     def _cleanup_memory(self):
@@ -356,16 +486,7 @@ class ClassifierModel:
         gc.collect()
 
     def classify_with_fallback(self, narrative: str, max_retries: int = 2) -> Optional[Dict[str, str]]:
-        """
-        Classify with fallback strategies for robust processing
-        
-        Args:
-            narrative: Input case description
-            max_retries: Maximum number of retry attempts
-            
-        Returns:
-            Classification result or default if all attempts fail
-        """
+        """Classify with fallback strategies for robust processing"""
         if not narrative or not narrative.strip():
             return self._get_default_classification()
             
@@ -379,7 +500,6 @@ class ClassifierModel:
                     logger.error(f"All classification attempts failed for text length {len(narrative)}")
                     return self._get_default_classification()
                 
-                # Clean up before retry
                 self._cleanup_memory()
         
         return self._get_default_classification()
@@ -394,35 +514,42 @@ class ClassifierModel:
         token_count = len(self.tokenizer.encode(text)) if self.tokenizer else len(text) // 4
         
         if token_count <= self.max_length:
-            return 0.5  # Single chunk
+            return 0.5
         else:
             chunks = text_chunker.chunk_text(text, strategy="classification")
             return text_chunker.estimate_processing_time(chunks, "classification")
 
     def get_model_info(self) -> Dict:
+        """Get standardized model information"""
         info = {
+            "model_type": "classifier",
             "model_path": self.model_path,
+            "hf_repo_id": self.hf_repo_id,
             "loaded": self.loaded,
             "load_time": self.load_time.isoformat() if self.load_time else None,
             "device": str(self.device),
             "error": self.error,
-            "max_length": self.max_length,
-            "chunking_supported": True,
-            "aggregation_strategy": "weighted_voting",
-            "priority_escalation": True,
-            "num_categories": {
-                "main": len(self.main_categories),
-                "sub": len(self.sub_categories),
-                "intervention": len(self.interventions),
-                "priority": len(self.priorities)
-            }
         }
-        
+
         if self.loaded and self.model:
-            info.update({
-                "model_type": type(self.model).__name__,
-                "tokenizer": type(self.tokenizer).__name__
-            })
+            details = {
+                "model_class": type(self.model).__name__,
+                "tokenizer_class": type(self.tokenizer).__name__,
+                "max_length": self.max_length,
+                "top_k_subcategories": True,  # NEW
+                "chunking": {
+                    "supported": True,
+                    "strategy": "weighted_voting_top_k",
+                    "priority_escalation": True,
+                },
+                "categories": {
+                    "main": len(self.main_categories),
+                    "sub": len(self.sub_categories),
+                    "intervention": len(self.interventions),
+                    "priority": len(self.priorities),
+                }
+            }
+            info["details"] = details
         
         return info
     

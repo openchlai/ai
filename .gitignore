@@ -128,6 +128,7 @@ obj/
 temp*/
 gateway/ai_service/db.sqlite3
 gateway/ai_service/audio/
+ai_service/transcription_data_set_1
 
 # Models
 model/
@@ -158,3 +159,12 @@ models/
 *.tflite
 *.weights
 *.ckpt.index
+ai_service/test_audio_workspace/metadata/preprocessing.db
+ai_service/logs/
+ai_service/test_feedback.db
+ai_service/scripts/create_test_feedback.py
+ai_service/tests/test_agent_feedback.py
+# Test mock artifacts (auto-generated, do not commit)
+ai_service/MagicMock/
+ai_service/transcription_data_set_1/1737217551.180138.txt
+ai_service/mock_astteriisk_110_calls.out
