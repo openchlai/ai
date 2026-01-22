@@ -1,6 +1,5 @@
 """
 Comprehensive tests for all remaining model classes
-Focus: NER, Summarizer, Translator, and Whisper models - achieving 95% coverage
 """
 import pytest
 import torch

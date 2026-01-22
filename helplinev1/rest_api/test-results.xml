@@ -1,0 +1,553 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="" tests="225" assertions="1174" errors="3" warnings="0" failures="31" skipped="15" time="0.106720">
+    <testsuite name="Unit" tests="212" assertions="1128" errors="3" warnings="0" failures="28" skipped="14" time="0.097237">
+      <testsuite name="Tests\Unit\SessionManagerTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/SessionManagerTest.php" tests="4" assertions="6" errors="1" warnings="0" failures="1" skipped="0" time="0.015213">
+        <testcase name="testSessionRead" class="Tests\Unit\SessionManagerTest" classname="Tests.Unit.SessionManagerTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/SessionManagerTest.php" line="106" assertions="0" time="0.013339">
+          <error type="TypeError">Tests\Unit\SessionManagerTest::testSessionRead
+TypeError: mysqli_stmt_init(): Argument #1 ($mysql) must be of type mysqli, null given
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/lib/rest.php:202
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/lib/session.php:37
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/SessionManagerTest.php:115
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</error>
+        </testcase>
+        <testcase name="testSessionIdExtraction" class="Tests\Unit\SessionManagerTest" classname="Tests.Unit.SessionManagerTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/SessionManagerTest.php" line="76" assertions="3" time="0.001437">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Unit\SessionManagerTest::testSessionIdExtraction
+Failed asserting that two strings are equal.
+--- Expected
++++ Actual
+@@ @@
+-'test_session_123'
++'j0o1plumo89su66rjkj63lqph7'
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/SessionManagerTest.php:92
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</failure>
+        </testcase>
+        <testcase name="testSessionOpenClose" class="Tests\Unit\SessionManagerTest" classname="Tests.Unit.SessionManagerTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/SessionManagerTest.php" line="100" assertions="2" time="0.000322"/>
+        <testcase name="testSessionWrite" class="Tests\Unit\SessionManagerTest" classname="Tests.Unit.SessionManagerTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/SessionManagerTest.php" line="134" assertions="1" time="0.000115"/>
+      </testsuite>
+      <testsuite name="Tests\Unit\SessionTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/SessionTest.php" tests="11" assertions="6" errors="1" warnings="0" failures="0" skipped="6" time="0.009589">
+        <testcase name="testSs_read_Function" class="Tests\Unit\SessionTest" classname="Tests.Unit.SessionTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/SessionTest.php" line="56" assertions="0" time="0.000287">
+          <error type="TypeError">Tests\Unit\SessionTest::testSs_read_Function
+TypeError: mysqli_stmt_init(): Argument #1 ($mysql) must be of type mysqli, null given
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/lib/rest.php:202
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/lib/session.php:37
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/SessionTest.php:93
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</error>
+        </testcase>
+        <testcase name="testSs_destroy_Function" class="Tests\Unit\SessionTest" classname="Tests.Unit.SessionTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/SessionTest.php" line="110" assertions="0" time="0.000387">
+          <skipped/>
+        </testcase>
+        <testcase name="testSs_gc_Function" class="Tests\Unit\SessionTest" classname="Tests.Unit.SessionTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/SessionTest.php" line="143" assertions="0" time="0.000127">
+          <skipped/>
+        </testcase>
+        <testcase name="testSs_new_Function" class="Tests\Unit\SessionTest" classname="Tests.Unit.SessionTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/SessionTest.php" line="180" assertions="0" time="0.000278">
+          <skipped/>
+        </testcase>
+        <testcase name="testSs_new_phone_Function" class="Tests\Unit\SessionTest" classname="Tests.Unit.SessionTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/SessionTest.php" line="227" assertions="0" time="0.000172">
+          <skipped/>
+        </testcase>
+        <testcase name="testSs_Function" class="Tests\Unit\SessionTest" classname="Tests.Unit.SessionTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/SessionTest.php" line="268" assertions="0" time="0.000251">
+          <skipped/>
+        </testcase>
+        <testcase name="testAuth_Function" class="Tests\Unit\SessionTest" classname="Tests.Unit.SessionTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/SessionTest.php" line="297" assertions="0" time="0.000176">
+          <skipped/>
+        </testcase>
+        <testcase name="testSs_id_Function" class="Tests\Unit\SessionTest" classname="Tests.Unit.SessionTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/SessionTest.php" line="26" assertions="3" time="0.007719"/>
+        <testcase name="testSs_open_Function" class="Tests\Unit\SessionTest" classname="Tests.Unit.SessionTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/SessionTest.php" line="46" assertions="1" time="0.000077"/>
+        <testcase name="testSs_close_Function" class="Tests\Unit\SessionTest" classname="Tests.Unit.SessionTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/SessionTest.php" line="51" assertions="1" time="0.000060"/>
+        <testcase name="testSs_write_Function" class="Tests\Unit\SessionTest" classname="Tests.Unit.SessionTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/SessionTest.php" line="105" assertions="1" time="0.000054"/>
+      </testsuite>
+      <testsuite name="Tests\Unit\ApiUtilsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ApiUtilsTest.php" tests="19" assertions="455" errors="0" warnings="0" failures="7" skipped="0" time="0.011020">
+        <testcase name="testApiDefinitions" class="Tests\Unit\ApiUtilsTest" classname="Tests.Unit.ApiUtilsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ApiUtilsTest.php" line="137" assertions="2" time="0.000120">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Unit\ApiUtilsTest::testApiDefinitions
+Failed asserting that null is of type "array".
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ApiUtilsTest.php:142
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</failure>
+        </testcase>
+        <testcase name="testSubsDefinitions" class="Tests\Unit\ApiUtilsTest" classname="Tests.Unit.ApiUtilsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ApiUtilsTest.php" line="151" assertions="1" time="0.000103">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Unit\ApiUtilsTest::testSubsDefinitions
+Failed asserting that null is of type "array".
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ApiUtilsTest.php:155
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</failure>
+        </testcase>
+        <testcase name="testJoinDefinitions" class="Tests\Unit\ApiUtilsTest" classname="Tests.Unit.ApiUtilsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ApiUtilsTest.php" line="166" assertions="23" time="0.000096"/>
+        <testcase name="testCsvDefinitions" class="Tests\Unit\ApiUtilsTest" classname="Tests.Unit.ApiUtilsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ApiUtilsTest.php" line="184" assertions="1" time="0.000079">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Unit\ApiUtilsTest::testCsvDefinitions
+Failed asserting that null is of type "array".
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ApiUtilsTest.php:188
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</failure>
+        </testcase>
+        <testcase name="testDuplicateCheckDefinitions" class="Tests\Unit\ApiUtilsTest" classname="Tests.Unit.ApiUtilsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ApiUtilsTest.php" line="199" assertions="1" time="0.000118">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Unit\ApiUtilsTest::testDuplicateCheckDefinitions
+Failed asserting that null is of type "array".
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ApiUtilsTest.php:203
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</failure>
+        </testcase>
+        <testcase name="testSrcEnumDefinitions" class="Tests\Unit\ApiUtilsTest" classname="Tests.Unit.ApiUtilsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ApiUtilsTest.php" line="250" assertions="2" time="0.000119">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Unit\ApiUtilsTest::testSrcEnumDefinitions
+Failed asserting that null is of type "array".
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ApiUtilsTest.php:255
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</failure>
+        </testcase>
+        <testcase name="testLocationEnumDefinitions" class="Tests\Unit\ApiUtilsTest" classname="Tests.Unit.ApiUtilsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ApiUtilsTest.php" line="274" assertions="1" time="0.000087">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Unit\ApiUtilsTest::testLocationEnumDefinitions
+Failed asserting that null is of type "array".
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ApiUtilsTest.php:278
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</failure>
+        </testcase>
+        <testcase name="testSpecialFieldDefinitions" class="Tests\Unit\ApiUtilsTest" classname="Tests.Unit.ApiUtilsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ApiUtilsTest.php" line="289" assertions="2" time="0.000253"/>
+        <testcase name="testDispositionDefinitions" class="Tests\Unit\ApiUtilsTest" classname="Tests.Unit.ApiUtilsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ApiUtilsTest.php" line="320" assertions="124" time="0.000181"/>
+        <testcase name="testActivityDefinitions" class="Tests\Unit\ApiUtilsTest" classname="Tests.Unit.ApiUtilsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ApiUtilsTest.php" line="334" assertions="4" time="0.000073"/>
+        <testcase name="testMessageDefinitions" class="Tests\Unit\ApiUtilsTest" classname="Tests.Unit.ApiUtilsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ApiUtilsTest.php" line="354" assertions="4" time="0.000063"/>
+        <testcase name="testCallDefinitions" class="Tests\Unit\ApiUtilsTest" classname="Tests.Unit.ApiUtilsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ApiUtilsTest.php" line="374" assertions="5" time="0.000070"/>
+        <testcase name="testValidationFlags" class="Tests\Unit\ApiUtilsTest" classname="Tests.Unit.ApiUtilsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ApiUtilsTest.php" line="230" assertions="2" time="0.000615">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Unit\ApiUtilsTest::testValidationFlags
+Should have a field with email validation
+Failed asserting that null is not null.
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ApiUtilsTest.php:246
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</failure>
+        </testcase>
+        <testcase name="testFieldDefinitionStructure" class="Tests\Unit\ApiUtilsTest" classname="Tests.Unit.ApiUtilsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ApiUtilsTest.php" line="213" assertions="248" time="0.007975"/>
+        <testcase name="testRightsSystemStructure" class="Tests\Unit\ApiUtilsTest" classname="Tests.Unit.ApiUtilsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ApiUtilsTest.php" line="79" assertions="6" time="0.000140"/>
+        <testcase name="testEnumDefinitions" class="Tests\Unit\ApiUtilsTest" classname="Tests.Unit.ApiUtilsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ApiUtilsTest.php" line="104" assertions="13" time="0.000307"/>
+        <testcase name="testResourceDefinitions" class="Tests\Unit\ApiUtilsTest" classname="Tests.Unit.ApiUtilsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ApiUtilsTest.php" line="53" assertions="5" time="0.000071"/>
+        <testcase name="testMetricsDefinitions" class="Tests\Unit\ApiUtilsTest" classname="Tests.Unit.ApiUtilsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ApiUtilsTest.php" line="66" assertions="5" time="0.000283"/>
+        <testcase name="testSystemConstants" class="Tests\Unit\ApiUtilsTest" classname="Tests.Unit.ApiUtilsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ApiUtilsTest.php" line="306" assertions="6" time="0.000267"/>
+      </testsuite>
+      <testsuite name="Tests\Unit\BasicTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/BasicTest.php" tests="9" assertions="31" errors="0" warnings="0" failures="0" skipped="0" time="0.009180">
+        <testcase name="testGlobalVariablesExist" class="Tests\Unit\BasicTest" classname="Tests.Unit.BasicTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/BasicTest.php" line="43" assertions="9" time="0.000099"/>
+        <testcase name="testPhpVersion" class="Tests\Unit\BasicTest" classname="Tests.Unit.BasicTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/BasicTest.php" line="9" assertions="2" time="0.000125"/>
+        <testcase name="testBasicAssertion" class="Tests\Unit\BasicTest" classname="Tests.Unit.BasicTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/BasicTest.php" line="14" assertions="3" time="0.000054"/>
+        <testcase name="testModelFileExists" class="Tests\Unit\BasicTest" classname="Tests.Unit.BasicTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/BasicTest.php" line="21" assertions="1" time="0.000233"/>
+        <testcase name="testRestFileExists" class="Tests\Unit\BasicTest" classname="Tests.Unit.BasicTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/BasicTest.php" line="27" assertions="1" time="0.000054"/>
+        <testcase name="testCanIncludeModelFile" class="Tests\Unit\BasicTest" classname="Tests.Unit.BasicTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/BasicTest.php" line="33" assertions="0" time="0.000043"/>
+        <testcase name="testRestFunctionsExist" class="Tests\Unit\BasicTest" classname="Tests.Unit.BasicTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/BasicTest.php" line="62" assertions="6" time="0.000054"/>
+        <testcase name="testUtilityFunctions" class="Tests\Unit\BasicTest" classname="Tests.Unit.BasicTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/BasicTest.php" line="76" assertions="5" time="0.000373"/>
+        <testcase name="testValidationFunctions" class="Tests\Unit\BasicTest" classname="Tests.Unit.BasicTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/BasicTest.php" line="97" assertions="4" time="0.008145"/>
+      </testsuite>
+      <testsuite name="Tests\Unit\ContextTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ContextTest.php" tests="6" assertions="2" errors="0" warnings="0" failures="1" skipped="4" time="0.000660">
+        <testcase name="testCtxFvFunctionGeneratesKeyMap" class="Tests\Unit\ContextTest" classname="Tests.Unit.ContextTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ContextTest.php" line="60" assertions="1" time="0.000257">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Unit\ContextTest::testCtxFvFunctionGeneratesKeyMap
+Failed asserting that '' contains "id".
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ContextTest.php:71
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</failure>
+        </testcase>
+        <testcase name="testCtxRightsWithContextFilter" class="Tests\Unit\ContextTest" classname="Tests.Unit.ContextTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ContextTest.php" line="45" assertions="0" time="0.000088">
+          <skipped/>
+        </testcase>
+        <testcase name="testCtxFunctionBasic" class="Tests\Unit\ContextTest" classname="Tests.Unit.ContextTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ContextTest.php" line="50" assertions="0" time="0.000099">
+          <skipped/>
+        </testcase>
+        <testcase name="testCtxWithSearchFilter" class="Tests\Unit\ContextTest" classname="Tests.Unit.ContextTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ContextTest.php" line="55" assertions="0" time="0.000064">
+          <skipped/>
+        </testcase>
+        <testcase name="testCtxFFunctionGeneratesFullFieldInfo" class="Tests\Unit\ContextTest" classname="Tests.Unit.ContextTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ContextTest.php" line="74" assertions="0" time="0.000092">
+          <skipped/>
+        </testcase>
+        <testcase name="testCtxRightsWithoutContextFilter" class="Tests\Unit\ContextTest" classname="Tests.Unit.ContextTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ContextTest.php" line="34" assertions="1" time="0.000061"/>
+      </testsuite>
+      <testsuite name="Tests\Unit\DatabaseOpsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/DatabaseOpsTest.php" tests="14" assertions="30" errors="0" warnings="0" failures="2" skipped="0" time="0.008434">
+        <testcase name="testSelectColsFunctionWithComputedFields" class="Tests\Unit\DatabaseOpsTest" classname="Tests.Unit.DatabaseOpsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/DatabaseOpsTest.php" line="201" assertions="2" time="0.000110">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Unit\DatabaseOpsTest::testSelectColsFunctionWithComputedFields
+Failed asserting that 'id,age' contains "YEAR(NOW())".
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/DatabaseOpsTest.php:213
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</failure>
+        </testcase>
+        <testcase name="testKvWithDefaultValue" class="Tests\Unit\DatabaseOpsTest" classname="Tests.Unit.DatabaseOpsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/DatabaseOpsTest.php" line="244" assertions="1" time="0.000180">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Unit\DatabaseOpsTest::testKvWithDefaultValue
+Failed asserting that null matches expected 'default_value'.
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/DatabaseOpsTest.php:252
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</failure>
+        </testcase>
+        <testcase name="testTryFunctionValidatesFields" class="Tests\Unit\DatabaseOpsTest" classname="Tests.Unit.DatabaseOpsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/DatabaseOpsTest.php" line="35" assertions="1" time="0.000117"/>
+        <testcase name="testTryFunctionDetectsInvalidFields" class="Tests\Unit\DatabaseOpsTest" classname="Tests.Unit.DatabaseOpsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/DatabaseOpsTest.php" line="46" assertions="2" time="0.000137"/>
+        <testcase name="testValFunctionSkipsUnsetFieldsDuringUpdate" class="Tests\Unit\DatabaseOpsTest" classname="Tests.Unit.DatabaseOpsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/DatabaseOpsTest.php" line="61" assertions="2" time="0.000083"/>
+        <testcase name="testValFunctionRequiresMandatoryFieldsOnAdd" class="Tests\Unit\DatabaseOpsTest" classname="Tests.Unit.DatabaseOpsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/DatabaseOpsTest.php" line="75" assertions="2" time="0.006763"/>
+        <testcase name="testValFunctionWithRegexValidation" class="Tests\Unit\DatabaseOpsTest" classname="Tests.Unit.DatabaseOpsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/DatabaseOpsTest.php" line="92" assertions="3" time="0.000239"/>
+        <testcase name="testValFunctionWithNumericLengthValidation" class="Tests\Unit\DatabaseOpsTest" classname="Tests.Unit.DatabaseOpsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/DatabaseOpsTest.php" line="114" assertions="3" time="0.000149"/>
+        <testcase name="testValFunctionWithForeignKey" class="Tests\Unit\DatabaseOpsTest" classname="Tests.Unit.DatabaseOpsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/DatabaseOpsTest.php" line="141" assertions="4" time="0.000143"/>
+        <testcase name="testValAddrFunction" class="Tests\Unit\DatabaseOpsTest" classname="Tests.Unit.DatabaseOpsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/DatabaseOpsTest.php" line="166" assertions="3" time="0.000103"/>
+        <testcase name="testSelectColsFunctionWithPrefix" class="Tests\Unit\DatabaseOpsTest" classname="Tests.Unit.DatabaseOpsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/DatabaseOpsTest.php" line="187" assertions="2" time="0.000170"/>
+        <testcase name="testSelectColsFunctionExcludesHiddenFields" class="Tests\Unit\DatabaseOpsTest" classname="Tests.Unit.DatabaseOpsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/DatabaseOpsTest.php" line="216" assertions="2" time="0.000071"/>
+        <testcase name="testModelKIdWithMissingResources" class="Tests\Unit\DatabaseOpsTest" classname="Tests.Unit.DatabaseOpsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/DatabaseOpsTest.php" line="232" assertions="1" time="0.000059"/>
+        <testcase name="testKvWithNullPlaceholder" class="Tests\Unit\DatabaseOpsTest" classname="Tests.Unit.DatabaseOpsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/DatabaseOpsTest.php" line="255" assertions="2" time="0.000110"/>
+      </testsuite>
+      <testsuite name="Tests\Unit\DatabaseTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/DatabaseTest.php" tests="13" assertions="50" errors="1" warnings="0" failures="1" skipped="0" time="0.008001">
+        <testcase name="testDuplicateFieldValidation" class="Tests\Unit\DatabaseTest" classname="Tests.Unit.DatabaseTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/DatabaseTest.php" line="193" assertions="1" time="0.000265">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Unit\DatabaseTest::testDuplicateFieldValidation
+Failed asserting that 0 matches expected 1.
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/DatabaseTest.php:202
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</failure>
+        </testcase>
+        <testcase name="testSelectQueryBuilding" class="Tests\Unit\DatabaseTest" classname="Tests.Unit.DatabaseTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/DatabaseTest.php" line="261" assertions="1" time="0.000115">
+          <error type="PHPUnit\Framework\RiskyTestError">Tests\Unit\DatabaseTest::testSelectQueryBuilding
+This test is annotated with "@doesNotPerformAssertions" but performed 1 assertions
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</error>
+        </testcase>
+        <testcase name="testSelectColsFunction" class="Tests\Unit\DatabaseTest" classname="Tests.Unit.DatabaseTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/DatabaseTest.php" line="65" assertions="5" time="0.000132"/>
+        <testcase name="testValidationErrorHandling" class="Tests\Unit\DatabaseTest" classname="Tests.Unit.DatabaseTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/DatabaseTest.php" line="84" assertions="9" time="0.000128"/>
+        <testcase name="testFieldValidation" class="Tests\Unit\DatabaseTest" classname="Tests.Unit.DatabaseTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/DatabaseTest.php" line="105" assertions="9" time="0.000254"/>
+        <testcase name="testConstantAndGeneratedValues" class="Tests\Unit\DatabaseTest" classname="Tests.Unit.DatabaseTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/DatabaseTest.php" line="141" assertions="7" time="0.000223"/>
+        <testcase name="testDefaultValues" class="Tests\Unit\DatabaseTest" classname="Tests.Unit.DatabaseTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/DatabaseTest.php" line="167" assertions="2" time="0.000107"/>
+        <testcase name="testUpdateFieldHandling" class="Tests\Unit\DatabaseTest" classname="Tests.Unit.DatabaseTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/DatabaseTest.php" line="180" assertions="2" time="0.006230"/>
+        <testcase name="testCustomFieldMapping" class="Tests\Unit\DatabaseTest" classname="Tests.Unit.DatabaseTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/DatabaseTest.php" line="207" assertions="2" time="0.000115"/>
+        <testcase name="testPriorityHandling" class="Tests\Unit\DatabaseTest" classname="Tests.Unit.DatabaseTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/DatabaseTest.php" line="220" assertions="2" time="0.000109"/>
+        <testcase name="testVGlobalFunction" class="Tests\Unit\DatabaseTest" classname="Tests.Unit.DatabaseTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/DatabaseTest.php" line="233" assertions="3" time="0.000102"/>
+        <testcase name="testGlobalGetPostSession" class="Tests\Unit\DatabaseTest" classname="Tests.Unit.DatabaseTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/DatabaseTest.php" line="243" assertions="6" time="0.000135"/>
+        <testcase name="testEmptyFieldHandling" class="Tests\Unit\DatabaseTest" classname="Tests.Unit.DatabaseTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/DatabaseTest.php" line="279" assertions="1" time="0.000085"/>
+      </testsuite>
+      <testsuite name="Tests\Unit\ErrorHandlingTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ErrorHandlingTest.php" tests="26" assertions="75" errors="0" warnings="0" failures="0" skipped="0" time="0.004597">
+        <testcase name="testVESCWithSpecialChars" class="Tests\Unit\ErrorHandlingTest" classname="Tests.Unit.ErrorHandlingTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ErrorHandlingTest.php" line="49" assertions="1" time="0.000076"/>
+        <testcase name="testDateWithVariousTimestamps" class="Tests\Unit\ErrorHandlingTest" classname="Tests.Unit.ErrorHandlingTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ErrorHandlingTest.php" line="149" assertions="3" time="0.000360"/>
+        <testcase name="testKvWithConditionalOperator" class="Tests\Unit\ErrorHandlingTest" classname="Tests.Unit.ErrorHandlingTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ErrorHandlingTest.php" line="216" assertions="1" time="0.000096"/>
+        <testcase name="testPhoneFmtWithEmptyString" class="Tests\Unit\ErrorHandlingTest" classname="Tests.Unit.ErrorHandlingTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ErrorHandlingTest.php" line="19" assertions="1" time="0.000066"/>
+        <testcase name="testPhoneFmtWithSpacesOnly" class="Tests\Unit\ErrorHandlingTest" classname="Tests.Unit.ErrorHandlingTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ErrorHandlingTest.php" line="25" assertions="1" time="0.000059"/>
+        <testcase name="testPhoneFmtWithPlusPrefix" class="Tests\Unit\ErrorHandlingTest" classname="Tests.Unit.ErrorHandlingTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ErrorHandlingTest.php" line="31" assertions="1" time="0.000092"/>
+        <testcase name="testPhoneFmtWithZeroPrefix" class="Tests\Unit\ErrorHandlingTest" classname="Tests.Unit.ErrorHandlingTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ErrorHandlingTest.php" line="37" assertions="1" time="0.000102"/>
+        <testcase name="testPhoneFmtWithMixedSpaces" class="Tests\Unit\ErrorHandlingTest" classname="Tests.Unit.ErrorHandlingTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ErrorHandlingTest.php" line="43" assertions="1" time="0.000121"/>
+        <testcase name="testVESCWithQuotes" class="Tests\Unit\ErrorHandlingTest" classname="Tests.Unit.ErrorHandlingTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ErrorHandlingTest.php" line="56" assertions="1" time="0.000098"/>
+        <testcase name="testVESCWithBackslash" class="Tests\Unit\ErrorHandlingTest" classname="Tests.Unit.ErrorHandlingTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ErrorHandlingTest.php" line="62" assertions="1" time="0.000105"/>
+        <testcase name="testVESCWithNewlines" class="Tests\Unit\ErrorHandlingTest" classname="Tests.Unit.ErrorHandlingTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ErrorHandlingTest.php" line="68" assertions="2" time="0.000072"/>
+        <testcase name="testVESCWithTabs" class="Tests\Unit\ErrorHandlingTest" classname="Tests.Unit.ErrorHandlingTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ErrorHandlingTest.php" line="75" assertions="1" time="0.000072"/>
+        <testcase name="testVESCWithNullAndNumbers" class="Tests\Unit\ErrorHandlingTest" classname="Tests.Unit.ErrorHandlingTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ErrorHandlingTest.php" line="81" assertions="4" time="0.000095"/>
+        <testcase name="testValEmailWithComplexAddresses" class="Tests\Unit\ErrorHandlingTest" classname="Tests.Unit.ErrorHandlingTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ErrorHandlingTest.php" line="89" assertions="4" time="0.000178"/>
+        <testcase name="testValEmailWithInvalidFormats" class="Tests\Unit\ErrorHandlingTest" classname="Tests.Unit.ErrorHandlingTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ErrorHandlingTest.php" line="98" assertions="5" time="0.000068"/>
+        <testcase name="testValPhoneWithVariousFormats" class="Tests\Unit\ErrorHandlingTest" classname="Tests.Unit.ErrorHandlingTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ErrorHandlingTest.php" line="107" assertions="5" time="0.000084"/>
+        <testcase name="testValPhoneWithInvalidFormats" class="Tests\Unit\ErrorHandlingTest" classname="Tests.Unit.ErrorHandlingTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ErrorHandlingTest.php" line="126" assertions="3" time="0.000057"/>
+        <testcase name="testRandsConsistency" class="Tests\Unit\ErrorHandlingTest" classname="Tests.Unit.ErrorHandlingTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ErrorHandlingTest.php" line="138" assertions="3" time="0.000136"/>
+        <testcase name="testDateWithDifferentFormats" class="Tests\Unit\ErrorHandlingTest" classname="Tests.Unit.ErrorHandlingTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ErrorHandlingTest.php" line="160" assertions="4" time="0.000204"/>
+        <testcase name="testEnumWithNonExistentKey" class="Tests\Unit\ErrorHandlingTest" classname="Tests.Unit.ErrorHandlingTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ErrorHandlingTest.php" line="170" assertions="1" time="0.000074"/>
+        <testcase name="testEnumWithEmptyValue" class="Tests\Unit\ErrorHandlingTest" classname="Tests.Unit.ErrorHandlingTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ErrorHandlingTest.php" line="181" assertions="1" time="0.000056"/>
+        <testcase name="testEnumWithMultipleMixedValues" class="Tests\Unit\ErrorHandlingTest" classname="Tests.Unit.ErrorHandlingTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ErrorHandlingTest.php" line="191" assertions="3" time="0.000076"/>
+        <testcase name="testKvWithLiteralValue" class="Tests\Unit\ErrorHandlingTest" classname="Tests.Unit.ErrorHandlingTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ErrorHandlingTest.php" line="205" assertions="1" time="0.000057"/>
+        <testcase name="testValIdIncrementing" class="Tests\Unit\ErrorHandlingTest" classname="Tests.Unit.ErrorHandlingTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ErrorHandlingTest.php" line="228" assertions="19" time="0.001962"/>
+        <testcase name="testModelKIdWithCustomAlias" class="Tests\Unit\ErrorHandlingTest" classname="Tests.Unit.ErrorHandlingTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ErrorHandlingTest.php" line="245" assertions="1" time="0.000082"/>
+        <testcase name="testStr2tsWithAllPeriods" class="Tests\Unit\ErrorHandlingTest" classname="Tests.Unit.ErrorHandlingTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ErrorHandlingTest.php" line="256" assertions="6" time="0.000149"/>
+      </testsuite>
+      <testsuite name="Tests\Unit\FieldOperationsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php" tests="19" assertions="39" errors="0" warnings="0" failures="3" skipped="2" time="0.007806">
+        <testcase name="testSelectColsWithAlias" class="Tests\Unit\FieldOperationsTest" classname="Tests.Unit.FieldOperationsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php" line="44" assertions="2" time="0.000119"/>
+        <testcase name="testSelectColsWithComputedField" class="Tests\Unit\FieldOperationsTest" classname="Tests.Unit.FieldOperationsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php" line="59" assertions="2" time="0.000060"/>
+        <testcase name="testPhoneFmtWithVariousInputs" class="Tests\Unit\FieldOperationsTest" classname="Tests.Unit.FieldOperationsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php" line="223" assertions="1" time="0.000112">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Unit\FieldOperationsTest::testPhoneFmtWithVariousInputs
+Failed asserting that two strings are equal.
+--- Expected
++++ Actual
+@@ @@
+-'+256701234567'
++'701234567 '
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php:227
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</failure>
+        </testcase>
+        <testcase name="testVESCWithComplexContent" class="Tests\Unit\FieldOperationsTest" classname="Tests.Unit.FieldOperationsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php" line="238" assertions="3" time="0.000105">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Unit\FieldOperationsTest::testVESCWithComplexContent
+Failed asserting that '&amp;lt;div class=\"test\"&amp;gt;Content &amp; \"quotes\" with 'apostrophes'&amp;lt;\/div&amp;gt;' contains "&amp;amp;".
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php:245
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</failure>
+        </testcase>
+        <testcase name="testKvWithComplexOperators" class="Tests\Unit\FieldOperationsTest" classname="Tests.Unit.FieldOperationsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php" line="260" assertions="3" time="0.000125">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Unit\FieldOperationsTest::testKvWithComplexOperators
+Failed asserting that null matches expected 'fallback'.
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php:273
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</failure>
+        </testcase>
+        <testcase name="testCsvColsKMapping" class="Tests\Unit\FieldOperationsTest" classname="Tests.Unit.FieldOperationsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php" line="74" assertions="0" time="0.000075">
+          <skipped/>
+        </testcase>
+        <testcase name="testCsvColsVMapping" class="Tests\Unit\FieldOperationsTest" classname="Tests.Unit.FieldOperationsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php" line="79" assertions="0" time="0.000167">
+          <skipped/>
+        </testcase>
+        <testcase name="testSelectColsBasic" class="Tests\Unit\FieldOperationsTest" classname="Tests.Unit.FieldOperationsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php" line="25" assertions="3" time="0.006198"/>
+        <testcase name="testSelectColsWithTablePrefix" class="Tests\Unit\FieldOperationsTest" classname="Tests.Unit.FieldOperationsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php" line="35" assertions="2" time="0.000110"/>
+        <testcase name="testValWithEmptyStringVsNull" class="Tests\Unit\FieldOperationsTest" classname="Tests.Unit.FieldOperationsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php" line="84" assertions="4" time="0.000093"/>
+        <testcase name="testValWithPOverridesO" class="Tests\Unit\FieldOperationsTest" classname="Tests.Unit.FieldOperationsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php" line="104" assertions="2" time="0.000062"/>
+        <testcase name="testValWithDefaultValueWhenNull" class="Tests\Unit\FieldOperationsTest" classname="Tests.Unit.FieldOperationsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php" line="117" assertions="2" time="0.000071"/>
+        <testcase name="testValWithDefaultValueNotAppliedWhenSet" class="Tests\Unit\FieldOperationsTest" classname="Tests.Unit.FieldOperationsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php" line="130" assertions="2" time="0.000059"/>
+        <testcase name="testValStringLengthValidation" class="Tests\Unit\FieldOperationsTest" classname="Tests.Unit.FieldOperationsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php" line="143" assertions="4" time="0.000098"/>
+        <testcase name="testValNumericRangeValidation" class="Tests\Unit\FieldOperationsTest" classname="Tests.Unit.FieldOperationsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php" line="172" assertions="3" time="0.000083"/>
+        <testcase name="testTryWithValidData" class="Tests\Unit\FieldOperationsTest" classname="Tests.Unit.FieldOperationsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php" line="199" assertions="1" time="0.000076"/>
+        <testcase name="testTryWithInvalidData" class="Tests\Unit\FieldOperationsTest" classname="Tests.Unit.FieldOperationsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php" line="209" assertions="2" time="0.000081"/>
+        <testcase name="testModelKIdWithPartialResources" class="Tests\Unit\FieldOperationsTest" classname="Tests.Unit.FieldOperationsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php" line="248" assertions="1" time="0.000050"/>
+        <testcase name="testValAddrWithDifferentSources" class="Tests\Unit\FieldOperationsTest" classname="Tests.Unit.FieldOperationsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FieldOperationsTest.php" line="276" assertions="2" time="0.000061"/>
+      </testsuite>
+      <testsuite name="Tests\Unit\IndexTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/IndexTest.php" tests="7" assertions="21" errors="0" warnings="0" failures="2" skipped="0" time="0.001317">
+        <testcase name="test_message_in_Function" class="Tests\Unit\IndexTest" classname="Tests.Unit.IndexTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/IndexTest.php" line="252" assertions="2" time="0.000278">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Unit\IndexTest::test_message_in_Function
+Failed asserting that '' contains "success".
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/IndexTest.php:321
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</failure>
+        </testcase>
+        <testcase name="test_chan_Function" class="Tests\Unit\IndexTest" classname="Tests.Unit.IndexTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/IndexTest.php" line="365" assertions="2" time="0.000276">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Unit\IndexTest::test_chan_Function
+Failed asserting that 202 matches expected 413.
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/IndexTest.php:433
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</failure>
+        </testcase>
+        <testcase name="testCopy_from_pabx_Function" class="Tests\Unit\IndexTest" classname="Tests.Unit.IndexTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/IndexTest.php" line="109" assertions="1" time="0.000182"/>
+        <testcase name="testMuu_Function" class="Tests\Unit\IndexTest" classname="Tests.Unit.IndexTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/IndexTest.php" line="141" assertions="5" time="0.000148"/>
+        <testcase name="testMessage_out_Function" class="Tests\Unit\IndexTest" classname="Tests.Unit.IndexTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/IndexTest.php" line="165" assertions="2" time="0.000134"/>
+        <testcase name="testNational_registry_Function" class="Tests\Unit\IndexTest" classname="Tests.Unit.IndexTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/IndexTest.php" line="207" assertions="6" time="0.000153"/>
+        <testcase name="test_sup_Function" class="Tests\Unit\IndexTest" classname="Tests.Unit.IndexTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/IndexTest.php" line="324" assertions="3" time="0.000144"/>
+      </testsuite>
+      <testsuite name="Tests\Unit\ModelTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ModelTest.php" tests="11" assertions="95" errors="0" warnings="0" failures="2" skipped="0" time="0.001671">
+        <testcase name="testResourcesArrayExists" class="Tests\Unit\ModelTest" classname="Tests.Unit.ModelTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ModelTest.php" line="57" assertions="2" time="0.000302">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Unit\ModelTest::testResourcesArrayExists
+Failed asserting that an array has the key 'auth'.
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ModelTest.php:61
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</failure>
+        </testcase>
+        <testcase name="testRightsArrayExists" class="Tests\Unit\ModelTest" classname="Tests.Unit.ModelTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ModelTest.php" line="65" assertions="3" time="0.000120">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Unit\ModelTest::testRightsArrayExists
+Failed asserting that an array has the key 'auth'.
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ModelTest.php:70
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</failure>
+        </testcase>
+        <testcase name="testEnumDefinitions" class="Tests\Unit\ModelTest" classname="Tests.Unit.ModelTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ModelTest.php" line="102" assertions="13" time="0.000147"/>
+        <testcase name="testApiDefinitions" class="Tests\Unit\ModelTest" classname="Tests.Unit.ModelTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ModelTest.php" line="126" assertions="6" time="0.000066"/>
+        <testcase name="testSubsDefinitions" class="Tests\Unit\ModelTest" classname="Tests.Unit.ModelTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ModelTest.php" line="141" assertions="23" time="0.000207"/>
+        <testcase name="testJoinDefinitions" class="Tests\Unit\ModelTest" classname="Tests.Unit.ModelTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ModelTest.php" line="156" assertions="22" time="0.000075"/>
+        <testcase name="testCsvDefinitions" class="Tests\Unit\ModelTest" classname="Tests.Unit.ModelTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ModelTest.php" line="174" assertions="7" time="0.000482"/>
+        <testcase name="testDuplicateCheckDefinitions" class="Tests\Unit\ModelTest" classname="Tests.Unit.ModelTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ModelTest.php" line="190" assertions="7" time="0.000109"/>
+        <testcase name="testMetricsDefinitions" class="Tests\Unit\ModelTest" classname="Tests.Unit.ModelTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ModelTest.php" line="205" assertions="5" time="0.000060"/>
+        <testcase name="testAuthDefinitionStructure" class="Tests\Unit\ModelTest" classname="Tests.Unit.ModelTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ModelTest.php" line="74" assertions="5" time="0.000055"/>
+        <testcase name="testContactsDefinitionStructure" class="Tests\Unit\ModelTest" classname="Tests.Unit.ModelTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ModelTest.php" line="87" assertions="2" time="0.000047"/>
+      </testsuite>
+      <testsuite name="Tests\Unit\RequestResponseTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RequestResponseTest.php" tests="17" assertions="54" errors="0" warnings="0" failures="4" skipped="0" time="0.003045">
+        <testcase name="testPhoneFormatInternational" class="Tests\Unit\RequestResponseTest" classname="Tests.Unit.RequestResponseTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RequestResponseTest.php" line="88" assertions="1" time="0.000140">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Unit\RequestResponseTest::testPhoneFormatInternational
+Failed asserting that two strings are equal.
+--- Expected
++++ Actual
+@@ @@
+-'+15551234567'
++'5551234567'
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RequestResponseTest.php:94
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</failure>
+        </testcase>
+        <testcase name="testValEmailEdgeCases" class="Tests\Unit\RequestResponseTest" classname="Tests.Unit.RequestResponseTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RequestResponseTest.php" line="150" assertions="4" time="0.000265">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Unit\RequestResponseTest::testValEmailEdgeCases
+Failed asserting that 1 matches expected 0.
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RequestResponseTest.php:164
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</failure>
+        </testcase>
+        <testcase name="testValIdUniqueness" class="Tests\Unit\RequestResponseTest" classname="Tests.Unit.RequestResponseTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RequestResponseTest.php" line="209" assertions="1" time="0.000273">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Unit\RequestResponseTest::testValIdUniqueness
+Failed asserting that actual size 1 matches expected size 100.
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RequestResponseTest.php:220
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</failure>
+        </testcase>
+        <testcase name="testStr2tsAllTimePeriods" class="Tests\Unit\RequestResponseTest" classname="Tests.Unit.RequestResponseTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RequestResponseTest.php" line="253" assertions="3" time="0.000177">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Unit\RequestResponseTest::testStr2tsAllTimePeriods
+Failed asserting that 1768780800 is of type "string".
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RequestResponseTest.php:263
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</failure>
+        </testcase>
+        <testcase name="testGetParameterFunction" class="Tests\Unit\RequestResponseTest" classname="Tests.Unit.RequestResponseTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RequestResponseTest.php" line="21" assertions="3" time="0.000086"/>
+        <testcase name="testPostParameterFunction" class="Tests\Unit\RequestResponseTest" classname="Tests.Unit.RequestResponseTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RequestResponseTest.php" line="31" assertions="3" time="0.000090"/>
+        <testcase name="testSessionParameterFunction" class="Tests\Unit\RequestResponseTest" classname="Tests.Unit.RequestResponseTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RequestResponseTest.php" line="41" assertions="3" time="0.000066"/>
+        <testcase name="testVArrayFunction" class="Tests\Unit\RequestResponseTest" classname="Tests.Unit.RequestResponseTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RequestResponseTest.php" line="51" assertions="4" time="0.000096"/>
+        <testcase name="testVESCSecurityEscaping" class="Tests\Unit\RequestResponseTest" classname="Tests.Unit.RequestResponseTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RequestResponseTest.php" line="68" assertions="5" time="0.000148"/>
+        <testcase name="testRandomStringGenerationDistribution" class="Tests\Unit\RequestResponseTest" classname="Tests.Unit.RequestResponseTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RequestResponseTest.php" line="105" assertions="2" time="0.000783"/>
+        <testcase name="testEnumWithMissingGlobal" class="Tests\Unit\RequestResponseTest" classname="Tests.Unit.RequestResponseTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RequestResponseTest.php" line="127" assertions="1" time="0.000108"/>
+        <testcase name="testDateFormatEdgeCases" class="Tests\Unit\RequestResponseTest" classname="Tests.Unit.RequestResponseTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RequestResponseTest.php" line="134" assertions="3" time="0.000184"/>
+        <testcase name="testValPhoneEdgeCases" class="Tests\Unit\RequestResponseTest" classname="Tests.Unit.RequestResponseTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RequestResponseTest.php" line="167" assertions="3" time="0.000101"/>
+        <testcase name="testKvOperators" class="Tests\Unit\RequestResponseTest" classname="Tests.Unit.RequestResponseTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RequestResponseTest.php" line="187" assertions="6" time="0.000132"/>
+        <testcase name="testModelKIdVariations" class="Tests\Unit\RequestResponseTest" classname="Tests.Unit.RequestResponseTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RequestResponseTest.php" line="229" assertions="4" time="0.000102"/>
+        <testcase name="testValErrorMultipleErrors" class="Tests\Unit\RequestResponseTest" classname="Tests.Unit.RequestResponseTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RequestResponseTest.php" line="276" assertions="4" time="0.000132"/>
+        <testcase name="testValWithCombinedFlags" class="Tests\Unit\RequestResponseTest" classname="Tests.Unit.RequestResponseTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RequestResponseTest.php" line="292" assertions="4" time="0.000163"/>
+      </testsuite>
+      <testsuite name="Tests\Unit\RestHelpersTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestHelpersTest.php" tests="16" assertions="57" errors="0" warnings="0" failures="2" skipped="0" time="0.009448">
+        <testcase name="testVESC_Function" class="Tests\Unit\RestHelpersTest" classname="Tests.Unit.RestHelpersTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestHelpersTest.php" line="43" assertions="3" time="0.000232">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Unit\RestHelpersTest::testVESC_Function
+Failed asserting that two strings are equal.
+--- Expected
++++ Actual
+@@ @@
+-'&amp;lt;div&amp;gt;content&amp;lt;/div&amp;gt;'
++'&amp;lt;div&amp;gt;content&amp;lt;\/div&amp;gt;'
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestHelpersTest.php:50
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</failure>
+        </testcase>
+        <testcase name="testPhoneFmtFunction" class="Tests\Unit\RestHelpersTest" classname="Tests.Unit.RestHelpersTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestHelpersTest.php" line="88" assertions="3" time="0.000251">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Unit\RestHelpersTest::testPhoneFmtFunction
+Failed asserting that two strings are equal.
+--- Expected
++++ Actual
+@@ @@
+-'+256701234567'
++'256701234567'
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestHelpersTest.php:95
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</failure>
+        </testcase>
+        <testcase name="test_G_Function" class="Tests\Unit\RestHelpersTest" classname="Tests.Unit.RestHelpersTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestHelpersTest.php" line="15" assertions="2" time="0.000100"/>
+        <testcase name="test_P_Function" class="Tests\Unit\RestHelpersTest" classname="Tests.Unit.RestHelpersTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestHelpersTest.php" line="22" assertions="2" time="0.006165"/>
+        <testcase name="test_S_Function" class="Tests\Unit\RestHelpersTest" classname="Tests.Unit.RestHelpersTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestHelpersTest.php" line="29" assertions="2" time="0.000102"/>
+        <testcase name="test_V_Function" class="Tests\Unit\RestHelpersTest" classname="Tests.Unit.RestHelpersTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestHelpersTest.php" line="36" assertions="2" time="0.000082"/>
+        <testcase name="testDateFunction" class="Tests\Unit\RestHelpersTest" classname="Tests.Unit.RestHelpersTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestHelpersTest.php" line="59" assertions="2" time="0.000091"/>
+        <testcase name="testEnumFunction" class="Tests\Unit\RestHelpersTest" classname="Tests.Unit.RestHelpersTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestHelpersTest.php" line="69" assertions="3" time="0.000102"/>
+        <testcase name="testRandsFunction" class="Tests\Unit\RestHelpersTest" classname="Tests.Unit.RestHelpersTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestHelpersTest.php" line="101" assertions="5" time="0.000292"/>
+        <testcase name="testStr2tsFunction" class="Tests\Unit\RestHelpersTest" classname="Tests.Unit.RestHelpersTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestHelpersTest.php" line="118" assertions="4" time="0.000111"/>
+        <testcase name="testValIdFunction" class="Tests\Unit\RestHelpersTest" classname="Tests.Unit.RestHelpersTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestHelpersTest.php" line="132" assertions="3" time="0.001320"/>
+        <testcase name="testValPhoneFunction" class="Tests\Unit\RestHelpersTest" classname="Tests.Unit.RestHelpersTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestHelpersTest.php" line="143" assertions="4" time="0.000116"/>
+        <testcase name="testValEmailFunction" class="Tests\Unit\RestHelpersTest" classname="Tests.Unit.RestHelpersTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestHelpersTest.php" line="163" assertions="8" time="0.000125"/>
+        <testcase name="testValErrorFunction" class="Tests\Unit\RestHelpersTest" classname="Tests.Unit.RestHelpersTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestHelpersTest.php" line="178" assertions="5" time="0.000114"/>
+        <testcase name="testKvFunction" class="Tests\Unit\RestHelpersTest" classname="Tests.Unit.RestHelpersTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestHelpersTest.php" line="192" assertions="7" time="0.000145"/>
+        <testcase name="testModelKIdFunction" class="Tests\Unit\RestHelpersTest" classname="Tests.Unit.RestHelpersTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestHelpersTest.php" line="218" assertions="2" time="0.000099"/>
+      </testsuite>
+      <testsuite name="Tests\Unit\RestTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestTest.php" tests="14" assertions="71" errors="0" warnings="0" failures="0" skipped="0" time="0.003217">
+        <testcase name="testModelKIdFunction" class="Tests\Unit\RestTest" classname="Tests.Unit.RestTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestTest.php" line="86" assertions="2" time="0.000117"/>
+        <testcase name="testGlobalHelperFunctions" class="Tests\Unit\RestTest" classname="Tests.Unit.RestTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestTest.php" line="30" assertions="8" time="0.000108"/>
+        <testcase name="testVescFunction" class="Tests\Unit\RestTest" classname="Tests.Unit.RestTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestTest.php" line="53" assertions="5" time="0.000111"/>
+        <testcase name="testDateFunction" class="Tests\Unit\RestTest" classname="Tests.Unit.RestTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestTest.php" line="63" assertions="3" time="0.000157"/>
+        <testcase name="testEnumFunction" class="Tests\Unit\RestTest" classname="Tests.Unit.RestTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestTest.php" line="73" assertions="3" time="0.000248"/>
+        <testcase name="testValidationFunctions" class="Tests\Unit\RestTest" classname="Tests.Unit.RestTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestTest.php" line="101" assertions="6" time="0.000124"/>
+        <testcase name="testRandomStringGeneration" class="Tests\Unit\RestTest" classname="Tests.Unit.RestTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestTest.php" line="122" assertions="5" time="0.000221"/>
+        <testcase name="testTimestampConversion" class="Tests\Unit\RestTest" classname="Tests.Unit.RestTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestTest.php" line="137" assertions="5" time="0.000159"/>
+        <testcase name="testErrorHandling" class="Tests\Unit\RestTest" classname="Tests.Unit.RestTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestTest.php" line="154" assertions="5" time="0.000114"/>
+        <testcase name="testIdGeneration" class="Tests\Unit\RestTest" classname="Tests.Unit.RestTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestTest.php" line="168" assertions="4" time="0.001194"/>
+        <testcase name="testQueryBuilding" class="Tests\Unit\RestTest" classname="Tests.Unit.RestTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestTest.php" line="182" assertions="9" time="0.000144"/>
+        <testcase name="testUriParsing" class="Tests\Unit\RestTest" classname="Tests.Unit.RestTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestTest.php" line="215" assertions="7" time="0.000189"/>
+        <testcase name="testResponseErrorHandling" class="Tests\Unit\RestTest" classname="Tests.Unit.RestTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestTest.php" line="253" assertions="4" time="0.000194"/>
+        <testcase name="testValueExtractionFunction" class="Tests\Unit\RestTest" classname="Tests.Unit.RestTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/RestTest.php" line="277" assertions="5" time="0.000136"/>
+      </testsuite>
+      <testsuite name="Tests\Unit\ValidationTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ValidationTest.php" tests="13" assertions="71" errors="0" warnings="0" failures="3" skipped="0" time="0.002295">
+        <testcase name="testPhoneValidation" class="Tests\Unit\ValidationTest" classname="Tests.Unit.ValidationTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ValidationTest.php" line="26" assertions="3" time="0.000391">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Unit\ValidationTest::testPhoneValidation
+Failed asserting that 0 matches expected 1.
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ValidationTest.php:37
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</failure>
+        </testcase>
+        <testcase name="testPhoneFormatting" class="Tests\Unit\ValidationTest" classname="Tests.Unit.ValidationTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ValidationTest.php" line="92" assertions="3" time="0.000226">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Unit\ValidationTest::testPhoneFormatting
+Failed asserting that two strings are equal.
+--- Expected
++++ Actual
+@@ @@
+-'+256701234567'
++'256701234567'
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ValidationTest.php:99
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</failure>
+        </testcase>
+        <testcase name="testValidIdGeneration" class="Tests\Unit\ValidationTest" classname="Tests.Unit.ValidationTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ValidationTest.php" line="238" assertions="3" time="0.000319">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Unit\ValidationTest::testValidIdGeneration
+Failed asserting that 17688576126008.0 is not equal to 17688576126008.0.
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ValidationTest.php:245
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</failure>
+        </testcase>
+        <testcase name="testEmailValidation" class="Tests\Unit\ValidationTest" classname="Tests.Unit.ValidationTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ValidationTest.php" line="50" assertions="8" time="0.000139"/>
+        <testcase name="testAddressValidation" class="Tests\Unit\ValidationTest" classname="Tests.Unit.ValidationTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ValidationTest.php" line="65" assertions="5" time="0.000127"/>
+        <testcase name="testRandomStringGeneration" class="Tests\Unit\ValidationTest" classname="Tests.Unit.ValidationTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ValidationTest.php" line="108" assertions="7" time="0.000212"/>
+        <testcase name="testValueEscaping" class="Tests\Unit\ValidationTest" classname="Tests.Unit.ValidationTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ValidationTest.php" line="130" assertions="7" time="0.000122"/>
+        <testcase name="testDateFormatting" class="Tests\Unit\ValidationTest" classname="Tests.Unit.ValidationTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ValidationTest.php" line="153" assertions="4" time="0.000120"/>
+        <testcase name="testEnumFormatting" class="Tests\Unit\ValidationTest" classname="Tests.Unit.ValidationTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ValidationTest.php" line="168" assertions="6" time="0.000117"/>
+        <testcase name="testStr2TsFunction" class="Tests\Unit\ValidationTest" classname="Tests.Unit.ValidationTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ValidationTest.php" line="194" assertions="9" time="0.000169"/>
+        <testcase name="testValidationErrors" class="Tests\Unit\ValidationTest" classname="Tests.Unit.ValidationTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ValidationTest.php" line="220" assertions="8" time="0.000123"/>
+        <testcase name="testKvFunction" class="Tests\Unit\ValidationTest" classname="Tests.Unit.ValidationTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ValidationTest.php" line="250" assertions="5" time="0.000122"/>
+        <testcase name="testModelKeyIdGeneration" class="Tests\Unit\ValidationTest" classname="Tests.Unit.ValidationTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/ValidationTest.php" line="275" assertions="3" time="0.000108"/>
+      </testsuite>
+      <testsuite name="Tests\Unit\FileUtilsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FileUtilsTest.php" tests="12" assertions="34" errors="0" warnings="0" failures="0" skipped="2" time="0.001563">
+        <testcase name="testCsvColsKFunction" class="Tests\Unit\FileUtilsTest" classname="Tests.Unit.FileUtilsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FileUtilsTest.php" line="202" assertions="0" time="0.000175">
+          <skipped/>
+        </testcase>
+        <testcase name="testCsvColsVFunction" class="Tests\Unit\FileUtilsTest" classname="Tests.Unit.FileUtilsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FileUtilsTest.php" line="207" assertions="0" time="0.000078">
+          <skipped/>
+        </testcase>
+        <testcase name="testSelectColsFunction" class="Tests\Unit\FileUtilsTest" classname="Tests.Unit.FileUtilsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FileUtilsTest.php" line="18" assertions="3" time="0.000076"/>
+        <testcase name="testValFunctionWithConstantField" class="Tests\Unit\FileUtilsTest" classname="Tests.Unit.FileUtilsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FileUtilsTest.php" line="35" assertions="2" time="0.000102"/>
+        <testcase name="testValFunctionWithGeneratedId" class="Tests\Unit\FileUtilsTest" classname="Tests.Unit.FileUtilsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FileUtilsTest.php" line="48" assertions="4" time="0.000109"/>
+        <testcase name="testValFunctionWithRandomNumber" class="Tests\Unit\FileUtilsTest" classname="Tests.Unit.FileUtilsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FileUtilsTest.php" line="63" assertions="4" time="0.000184"/>
+        <testcase name="testValFunctionWithMandatoryField" class="Tests\Unit\FileUtilsTest" classname="Tests.Unit.FileUtilsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FileUtilsTest.php" line="78" assertions="3" time="0.000132"/>
+        <testcase name="testValFunctionWithDefaultValue" class="Tests\Unit\FileUtilsTest" classname="Tests.Unit.FileUtilsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FileUtilsTest.php" line="95" assertions="2" time="0.000070"/>
+        <testcase name="testValFunctionWithLengthValidation" class="Tests\Unit\FileUtilsTest" classname="Tests.Unit.FileUtilsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FileUtilsTest.php" line="108" assertions="4" time="0.000162"/>
+        <testcase name="testValFunctionWithEmailValidation" class="Tests\Unit\FileUtilsTest" classname="Tests.Unit.FileUtilsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FileUtilsTest.php" line="133" assertions="4" time="0.000189"/>
+        <testcase name="testValFunctionWithPhoneValidation" class="Tests\Unit\FileUtilsTest" classname="Tests.Unit.FileUtilsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FileUtilsTest.php" line="158" assertions="5" time="0.000156"/>
+        <testcase name="testValFunctionWithUniqueField" class="Tests\Unit\FileUtilsTest" classname="Tests.Unit.FileUtilsTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/FileUtilsTest.php" line="185" assertions="3" time="0.000131"/>
+      </testsuite>
+      <testsuite name="Tests\Unit\CoverageFunctionNamesTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/CoverageFunctionNamesTest.php" tests="1" assertions="31" errors="0" warnings="0" failures="0" skipped="0" time="0.000181">
+        <testcase name="test_core_helper_function_names_are_referenced" class="Tests\Unit\CoverageFunctionNamesTest" classname="Tests.Unit.CoverageFunctionNamesTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Unit/CoverageFunctionNamesTest.php" line="16" assertions="31" time="0.000181"/>
+      </testsuite>
+    </testsuite>
+    <testsuite name="Integration" tests="13" assertions="46" errors="0" warnings="0" failures="3" skipped="1" time="0.009483">
+      <testsuite name="Tests\Integration\ApiIntegrationTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Integration/ApiIntegrationTest.php" tests="13" assertions="46" errors="0" warnings="0" failures="3" skipped="1" time="0.009483">
+        <testcase name="testValidationFlow" class="Tests\Integration\ApiIntegrationTest" classname="Tests.Integration.ApiIntegrationTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Integration/ApiIntegrationTest.php" line="183" assertions="4" time="0.006658">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Integration\ApiIntegrationTest::testValidationFlow
+Failed asserting that two strings are equal.
+--- Expected
++++ Actual
+@@ @@
+-'+256701234567'
++'john@example.com'
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Integration/ApiIntegrationTest.php:203
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</failure>
+        </testcase>
+        <testcase name="testValidationErrors" class="Tests\Integration\ApiIntegrationTest" classname="Tests.Integration.ApiIntegrationTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Integration/ApiIntegrationTest.php" line="212" assertions="3" time="0.000373">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Integration\ApiIntegrationTest::testValidationErrors
+Expected error message containing 'Invalid Phone Number' not found
+Failed asserting that false is true.
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/TestCase.php:105
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Integration/ApiIntegrationTest.php:227
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</failure>
+        </testcase>
+        <testcase name="testContextFiltering" class="Tests\Integration\ApiIntegrationTest" classname="Tests.Integration.ApiIntegrationTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Integration/ApiIntegrationTest.php" line="237" assertions="2" time="0.000437">
+          <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Integration\ApiIntegrationTest::testContextFiltering
+Failed asserting that '"id":["0","id","","ID",""],"fullname":["1","fullname","John","Full Name",""],"email":["2","email","","Email",""]' contains "contacts_k".
+
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Integration/ApiIntegrationTest.php:249
+/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/vendor/bin/phpunit:122</failure>
+        </testcase>
+        <testcase name="testRestUriParsePostRequest" class="Tests\Integration\ApiIntegrationTest" classname="Tests.Integration.ApiIntegrationTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Integration/ApiIntegrationTest.php" line="124" assertions="0" time="0.000210">
+          <skipped/>
+        </testcase>
+        <testcase name="testRestUriParseGetRequest" class="Tests\Integration\ApiIntegrationTest" classname="Tests.Integration.ApiIntegrationTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Integration/ApiIntegrationTest.php" line="108" assertions="5" time="0.000323">
+          <system-out>
+Deprecated: strlen(): Passing null to parameter #1 ($string) of type string is deprecated in /home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/lib/rest.php on line 2171
+</system-out>
+        </testcase>
+        <testcase name="testRestUriParseInvalidResource" class="Tests\Integration\ApiIntegrationTest" classname="Tests.Integration.ApiIntegrationTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Integration/ApiIntegrationTest.php" line="156" assertions="1" time="0.000279"/>
+        <testcase name="testRestUriParseWithSuffix" class="Tests\Integration\ApiIntegrationTest" classname="Tests.Integration.ApiIntegrationTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Integration/ApiIntegrationTest.php" line="168" assertions="4" time="0.000171">
+          <system-out>
+Deprecated: strlen(): Passing null to parameter #1 ($string) of type string is deprecated in /home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/lib/rest.php on line 2171
+</system-out>
+        </testcase>
+        <testcase name="testSessionHandling" class="Tests\Integration\ApiIntegrationTest" classname="Tests.Integration.ApiIntegrationTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Integration/ApiIntegrationTest.php" line="252" assertions="2" time="0.000129"/>
+        <testcase name="testErrorHandling" class="Tests\Integration\ApiIntegrationTest" classname="Tests.Integration.ApiIntegrationTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Integration/ApiIntegrationTest.php" line="265" assertions="6" time="0.000134"/>
+        <testcase name="testUtilityFunctions" class="Tests\Integration\ApiIntegrationTest" classname="Tests.Integration.ApiIntegrationTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Integration/ApiIntegrationTest.php" line="282" assertions="8" time="0.000286"/>
+        <testcase name="testResponseHandling" class="Tests\Integration\ApiIntegrationTest" classname="Tests.Integration.ApiIntegrationTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Integration/ApiIntegrationTest.php" line="306" assertions="4" time="0.000209"/>
+        <testcase name="testModelIdGeneration" class="Tests\Integration\ApiIntegrationTest" classname="Tests.Integration.ApiIntegrationTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Integration/ApiIntegrationTest.php" line="330" assertions="2" time="0.000121"/>
+        <testcase name="testKvFunction" class="Tests\Integration\ApiIntegrationTest" classname="Tests.Integration.ApiIntegrationTest" file="/home/justphyl/Desktop/bitz/ai/helplinev1/rest_api/tests/Integration/ApiIntegrationTest.php" line="341" assertions="5" time="0.000152"/>
+      </testsuite>
+    </testsuite>
+  </testsuite>
+</testsuites>

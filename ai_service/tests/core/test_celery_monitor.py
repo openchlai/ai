@@ -1,6 +1,5 @@
 """
-Comprehensive coverage tests for app/core/celery_monitor.py - Phase 3C
-Tests event monitoring, worker tracking, and connection management
+Comprehensive coverage tests for app/core/celery_monitor.py 
 """
 import pytest
 from unittest.mock import patch, MagicMock, call

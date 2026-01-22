@@ -1,5 +1,5 @@
 """
-Comprehensive tests for audio_tasks Celery tasks to achieve 100% coverage.
+Comprehensive tests for audio_tasks Celery tasks
 """
 import pytest
 import json

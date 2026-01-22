@@ -1,7 +1,5 @@
 """
-Comprehensive tests for notification_routes.py - Phase 3A
-Focuses on achieving 95% coverage for all notification endpoints
-"""
+Comprehensive tests for notification_routes.py """
 import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import MagicMock, AsyncMock, patch

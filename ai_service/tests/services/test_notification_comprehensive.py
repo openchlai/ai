@@ -1,5 +1,5 @@
 """
-Comprehensive tests for enhanced_notification_service to achieve 99%+ coverage.
+Comprehensive tests for enhanced_notification_service
 """
 import pytest
 import json
