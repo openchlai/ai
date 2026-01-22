@@ -46,9 +46,20 @@ class TestTranslatorModelBasic:
 
     def test_translator_load_failure(self):
         """Test translator loading failure"""
-        with patch("os.getenv", return_value=None):
+        with patch("os.getenv") as mock_getenv:
+            # Return None for TRANSLATION_HF_REPO_ID to trigger failure
+            # But allow other env vars to pass through with their defaults
+            def getenv_side_effect(key, default=None):
+                if key == "TRANSLATION_HF_REPO_ID":
+                    return None
+                return os.environ.get(key, default)
+
+            mock_getenv.side_effect = getenv_side_effect
+
             from app.model_scripts.translator_model import TranslationModel
             model = TranslationModel()
+            # Force hf_repo_id to None to trigger the failure
+            model.hf_repo_id = None
             result = model.load()
 
             assert result is False
