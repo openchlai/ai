@@ -151,19 +151,46 @@ export default defineConfig({
                     { text: 'Overview', link: '/ai-services/overview' },
                     { text: 'Ethics', link: '/ai-services/ethics.md' },
                     {
-                        text: 'Features',
+                        text: 'AI/ML Models',
                         items: [
-                            { text: 'Classifier Model', link: '/ai-services/features/classifier_model.md' },
-                            { text: 'Data Science Analytics', link: '/ai-services/features/data_sciaence_analytics.md' },
-                            { text: 'Insights', link: '/ai-services/features/insights.md' },
-                            { text: 'NER Model', link: '/ai-services/features/ner_model.md' },
-                            { text: 'QA Model', link: '/ai-services/features/qa_model.md' },
-                            { text: 'Summarizer Model', link: '/ai-services/features/summarizer_model.md' },
-                            { text: 'Translator Model', link: '/ai-services/features/translator_model.md' },
-                            { text: 'Whisper Model', link: '/ai-services/features/whisper_model.md' }
+                            { text: 'Classifier Model', link: '/ai-services/features/models/classifier_model.md' },
+                            { text: 'NER Model', link: '/ai-services/features/models/ner_model.md' },
+                            { text: 'QA Model', link: '/ai-services/features/models/qa_model.md' },
+                            { text: 'Summarizer Model', link: '/ai-services/features/models/summarizer_model.md' },
+                            { text: 'Translator Model', link: '/ai-services/features/models/translator_model.md' },
+                            { text: 'Whisper Model', link: '/ai-services/features/models/whisper_model.md' }
                         ]
                     },
-                    
+                    {
+                        text: 'API Reference',
+                        items: [
+                            { text: 'Audio API Reference', link: '/ai-services/features/api-reference/audio-api-reference.md' },
+                            { text: 'Agent Feedback API', link: '/ai-services/features/api-reference/agent_feedback.md' }
+                        ]
+                    },
+                    {
+                        text: 'Streaming & Real-Time Processing',
+                        items: [
+                            { text: 'Streaming API', link: '/ai-services/features/streaming/streaming.md' },
+                            { text: 'Call Session Management', link: '/ai-services/features/streaming/call-session-management.md' },
+                            { text: 'Call Sessions', link: '/ai-services/features/streaming/call_sessions.md' },
+                            { text: 'Progressive Processing Strategy', link: '/ai-services/features/streaming/progressive-processing-strategy.md' }
+                        ]
+                    },
+                    {
+                        text: 'Core Services',
+                        items: [
+                            { text: 'Notifications', link: '/ai-services/features/core-services/notifications.md' },
+                            { text: 'Insights', link: '/ai-services/features/core-services/insights.md' },
+                            { text: 'Health Monitoring', link: '/ai-services/features/core-services/health.md' }
+                        ]
+                    },
+                    {
+                        text: 'Configuration & Guides',
+                        items: [
+                            { text: 'Model Loading & Configuration', link: '/ai-services/features/guides/model-loading-and-configuration.md' }
+                        ]
+                    }
                 ]
             }
         ],

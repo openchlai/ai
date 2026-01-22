@@ -29,7 +29,7 @@ class TaskResponse(BaseModel):
 @router.post("/process", response_model=TaskResponse)
 async def process_audio_complete(
     audio: UploadFile = File(...),
-    language: Optional[str] = Form(None),
+    language: Optional[str] = Form(None, description="Language code: 'sw' (Swahili), 'en' (English), 'auto' for auto-detect. Leave empty for Swahili.", example="sw"),
     include_translation: bool = Form(True),
     include_insights: bool = Form(True),
     background: bool = Form(True)
@@ -40,16 +40,16 @@ async def process_audio_complete(
     Args:
         audio: Audio file to process
         language: Language code (e.g., 'sw' for Swahili, 'en' for English).
-                  Defaults to 'sw' if not specified. Use 'auto' for auto-detection.
+                  Defaults to 'sw' if not specified. Use 'auto' for auto-detection. Examples: 'sw', 'en', 'fr', 'auto'
         include_translation: Include translation to English
         include_insights: Include NER, classification, and other insights
         background: Process in background (async) or synchronously
     """
 
-    # Default language to Swahili if not specified 
-    if language is None or language.strip() == "":
+    # Default language to Swahili if not specified
+    if language is None or language.strip() == "" or language.strip().lower() == "string":
         language = "sw"
-        logger.info(f" No language specified, defaulting to 'sw' (Swahili)")
+        logger.info(f" No valid language specified, defaulting to 'sw' (Swahili)")
 
     # Validate audio file
     if not audio.filename:
@@ -112,7 +112,7 @@ async def process_audio_complete(
 @router.post("/analyze", response_model=TaskResponse)
 async def quick_audio_analysis(
     audio: UploadFile = File(...),
-    language: Optional[str] = Form(None),
+    language: Optional[str] = Form(None, description="Language code: 'sw' (Swahili), 'en' (English), 'auto' for auto-detect. Leave empty for Swahili.", example="sw"),
     background: bool = Form(True)
 ):
     """
@@ -120,13 +120,14 @@ async def quick_audio_analysis(
 
     Args:
         audio: Audio file to analyze
-        language: Language code (defaults to 'sw' for Swahili if not specified)
+        language: Language code (defaults to 'sw' for Swahili if not specified). Examples: 'sw', 'en', 'fr', 'auto'
         background: Process asynchronously
     """
 
     # Default language to Swahili if not specified
-    if language is None or language.strip() == "":
+    if language is None or language.strip() == "" or language.strip().lower() == "string":
         language = "sw"
+        logger.info(f" No valid language specified, defaulting to 'sw' (Swahili)")
 
     if not audio.filename:
         raise HTTPException(status_code=400, detail="No audio file provided")

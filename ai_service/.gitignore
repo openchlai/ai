@@ -1,6 +1,8 @@
 # Python virtual environments
 .venv/
 venv/
+ai_service/MagicMock/
+./ai_service/MagicMock/
 
 # Environment variables
 .env

@@ -194,13 +194,14 @@ def classifier_classify_task(self, narrative: str) -> Dict[str, Any]:
         if token_count <= MAX_SOURCE_LENGTH:
             # Direct classification
             classification = classifier.classify(narrative)
-            
+
             aggregated_result = {
                 'main_category': classification['main_category'],
                 'sub_category': classification['sub_category'],
+                'sub_category_2': classification.get('sub_category_2'),  # ← FIXED: Include top-2 subcategory
                 'intervention': classification['intervention'],
                 'priority': classification['priority'],
-                'confidence_scores': classification.get('confidence_breakdown', {}),  # ← FIXED: Use confidence_breakdown
+                'confidence_scores': classification.get('confidence_breakdown', {}),
                 'chunks_processed': 1,
                 'chunk_predictions': None
             }

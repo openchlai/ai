@@ -56,7 +56,7 @@ class ProcessingStrategyManager:
             self.config.default_mode = mode_mapping.get(default_mode_str, CallProcessingMode.HYBRID)
             
             # Update real-time config from settings
-            self.config.realtime_config.enabled = self.settings.enable_realtime_processing
+            self.config.realtime_config.enabled = self.settings.enable_streaming_processing
             self.config.realtime_config.min_window_chars = self.settings.realtime_min_window_chars
             self.config.realtime_config.target_window_chars = self.settings.realtime_target_window_chars
             self.config.realtime_config.processing_interval_seconds = self.settings.realtime_processing_interval_seconds
