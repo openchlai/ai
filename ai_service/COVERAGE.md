@@ -1,19 +1,16 @@
 # 📊 Code Coverage Report - AI Service
 
 **Branch:** justphyl
-**Commit:** [\`20d7a93\`](https://github.com/openchlai/ai/commit/20d7a9398c9c41a14b2ad491a1fcd17b93b15a92)
-**Generated:** 2026-01-22 07:53:52 UTC
+**Commit:** [\`fdc3997\`](https://github.com/openchlai/ai/commit/fdc39978ab1ac50eb22fb5413ea67923d2627373)
+**Generated:** 2026-01-22 08:13:21 UTC
 **Python Version:** 3.12
-**Workflow:** [\`21240301138\`](https://github.com/openchlai/ai/actions/runs/21240301138)
+**Workflow:** [\`21240796750\`](https://github.com/openchlai/ai/actions/runs/21240796750)
 
 ## 🎯 Coverage Summary
 
 ![Coverage](https://img.shields.io/badge/Coverage-56%25-orange)
 
-| Metric | Value | Status |
-|--------|-------|--------|
-| **Coverage** | 56% | ❌ Fail |
-| **Threshold** | 80% | Target |
+**Coverage:** 56%
 
 ## 📈 Detailed Coverage Report
 
