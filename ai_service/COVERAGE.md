@@ -1,10 +1,10 @@
 # 📊 Code Coverage Report - AI Service
 
 **Branch:** rogendo_test
-**Commit:** [\`041add1\`](https://github.com/openchlai/ai/commit/041add1b8305d35bc9fe5da181206cd3b172a715)
-**Generated:** 2026-01-22 14:35:25 UTC
+**Commit:** [\`2a75de4\`](https://github.com/openchlai/ai/commit/2a75de46f170e8c7c1c6e00e2572e3958a75a112)
+**Generated:** 2026-01-22 16:03:18 UTC
 **Python Version:** 3.12
-**Workflow:** [\`21252013873\`](https://github.com/openchlai/ai/actions/runs/21252013873)
+**Workflow:** [\`21255063605\`](https://github.com/openchlai/ai/actions/runs/21255063605)
 
 ## 🎯 Coverage Summary
 
@@ -34,7 +34,7 @@ app/api/translator_routes.py                       77      0   100%
 app/api/whisper_routes.py                         109      1    99%   74
 app/celery_app.py                                  10      0   100%
 app/config/__init__.py                              0      0   100%
-app/config/settings.py                            172      0   100%
+app/config/settings.py                            173      0   100%
 app/core/__init__.py                                0      0   100%
 app/core/celery_monitor.py                         61     32    48%   26-89
 app/core/enhanced_processing_manager.py            75      0   100%
@@ -79,7 +79,7 @@ app/utils/mode_detector.py                         16      0   100%
 app/utils/scp_audio_downloader.py                 232     22    91%   45, 51, 124-126, 138-140, 239-241, 353, 360-361, 385, 438, 546-555
 app/utils/text_utils.py                           268     20    93%   90-91, 158-169, 186, 241-242, 302-316, 357-358, 560
 -----------------------------------------------------------------------------
-TOTAL                                            7166   1711    76%
+TOTAL                                            7167   1711    76%
 ```
 
 ---
