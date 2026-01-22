@@ -5,7 +5,7 @@ const isProd = process.env.NODE_ENV === 'production'
 
 export default defineConfig({
     base: '/',  // Use root path to avoid CSS loading issues
-    title: "openCHS",
+    title: "OPENCHSAI",
     description: "A Child Helpline System",
     ignoreDeadLinks: true,
     themeConfig: {
@@ -13,9 +13,10 @@ export default defineConfig({
         { text: 'Home', link: '/' },
         { text: 'Getting Started', link: '/getting-started/introduction' },
         { text: 'User Guides', link: '/user-guides/for-helpline-operators/daily-workflow-guide' },
-        { text: 'Deployment & Administration', link: '/deployment-administration/installation/system-requirements' },
-        { text: 'Developer Documentation', link: '/developer-documentation/api-reference/authentication' },
+        { text: 'Helpline Service', link: '/helpline-service/overview' },
         { text: 'AI Services', link: '/ai-services/overview' },
+        //{ text: 'Deployment & Administration', link: '/deployment-administration/installation/system-requirements' },
+        { text: 'Developer Documentation', link: '/developer-documentation/api-reference/authentication' },
         { text: 'Governance & Legal', link: '/governance-legal/project-governance' },
         { text: 'Case Studies & Impact', link: '/case-studies-impact/success-stories' },
         { text: 'Resources', link: '/resources/faqs' }
@@ -67,7 +68,7 @@ export default defineConfig({
         ],
 
 
-        '/deployment-administration/': [
+        /*'/deployment-administration/': [
             {
                 text: 'Deployment & Administration',
                 items: [
@@ -100,9 +101,9 @@ export default defineConfig({
                     }
                 ]
             }
-        ],
+        ], */
 
-        '/developer-documentation/': [
+       '/developer-documentation/': [
             {
                 text: 'Developer Documentation',
                 items: [
@@ -142,6 +143,53 @@ export default defineConfig({
                     }
                 ]
             }
+        ], 
+
+        '/helpline-service/': [
+            {
+                text: 'Helpline Service',
+                items: [
+                    { text: 'Overview', link: '/helpline-service/overview' },
+                    { text: 'Architecture', link: '/helpline-service/architecture' },
+
+                    {
+                        text: 'Getting Started',
+                        items: [
+                            { text: 'Quick Start Guide', link: '/helpline-service/quick-start' }
+                        ]
+                    },
+
+                    {
+                        text: 'Installation & Deployment',
+                        items: [
+                            { text: 'Overview', link: '/helpline-service/installation/overview' },
+                            { text: 'Docker Setup', link: '/helpline-service/installation/docker-setup' }
+                        ]
+                    },
+
+                    {
+                        text: 'Configuration',
+                        items: [
+                            { text: 'Environment Setup', link: '/helpline-service/configuration' }
+                        ]
+                    },
+
+                    {
+                        text: 'Development',
+                        items: [
+                            { text: 'Development Guide', link: '/helpline-service/development' },
+                            { text: 'Deployment Workflow', link: '/helpline-service/deployment-workflow' }
+                        ]
+                    },
+
+                    {
+                        text: 'API Reference',
+                        items: [
+                            { text: 'API Overview', link: '/helpline-service/api-reference/overview' }
+                        ]
+                    }
+                ]
+            }
         ],
 
         '/ai-services/': [
@@ -149,46 +197,66 @@ export default defineConfig({
                 text: 'AI Services',
                 items: [
                     { text: 'Overview', link: '/ai-services/overview' },
-                    { text: 'Ethics', link: '/ai-services/ethics.md' },
+                    { text: 'Architecture', link: '/ai-services/architecture' },
+                    { text: 'Ethics & Compliance', link: '/ai-services/ethics' },
+
                     {
-                        text: 'AI/ML Models',
+                        text: 'Getting Started',
                         items: [
-                            { text: 'Classifier Model', link: '/ai-services/features/models/classifier_model.md' },
-                            { text: 'NER Model', link: '/ai-services/features/models/ner_model.md' },
-                            { text: 'QA Model', link: '/ai-services/features/models/qa_model.md' },
-                            { text: 'Summarizer Model', link: '/ai-services/features/models/summarizer_model.md' },
-                            { text: 'Translator Model', link: '/ai-services/features/models/translator_model.md' },
-                            { text: 'Whisper Model', link: '/ai-services/features/models/whisper_model.md' }
+                            { text: 'Quick Start Guide', link: '/ai-services/quick-start' }
                         ]
                     },
+
+                    {
+                        text: 'Installation & Deployment',
+                        items: [
+                            { text: 'Docker Setup', link: '/ai-services/installation/docker-compose' },
+                            { text: 'Kubernetes Deployment', link: '/ai-services/installation/kubernetes' },
+                            { text: 'Manual Installation', link: '/ai-services/installation/manual' }
+                        ]
+                    },
+
+                    {
+                        text: 'Core Features',
+                        items: [
+                            { text: 'Speech-to-Text (Whisper)', link: '/ai-services/features/whisper_model' },
+                            { text: 'Translation', link: '/ai-services/features/translator_model' },
+                            { text: 'Named Entity Recognition (NER)', link: '/ai-services/features/ner_model' },
+                            { text: 'Case Classification', link: '/ai-services/features/classifier_model' },
+                            { text: 'Text Summarization', link: '/ai-services/features/summarizer_model' },
+                            { text: 'Question-Answering', link: '/ai-services/features/qa_model' },
+                            { text: 'Real-time Call Sessions', link: '/ai-services/features/call_sessions' },
+                            { text: 'Data Analytics & Insights', link: '/ai-services/features/insights' }
+                        ]
+                    },
+
+                    {
+                        text: 'Configuration',
+                        items: [
+                            { text: 'Environment Setup', link: '/ai-services/configuration' }
+                        ]
+                    },
+
                     {
                         text: 'API Reference',
                         items: [
-                            { text: 'Audio API Reference', link: '/ai-services/features/api-reference/audio-api-reference.md' },
-                            { text: 'Agent Feedback API', link: '/ai-services/features/api-reference/agent_feedback.md' }
+                            { text: 'API Endpoints', link: '/ai-services/api-reference' }
                         ]
                     },
+
                     {
-                        text: 'Streaming & Real-Time Processing',
+                        text: 'Development',
                         items: [
-                            { text: 'Streaming API', link: '/ai-services/features/streaming/streaming.md' },
-                            { text: 'Call Session Management', link: '/ai-services/features/streaming/call-session-management.md' },
-                            { text: 'Call Sessions', link: '/ai-services/features/streaming/call_sessions.md' },
-                            { text: 'Progressive Processing Strategy', link: '/ai-services/features/streaming/progressive-processing-strategy.md' }
+                            { text: 'Development Guide', link: '/ai-services/development-guide' }
                         ]
                     },
+
                     {
-                        text: 'Core Services',
+                        text: 'Operations',
                         items: [
-                            { text: 'Notifications', link: '/ai-services/features/core-services/notifications.md' },
-                            { text: 'Insights', link: '/ai-services/features/core-services/insights.md' },
-                            { text: 'Health Monitoring', link: '/ai-services/features/core-services/health.md' }
-                        ]
-                    },
-                    {
-                        text: 'Configuration & Guides',
-                        items: [
-                            { text: 'Model Loading & Configuration', link: '/ai-services/features/guides/model-loading-and-configuration.md' }
+                            { text: 'Performance Tuning', link: '/ai-services/performance-tuning' },
+                            { text: 'Security', link: '/ai-services/security' },
+                            { text: 'Troubleshooting', link: '/ai-services/troubleshooting' }
                         ]
                     }
                 ]

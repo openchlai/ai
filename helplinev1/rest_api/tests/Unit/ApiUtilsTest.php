@@ -27,10 +27,12 @@ class ApiUtilsTest extends TestCase
         // Set up resource definitions
         global $RESOURCES, $METRICS;
         
-        $RESOURCES = [
-            'test_resource' => ['test_table', 'test_alias', '3', '0', '0', 'Test Resource', 'id DESC', '', '']
-        ];
+        if (!isset($RESOURCES) || !is_array($RESOURCES)) {
+            $RESOURCES = [];
+        }
+        $RESOURCES['test_resource'] = ['test_table', 'test_alias', '3', '0', '0', 'Test Resource', 'id DESC', '', ''];
         
+        // Override or define a minimal metrics set for this test context
         $METRICS = [
             'case_count' => ['COUNT(DISTINCT kase.id)', '', '', '', '', '', ''],
             'call_count' => ['COUNT(DISTINCT chan.id)', '', '', '', '', '', ''],
