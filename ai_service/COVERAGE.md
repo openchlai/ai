@@ -1,10 +1,10 @@
 # 📊 Code Coverage Report - AI Service
 
 **Branch:** rogendo_test
-**Commit:** [\`2a75de4\`](https://github.com/openchlai/ai/commit/2a75de46f170e8c7c1c6e00e2572e3958a75a112)
-**Generated:** 2026-01-22 16:03:18 UTC
+**Commit:** [\`c76d097\`](https://github.com/openchlai/ai/commit/c76d097c27c32d47d25e20861277bfec20a00f5d)
+**Generated:** 2026-01-23 13:57:05 UTC
 **Python Version:** 3.12
-**Workflow:** [\`21255063605\`](https://github.com/openchlai/ai/actions/runs/21255063605)
+**Workflow:** [\`21288306994\`](https://github.com/openchlai/ai/actions/runs/21288306994)
 
 ## 🎯 Coverage Summary
 
@@ -38,7 +38,7 @@ app/config/settings.py                            173      0   100%
 app/core/__init__.py                                0      0   100%
 app/core/celery_monitor.py                         61     32    48%   26-89
 app/core/enhanced_processing_manager.py            75      0   100%
-app/core/insights_service.py                       57     42    26%   14-19, 23-35, 75-208, 213-215
+app/core/insights_service.py                       56     43    23%   14-19, 23-35, 48-183, 188-190
 app/core/metrics.py                                68      0   100%
 app/core/notification_manager.py                  159     11    93%   113-114, 223-225, 258-259, 282-284, 288
 app/core/processing_modes.py                       93      2    98%   149-150
@@ -62,15 +62,15 @@ app/model_scripts/whisper_model.py                254     82    68%   77-78, 128
 app/models/__init__.py                              0      0   100%
 app/models/model_loader.py                         12     12     0%   2-18
 app/models/notification_types.py                   62      0   100%
-app/services/enhanced_notification_service.py     328      4    99%   308, 524-525, 848
+app/services/enhanced_notification_service.py     328      4    99%   308, 524-525, 849
 app/streaming/__init__.py                           3      0   100%
 app/streaming/audio_buffer.py                      36      0   100%
-app/streaming/call_session_manager.py             550    277    50%   45-47, 65, 71-78, 90-93, 121, 167-169, 220-221, 237-239, 280-284, 287-288, 319-323, 335-336, 345-349, 353-354, 356-357, 360, 385-387, 391-478, 524-526, 530-636, 640-665, 669-699, 703-762, 772-787, 791-869, 920-922, 955, 959-960, 993-995, 1003, 1015-1045
+app/streaming/call_session_manager.py             551    278    50%   45-47, 65, 71-78, 90-93, 121, 167-169, 220-221, 237-239, 280-284, 287-288, 319-323, 335-336, 345-349, 353-354, 356-357, 360, 385-387, 391-478, 524-526, 530-637, 641-666, 670-700, 704-763, 773-788, 792-870, 921-923, 956, 960-961, 994-996, 1004, 1016-1046
 app/streaming/progressive_processor.py            247     10    96%   16-18, 79, 125, 372-374, 386-387
 app/streaming/tcp_server.py                       111      4    96%   131-132, 136-137
 app/streaming/websocket_server.py                  57      0   100%
 app/tasks/__init__.py                               0      0   100%
-app/tasks/audio_tasks.py                          498    438    12%   28-167, 197-198, 209-415, 447-470, 510-1020, 1044-1072, 1088, 1094-1128, 1182-1290, 1294-1296
+app/tasks/audio_tasks.py                          510    450    12%   28-167, 197-198, 209-418, 450-473, 513-1036, 1060-1088, 1104, 1110-1144, 1198-1306, 1310-1312
 app/tasks/health_tasks.py                          11      0   100%
 app/tasks/model_tasks.py                          300     20    93%   34-59, 67, 559
 app/utils/__init__.py                               2      0   100%
@@ -79,7 +79,7 @@ app/utils/mode_detector.py                         16      0   100%
 app/utils/scp_audio_downloader.py                 232     22    91%   45, 51, 124-126, 138-140, 239-241, 353, 360-361, 385, 438, 546-555
 app/utils/text_utils.py                           268     20    93%   90-91, 158-169, 186, 241-242, 302-316, 357-358, 560
 -----------------------------------------------------------------------------
-TOTAL                                            7167   1711    76%
+TOTAL                                            7179   1725    76%
 ```
 
 ---
