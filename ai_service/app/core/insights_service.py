@@ -34,55 +34,54 @@ def call_ollama(model: str, prompt: str, endpoint: str = "http://localhost:11434
         logger.error(f"Ollama error: {e}")
         return None
 
-#  PRIMARY CATEGORIES (HIGH LEVEL)
-PRIMARY_CATEGORIES = [
-    'Advice and Counselling',
-    'Child Maintenance & Custody',
-    'Disability',
-    'GBV',
-    'Information',
-    'Nutrition',
-    'VANE'
-]
-
-#  DETAILED SUB-CATEGORIES
-SUB_CATEGORIES = [
-    "Bullying", "Child in Conflict with the Law", "Discrimination", "Drug/Alcohol Abuse",
-    "Family Relationship", "HIV/AIDS", "Homelessness", "Legal issues", "Missing Child",
-    "Peer Relationships", "Physical Health", "Psychosocial/Mental Health", 
-    "Relationships (Boy/Girl)", "Relationships (Parent/Child)", "Relationships (Student/Teacher)",
-    "School related issues", "Self Esteem", "Sexual & Reproductive Health", 
-    "Student/ Teacher Relationship", "Teen Pregnancy", "Adoption", "Birth Registration",
-    "Custody", "Foster Care", "Maintenance", "No Care Giver", "Other", "Albinism",
-    "Hearing impairment", "Hydrocephalus", "Mental impairment", "Multiple disabilities",
-    "Physical impairment", "Speech impairment", "Spinal bifida", "Visual impairment",
-    "Emotional/Psychological Violence", "Financial/Economic Violence", "Forced Marriage Violence",
-    "Harmful Practice", "Physical Violence", "Sexual Violence", "Child Abuse", "Child Rights",
-    "Info on Helpline", "Legal Issues", "Outside Mandate", "School Related Issues",
-    "Balanced Diet", "Breastfeeding", "Feeding & Food preparation", "Malnutrition",
-    "Obesity", "Stagnation", "Underweight", "Child Abduction", "Child Labor", "Child Marriage",
-    "Child Neglect", "Child Trafficking", "Emotional Abuse", "Female Genital Mutilation",
-    "OCSEA", "Physical Abuse", "Sexual Abuse", "Traditional Practice", "Unlawful Confinement"
-]
-
-def generate_case_insights(transcript: str) -> Dict[str, Any]:
+def generate_case_insights(transcript: str, classification_results: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
-    Input transcript → Mistral → JSON insights 
-    primary_category: FROM PRIMARY_CATEGORIES list ONLY
-    sub_category: FROM SUB_CATEGORIES list ONLY
+    Input transcript + DistilBERT classification → Mistral → JSON insights
+    Uses DistilBERT model's classification as the authoritative category source.
+
+    Args:
+        transcript: The call transcript text
+        classification_results: DistilBERT model predictions with categories and confidence scores
     """
-    
-    primary_cats_text = json.dumps(PRIMARY_CATEGORIES, indent=2)
-    sub_cats_text = json.dumps(SUB_CATEGORIES, indent=2)
-    
+
+    # Format classification results for the prompt
+    classification_section = ""
+
+    # Set default values
+    main_cat = "N/A"
+    sub_cat = "N/A"
+    intervention = "N/A"
+    priority = "N/A"
+
+    if classification_results:
+        main_cat = classification_results.get('main_category', 'N/A')
+        sub_cat = classification_results.get('sub_category', 'N/A')
+        intervention = classification_results.get('intervention', 'N/A')
+        priority = classification_results.get('priority', 'N/A')
+
+        classification_section = f"""
+=== PRE-CLASSIFIED CATEGORIES (MANDATORY - DO NOT CHANGE) ===
+
+REQUIRED OUTPUT VALUES:
+- primary_category: "{main_cat}"
+- sub_category: "{sub_cat}"
+- intervention: "{intervention}"
+- priority: "{priority}"
+
+Model Confidence: {classification_results.get('confidence', 0):.1%}
+
+**CRITICAL**: Copy these exact values into your category_suggestions output. DO NOT create different categories.
+=== END OF CLASSIFICATION ===
+"""
+
     prompt = f"""
 You are a Senior Child Protection Intake Specialist with 15+ years of experience in helpline crisis management and risk assessment. Your role is to:
 - Analyze case narratives objectively
 - Identify immediate safety concerns
-- Classify risk levels based on established criteria
+- Assess risk levels based on established criteria
 - Recommend appropriate interventions
 - Extract key entities (names, locations, organizations, dates)
-- Suggest case categories and tags
+- Provide relevant tags for the case
 
 
 === CASE NARRATIVE ===
@@ -90,20 +89,7 @@ You are a Senior Child Protection Intake Specialist with 15+ years of experience
 
 === END OF NARRATIVE ===
 
-**PRIMARY CATEGORIES (CHOOSE EXACTLY ONE):**
-{primary_cats_text}
-
-**SUB-CATEGORIES (CHOOSE EXACTLY ONE):**
-{sub_cats_text}
-
-**RULES:**
-1. primary_category: EXACT match from PRIMARY CATEGORIES ONLY
-2. sub_category: EXACT match from SUB-CATEGORIES ONLY  
-3. Map case to best fit for example:
-   - Drugs/Alcohol → 'Advice and Counselling' + 'Drug/Alcohol Abuse'
-   - Abuse → 'GBV' + specific abuse type
-   - Nutrition → 'Nutrition' + specific nutrition issue
-   - etc.
+{classification_section}
 
 
 
@@ -129,13 +115,15 @@ Evaluate the narrative and provide a comprehensive analysis in JSON format with 
    - dates: Array of dates/timestamps mentioned
 
 6. category_suggestions: Object with:
-   - primary_category: Suggested main case category
-   - sub_category: Suggested sub-category
-   - tags: Array of relevant tags/keywords
+   - primary_category: MUST match the pre-classified Main Category exactly
+   - sub_category: MUST match the pre-classified Sub-Category exactly
+   - intervention: MUST match the pre-classified Intervention exactly
+   - priority: MUST match the pre-classified Priority exactly
+   - tags: Array of relevant tags/keywords based on the case narrative
 
-7. priority: One of "Critical", "High", "Medium", or "Low" (may differ from risk_level)
 
 CRITICAL CONSTRAINTS:
+- MANDATORY: Use the exact pre-classified categories provided above. Do NOT generate your own categories.
 - ONLY use facts explicitly stated in the narrative
 - DO NOT infer, assume, or speculate beyond what is written
 - If information is insufficient, state this in rationale and lower confidence score
@@ -154,7 +142,7 @@ CRITICAL CONSTRAINTS:
 
 {{
   "risk_level": "Critical|High|Medium|Low",
-  "suggested_disposition": "Specific action", 
+  "suggested_disposition": "Specific action",
   "rationale_summary": "2-3 sentences",
   "confidence_score": 0.85,
   "extracted_entities": {{
@@ -164,9 +152,11 @@ CRITICAL CONSTRAINTS:
     "dates": []
   }},
   "category_suggestions": {{
-    "primary_category": "EXACT from PRIMARY list",
-    "sub_category": "EXACT from SUB list",
-    "tags": ["keywords"]
+    "primary_category": "{main_cat}",
+    "sub_category": "{sub_cat}",
+    "intervention": "{intervention}",
+    "priority": "{priority}",
+    "tags": ["relevant", "keywords"]
   }},
   "priority": "Critical|High|Medium|Low"
 }}
@@ -188,23 +178,8 @@ Your response MUST be ONLY valid JSON. Do not include markdown code blocks, expl
     except json.JSONDecodeError:
         sanitized = sanitize_json_response(response_text)
         insights = json.loads(sanitized)
-    
-    # STRICT VALIDATION - Force your lists
-    if 'category_suggestions' in insights:
-        cats = insights['category_suggestions']
-        
-        # Primary must be from PRIMARY_CATEGORIES
-        if 'primary_category' in cats and cats['primary_category'] not in PRIMARY_CATEGORIES:
-            logger.warning(f"Invalid primary '{cats['primary_category']}' → 'Advice and Counselling'")
-            cats['primary_category'] = 'Advice and Counselling'
-        
-        # Sub must be from SUB_CATEGORIES  
-        if 'sub_category' in cats and cats['sub_category'] not in SUB_CATEGORIES:
-            logger.warning(f"Invalid sub '{cats['sub_category']}' → 'Drug/Alcohol Abuse'")
-            cats['sub_category'] = 'Drug/Alcohol Abuse'
-    
-    
-    logger.info(" Insights with PRIMARY+SUB categories!")
+
+    logger.info("Generated insights from Mistral with DistilBERT classification context")
     return insights
 
 # TEST

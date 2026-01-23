@@ -604,11 +604,12 @@ class CallSessionManager:
                             # Generate and send Mistral GPT insights
                             try:
                                 from ..services.insights_service import generate_case_insights
-                                
+
                                 transcript = pipeline_result.get('transcript', '')
+                                classification = pipeline_result.get('classification', {})
                                 if transcript and len(transcript.strip()) > 50:
-                                    logger.info(f"🧠 [session] Generating Mistral GPT insights for call {call_id}")
-                                    gpt_insights = generate_case_insights(transcript)
+                                    logger.info(f"🧠 [session] Generating Mistral GPT insights with classification context for call {call_id}")
+                                    gpt_insights = generate_case_insights(transcript, classification_results=classification)
                                     
                                     # Send GPT insights notification
                                     # Commented out to reduce notification noise - use notification manager instead
