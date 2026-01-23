@@ -163,7 +163,7 @@ watch(() => props.filters, () => {
           v-for="(slice, index) in chartData" 
           :key="index"
           class="flex items-center gap-3 px-3 py-2 rounded"
-          :class="isDarkMode ? 'bg-gray-900/40' : 'bg-gray-50'"
+          :class="isDarkMode ? 'bg-black/40' : 'bg-gray-50'"
         >
           <div 
             class="w-3 h-3 rounded-sm flex-shrink-0"

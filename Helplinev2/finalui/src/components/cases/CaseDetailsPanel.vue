@@ -12,7 +12,7 @@
     class="fixed top-0 right-0 h-full shadow-2xl z-50 transform transition-all duration-300 ease-out overflow-hidden"
     :class="[
       panelWidthClass,
-      isDarkMode ? 'bg-gray-900 border-l border-transparent' : 'bg-white border-l border-transparent'
+      isDarkMode ? 'bg-black border-l border-transparent' : 'bg-white border-l border-transparent'
     ]"
     @click.stop
   >
@@ -41,7 +41,7 @@
       <div 
         class="flex items-center justify-between px-6 py-4 border-b"
         :class="isDarkMode 
-          ? 'bg-gray-800/50 border-transparent' 
+          ? 'bg-black/50 border-transparent' 
           : 'bg-gray-50 border-transparent'"
       >
         <!-- Breadcrumb -->
@@ -152,7 +152,7 @@
           <div 
             class="border rounded-lg p-5"
             :class="isDarkMode 
-              ? 'bg-gray-800 border-transparent' 
+              ? 'bg-black border-transparent' 
               : 'bg-white border-transparent'"
           >
             <h3 
@@ -280,7 +280,7 @@
               @click="currentView = 'edit'"
               class="px-4 py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 border"
               :class="isDarkMode 
-                ? 'bg-gray-800 text-gray-300 border-transparent hover:border-amber-500 hover:text-amber-500' 
+                ? 'bg-black text-gray-300 border-transparent hover:border-amber-500 hover:text-amber-500' 
                 : 'bg-white text-gray-700 border-transparent hover:border-amber-600 hover:text-amber-700'"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -294,7 +294,7 @@
               @click="currentView = 'history'"
               class="px-4 py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 border"
               :class="isDarkMode 
-                ? 'bg-gray-800 text-gray-300 border-transparent hover:border-purple-500 hover:text-purple-400' 
+                ? 'bg-black text-gray-300 border-transparent hover:border-purple-500 hover:text-purple-400' 
                 : 'bg-white text-gray-700 border-transparent hover:border-purple-600 hover:text-purple-700'"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

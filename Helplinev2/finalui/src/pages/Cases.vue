@@ -1,27 +1,7 @@
 <template>
   <div 
-    class="p-6 space-y-6 min-h-screen"
-    :class="isDarkMode ? 'bg-black' : 'bg-gray-50'"
+    class="space-y-6"
   >
-    <!-- Page Header -->
-    <div class="mb-6">
-      <h1 
-        class="text-3xl font-bold flex items-center gap-3"
-        :class="isDarkMode ? 'text-gray-100' : 'text-gray-900'"
-      >
-        <i-mdi-folder-account-outline 
-          class="w-8 h-8"
-          :class="isDarkMode ? 'text-amber-500' : 'text-amber-600'"
-        />
-        Cases
-      </h1>
-      <p 
-        class="mt-2"
-        :class="isDarkMode ? 'text-gray-400' : 'text-gray-600'"
-      >
-        Manage and track all case records and their statuses
-      </p>
-    </div>
 
     <!-- Filters -->
     <CasesFilter @update:filters="applyFilters" />
@@ -31,7 +11,7 @@
       v-if="casesStore.loading" 
       class="flex justify-center items-center py-12 rounded-lg shadow-xl border"
       :class="isDarkMode 
-        ? 'bg-neutral-900 border-transparent' 
+        ? 'bg-black border-transparent' 
         : 'bg-white border-transparent'"
     >
       <div 
@@ -97,7 +77,7 @@
             :disabled="casesStore.loading"
             class="px-5 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 text-sm border disabled:opacity-50 disabled:cursor-not-allowed"
             :class="isDarkMode 
-              ? 'bg-neutral-900 text-gray-300 border-transparent hover:border-green-500 hover:text-green-400' 
+              ? 'bg-black text-gray-300 border-transparent hover:border-green-500 hover:text-green-400' 
               : 'bg-white text-gray-700 border-transparent hover:border-green-600 hover:text-green-700'"
           >
             <i-mdi-refresh class="w-5 h-5" />
@@ -153,11 +133,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, inject } from 'vue'
+import { ref, onMounted, inject, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { useCaseStore } from '@/stores/cases'
 import { useAuthStore } from '@/stores/auth'
+import { useSearchStore } from '@/stores/search'
 import Table from '@/components/cases/Table.vue'
 import Timeline from '@/components/cases/Timeline.vue'
 import CasesFilter from '@/components/cases/CasesFilter.vue'
@@ -167,9 +148,28 @@ import Pagination from '@/components/base/Pagination.vue'
 const router = useRouter()
 const casesStore = useCaseStore()
 const authStore = useAuthStore()
+const searchStore = useSearchStore()
 const currentView = ref('timeline')
 const currentFilters = ref({})
 const selectedPageSize = ref(20)
+
+// Debounce handle for global search
+let searchDebounce = null
+
+// Watch for global search query changes
+watch(() => searchStore.query, (newQuery) => {
+  clearTimeout(searchDebounce)
+  searchDebounce = setTimeout(() => {
+    // Merge search query with existing filters
+    const searchParams = { ...currentFilters.value }
+    if (newQuery) {
+      searchParams.q = newQuery
+    } else {
+      delete searchParams.q
+    }
+    applyFilters(searchParams)
+  }, 500)
+})
 
 // ✅ FIXED: Case details panel state
 const showDetailsPanel = ref(false)
@@ -210,7 +210,7 @@ const getViewButtonClass = (isActive) => {
       : `${baseClasses} bg-amber-700 text-white shadow-lg shadow-amber-900/30`
   } else {
     return isDarkMode.value
-      ? `${baseClasses} bg-gray-800 text-gray-300 border border-transparent hover:border-amber-600 hover:text-amber-500`
+      ? `${baseClasses} bg-black text-gray-300 border border-transparent hover:border-amber-600 hover:text-amber-500`
       : `${baseClasses} bg-white text-gray-700 border border-transparent hover:border-amber-600 hover:text-amber-700`
   }
 }
@@ -235,7 +235,16 @@ async function applyFilters(filters) {
     console.log('Applying filters:', filters)
     casesStore.resetPagination()
     await casesStore.listCases({ ...filters, _o: 0, _c: selectedPageSize.value })
-    console.log('Filtered cases fetched:', casesStore.cases)
+    
+    // Auto-select if a single record is found via direct search
+    if (filters.q && casesStore.cases.length === 1) {
+      const caseItem = casesStore.cases[0]
+      const idIndex = casesStore.cases_k?.id?.[0]
+      if (idIndex !== undefined) {
+        handleCaseSelect(caseItem[idIndex])
+        toast.success(`Found and opened case: #${caseItem[idIndex]}`)
+      }
+    }
   } catch (err) {
     console.error('Error fetching filtered cases:', err)
     toast.error('Failed to apply filters')

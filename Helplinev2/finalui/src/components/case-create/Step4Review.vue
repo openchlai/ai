@@ -18,7 +18,7 @@
       <div 
         class="border rounded-lg"
         :class="isDarkMode 
-          ? 'bg-gray-800 border-transparent' 
+          ? 'bg-black border-transparent' 
           : 'bg-white border-transparent'"
       >
         <div 
@@ -136,7 +136,7 @@
       <div 
         class="border rounded-lg"
         :class="isDarkMode 
-          ? 'bg-gray-800 border-transparent' 
+          ? 'bg-black border-transparent' 
           : 'bg-white border-transparent'"
       >
         <div 
@@ -264,7 +264,7 @@
       <div 
         class="border rounded-lg"
         :class="isDarkMode 
-          ? 'bg-gray-800 border-transparent' 
+          ? 'bg-black border-transparent' 
           : 'bg-white border-transparent'"
       >
         <div 

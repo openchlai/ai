@@ -4,7 +4,7 @@
       v-if="Object.keys(groupedMessagesByDate).length === 0" 
       class="text-center py-12 rounded-lg shadow-xl border"
       :class="isDarkMode 
-        ? 'bg-neutral-900 border-transparent' 
+        ? 'bg-black border-transparent' 
         : 'bg-white border-transparent'"
     >
       <p 
@@ -37,7 +37,7 @@
                 ? 'ring-2 ring-amber-600 border-amber-600 bg-amber-600/10' 
                 : 'ring-2 ring-amber-600 border-amber-600 bg-amber-100'
               : isDarkMode
-                ? 'bg-neutral-900 border-transparent hover:border-amber-600/50 hover:shadow-2xl'
+                ? 'bg-black border-transparent hover:border-amber-600/50 hover:shadow-2xl'
                 : 'bg-white border-transparent hover:border-amber-600/50 hover:shadow-2xl'
           ]"
           @click="openChatPanel(message)"

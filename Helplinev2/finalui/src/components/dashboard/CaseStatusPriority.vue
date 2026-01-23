@@ -181,7 +181,7 @@ watch(() => props.filters, () => {
           <div 
             class="w-full rounded-full h-7 relative overflow-hidden border"
             :class="isDarkMode 
-              ? 'bg-gray-900/60 border-transparent' 
+              ? 'bg-black/60 border-transparent' 
               : 'bg-gray-100 border-transparent'"
           >
             <div 
@@ -228,7 +228,7 @@ watch(() => props.filters, () => {
           <div 
             class="w-full rounded-full h-7 relative overflow-hidden border"
             :class="isDarkMode 
-              ? 'bg-gray-900/60 border-transparent' 
+              ? 'bg-black/60 border-transparent' 
               : 'bg-gray-100 border-transparent'"
           >
             <div 

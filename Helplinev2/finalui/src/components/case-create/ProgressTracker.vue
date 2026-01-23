@@ -90,13 +90,13 @@ const getStepCircleClass = (step) => {
   if (isDarkMode.value) {
     // Dark mode classes
     if (status === 'pending' && !isCurrent) {
-      return 'bg-gray-900 border-transparent text-gray-500'
+      return 'bg-black border-transparent text-gray-500'
     } else if (isCurrent && status !== 'completed') {
-      return 'bg-gray-900 border-amber-600 text-amber-500'
+      return 'bg-black border-amber-600 text-amber-500'
     } else if (status === 'completed') {
       return 'border-green-500 bg-green-500 text-white'
     } else if (status === 'error') {
-      return 'border-red-600 text-red-400 bg-gray-900'
+      return 'border-red-600 text-red-400 bg-black'
     }
   } else {
     // Light mode classes

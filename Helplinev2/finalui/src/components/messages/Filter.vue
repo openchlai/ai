@@ -64,7 +64,7 @@ const getFilterButtonClass = (isActive) => {
       : `${baseClasses} bg-amber-700 text-white shadow-lg shadow-amber-900/30`
   } else {
     return isDarkMode.value
-      ? `${baseClasses} bg-neutral-900 text-gray-300 border border-transparent hover:border-amber-600 hover:text-amber-500`
+      ? `${baseClasses} bg-black text-gray-300 border border-transparent hover:border-amber-600 hover:text-amber-500`
       : `${baseClasses} bg-white text-gray-700 border border-transparent hover:border-amber-600 hover:text-amber-700`
   }
 }

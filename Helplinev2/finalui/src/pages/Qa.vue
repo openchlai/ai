@@ -1,27 +1,7 @@
 <template>
   <div 
-    class="p-6 space-y-6 min-h-screen"
-    :class="isDarkMode ? 'bg-black' : 'bg-gray-50'"
+    class="space-y-6"
   >
-    <!-- Page Header -->
-    <div class="mb-6">
-      <h1 
-        class="text-3xl font-bold flex items-center gap-3"
-        :class="isDarkMode ? 'text-gray-100' : 'text-gray-900'"
-      >
-        <i-mdi-check-decagram 
-          class="w-8 h-8"
-          :class="isDarkMode ? 'text-amber-500' : 'text-amber-700'"
-        />
-        QA Results
-      </h1>
-      <p 
-        class="mt-2"
-        :class="isDarkMode ? 'text-gray-400' : 'text-gray-600'"
-      >
-        Review and analyze quality assurance evaluations and call performance
-      </p>
-    </div>
 
     <!-- Filters -->
     <QAFilter @update:filters="applyFilters" />
@@ -31,7 +11,7 @@
       v-if="qaStore.loading" 
       class="flex justify-center items-center py-12 rounded-lg shadow-xl border"
       :class="isDarkMode 
-        ? 'bg-gray-800 border-transparent' 
+        ? 'bg-black border-transparent' 
         : 'bg-white border-transparent'"
     >
       <div 
@@ -89,7 +69,7 @@
             :disabled="qaStore.loading"
             class="px-5 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 text-sm border disabled:opacity-50 disabled:cursor-not-allowed"
             :class="isDarkMode 
-              ? 'bg-gray-800 text-gray-300 border-transparent hover:border-green-500 hover:text-green-400' 
+              ? 'bg-black text-gray-300 border-transparent hover:border-green-500 hover:text-green-400' 
               : 'bg-white text-gray-700 border-transparent hover:border-green-600 hover:text-green-700'"
           >
             <i-mdi-refresh class="w-5 h-5" />
@@ -158,7 +138,7 @@ const getViewButtonClass = (isActive) => {
       : `${baseClasses} bg-amber-700 text-white shadow-lg shadow-amber-900/30`
   } else {
     return isDarkMode.value
-      ? `${baseClasses} bg-gray-800 text-gray-300 border border-transparent hover:border-amber-600 hover:text-amber-500`
+      ? `${baseClasses} bg-black text-gray-300 border border-transparent hover:border-amber-600 hover:text-amber-500`
       : `${baseClasses} bg-white text-gray-700 border border-transparent hover:border-amber-600 hover:text-amber-700`
   }
 }

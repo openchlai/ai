@@ -20,14 +20,14 @@
             : 'border-transparent focus:border-amber-600 focus:ring-amber-600/50 hover:border-amber-600'),
         disabled 
           ? (isDarkMode 
-            ? 'bg-gray-800 text-gray-500 cursor-not-allowed' 
+            ? 'bg-black text-gray-500 cursor-not-allowed' 
             : 'bg-gray-200 text-gray-500 cursor-not-allowed')
           : (isDarkMode 
             ? 'bg-gray-700 text-gray-100' 
             : 'bg-gray-50 text-gray-900'),
         readonly 
           ? (isDarkMode 
-            ? 'bg-gray-800/50 cursor-default' 
+            ? 'bg-black/50 cursor-default' 
             : 'bg-gray-100 cursor-default')
           : ''
       ]"
