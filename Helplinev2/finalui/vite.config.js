@@ -7,6 +7,7 @@ import IconsResolver from 'unplugin-icons/resolver'
 import Components from 'unplugin-vue-components/vite'
 
 export default defineConfig({
+  base: '/demohelpline2/',
   plugins: [
     vue(),
     tailwindcss(),
