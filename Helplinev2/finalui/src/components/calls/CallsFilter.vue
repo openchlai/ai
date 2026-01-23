@@ -210,7 +210,7 @@
 </template>
 
 <script setup>
-import { reactive, defineEmits, inject } from 'vue'
+import { reactive, inject } from 'vue'
 
 // Inject theme
 const isDarkMode = inject('isDarkMode')

@@ -325,11 +325,12 @@
               : (isDarkMode ? 'text-gray-500 hover:text-white' : 'text-gray-400 hover:text-gray-900')"
           >
             <i-mdi-bell class="w-5 h-5" />
-            <span 
-              class="absolute top-1 right-1 min-w-[17px] h-[17px] px-1 bg-red-600 text-[9px] font-black text-white flex items-center justify-center rounded-full border-2 border-black shadow-xl" 
+            <span
+              v-if="notificationsStore.unreadCount > 0"
+              class="absolute top-1 right-1 min-w-[17px] h-[17px] px-1 bg-red-600 text-[9px] font-black text-white flex items-center justify-center rounded-full border-2 border-black shadow-xl"
               style="transform: translate(25%, -25%);"
             >
-              44
+              {{ notificationsStore.unreadCount }}
             </span>
           </button>
         </div>
@@ -488,35 +489,84 @@
               <h3 class="font-black text-sm uppercase tracking-tight">Notifications</h3>
             </div>
             <div class="max-h-[500px] overflow-y-auto">
-              <div v-for="i in 10" :key="i" class="px-5 py-4 border-b last:border-0 hover:bg-white/5 transition-colors cursor-pointer" :class="isDarkMode ? 'border-white/5' : 'border-gray-100'">
+              <div
+                v-if="notificationsStore.loading"
+                class="px-5 py-8 text-center"
+              >
+                <div class="animate-spin w-8 h-8 mx-auto border-4 border-amber-500 border-t-transparent rounded-full"></div>
+                <p class="mt-2 text-sm text-gray-500">Loading notifications...</p>
+              </div>
+
+              <div
+                v-else-if="notificationsStore.notifications.length === 0"
+                class="px-5 py-8 text-center"
+              >
+                <i-mdi-bell-off class="w-12 h-12 mx-auto text-gray-400 mb-2" />
+                <p class="text-sm text-gray-500">No notifications</p>
+              </div>
+
+              <div
+                v-else
+                v-for="(notification, index) in notificationsStore.notificationsAsObjects"
+                :key="notification.id"
+                class="px-5 py-4 border-b last:border-0 hover:bg-white/5 transition-colors cursor-pointer"
+                :class="[
+                  isDarkMode ? 'border-white/5' : 'border-gray-100',
+                  !notification.read_on || notification.read_on === '0' ? (isDarkMode ? 'bg-white/5' : 'bg-amber-50/30') : ''
+                ]"
+                @click="handleNotificationClick(notification)"
+              >
                 <div class="flex justify-between items-start mb-2">
                   <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold" :class="isDarkMode ? 'text-white' : 'text-gray-900'">Case Update</span>
-                    <span class="text-[10px] font-medium text-gray-500">from test</span>
+                    <span class="text-xs font-bold" :class="isDarkMode ? 'text-white' : 'text-gray-900'">
+                      {{ notification.action_verb || 'Case Update' }}
+                    </span>
+                    <span class="text-[10px] font-medium text-gray-500">
+                      from {{ notification.created_by || 'Unknown' }}
+                    </span>
                   </div>
                   <div class="text-right">
-                    <span class="text-[10px] font-bold text-gray-500 block uppercase">2 days ago</span>
-                    <span class="text-[10px] font-bold text-gray-500 uppercase">3:27 PM</span>
+                    <span class="text-[10px] font-bold text-gray-500 block uppercase">
+                      {{ formatTimeAgo(notification.created_on) }}
+                    </span>
+                    <span class="text-[10px] font-bold text-gray-500 uppercase">
+                      {{ formatTime(notification.created_on) }}
+                    </span>
                   </div>
                 </div>
                 <div class="flex items-center gap-1.5 mb-3 text-[10px] font-bold text-gray-500 opacity-80 overflow-x-hidden">
-                  <span>#31746</span>
-                  <i-mdi-chevron-right class="w-3 h-3 opacity-50" />
-                  <span>Abuse</span>
-                  <i-mdi-chevron-right class="w-3 h-3 opacity-50" />
-                  <span class="truncate">Child Exploitation</span>
-                  <i-mdi-chevron-right class="w-3 h-3 opacity-50" />
-                  <span>Child</span>
+                  <span v-if="notification.case_id">#{{ notification.case_id }}</span>
+                  <template v-if="notification.case_details">
+                    <i-mdi-chevron-right class="w-3 h-3 opacity-50" />
+                    <span class="truncate">{{ notification.case_details }}</span>
+                  </template>
                 </div>
-                <span class="px-2 py-0.5 bg-red-600 text-[9px] font-black text-white rounded uppercase tracking-widest inline-block">unread</span>
+                <span
+                  v-if="!notification.read_on || notification.read_on === '0'"
+                  class="px-2 py-0.5 bg-red-600 text-[9px] font-black text-white rounded uppercase tracking-widest inline-block"
+                >
+                  unread
+                </span>
               </div>
             </div>
             <div class="p-4 border-t" :class="isDarkMode ? 'border-white/5' : 'border-gray-50'">
               <div class="flex items-center justify-between px-2 text-[11px] font-bold text-gray-500">
-                <span>1 - 10 of 44</span>
+                <span>{{ notificationsStore.paginationInfo.rangeStart }} - {{ notificationsStore.paginationInfo.rangeEnd }} of {{ notificationsStore.paginationInfo.total }}</span>
                 <div class="flex gap-4">
-                  <button class="hover:text-amber-500 transition-colors"><i-mdi-chevron-left class="w-5 h-5" /></button>
-                  <button class="hover:text-amber-500 transition-colors"><i-mdi-chevron-right class="w-5 h-5" /></button>
+                  <button
+                    @click="handleNotificationPrevPage"
+                    :disabled="!notificationsStore.hasPrevPage"
+                    :class="notificationsStore.hasPrevPage ? 'hover:text-amber-500 transition-colors' : 'opacity-30 cursor-not-allowed'"
+                  >
+                    <i-mdi-chevron-left class="w-5 h-5" />
+                  </button>
+                  <button
+                    @click="handleNotificationNextPage"
+                    :disabled="!notificationsStore.hasNextPage"
+                    :class="notificationsStore.hasNextPage ? 'hover:text-amber-500 transition-colors' : 'opacity-30 cursor-not-allowed'"
+                  >
+                    <i-mdi-chevron-right class="w-5 h-5" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -532,6 +582,7 @@ import { ref, computed, onMounted, onUnmounted, markRaw, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useSearchStore } from '@/stores/search'
+import { useNotificationsStore } from '@/stores/notifications'
 
 const props = defineProps({
   isDarkMode: {
@@ -544,6 +595,7 @@ const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const searchStore = useSearchStore()
+const notificationsStore = useNotificationsStore()
 
 const dropdown = ref(null)
 const dialNumber = ref('')
@@ -721,8 +773,16 @@ const handleClickOutside = (event) => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   window.addEventListener('click', handleClickOutside)
+  // Fetch notifications only if user is authenticated
+  if (authStore.isAuthenticated) {
+    try {
+      await notificationsStore.fetchNotifications()
+    } catch (error) {
+      console.error('Failed to load notifications:', error)
+    }
+  }
 })
 
 onUnmounted(() => {
@@ -737,7 +797,7 @@ const handleLogout = async () => {
 const pageTitle = computed(() => {
   const path = route.path
   if (path === '/') return 'Dashboard'
-  
+
   const customTitles = {
     '/calls': 'Call Recordings',
     '/cases': 'Case Management',
@@ -751,15 +811,73 @@ const pageTitle = computed(() => {
   }
 
   if (customTitles[path]) return customTitles[path]
-  
+
   const segment = path.split('/')[1] || ''
   if (!segment) return 'Home'
-  
+
   return segment
     .split('-')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ')
 })
+
+// Notification helper functions
+const formatTimeAgo = (timestamp) => {
+  if (!timestamp) return ''
+  const date = new Date(Number(timestamp) * 1000)
+  const now = new Date()
+  const diffMs = now - date
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMs / 3600000)
+  const diffDays = Math.floor(diffMs / 86400000)
+
+  if (diffMins < 1) return 'just now'
+  if (diffMins < 60) return `${diffMins}m ago`
+  if (diffHours < 24) return `${diffHours}h ago`
+  if (diffDays < 7) return `${diffDays}d ago`
+  return date.toLocaleDateString()
+}
+
+const formatTime = (timestamp) => {
+  if (!timestamp) return ''
+  const date = new Date(Number(timestamp) * 1000)
+  return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+}
+
+const handleNotificationClick = async (notification) => {
+  console.log('Notification clicked:', notification)
+
+  // Mark as read if unread
+  if (!notification.read_on || notification.read_on === '0') {
+    try {
+      await notificationsStore.markAsRead(notification.id)
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error)
+    }
+  }
+
+  // Navigate to the case if case_id exists
+  if (notification.case_id) {
+    router.push(`/cases/${notification.case_id}`)
+    dropdown.value = null // Close dropdown
+  }
+}
+
+const handleNotificationPrevPage = async () => {
+  try {
+    await notificationsStore.prevPage()
+  } catch (error) {
+    console.error('Failed to load previous page:', error)
+  }
+}
+
+const handleNotificationNextPage = async () => {
+  try {
+    await notificationsStore.nextPage()
+  } catch (error) {
+    console.error('Failed to load next page:', error)
+  }
+}
 </script>
 
 <style scoped>

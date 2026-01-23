@@ -8,7 +8,7 @@ import Components from 'unplugin-vue-components/vite'
 
 export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current working directory.
-  const env = loadEnv(mode, process.cwd(), '');
+  const env = loadEnv(mode, path.resolve(__dirname), '');
 
   return {
     plugins: [
@@ -32,9 +32,9 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true, // rewrite Host header
           secure: false,      // allow self-signed SSL
           rewrite: (path) => path.replace(/^\/api-proxy/, env.VITE_BACKEND_PATH || '/helpline'),
-          configure: (proxy) => {
+          configure: (proxy, options) => {
             proxy.on('proxyReq', (_proxyReq, req) => {
-              console.log(`[proxy] ${req.method} ${req.url} -> ${proxy.target}${req.url}`);
+              console.log(`[proxy] ${req.method} ${req.url} -> ${options.target}${req.url}`);
             });
           },
         },

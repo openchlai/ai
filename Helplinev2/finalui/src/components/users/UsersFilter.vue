@@ -155,7 +155,7 @@
 </template>
 
 <script setup>
-import { reactive, defineEmits, inject } from 'vue'
+import { reactive, inject } from 'vue'
 
 const emit = defineEmits(['update:filters'])
 
