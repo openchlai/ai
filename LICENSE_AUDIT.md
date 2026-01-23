@@ -13,7 +13,7 @@
 | **Audit Owner** | Tech Lead |
 | **Audit Date** | 2026-01-22 |
 | **Audit Standard** | Digital Public Goods (DPG) Licensing Criteria |
-| **Status** | ⚠️ Pending |
+| **Status** | ✅ Completed |
 
 ## 2. DPG Licensing Requirement
 
@@ -48,8 +48,13 @@ No dependency may impose restrictions that:
 | Dependency Name | Introduced By | License | Compatible? (Y/N) | Risk Level | Notes |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `kombu` | `celery` | BSD-3-Clause | Y | Low | Core messaging lib |
+| `billiard` | `celery` | BSD-3-Clause | Y | Low | Multiprocessing |
+| `amqp` | `kombu` | BSD-3-Clause | Y | Low | Messaging protocol |
 | `starlette` | `fastapi` | BSD-3-Clause | Y | Low | ASGI framework |
+| `h11` | `uvicorn` | MIT | Y | Low | HTTP/1.1 protocol |
 | `huggingface-hub` | `transformers` | Apache-2.0 | Y | Low | Model hub client |
+| `yarl` | `aiohttp` | Apache-2.0 | Y | Low | URL parsing |
+| `multidict` | `aiohttp` | Apache-2.0 | Y | Low | Dictionary structure |
 
 ## 4. License Compatibility Assessment
 
