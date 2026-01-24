@@ -1,5 +1,11 @@
 <template>
+<<<<<<< HEAD
   <div class="space-y-6">
+=======
+  <div 
+    class="space-y-6"
+  >
+>>>>>>> main
     <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
 
       <!-- Left Column: Case Wizard -->
@@ -14,9 +20,18 @@
         </div>
 
         <!-- Step Content Area -->
+<<<<<<< HEAD
         <div class="rounded-xl shadow-xl border p-6 sm:p-8" :class="isDarkMode
           ? 'bg-black border-transparent'
           : 'bg-white border-transparent'">
+=======
+        <div 
+          class="rounded-xl shadow-xl border p-6 sm:p-8"
+          :class="isDarkMode 
+            ? 'bg-black border-transparent' 
+            : 'bg-white border-transparent'"
+        >
+>>>>>>> main
           <!-- Step 1: Reporter Selection -->
           <Step1ReporterSelection v-if="currentStep === 1" :currentStep="currentStep"
             :searchQuery="formData.step1.searchQuery" :filteredContacts="formData.step1.filteredContacts"

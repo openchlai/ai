@@ -1,4 +1,5 @@
 <template>
+<<<<<<< HEAD
   <div class="max-w-2xl w-full rounded-xl shadow-2xl border overflow-hidden" :class="isDarkMode
     ? 'bg-black border-transparent'
     : 'bg-white border-transparent'">
@@ -6,6 +7,21 @@
     <div class="px-8 py-5 border-b flex items-center justify-between" :class="isDarkMode
       ? 'border-transparent bg-black/50'
       : 'border-transparent bg-gray-50'">
+=======
+  <div 
+    class="max-w-2xl w-full rounded-xl shadow-2xl border overflow-hidden"
+    :class="isDarkMode 
+      ? 'bg-black border-transparent' 
+      : 'bg-white border-transparent'"
+  >
+    <!-- Header -->
+    <div 
+      class="px-8 py-5 border-b flex items-center justify-between"
+      :class="isDarkMode 
+        ? 'border-transparent bg-black/50' 
+        : 'border-transparent bg-gray-50'"
+    >
+>>>>>>> main
       <div class="flex items-center gap-3">
         <div class="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold" :class="isDarkMode
           ? 'bg-amber-600 text-white'
@@ -49,11 +65,24 @@
             </p>
 
             <!-- New Password Display -->
+<<<<<<< HEAD
             <div class="rounded-xl p-4 border" :class="isDarkMode
               ? 'bg-black border-transparent'
               : 'bg-white border-green-300'">
               <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
                 :class="isDarkMode ? 'text-gray-400' : 'text-gray-600'">
+=======
+            <div 
+              class="rounded-xl p-4 border"
+              :class="isDarkMode 
+                ? 'bg-black border-transparent' 
+                : 'bg-white border-green-300'"
+            >
+              <label 
+                class="block text-xs font-semibold uppercase tracking-wider mb-2"
+                :class="isDarkMode ? 'text-gray-400' : 'text-gray-600'"
+              >
+>>>>>>> main
                 New Temporary Password
               </label>
               <div class="flex items-center justify-between gap-3">
@@ -86,7 +115,14 @@
     </Transition>
 
     <!-- User Details -->
+<<<<<<< HEAD
     <div class="px-8 py-6 space-y-4" :class="isDarkMode ? 'bg-black' : 'bg-white'">
+=======
+    <div 
+      class="px-8 py-6 space-y-4"
+      :class="isDarkMode ? 'bg-black' : 'bg-white'"
+    >
+>>>>>>> main
       <!-- Role Badge -->
       <div>
         <label class="text-xs font-semibold uppercase tracking-wider mb-2 block"
@@ -188,9 +224,18 @@
     </div>
 
     <!-- Action Buttons -->
+<<<<<<< HEAD
     <div class="px-8 py-5 border-t flex gap-3" :class="isDarkMode
       ? 'border-transparent bg-black/30'
       : 'border-transparent bg-gray-50'">
+=======
+    <div 
+      class="px-8 py-5 border-t flex gap-3"
+      :class="isDarkMode 
+        ? 'border-transparent bg-black/30' 
+        : 'border-transparent bg-gray-50'"
+    >
+>>>>>>> main
       <!-- Show different buttons based on reset state -->
       <template v-if="resetSuccess && newPassword">
         <!-- After successful reset, show Done button -->

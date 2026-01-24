@@ -9,7 +9,13 @@
     :class="[
       panelWidthClass,
       isDarkMode ? 'bg-black border-l border-transparent' : 'bg-white border-l border-transparent'
+<<<<<<< HEAD
     ]" @click.stop>
+=======
+    ]"
+    @click.stop
+  >
+>>>>>>> main
     <!-- Loading State -->
     <div v-if="loading" class="h-full flex flex-col items-center justify-center gap-4">
       <div class="w-12 h-12 border-4 rounded-full animate-spin" :class="isDarkMode
@@ -23,9 +29,18 @@
     <!-- Content (when loaded) -->
     <div v-else-if="caseItem" class="h-full flex flex-col">
       <!-- Header with breadcrumb -->
+<<<<<<< HEAD
       <div class="flex items-center justify-between px-6 py-4 border-b" :class="isDarkMode
         ? 'bg-black/50 border-transparent'
         : 'bg-gray-50 border-transparent'">
+=======
+      <div 
+        class="flex items-center justify-between px-6 py-4 border-b"
+        :class="isDarkMode 
+          ? 'bg-black/50 border-transparent' 
+          : 'bg-gray-50 border-transparent'"
+      >
+>>>>>>> main
         <!-- Breadcrumb -->
         <div class="flex items-center gap-2 text-sm">
           <button v-if="currentView !== 'details'" @click="currentView = 'details'" class="transition-colors" :class="isDarkMode
@@ -94,10 +109,23 @@
           </div>
 
           <!-- Case Information -->
+<<<<<<< HEAD
           <div class="border rounded-lg p-5" :class="isDarkMode
             ? 'bg-black border-transparent'
             : 'bg-white border-transparent'">
             <h3 class="text-lg font-bold mb-4" :class="isDarkMode ? 'text-gray-100' : 'text-gray-900'">
+=======
+          <div 
+            class="border rounded-lg p-5"
+            :class="isDarkMode 
+              ? 'bg-black border-transparent' 
+              : 'bg-white border-transparent'"
+          >
+            <h3 
+              class="text-lg font-bold mb-4"
+              :class="isDarkMode ? 'text-gray-100' : 'text-gray-900'"
+            >
+>>>>>>> main
               Case Information
             </h3>
 
@@ -187,9 +215,16 @@
 
             <button v-if="authStore.isSupervisor" @click="currentView = 'edit'"
               class="px-4 py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 border"
+<<<<<<< HEAD
               :class="isDarkMode
                 ? 'bg-black text-gray-300 border-transparent hover:border-amber-500 hover:text-amber-500'
                 : 'bg-white text-gray-700 border-transparent hover:border-amber-600 hover:text-amber-700'">
+=======
+              :class="isDarkMode 
+                ? 'bg-black text-gray-300 border-transparent hover:border-amber-500 hover:text-amber-500' 
+                : 'bg-white text-gray-700 border-transparent hover:border-amber-600 hover:text-amber-700'"
+            >
+>>>>>>> main
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
@@ -199,9 +234,16 @@
 
             <button @click="currentView = 'history'"
               class="px-4 py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 border"
+<<<<<<< HEAD
               :class="isDarkMode
                 ? 'bg-black text-gray-300 border-transparent hover:border-purple-500 hover:text-purple-400'
                 : 'bg-white text-gray-700 border-transparent hover:border-purple-600 hover:text-purple-700'">
+=======
+              :class="isDarkMode 
+                ? 'bg-black text-gray-300 border-transparent hover:border-purple-500 hover:text-purple-400' 
+                : 'bg-white text-gray-700 border-transparent hover:border-purple-600 hover:text-purple-700'"
+            >
+>>>>>>> main
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10" />
                 <polyline points="12 6 12 12 16 14" />

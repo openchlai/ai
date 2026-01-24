@@ -1,9 +1,18 @@
 <template>
   <div class="p-6">
     <!-- Header with Save/Cancel buttons -->
+<<<<<<< HEAD
     <div class="flex items-center justify-between mb-6 pb-4 border-b sticky top-0 z-10 -mx-6 px-6 -mt-6 pt-6" :class="isDarkMode
       ? 'bg-black border-transparent'
       : 'bg-white border-transparent'">
+=======
+    <div 
+      class="flex items-center justify-between mb-6 pb-4 border-b sticky top-0 z-10 -mx-6 px-6 -mt-6 pt-6"
+      :class="isDarkMode 
+        ? 'bg-black border-transparent' 
+        : 'bg-white border-transparent'"
+    >
+>>>>>>> main
       <div>
         <h2 class="text-xl font-bold" :class="isDarkMode ? 'text-gray-100' : 'text-gray-900'">
           Edit Case #{{ getCaseValue('id') }}
@@ -158,10 +167,21 @@
         <div class="space-y-3">
           <!-- Client List -->
           <div v-if="formData.clients_case.length > 0" class="space-y-2">
+<<<<<<< HEAD
             <div v-for="(client, index) in formData.clients_case" :key="index"
               class="flex items-center justify-between p-3 border rounded-lg" :class="isDarkMode
                 ? 'bg-black border-transparent'
                 : 'bg-gray-50 border-transparent'">
+=======
+            <div
+              v-for="(client, index) in formData.clients_case"
+              :key="index"
+              class="flex items-center justify-between p-3 border rounded-lg"
+              :class="isDarkMode 
+                ? 'bg-black border-transparent' 
+                : 'bg-gray-50 border-transparent'"
+            >
+>>>>>>> main
               <div class="flex-1">
                 <div class="font-semibold text-sm" :class="isDarkMode ? 'text-gray-100' : 'text-gray-900'">
                   {{ client.name || 'Unnamed Client' }}
@@ -186,9 +206,19 @@
           </div>
 
           <!-- Empty State -->
+<<<<<<< HEAD
           <div v-else class="text-center p-8 border border-dashed rounded-lg" :class="isDarkMode
             ? 'bg-black border-transparent text-gray-500'
             : 'bg-white border-transparent text-gray-500'">
+=======
+          <div 
+            v-else
+            class="text-center p-8 border border-dashed rounded-lg"
+            :class="isDarkMode 
+              ? 'bg-black border-transparent text-gray-500' 
+              : 'bg-white border-transparent text-gray-500'"
+          >
+>>>>>>> main
             No clients added yet
           </div>
 
@@ -213,10 +243,21 @@
         <div class="space-y-3">
           <!-- Perpetrator List -->
           <div v-if="formData.perpetrators_case.length > 0" class="space-y-2">
+<<<<<<< HEAD
             <div v-for="(perp, index) in formData.perpetrators_case" :key="index"
               class="flex items-center justify-between p-3 border rounded-lg" :class="isDarkMode
                 ? 'bg-black border-transparent'
                 : 'bg-gray-50 border-transparent'">
+=======
+            <div
+              v-for="(perp, index) in formData.perpetrators_case"
+              :key="index"
+              class="flex items-center justify-between p-3 border rounded-lg"
+              :class="isDarkMode 
+                ? 'bg-black border-transparent' 
+                : 'bg-gray-50 border-transparent'"
+            >
+>>>>>>> main
               <div class="flex-1">
                 <div class="font-semibold text-sm" :class="isDarkMode ? 'text-gray-100' : 'text-gray-900'">
                   {{ perp.name || 'Unnamed' }}
@@ -241,9 +282,19 @@
           </div>
 
           <!-- Empty State -->
+<<<<<<< HEAD
           <div v-else class="text-center p-8 border border-dashed rounded-lg" :class="isDarkMode
             ? 'bg-black border-transparent text-gray-500'
             : 'bg-white border-transparent text-gray-500'">
+=======
+          <div 
+            v-else
+            class="text-center p-8 border border-dashed rounded-lg"
+            :class="isDarkMode 
+              ? 'bg-black border-transparent text-gray-500' 
+              : 'bg-white border-transparent text-gray-500'"
+          >
+>>>>>>> main
             No perpetrators added yet
           </div>
 
@@ -283,6 +334,7 @@
     </div>
 
     <!-- Bottom Save/Cancel buttons -->
+<<<<<<< HEAD
     <div class="flex justify-end gap-3 mt-6 pt-6 border-t sticky bottom-0 -mx-6 px-6 -mb-6 pb-6" :class="isDarkMode
       ? 'bg-black border-transparent'
       : 'bg-white border-transparent'">
@@ -290,6 +342,22 @@
         :class="isDarkMode
           ? 'bg-gray-700 text-gray-300 border-transparent hover:bg-gray-600'
           : 'bg-white text-gray-700 border-transparent hover:bg-gray-50'">
+=======
+    <div 
+      class="flex justify-end gap-3 mt-6 pt-6 border-t sticky bottom-0 -mx-6 px-6 -mb-6 pb-6"
+      :class="isDarkMode 
+        ? 'bg-black border-transparent' 
+        : 'bg-white border-transparent'"
+    >
+      <button
+        @click="$emit('cancel')"
+        type="button"
+        class="px-4 py-2 border rounded-lg transition-colors font-medium"
+        :class="isDarkMode 
+          ? 'bg-gray-700 text-gray-300 border-transparent hover:bg-gray-600' 
+          : 'bg-white text-gray-700 border-transparent hover:bg-gray-50'"
+      >
+>>>>>>> main
         Cancel
       </button>
       <button @click="handleSave" :disabled="isSubmitting" type="button"

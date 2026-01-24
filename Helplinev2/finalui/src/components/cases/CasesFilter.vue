@@ -1,8 +1,17 @@
 <template>
+<<<<<<< HEAD
   <div class="w-full rounded-lg p-4 shadow-xl border border-transparent mb-4 transition-all duration-300" :class="isDarkMode
     ? 'bg-black'
     : 'bg-white'">
 
+=======
+  <div 
+    class="w-full rounded-lg p-4 shadow-xl border border-transparent mb-4"
+    :class="isDarkMode 
+      ? 'bg-black' 
+      : 'bg-white'"
+  >
+>>>>>>> main
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <!-- Global Search -->
       <div class="flex flex-col">

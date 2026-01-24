@@ -1,14 +1,33 @@
 <template>
+<<<<<<< HEAD
   <div class="space-y-6">
+=======
+  <div 
+    class="space-y-6"
+  >
+>>>>>>> main
 
     <!-- Filters -->
     <CasesFilter @update:filters="applyFilters" />
 
     <!-- Loading State -->
+<<<<<<< HEAD
     <div v-if="casesStore.loading" class="flex justify-center items-center py-12 rounded-lg shadow-xl border" :class="isDarkMode
       ? 'bg-black border-transparent'
       : 'bg-white border-transparent'">
       <div :class="isDarkMode ? 'text-gray-400' : 'text-gray-600'">
+=======
+    <div 
+      v-if="casesStore.loading" 
+      class="flex justify-center items-center py-12 rounded-lg shadow-xl border"
+      :class="isDarkMode 
+        ? 'bg-black border-transparent' 
+        : 'bg-white border-transparent'"
+    >
+      <div 
+        :class="isDarkMode ? 'text-gray-400' : 'text-gray-600'"
+      >
+>>>>>>> main
         Loading cases...
       </div>
     </div>
@@ -49,9 +68,16 @@
 
           <button @click="refreshCases" :disabled="casesStore.loading"
             class="px-5 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 text-sm border disabled:opacity-50 disabled:cursor-not-allowed"
+<<<<<<< HEAD
             :class="isDarkMode
               ? 'bg-black text-gray-300 border-transparent hover:border-green-500 hover:text-green-400'
               : 'bg-white text-gray-700 border-transparent hover:border-green-600 hover:text-green-700'">
+=======
+            :class="isDarkMode 
+              ? 'bg-black text-gray-300 border-transparent hover:border-green-500 hover:text-green-400' 
+              : 'bg-white text-gray-700 border-transparent hover:border-green-600 hover:text-green-700'"
+          >
+>>>>>>> main
             <i-mdi-refresh class="w-5 h-5" />
             Refresh
           </button>
@@ -84,6 +110,7 @@
 </template>
 
 <script setup>
+<<<<<<< HEAD
   import { ref, onMounted, inject, watch } from 'vue'
   import { useRouter } from 'vue-router'
   import { toast } from 'vue-sonner'
@@ -117,6 +144,214 @@
         searchParams.q = newQuery
       } else {
         delete searchParams.q
+=======
+import { ref, onMounted, inject, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { toast } from 'vue-sonner'
+import { useCaseStore } from '@/stores/cases'
+import { useAuthStore } from '@/stores/auth'
+import { useSearchStore } from '@/stores/search'
+import Table from '@/components/cases/Table.vue'
+import Timeline from '@/components/cases/Timeline.vue'
+import CasesFilter from '@/components/cases/CasesFilter.vue'
+import CaseDetailsPanel from '@/components/cases/CaseDetailsPanel.vue'
+import Pagination from '@/components/base/Pagination.vue'
+
+const router = useRouter()
+const casesStore = useCaseStore()
+const authStore = useAuthStore()
+const searchStore = useSearchStore()
+const currentView = ref('timeline')
+const currentFilters = ref({})
+const selectedPageSize = ref(20)
+
+// Debounce handle for global search
+let searchDebounce = null
+
+// Watch for global search query changes
+watch(() => searchStore.query, (newQuery) => {
+  clearTimeout(searchDebounce)
+  searchDebounce = setTimeout(() => {
+    // Merge search query with existing filters
+    const searchParams = { ...currentFilters.value }
+    if (newQuery) {
+      searchParams.q = newQuery
+    } else {
+      delete searchParams.q
+    }
+    applyFilters(searchParams)
+  }, 500)
+})
+
+// ✅ FIXED: Case details panel state
+const showDetailsPanel = ref(false)
+const selectedCase = ref(null) // For backward compatibility
+const selectedCaseData = ref(null) // Full case data with mapping
+const loadingCaseDetails = ref(false)
+
+// Inject theme
+const isDarkMode = inject('isDarkMode')
+
+// Helper function to get value from case using cases_k structure
+const getCaseValue = (caseItem, key) => {
+  if (!caseItem || !casesStore.cases_k?.[key]) return null
+  return caseItem[casesStore.cases_k[key][0]]
+}
+
+// Generate session tracking IDs
+const generateSessionIds = () => {
+  const timestamp = Date.now()
+  const userId = authStore.user?.id || '100'
+  const srcUid = `edit-${userId}-${timestamp}`
+  
+  return {
+    src_uid: srcUid,
+    src_uid2: `${srcUid}-1`,
+    src_callid: `${srcUid}-1`,
+    src_usr: userId
+  }
+}
+
+// Dynamic button class for view toggle
+const getViewButtonClass = (isActive) => {
+  const baseClasses = 'px-5 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 text-sm'
+  
+  if (isActive) {
+    return isDarkMode.value
+      ? `${baseClasses} bg-amber-600 text-white shadow-lg shadow-amber-900/50`
+      : `${baseClasses} bg-amber-700 text-white shadow-lg shadow-amber-900/30`
+  } else {
+    return isDarkMode.value
+      ? `${baseClasses} bg-black text-gray-300 border border-transparent hover:border-amber-600 hover:text-amber-500`
+      : `${baseClasses} bg-white text-gray-700 border border-transparent hover:border-amber-600 hover:text-amber-700`
+  }
+}
+
+// Fetch cases on mount
+onMounted(async () => {
+  try {
+    console.log('Fetching cases...')
+    await casesStore.listCases({ _o: 0, _c: selectedPageSize.value })
+    console.log('Cases fetched:', casesStore.cases)
+    console.log('Pagination info:', casesStore.paginationInfo)
+  } catch (err) {
+    console.error('Failed to fetch cases:', err)
+    toast.error('Failed to load cases')
+  }
+})
+
+// Apply filters and fetch cases (resets to first page)
+async function applyFilters(filters) {
+  currentFilters.value = filters
+  try {
+    console.log('Applying filters:', filters)
+    casesStore.resetPagination()
+    await casesStore.listCases({ ...filters, _o: 0, _c: selectedPageSize.value })
+    
+    // Auto-select if a single record is found via direct search
+    if (filters.q && casesStore.cases.length === 1) {
+      const caseItem = casesStore.cases[0]
+      const idIndex = casesStore.cases_k?.id?.[0]
+      if (idIndex !== undefined) {
+        handleCaseSelect(caseItem[idIndex])
+        toast.success(`Found and opened case: #${caseItem[idIndex]}`)
+      }
+    }
+  } catch (err) {
+    console.error('Error fetching filtered cases:', err)
+    toast.error('Failed to apply filters')
+  }
+}
+
+// Refresh cases with current filters (maintains current page)
+async function refreshCases() {
+  try {
+    console.log('Refreshing cases...')
+    await casesStore.listCases({
+      ...currentFilters.value,
+      _o: casesStore.pagination.offset,
+      _c: casesStore.pagination.limit
+    })
+    console.log('Cases refreshed')
+    toast.success('Cases refreshed successfully!')
+  } catch (err) {
+    console.error('Error refreshing cases:', err)
+    toast.error('Failed to refresh cases')
+  }
+}
+
+// Pagination handlers
+async function goToNextPage() {
+  try {
+    await casesStore.nextPage(currentFilters.value)
+  } catch (err) {
+    console.error('Error going to next page:', err)
+    toast.error('Failed to load next page.')
+  }
+}
+
+async function goToPrevPage() {
+  try {
+    await casesStore.prevPage(currentFilters.value)
+  } catch (err) {
+    console.error('Error going to previous page:', err)
+    toast.error('Failed to load previous page.')
+  }
+}
+
+async function goToPage(page) {
+  if (page === '...') return
+  try {
+    await casesStore.goToPage(page, currentFilters.value)
+  } catch (err) {
+    console.error('Error going to page:', err)
+    toast.error('Failed to load page.')
+  }
+}
+
+async function changePageSize(size) {
+  selectedPageSize.value = size
+  try {
+    await casesStore.setPageSize(size, currentFilters.value)
+  } catch (err) {
+    console.error('Error changing page size:', err)
+    toast.error('Failed to change page size.')
+  }
+}
+
+// Navigate to Case Creation page
+function createCase() {
+  router.push({ name: 'CaseCreation' })
+}
+
+// ✅ FIXED: Handle case selection with API fetch
+async function handleCaseSelect(caseId) {
+  console.log('📥 Cases.vue received case ID:', caseId)
+  
+  if (!caseId) {
+    console.error('❌ No case ID provided')
+    return
+  }
+  
+  try {
+    loadingCaseDetails.value = true
+    showDetailsPanel.value = true // Show panel immediately with loading state
+    
+    console.log('🔄 Fetching case details for ID:', caseId)
+    
+    // Fetch full case details from API
+    const response = await casesStore.viewCase(caseId)
+    
+    console.log('📦 Full API response:', response)
+    console.log('📋 Cases array:', response?.cases)
+    console.log('🗺️ Cases_k mapping:', response?.cases_k)
+    
+    // Store the fetched case data locally
+    if (response?.cases?.[0]) {
+      selectedCaseData.value = {
+        caseItem: response.cases[0],
+        cases_k: response.cases_k
+>>>>>>> main
       }
       applyFilters(searchParams)
     }, 500)
