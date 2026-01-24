@@ -19,6 +19,9 @@
         <RouterView />
       </main>
     </div>
+
+    <!-- Global Active Call Toolbar -->
+    <ActiveCallToolbar />
   </div>
 </template>
 
@@ -27,7 +30,9 @@ import { computed, provide } from 'vue'
 import { useRoute } from 'vue-router'
 import { useTheme } from '@/composables/useTheme'
 import Sidebar from '@/components/layout/Sidebar.vue'
+
 import Navbar from '@/components/layout/Navbar.vue'
+import ActiveCallToolbar from '@/components/softphone/ActiveCallToolbar.vue'
 
 const route = useRoute()
 const { isDarkMode, toggleTheme } = useTheme()
@@ -35,6 +40,7 @@ const { isDarkMode, toggleTheme } = useTheme()
 // Provide theme to all child components
 provide('isDarkMode', isDarkMode)
 provide('toggleTheme', toggleTheme)
+
 
 // Hide sidebar and navbar on login page
 const showSidebar = computed(() => {

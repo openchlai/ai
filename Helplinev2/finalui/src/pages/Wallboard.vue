@@ -53,7 +53,9 @@ import { useApiData } from '@/composables/useApiData'
 import { formatDuration, getStatusText } from '@/utils/formatters'
 import { useTheme } from '@/composables/useTheme' // ✅ Import shared theme composable
 
-const WSHOST = 'wss://demo-openchs.bitz-itc.com:8384/ami/sync?c=-2'
+// Use environment variable or fallback to new demo server
+const AMI_HOST = import.meta.env.VITE_AMI_WS_URL || 'wss://demo-openchs.bitz-itc.com:8384/ami/sync'
+const WSHOST = `${AMI_HOST}?c=-2`
 
 export default {
   name: 'App',
@@ -83,7 +85,9 @@ export default {
     // Use API data composable
     const {
       apiData,
-      fetchCasesData
+      wallboardData,
+      fetchCasesData,
+      fetchLiveAgents
     } = useApiData(axiosInstance)
     
     // Use counsellor data composable
@@ -148,44 +152,95 @@ export default {
 
     // Separate counsellors and callers based on CHAN_CONTEXT
     const counsellorsWithQueueData = computed(() => {
-      const counsellorChannels = channels.value.filter(ch => {
+      // 1. Combine Logged-in Agents from both 'live' and 'users' API collections
+      const { live, users, live_k, users_k } = wallboardData.value
+      
+      const processApiList = (list, k, source) => {
+          if (!list || list.length === 0) return []
+          
+          // Extension is usually at index 7 based on legacy keys, or found by name
+          // Fallback to commonly observed indices if keys are missing
+          const extIdx = k.exten?.[0] ?? k.extension?.[0] ?? 0
+          const nameIdx = k.contact_fullname?.[0] ?? k.name?.[0] ?? 1
+          
+          return list.map(row => {
+              const extension = String(row[extIdx] || '')
+              const name = row[nameIdx] || 'Unknown'
+              
+              return {
+                  extension,
+                  name,
+                  isAvailable: true,
+                  source
+              }
+          }).filter(a => a.extension && a.extension !== 'undefined' && a.extension !== 'null')
+      }
+
+      const apiAgents = [
+          ...processApiList(live, live_k, 'live'),
+          ...processApiList(users, users_k, 'users')
+      ]
+
+      // 2. Identify active channels from WebSocket for counsellors
+      const activeChannels = channels.value.filter(ch => {
         const context = (ch.CHAN_CONTEXT || '').toLowerCase()
-        return context === 'agentlogin'
+        return context === 'agentlogin' || context === 'counselor' || context === 'agent' || context.includes('login')
       })
 
-      return counsellorChannels.map((ch) => {
-        const extension = ch.CHAN_EXTEN || '--'
-        const name = counsellorNames.value[extension] || 'Unknown'
-        const stats = counsellorStats.value[extension] || { answered: '--', missed: '--', talkTime: '--' }
-
-        // Find connected caller by matching bridge IDs
-        let connectedCallerNumber = '--'
-        if (Number(ch.CHAN_STATE_CONNECT) && ch.CHAN_BRIDGE_ID) {
-          const connectedCaller = callersData.value.find(caller => 
-            caller.channelData.CHAN_BRIDGE_ID === ch.CHAN_BRIDGE_ID
-          )
-          if (connectedCaller) {
-            connectedCallerNumber = connectedCaller.callerNumber
+      // 3. Merge: Start with API list, then add WS agents (deduplicate by extension)
+      const mergedMap = new Map()
+      
+      apiAgents.forEach(a => {
+          // Normalize extension
+          const key = String(a.extension)
+          if (!mergedMap.has(key)) {
+              mergedMap.set(key, { ...a, isOnline: true })
           }
-        }
+      })
+      
+      activeChannels.forEach(ch => {
+          const ext = String(ch.CHAN_EXTEN)
+          const existing = mergedMap.get(ext)
+          if (existing) {
+              existing.channelData = ch
+              existing.id = ch.CHAN_UNIQUEID || ch._uid
+          } else {
+              mergedMap.set(ext, {
+                  extension: ext,
+                  name: counsellorNames.value[ext] || 'User ' + ext,
+                  channelData: ch,
+                  id: ch.CHAN_UNIQUEID || ch._uid,
+                  isOnline: true,
+                  isAvailable: true,
+                  source: 'websocket'
+              })
+          }
+      })
+
+      const finalRows = Array.from(mergedMap.values()).map(agent => {
+        const ch = agent.channelData
+        const stats = counsellorStats.value[agent.extension] || { answered: '--', missed: '--', talkTime: '--' }
 
         return {
-          id: ch.CHAN_UNIQUEID || ch._uid,
-          extension: extension,
-          name: name,
-          caller: connectedCallerNumber,
+          id: agent.id || `agent-${agent.extension}`,
+          extension: agent.extension,
+          name: agent.name,
+          caller: agent.callerNumber || '--',
           answered: stats.answered,
           missed: stats.missed,
           talkTime: '--',
-          queueStatus: getStatusText(ch),
-          duration: Number(ch.CHAN_STATE_CONNECT) ? formatDuration(ch.CHAN_TS) : '--',
+          queueStatus: ch ? getStatusText(ch) : (agent.isAvailable ? 'Available' : 'Paused'),
+          duration: (ch && Number(ch.CHAN_STATE_CONNECT)) ? formatDuration(ch.CHAN_TS) : '--',
           isOnline: true,
-          channelData: ch,
-          channel: ch.CHAN_CHAN || '--',
-          vector: ch.CHAN_VECTOR || '--',
-          campaign: ch.CHAN_CAMPAIGN_ID || '--'
+          channelData: ch
         }
       })
+
+      if (finalRows.length > 0) {
+          // console.info('[Wallboard] Final Merged List Count:', finalRows.length)
+      }
+
+      return finalRows
     })
 
     // Callers data - filtered by DLPN_callcenter context
@@ -239,11 +294,13 @@ export default {
       
       // Fetch initial data
       fetchCasesData()
+      fetchLiveAgents()
       
-      // Refresh data every 5 minutes
+      // Refresh data periodically
       const dataInterval = setInterval(() => {
         fetchCasesData()
-      }, 300000)
+        fetchLiveAgents()
+      }, 30000) // Lowered to 30s for better live feel
       
       onBeforeUnmount(() => {
         clearInterval(dataInterval)
@@ -253,11 +310,11 @@ export default {
 
     // Watch for data changes
     watch(() => apiData.value, (newVal) => {
-      console.log('apiData changed:', newVal)
+      // console.log('apiData changed:', newVal)
     })
     
     watch(() => channels.value, (newVal) => {
-      console.log('channels changed, count:', newVal.length)
+      // Channels updated
     })
 
     return {

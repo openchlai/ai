@@ -1,265 +1,215 @@
 <template>
   <div class="space-y-6">
-    <div
-      class="p-4 rounded-lg border-l-4"
-      :class="isDarkMode
-        ? 'bg-purple-900/20 border-purple-500 text-purple-300'
-        : 'bg-purple-50 border-purple-500 text-purple-800'"
-    >
-      <p class="text-sm">View all changes and updates to this case</p>
+    <div class="p-4 rounded-lg border-l-4" :class="isDarkMode
+      ? 'bg-purple-900/20 border-purple-500 text-purple-300'
+      : 'bg-purple-50 border-purple-500 text-purple-800'">
+      <div class="flex items-center gap-2">
+        <i-mdi-history class="w-5 h-5" />
+        <p class="text-sm font-semibold">Case History Timeline</p>
+      </div>
+      <p class="text-xs mt-1 opacity-80">Track all modifications and life-cycle events for this case.</p>
+    </div>
+
+    <!-- Empty State -->
+    <div v-if="!activities || activities.length === 0" class="text-center py-12 border border-dashed rounded-lg"
+      :class="isDarkMode ? 'border-gray-800 text-gray-500' : 'border-gray-200 text-gray-400'">
+      <i-mdi-history class="w-12 h-12 mx-auto mb-3 opacity-20" />
+      <p>No activity history found for this case.</p>
     </div>
 
     <!-- History Timeline -->
-    <div class="space-y-4">
-      <!-- History Items -->
-      <div
-        v-for="(item, index) in mockHistory"
-        :key="index"
-        class="relative pl-8 pb-6 border-l-2"
-        :class="isDarkMode ? 'border-transparent' : 'border-transparent'"
-      >
+    <div v-else class="space-y-4">
+      <div v-for="(item, index) in activities" :key="index" class="relative pl-8 pb-6 border-l-2"
+        :class="isDarkMode ? 'border-gray-800' : 'border-gray-100'">
         <!-- Timeline Dot -->
-        <div
-          class="absolute -left-2 top-0 w-4 h-4 rounded-full border-2"
-          :class="[
-            isDarkMode ? 'border-transparent' : 'border-white',
-            getTimelineDotColor(item.type)
-          ]"
-        ></div>
+        <div class="absolute -left-2 top-0 w-4 h-4 rounded-full border-2" :class="[
+          isDarkMode ? 'border-black' : 'border-white',
+          getTimelineDotColor(getActVal(item, 'activity'))
+        ]"></div>
 
         <!-- History Card -->
-        <div
-          class="rounded-lg border p-4"
-          :class="isDarkMode
-            ? 'bg-black border-transparent'
-            : 'bg-white border-transparent'"
-        >
+        <div class="rounded-lg border p-4 transition-all hover:shadow-md" :class="isDarkMode
+          ? 'bg-black border-gray-800 hover:border-gray-700'
+          : 'bg-white border-gray-100 hover:border-gray-200'">
           <div class="flex items-start justify-between mb-2">
             <div class="flex items-center gap-2">
-              <component
-                :is="getHistoryIcon(item.type)"
-                class="w-5 h-5"
-                :class="getHistoryIconColor(item.type)"
-              />
-              <h5
-                class="font-semibold"
-                :class="isDarkMode ? 'text-gray-200' : 'text-gray-900'"
-              >
-                {{ item.title }}
-              </h5>
+              <component :is="getHistoryIcon(getActVal(item, 'activity'))" class="w-5 h-5"
+                :class="getHistoryIconColor(getActVal(item, 'activity'))" />
+              <div>
+                <h5 class="font-semibold text-sm" :class="isDarkMode ? 'text-gray-100' : 'text-gray-900'">
+                  {{ formatActivityTitle(getActVal(item, 'activity')) }}
+                </h5>
+                <p class="text-xs" :class="isDarkMode ? 'text-gray-500' : 'text-gray-400'">
+                  Action ID: #{{ getActVal(item, 'id') }}
+                </p>
+              </div>
             </div>
-            <span
-              class="text-xs whitespace-nowrap ml-4"
-              :class="isDarkMode ? 'text-gray-500' : 'text-gray-500'"
-            >
-              {{ item.timeAgo }}
+            <span class="text-xs font-medium px-2 py-1 rounded"
+              :class="isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-600'">
+              {{ formatDate(getActVal(item, 'created_on')) }}
             </span>
           </div>
 
-          <p
-            class="text-sm mb-2"
-            :class="isDarkMode ? 'text-gray-400' : 'text-gray-600'"
-          >
-            {{ item.description }}
-          </p>
+          <div class="space-y-3">
+            <!-- Details / Description -->
+            <div class="grid grid-cols-2 gap-x-4 gap-y-2 mt-2">
+              <div v-if="getActVal(item, 'status')">
+                <span class="text-[10px] uppercase font-bold text-gray-500 block">Status</span>
+                <span class="text-xs font-medium" :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'">
+                  {{ formatStatus(getActVal(item, 'status')) }}
+                </span>
+              </div>
+              <div v-if="getActVal(item, 'disposition')">
+                <span class="text-[10px] uppercase font-bold text-gray-500 block">Disposition</span>
+                <span class="text-xs font-medium" :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'">
+                  {{ getActVal(item, 'disposition') }}
+                </span>
+              </div>
+              <div v-if="getActVal(item, 'src')">
+                <span class="text-[10px] uppercase font-bold text-gray-500 block">Channel</span>
+                <span class="text-xs font-medium text-amber-500">
+                  {{ getActVal(item, 'src') }}
+                </span>
+              </div>
+              <div v-if="getActVal(item, 'change_count') !== '0'">
+                <span class="text-[10px] uppercase font-bold text-gray-500 block">Changes</span>
+                <span class="text-xs font-medium" :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'">
+                  {{ getActVal(item, 'change_count') }} fields updated
+                </span>
+              </div>
+            </div>
 
-          <!-- Changes -->
-          <div
-            v-if="item.changes && item.changes.length"
-            class="mt-3 space-y-1"
-          >
-            <div
-              v-for="(change, idx) in item.changes"
-              :key="idx"
-              class="text-xs flex items-center gap-2 p-2 rounded"
-              :class="isDarkMode
-                ? 'bg-black/50'
-                : 'bg-gray-50'"
-            >
-              <span :class="isDarkMode ? 'text-gray-500' : 'text-gray-500'">
-                {{ change.field }}:
-              </span>
-              <span
-                class="line-through"
-                :class="isDarkMode ? 'text-red-400' : 'text-red-600'"
-              >
-                {{ change.oldValue }}
-              </span>
-              <i-mdi-arrow-right class="w-3 h-3" :class="isDarkMode ? 'text-gray-600' : 'text-gray-400'" />
-              <span
-                class="font-medium"
-                :class="isDarkMode ? 'text-green-400' : 'text-green-600'"
-              >
-                {{ change.newValue }}
-              </span>
+            <p v-if="getActVal(item, 'detail')" class="text-sm p-3 rounded italic"
+              :class="isDarkMode ? 'bg-gray-900 text-gray-400' : 'bg-gray-50 text-gray-600'">
+              "{{ getActVal(item, 'detail') }}"
+            </p>
+
+            <!-- User Info -->
+            <div class="flex items-center gap-2 pt-3 border-t"
+              :class="isDarkMode ? 'border-gray-800' : 'border-gray-100'">
+              <div
+                class="w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center text-[10px] text-white font-bold">
+                {{ String(getActVal(item, 'created_by')).charAt(0) }}
+              </div>
+              <p class="text-xs" :class="isDarkMode ? 'text-gray-400' : 'text-gray-500'">
+                Modified by: <span class="font-semibold" :class="isDarkMode ? 'text-gray-200' : 'text-gray-800'">{{
+                  getActVal(item, 'created_by') }}</span>
+                <span class="ml-1 opacity-60">({{ getActVal(item, 'created_by_role') }})</span>
+              </p>
             </div>
           </div>
-
-          <!-- User Info -->
-          <div class="flex items-center gap-2 mt-3 pt-3 border-t" :class="isDarkMode ? 'border-transparent' : 'border-transparent'">
-            <i-mdi-account-circle 
-              class="w-4 h-4"
-              :class="isDarkMode ? 'text-gray-500' : 'text-gray-400'"
-            />
-            <p
-              class="text-xs"
-              :class="isDarkMode ? 'text-gray-500' : 'text-gray-500'"
-            >
-              Updated by: <span class="font-medium">{{ item.user }}</span>
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Mock Notice -->
-    <div
-      class="p-4 rounded-lg border"
-      :class="isDarkMode
-        ? 'bg-black border-transparent'
-        : 'bg-gray-100 border-transparent'"
-    >
-      <div class="flex items-start gap-3">
-        <i-mdi-information-outline 
-          class="w-5 h-5 mt-0.5"
-          :class="isDarkMode ? 'text-amber-500' : 'text-amber-700'"
-        />
-        <div>
-          <p 
-            class="text-sm font-semibold mb-1"
-            :class="isDarkMode ? 'text-gray-200' : 'text-gray-800'"
-          >
-            Mock Data
-          </p>
-          <p 
-            class="text-xs"
-            :class="isDarkMode ? 'text-gray-400' : 'text-gray-600'"
-          >
-            This is sample history data. Actual case history will be integrated with the backend API in the next update.
-          </p>
         </div>
       </div>
     </div>
 
     <!-- Back Button -->
-    <button
-      @click="$emit('back')"
-      class="w-full px-6 py-3 rounded-lg font-medium transition-all duration-200 border flex items-center justify-center gap-2"
+    <button @click="$emit('back')"
+      class="w-full px-6 py-4 rounded-xl font-bold transition-all duration-200 border-2 flex items-center justify-center gap-3 active:scale-[0.98]"
       :class="isDarkMode
-        ? 'bg-black text-gray-300 border-transparent hover:bg-gray-700'
-        : 'bg-white text-gray-700 border-transparent hover:bg-gray-50'"
-    >
+        ? 'bg-black text-gray-300 border-gray-800 hover:border-purple-500 hover:text-purple-400'
+        : 'bg-white text-gray-700 border-gray-200 hover:border-purple-600 hover:text-purple-700'">
       <i-mdi-arrow-left class="w-5 h-5" />
-      Back to Details
+      Return to Case Overview
     </button>
   </div>
 </template>
 
 <script setup>
-import { inject } from 'vue'
+  import { inject } from 'vue'
 
-defineProps({
-  caseItem: {
-    type: Object,
-    required: true
+  const props = defineProps({
+    caseItem: {
+      type: Array,
+      required: true
+    },
+    cases_k: {
+      type: Object,
+      required: true
+    },
+    activities: {
+      type: Array,
+      default: () => []
+    },
+    activities_k: {
+      type: Object,
+      default: () => ({})
+    }
+  })
+
+  defineEmits(['back'])
+
+  // Inject theme
+  const isDarkMode = inject('isDarkMode')
+
+  // Helper to get value from activity array using mapping
+  const getActVal = (actArr, key) => {
+    if (!actArr || !props.activities_k?.[key]) return null
+    const index = props.activities_k[key][0]
+    return actArr[index]
   }
-})
 
-defineEmits(['back'])
-
-// Inject theme
-const isDarkMode = inject('isDarkMode')
-
-// Mock history data
-const mockHistory = [
-  {
-    type: 'update',
-    title: 'Case Status Updated',
-    description: 'Case priority was escalated and status changed',
-    timeAgo: '2 hours ago',
-    user: 'John Doe',
-    changes: [
-      { field: 'Priority', oldValue: 'Medium', newValue: 'High' },
-      { field: 'Status', oldValue: 'Open', newValue: 'In Progress' }
-    ]
-  },
-  {
-    type: 'comment',
-    title: 'Comment Added',
-    description: 'Client has been contacted and scheduled for follow-up counseling session next Tuesday at 2:00 PM.',
-    timeAgo: '1 day ago',
-    user: 'Jane Smith',
-    changes: []
-  },
-  {
-    type: 'escalation',
-    title: 'Case Escalated',
-    description: 'Case escalated to supervisor due to complexity',
-    timeAgo: '2 days ago',
-    user: 'Michael Johnson',
-    changes: [
-      { field: 'Escalated To', oldValue: 'None', newValue: 'Sarah Williams - Supervisor' }
-    ]
-  },
-  {
-    type: 'update',
-    title: 'Assessment Updated',
-    description: 'General case assessment status changed',
-    timeAgo: '3 days ago',
-    user: 'John Doe',
-    changes: [
-      { field: 'Assessment', oldValue: 'Not Started', newValue: 'Progressing' }
-    ]
-  },
-  {
-    type: 'client',
-    title: 'Client Added',
-    description: 'New client "Maria Garcia" added to the case',
-    timeAgo: '5 days ago',
-    user: 'Jane Smith',
-    changes: []
-  },
-  {
-    type: 'created',
-    title: 'Case Created',
-    description: 'Case was initially created and assigned',
-    timeAgo: '1 week ago',
-    user: 'John Doe',
-    changes: []
+  // Format date
+  const formatDate = (timestamp) => {
+    if (!timestamp) return 'N/A'
+    const value = timestamp < 10000000000 ? timestamp * 1000 : timestamp
+    return new Date(value).toLocaleString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
   }
-]
 
-// Helper functions for styling
-const getTimelineDotColor = (type) => {
-  const colors = {
-    update: isDarkMode.value ? 'bg-amber-500' : 'bg-amber-600',
-    comment: isDarkMode.value ? 'bg-green-500' : 'bg-green-600',
-    escalation: isDarkMode.value ? 'bg-orange-500' : 'bg-orange-600',
-    client: isDarkMode.value ? 'bg-purple-500' : 'bg-purple-600',
-    created: isDarkMode.value ? 'bg-gray-500' : 'bg-gray-600'
+  const formatActivityTitle = (type) => {
+    switch (String(type)) {
+      case '1': return 'Case Initially Created'
+      case '2': return 'General Update'
+      case '3': return 'Manual Log / Activity'
+      case '4': return 'Status Escalation'
+      case '5': return 'Assignment Change'
+      default: return 'Case Activity'
+    }
   }
-  return colors[type] || colors.update
-}
 
-const getHistoryIcon = (type) => {
-  const icons = {
-    update: 'i-mdi-update',
-    comment: 'i-mdi-comment-text',
-    escalation: 'i-mdi-arrow-up-bold',
-    client: 'i-mdi-account-plus',
-    created: 'i-mdi-plus-circle'
+  const formatStatus = (status) => {
+    switch (String(status)) {
+      case '1': return 'Open'
+      case '2': return 'Closed'
+      case '3': return 'Pending'
+      default: return 'Active'
+    }
   }
-  return icons[type] || 'i-mdi-information'
-}
 
-const getHistoryIconColor = (type) => {
-  const colors = {
-    update: isDarkMode.value ? 'text-amber-500' : 'text-amber-700',
-    comment: isDarkMode.value ? 'text-green-400' : 'text-green-600',
-    escalation: isDarkMode.value ? 'text-orange-400' : 'text-orange-600',
-    client: isDarkMode.value ? 'text-purple-400' : 'text-purple-600',
-    created: isDarkMode.value ? 'text-gray-400' : 'text-gray-600'
+  // Styling helpers
+  const getTimelineDotColor = (type) => {
+    switch (String(type)) {
+      case '1': return isDarkMode.value ? 'bg-green-500' : 'bg-green-600'
+      case '2': return isDarkMode.value ? 'bg-amber-500' : 'bg-amber-600'
+      case '3': return isDarkMode.value ? 'bg-purple-500' : 'bg-purple-600'
+      case '4': return isDarkMode.value ? 'bg-red-500' : 'bg-red-600'
+      default: return isDarkMode.value ? 'bg-blue-500' : 'bg-blue-600'
+    }
   }
-  return colors[type] || colors.update
-}
+
+  const getHistoryIcon = (type) => {
+    switch (String(type)) {
+      case '1': return 'i-mdi-plus-circle'
+      case '2': return 'i-mdi-update'
+      case '3': return 'i-mdi-card-text-outline'
+      case '4': return 'i-mdi-arrow-up-bold-circle'
+      case '5': return 'i-mdi-account-arrow-right'
+      default: return 'i-mdi-information-outline'
+    }
+  }
+
+  const getHistoryIconColor = (type) => {
+    switch (String(type)) {
+      case '1': return 'text-green-500'
+      case '2': return 'text-amber-500'
+      case '3': return 'text-purple-500'
+      case '4': return 'text-red-500'
+      default: return 'text-blue-500'
+    }
+  }
 </script>

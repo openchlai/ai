@@ -6,7 +6,7 @@ export function useApiData(axiosInstance) {
   const apiData = ref(null)
   const apiError = ref(null)
   const apiLoading = ref(false)
-  
+
   // Calls report data state
   const callsReportData = ref(null)
   const callsReportError = ref(null)
@@ -16,10 +16,10 @@ export function useApiData(axiosInstance) {
   const fetchCallsReportDataComposable = async () => {
     callsReportLoading.value = true
     callsReportError.value = null
-    
+
     try {
       const data = await fetchCallsReportData()
-      
+
       if (data) {
         callsReportData.value = data
       } else {
@@ -36,11 +36,11 @@ export function useApiData(axiosInstance) {
   const fetchCasesDataComposable = async () => {
     apiLoading.value = true
     apiError.value = null
-    
+
     try {
       const data = await fetchFromApi()
-      
-      console.log('Fetched cases data:', data) 
+
+      // console.log('Fetched cases data:', data) 
       if (data) {
         apiData.value = data
       } else {
@@ -53,13 +53,43 @@ export function useApiData(axiosInstance) {
     }
   }
 
+  // Full Wallboard data state
+  const wallboardData = ref({ live: [], users: [], live_k: {}, users_k: {} })
+  const liveAgentsLoading = ref(false)
+
+  const fetchLiveAgents = async () => {
+    liveAgentsLoading.value = true
+    try {
+      const { data } = await axiosInstance.get('api/wallonly/', {
+        params: { _c: 50 }
+      })
+      if (data) {
+        wallboardData.value = {
+          live: data.live || [],
+          users: data.users || [],
+          live_k: data.live_k || {},
+          users_k: data.users_k || {}
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch live agents:', error)
+    } finally {
+      liveAgentsLoading.value = false
+    }
+  }
+
   return {
     // Cases data
     apiData,
     apiError,
     apiLoading,
     fetchCasesData: fetchCasesDataComposable,
-    
+
+    // Wallboard Data
+    wallboardData,
+    liveAgentsLoading,
+    fetchLiveAgents,
+
     // Calls report data  
     callsReportData,
     callsReportError,

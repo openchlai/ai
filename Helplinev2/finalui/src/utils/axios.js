@@ -3,37 +3,40 @@ import axios from 'axios';
 const axiosInstance = axios.create({
     // Always use relative path - nginx will proxy it
     baseURL: '/api-proxy',
-    timeout: 10000,
+    timeout: 60000,
+    withCredentials: true, // Required for legacy session cookie support
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
     }
 });
 
-// Add session-id to all requests if available
+// Request interceptor
 axiosInstance.interceptors.request.use((config) => {
-    // Add Session-Id header if available
-    const sessionId = localStorage.getItem('session-id');
-    if (sessionId) {
-        config.headers['Session-Id'] = sessionId;
-    }
-    // Add X-API-Key for /cases/ endpoint
-    if (config.url.includes('/cases/')) {
-        config.headers['X-API-Key'] = '08m9cujgjlk0epqqms1q99bbvc';
-    }
-    
     return config;
 }, (error) => Promise.reject(error));
 
-// Add response interceptor for better error handling
+// Response interceptor for session/error management
 axiosInstance.interceptors.response.use(
     (response) => response,
     (error) => {
-        // Handle 401 Unauthorized - redirect to login
-        if (error.response?.status === 401) {
-            localStorage.removeItem('session-id');
-            window.location.href = '/login';
+        const status = error.response?.status;
+
+        // 401 Unauthorized - redirect to login
+        if (status === 401) {
+            console.warn('⚠️ Session expired or unauthorized. Redirecting to login.');
+            // Only redirect if not already on login page to avoid loops
+            if (!window.location.pathname.startsWith('/login')) {
+                window.location.href = '/login';
+            }
         }
+
+        // 412 Precondition Failed - Often used by legacy system for validation/logic errors
+        if (status === 412) {
+            const message = error.response?.data?.message || 'A validation error occurred.';
+            console.error('❌ Legacy Validation Error (412):', message);
+        }
+
         return Promise.reject(error);
     }
 );
@@ -41,13 +44,13 @@ axiosInstance.interceptors.response.use(
 // Dashboard data fetchers
 export async function fetchCasesData() {
     try {
-        const { data } = await axiosInstance.get("/api/wallonly/rpt", {
+        const { data } = await axiosInstance.get("api/wallonly/rpt", {
             params: {
                 dash_period: "today",
                 type: "bar",
                 stacked: "stacked",
                 xaxis: "hangup_status_txt",
-                yaxis: "-",  
+                yaxis: "-",
                 vector: 1,
                 rpt: "call_count",
                 metrics: "call_count",
@@ -63,7 +66,7 @@ export async function fetchCasesData() {
 
 export async function fetchCallsReportData() {
     try {
-        const { data } = await axiosInstance.get("/api/wallonly/rpt", {
+        const { data } = await axiosInstance.get("api/wallonly/rpt", {
             params: {
                 dash_period: "today",
                 type: "bar",
@@ -75,9 +78,9 @@ export async function fetchCallsReportData() {
                 metrics: "call_count",
             },
         });
-        
+
         return data;
-        
+
     } catch (err) {
         console.error("Error fetching calls report data:", err.message);
         console.error("Full error:", err);

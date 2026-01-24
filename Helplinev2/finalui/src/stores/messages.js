@@ -2,6 +2,7 @@
 import { defineStore } from 'pinia'
 import axiosInstance from '@/utils/axios'
 import { useAuthStore } from './auth'
+import { normalizeMessages, normalizeMessage } from '@/utils/messageNormalizer'
 
 export const useMessagesStore = defineStore('messages', {
   state: () => ({
@@ -36,7 +37,45 @@ export const useMessagesStore = defineStore('messages', {
       total: state.pagination.totalRecords,
       currentPage: state.pagination.currentPage,
       totalPages: Math.ceil(state.pagination.totalRecords / state.pagination.limit) || 1
-    })
+    }),
+
+    // Normalized Data Getters
+    normalizedMessages: (state) => {
+      return normalizeMessages(state.pmessages, state.pmessages_k)
+    },
+
+    // Group by conversation (threadId) and filter active
+    activeConversations: (state) => {
+      const messages = normalizeMessages(state.pmessages, state.pmessages_k)
+      const groups = new Map()
+
+      // Group by threadId, keeping the latest message
+      for (const msg of messages) {
+        // Skip calling AI predictions 'conversations' in the main list if desired, 
+        // strictly speaking they are messages too.
+
+        const threadId = msg.threadId
+        if (!groups.has(threadId)) {
+          groups.set(threadId, msg)
+        } else {
+          // Assuming the list is roughly ordered, but let's check timestamps
+          const existing = groups.get(threadId)
+          if (new Date(msg.timestamp) > new Date(existing.timestamp)) {
+            groups.set(threadId, msg)
+          }
+        }
+      }
+
+      // Filter closed and sort by date desc
+      const active = []
+      for (const msg of groups.values()) {
+        if (!msg.isClosed) {
+          active.push(msg)
+        }
+      }
+
+      return active.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+    }
   },
 
   actions: {
@@ -78,7 +117,7 @@ export const useMessagesStore = defineStore('messages', {
           params: paginationParams,
           headers: this.getAuthHeaders()
         })
-        console.log('[ALL] Messages:', data)
+        // console.log('[ALL] Messages:', data)
         this.pmessages = data.pmessages || []
         this.pmessages_k = data.pmessages_k || {}
         this.pmessages_ctx = data.pmessages_ctx || []
@@ -125,6 +164,65 @@ export const useMessagesStore = defineStore('messages', {
         throw err
       } finally {
         this.loading = false
+      }
+    },
+
+    async closeConversation(payload) {
+      this.loading = true
+      try {
+        console.log('Ending conversation with payload:', payload)
+        const response = await axiosInstance.post('api/messages/', payload, {
+          headers: this.getAuthHeaders()
+        })
+        return response.data
+      } catch (err) {
+        console.error('Error ending conversation:', err)
+        throw err
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async sendMessage(payload) {
+      // this.loading = true // Don't block whole UI for sending
+      try {
+        console.log('Sending message:', payload)
+        const response = await axiosInstance.post('api/messages/', payload, {
+          headers: this.getAuthHeaders()
+        })
+        return response.data
+      } catch (err) {
+        console.error('Error sending message:', err)
+        throw err
+      }
+    },
+
+    async fetchConversationHistory(src, callId) {
+      if (!src || !callId) return
+
+      try {
+        const { data } = await axiosInstance.get('api/messages/', {
+          params: {
+            src: src,
+            src_callid: callId
+          },
+          headers: this.getAuthHeaders()
+        })
+        // Parse both array format (pmessages) and object list (messages) if API varies
+        const rawParams = data.pmessages_k || data.messages_k || {}
+        let history = []
+
+        if (data.pmessages && Array.isArray(data.pmessages)) {
+          history = normalizeMessages(data.pmessages, data.pmessages_k)
+        } else if (data.messages && Array.isArray(data.messages)) {
+          // Normalizes list of arrays using the messages_k schema
+          history = normalizeMessages(data.messages, data.messages_k)
+        }
+
+        return history
+      } catch (err) {
+        console.error('Error fetching conversation history:', err)
+        return []
       }
     },
 

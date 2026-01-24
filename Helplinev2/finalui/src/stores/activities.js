@@ -144,7 +144,7 @@ export const useActivitiesStore = defineStore('activitiesStore', {
           headers: this.getAuthHeaders()
         })
 
-        console.log('API Response:', data)
+        // console.log('API Response:', data)
         this.raw = data
         this.activities = data.activities || []
         this.activities_k = data.activities_k || {}
