@@ -1,16 +1,10 @@
 <template>
-<<<<<<< HEAD
-  <div class="w-full rounded-lg p-4 shadow-xl border mb-4" :class="isDarkMode
-    ? 'bg-black border-transparent'
-    : 'bg-white border-transparent'">
-=======
   <div 
     class="w-full rounded-lg p-4 shadow-xl border mb-4"
     :class="isDarkMode 
       ? 'bg-black border-transparent' 
       : 'bg-white border-transparent'"
   >
->>>>>>> main
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 
       <!-- Call Date From -->

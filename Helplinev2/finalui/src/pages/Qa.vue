@@ -1,22 +1,10 @@
 <template>
-<<<<<<< HEAD
   <div class="space-y-6">
-=======
-  <div 
-    class="space-y-6"
-  >
->>>>>>> main
 
     <!-- Filters -->
     <QAFilter @update:filters="applyFilters" />
 
     <!-- Loading State -->
-<<<<<<< HEAD
-    <div v-if="qaStore.loading" class="flex justify-center items-center py-12 rounded-lg shadow-xl border" :class="isDarkMode
-      ? 'bg-black border-transparent'
-      : 'bg-white border-transparent'">
-      <div :class="isDarkMode ? 'text-gray-400' : 'text-gray-600'">
-=======
     <div 
       v-if="qaStore.loading" 
       class="flex justify-center items-center py-12 rounded-lg shadow-xl border"
@@ -27,7 +15,6 @@
       <div 
         :class="isDarkMode ? 'text-gray-400' : 'text-gray-600'"
       >
->>>>>>> main
         Loading QA records...
       </div>
     </div>
@@ -62,16 +49,10 @@
 
           <button @click="refreshQA" :disabled="qaStore.loading"
             class="px-5 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 text-sm border disabled:opacity-50 disabled:cursor-not-allowed"
-<<<<<<< HEAD
-            :class="isDarkMode
-              ? 'bg-black text-gray-300 border-transparent hover:border-green-500 hover:text-green-400'
-              : 'bg-white text-gray-700 border-transparent hover:border-green-600 hover:text-green-700'">
-=======
             :class="isDarkMode 
               ? 'bg-black text-gray-300 border-transparent hover:border-green-500 hover:text-green-400' 
               : 'bg-white text-gray-700 border-transparent hover:border-green-600 hover:text-green-700'"
           >
->>>>>>> main
             <i-mdi-refresh class="w-5 h-5" />
             Refresh
           </button>
@@ -114,11 +95,10 @@
   // Inject theme
   const isDarkMode = inject('isDarkMode')
 
-<<<<<<< HEAD
   // Dynamic button class for view toggle
   const getViewButtonClass = (isActive) => {
     const baseClasses = 'px-5 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 text-sm'
-
+    
     if (isActive) {
       return isDarkMode.value
         ? `${baseClasses} bg-amber-600 text-white shadow-lg shadow-amber-900/50`
@@ -128,20 +108,6 @@
         ? `${baseClasses} bg-black text-gray-300 border border-transparent hover:border-amber-600 hover:text-amber-500`
         : `${baseClasses} bg-white text-gray-700 border border-transparent hover:border-amber-600 hover:text-amber-700`
     }
-=======
-// Dynamic button class for view toggle
-const getViewButtonClass = (isActive) => {
-  const baseClasses = 'px-5 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 text-sm'
-  
-  if (isActive) {
-    return isDarkMode.value
-      ? `${baseClasses} bg-amber-600 text-white shadow-lg shadow-amber-900/50`
-      : `${baseClasses} bg-amber-700 text-white shadow-lg shadow-amber-900/30`
-  } else {
-    return isDarkMode.value
-      ? `${baseClasses} bg-black text-gray-300 border border-transparent hover:border-amber-600 hover:text-amber-500`
-      : `${baseClasses} bg-white text-gray-700 border border-transparent hover:border-amber-600 hover:text-amber-700`
->>>>>>> main
   }
 
   onMounted(async () => {

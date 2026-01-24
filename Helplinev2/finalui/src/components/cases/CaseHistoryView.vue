@@ -28,18 +28,9 @@
         ]"></div>
 
         <!-- History Card -->
-<<<<<<< HEAD
         <div class="rounded-lg border p-4 transition-all hover:shadow-md" :class="isDarkMode
           ? 'bg-black border-gray-800 hover:border-gray-700'
           : 'bg-white border-gray-100 hover:border-gray-200'">
-=======
-        <div
-          class="rounded-lg border p-4"
-          :class="isDarkMode
-            ? 'bg-black border-transparent'
-            : 'bg-white border-transparent'"
-        >
->>>>>>> main
           <div class="flex items-start justify-between mb-2">
             <div class="flex items-center gap-2">
               <component :is="getHistoryIcon(getActVal(item, 'activity'))" class="w-5 h-5"
@@ -88,7 +79,6 @@
               </div>
             </div>
 
-<<<<<<< HEAD
             <p v-if="getActVal(item, 'detail')" class="text-sm p-3 rounded italic"
               :class="isDarkMode ? 'bg-gray-900 text-gray-400' : 'bg-gray-50 text-gray-600'">
               "{{ getActVal(item, 'detail') }}"
@@ -108,82 +98,6 @@
               </p>
             </div>
           </div>
-=======
-          <!-- Changes -->
-          <div
-            v-if="item.changes && item.changes.length"
-            class="mt-3 space-y-1"
-          >
-            <div
-              v-for="(change, idx) in item.changes"
-              :key="idx"
-              class="text-xs flex items-center gap-2 p-2 rounded"
-              :class="isDarkMode
-                ? 'bg-black/50'
-                : 'bg-gray-50'"
-            >
-              <span :class="isDarkMode ? 'text-gray-500' : 'text-gray-500'">
-                {{ change.field }}:
-              </span>
-              <span
-                class="line-through"
-                :class="isDarkMode ? 'text-red-400' : 'text-red-600'"
-              >
-                {{ change.oldValue }}
-              </span>
-              <i-mdi-arrow-right class="w-3 h-3" :class="isDarkMode ? 'text-gray-600' : 'text-gray-400'" />
-              <span
-                class="font-medium"
-                :class="isDarkMode ? 'text-green-400' : 'text-green-600'"
-              >
-                {{ change.newValue }}
-              </span>
-            </div>
-          </div>
-
-          <!-- User Info -->
-          <div class="flex items-center gap-2 mt-3 pt-3 border-t" :class="isDarkMode ? 'border-transparent' : 'border-transparent'">
-            <i-mdi-account-circle 
-              class="w-4 h-4"
-              :class="isDarkMode ? 'text-gray-500' : 'text-gray-400'"
-            />
-            <p
-              class="text-xs"
-              :class="isDarkMode ? 'text-gray-500' : 'text-gray-500'"
-            >
-              Updated by: <span class="font-medium">{{ item.user }}</span>
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Mock Notice -->
-    <div
-      class="p-4 rounded-lg border"
-      :class="isDarkMode
-        ? 'bg-black border-transparent'
-        : 'bg-gray-100 border-transparent'"
-    >
-      <div class="flex items-start gap-3">
-        <i-mdi-information-outline 
-          class="w-5 h-5 mt-0.5"
-          :class="isDarkMode ? 'text-amber-500' : 'text-amber-700'"
-        />
-        <div>
-          <p 
-            class="text-sm font-semibold mb-1"
-            :class="isDarkMode ? 'text-gray-200' : 'text-gray-800'"
-          >
-            Mock Data
-          </p>
-          <p 
-            class="text-xs"
-            :class="isDarkMode ? 'text-gray-400' : 'text-gray-600'"
-          >
-            This is sample history data. Actual case history will be integrated with the backend API in the next update.
-          </p>
->>>>>>> main
         </div>
       </div>
     </div>
@@ -192,14 +106,8 @@
     <button @click="$emit('back')"
       class="w-full px-6 py-4 rounded-xl font-bold transition-all duration-200 border-2 flex items-center justify-center gap-3 active:scale-[0.98]"
       :class="isDarkMode
-<<<<<<< HEAD
         ? 'bg-black text-gray-300 border-gray-800 hover:border-purple-500 hover:text-purple-400'
         : 'bg-white text-gray-700 border-gray-200 hover:border-purple-600 hover:text-purple-700'">
-=======
-        ? 'bg-black text-gray-300 border-transparent hover:bg-gray-700'
-        : 'bg-white text-gray-700 border-transparent hover:bg-gray-50'"
-    >
->>>>>>> main
       <i-mdi-arrow-left class="w-5 h-5" />
       Return to Case Overview
     </button>

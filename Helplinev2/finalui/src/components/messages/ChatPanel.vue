@@ -8,18 +8,9 @@
       ? 'bg-black border-transparent'
       : 'bg-white border-transparent'">
     <!-- Header -->
-<<<<<<< HEAD
     <div class="flex items-center justify-between p-4 border-b" :class="isDarkMode
       ? 'bg-black border-transparent'
       : 'bg-gray-50 border-transparent'">
-=======
-    <div 
-      class="flex items-center justify-between p-4 border-b"
-      :class="isDarkMode 
-        ? 'bg-black border-transparent' 
-        : 'bg-gray-50 border-transparent'"
-    >
->>>>>>> main
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm"
           :style="{ background: getAvatarColor(getContactName()) }">
@@ -56,7 +47,6 @@
     </div>
 
     <!-- Message History -->
-<<<<<<< HEAD
     <div ref="messageContainer" class="flex-1 overflow-y-auto p-4 space-y-6" :class="isDarkMode ? 'bg-black' : 'bg-gray-50'">
       <div v-if="isLoadingHistory" class="flex justify-center p-4">
           <span class="text-sm text-gray-400">Loading history...</span>
@@ -103,33 +93,6 @@
                     <i-mdi-check-all v-if="isOutbound(msg)" class="w-3 h-3 opacity-70" />
                  </div>
             </div>
-=======
-    <div 
-      class="flex-1 overflow-y-auto p-4 space-y-4"
-      :class="isDarkMode ? 'bg-black' : 'bg-gray-50'"
-    >
-      <!-- Received Message -->
-      <div class="flex gap-3">
-        <div
-          class="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-xs flex-shrink-0"
-          :style="{ background: getAvatarColor(getContactName()) }"
-        >
-          {{ getContactName().charAt(0).toUpperCase() }}
-        </div>
-        <div class="flex-1">
-          <div 
-            class="rounded-lg rounded-tl-none p-3 border"
-            :class="isDarkMode 
-              ? 'bg-black border-transparent' 
-              : 'bg-white border-transparent'"
-          >
-            <p 
-              class="text-sm"
-              :class="isDarkMode ? 'text-gray-200' : 'text-gray-900'"
-            >
-              {{ getMessageContent() }}
-            </p>
->>>>>>> main
           </div>
         </div>
       </div>
@@ -309,7 +272,7 @@
 
   const handleSendMessage = async (msgText) => {
     if (!msgText.trim()) return
-
+    
     const timestamp = Math.floor(Date.now() / 1000) // Seconds
     const extension = authStore.profile?.exten || '100'
     const m = props.selectedMessage

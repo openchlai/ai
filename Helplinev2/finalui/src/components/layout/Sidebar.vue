@@ -118,11 +118,6 @@
     </nav>
 
     <!-- User Profile Section with Theme Toggle - Fixed at Bottom -->
-<<<<<<< HEAD
-    <div class="flex-shrink-0 p-6 pt-4 border-t border-transparent">
-      <div class="flex items-center gap-3 px-4 py-3 rounded-xl mb-3" :class="isDarkMode ? 'bg-black' : 'bg-gray-50'">
-        <div
-=======
     <div 
       class="flex-shrink-0 p-6 pt-4 border-t border-transparent"
     >
@@ -130,8 +125,7 @@
         class="flex items-center gap-3 px-4 py-3 rounded-xl mb-3"
         :class="isDarkMode ? 'bg-black' : 'bg-gray-50'"
       >
-        <div 
->>>>>>> main
+        <div
           class="w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0 transition-colors"
           :class="isDarkMode ? 'bg-amber-600' : 'bg-amber-700'">
           {{ authStore.userInitials }}

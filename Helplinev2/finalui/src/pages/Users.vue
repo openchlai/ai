@@ -1,33 +1,14 @@
 <template>
-<<<<<<< HEAD
   <div class="space-y-6">
-=======
-  <div 
-    class="space-y-6"
-  >
->>>>>>> main
 
     <!-- Filters -->
     <UsersFilter @update:filters="applyFilters" />
 
     <!-- Loading State -->
-<<<<<<< HEAD
     <div v-if="store.loading" class="flex justify-center items-center py-12 rounded-xl shadow-xl border" :class="isDarkMode
       ? 'bg-black border-transparent'
       : 'bg-white border-transparent'">
       <div :class="isDarkMode ? 'text-gray-400' : 'text-gray-600'">
-=======
-    <div 
-      v-if="store.loading" 
-      class="flex justify-center items-center py-12 rounded-xl shadow-xl border"
-      :class="isDarkMode 
-        ? 'bg-black border-transparent' 
-        : 'bg-white border-transparent'"
-    >
-      <div 
-        :class="isDarkMode ? 'text-gray-400' : 'text-gray-600'"
-      >
->>>>>>> main
         Loading users...
       </div>
     </div>
@@ -68,16 +49,9 @@
 
           <button @click="refreshUsers" :disabled="store.loading"
             class="px-5 py-2.5 rounded-xl font-medium transition-all duration-200 flex items-center gap-2 text-sm border disabled:opacity-50 disabled:cursor-not-allowed"
-<<<<<<< HEAD
             :class="isDarkMode
               ? 'bg-black text-gray-300 border-transparent hover:border-green-500 hover:text-green-400'
               : 'bg-white text-gray-700 border-transparent hover:border-green-600 hover:text-green-700'">
-=======
-            :class="isDarkMode 
-              ? 'bg-black text-gray-300 border-transparent hover:border-green-500 hover:text-green-400' 
-              : 'bg-white text-gray-700 border-transparent hover:border-green-600 hover:text-green-700'"
-          >
->>>>>>> main
             <i-mdi-refresh class="w-5 h-5" />
             Refresh
           </button>
@@ -124,7 +98,6 @@
 </template>
 
 <script setup>
-<<<<<<< HEAD
   import { ref, onMounted, inject, watch } from 'vue'
   import { toast } from 'vue-sonner'
   import { useUserStore } from '@/stores/users'
@@ -179,62 +152,8 @@
         ? `${baseClasses} bg-black text-gray-300 border border-transparent hover:border-amber-600 hover:text-amber-500`
         : `${baseClasses} bg-white text-gray-700 border border-transparent hover:border-amber-600 hover:text-amber-700`
     }
-=======
-import { ref, onMounted, inject, watch } from 'vue'
-import { toast } from 'vue-sonner'
-import { useUserStore } from '@/stores/users'
-import { useSearchStore } from '@/stores/search'
-import UsersTable from '@/components/users/Table.vue'
-import UsersTimeline from '@/components/users/Timeline.vue'
-import UserForm from '@/components/users/UserForm.vue'
-import UserEditForm from '@/components/users/UserEditForm.vue'
-import UsersFilter from '@/components/users/UsersFilter.vue'
-import Pagination from '@/components/base/Pagination.vue'
-
-const store = useUserStore()
-const searchStore = useSearchStore()
-const view = ref('timeline')
-const showCreateModal = ref(false)
-const showEditModal = ref(false)
-const userToEdit = ref(null)
-const currentFilters = ref({})
-const selectedPageSize = ref(20)
-
-// Debounce handle for global search
-let searchDebounce = null
-
-// Watch for global search query changes
-watch(() => searchStore.query, (newQuery) => {
-  clearTimeout(searchDebounce)
-  searchDebounce = setTimeout(() => {
-    // Merge search query with existing filters
-    const searchParams = { ...currentFilters.value }
-    if (newQuery) {
-      searchParams.q = newQuery
-    } else {
-      delete searchParams.q
-    }
-    applyFilters(searchParams)
-  }, 500)
-})
-
-// Inject theme
-const isDarkMode = inject('isDarkMode')
-
-// Dynamic button class for view toggle
-const getViewButtonClass = (isActive) => {
-  const baseClasses = 'px-5 py-2.5 rounded-xl font-medium transition-all duration-200 flex items-center gap-2 text-sm'
-  
-  if (isActive) {
-    return isDarkMode.value
-      ? `${baseClasses} bg-amber-600 text-white shadow-lg shadow-amber-900/50`
-      : `${baseClasses} bg-amber-700 text-white shadow-lg shadow-amber-900/30`
-  } else {
-    return isDarkMode.value
-      ? `${baseClasses} bg-black text-gray-300 border border-transparent hover:border-amber-600 hover:text-amber-500`
-      : `${baseClasses} bg-white text-gray-700 border border-transparent hover:border-amber-600 hover:text-amber-700`
->>>>>>> main
   }
+
 
   onMounted(async () => {
     try {

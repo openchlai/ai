@@ -1,16 +1,10 @@
 <template>
-<<<<<<< HEAD
-  <div class="max-w-3xl w-full rounded-lg shadow-2xl border max-h-[90vh] flex flex-col" :class="isDarkMode
-    ? 'bg-black border-transparent'
-    : 'bg-white border-transparent'">
-=======
   <div 
     class="max-w-3xl w-full rounded-lg shadow-2xl border max-h-[90vh] flex flex-col"
     :class="isDarkMode 
       ? 'bg-black border-transparent' 
       : 'bg-white border-transparent'"
   >
->>>>>>> main
     <!-- Header -->
     <div class="px-8 py-5 border-b" :class="isDarkMode
       ? 'border-transparent'
