@@ -1,6 +1,3 @@
-"""
-Comprehensive tests for classifier_model.py
-"""
 import pytest
 import torch
 from unittest.mock import MagicMock, patch, mock_open
