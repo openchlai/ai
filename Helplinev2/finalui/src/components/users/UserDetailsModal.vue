@@ -55,7 +55,6 @@
             </p>
 
             <!-- New Password Display -->
-<<<<<<< HEAD
             <div 
               class="rounded-xl p-4 border"
               :class="isDarkMode 
@@ -98,7 +97,6 @@
     </Transition>
 
     <!-- User Details -->
-<<<<<<< HEAD
     <div 
       class="px-8 py-6 space-y-4"
       :class="isDarkMode ? 'bg-black' : 'bg-white'"
@@ -204,7 +202,6 @@
     </div>
 
     <!-- Action Buttons -->
-<<<<<<< HEAD
     <div 
       class="px-8 py-5 border-t flex gap-3"
       :class="isDarkMode 

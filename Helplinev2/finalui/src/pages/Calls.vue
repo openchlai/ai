@@ -72,6 +72,7 @@
       <div v-if="activeView === 'timeline'" class="flex-1 min-h-0 overflow-hidden flex flex-col">
         <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar">
            <CallsTimeline :grouped-calls="groupedCalls" :selected-call-id="selectedCallId"
+            :calls-store="callsStore"
             @select-call="selectCall" @create-qa="handleCreateQA" />
         </div>
       </div>

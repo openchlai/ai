@@ -28,10 +28,11 @@ export default defineConfig(({ mode }) => {
       cors: true, // important for dev CORS
       proxy: {
         '/api-proxy': {
-          target: env.VITE_BACKEND_URL || 'https://demo-openchs.bitz-itc.com',
+          // target: env.VITE_BACKEND_URL || 'https://demo-openchs.bitz-itc.com',
+          target: env.VITE_BACKEND_URL || 'https://https://helpline.sematanzania.org',
           changeOrigin: true, // rewrite Host header
           secure: false,      // allow self-signed SSL
-          rewrite: (path) => path.replace(/^\/api-proxy/, env.VITE_BACKEND_PATH || '/helpline'),
+          rewrite: (path) => path.replace(/^\/api-proxy/, env.VITE_BACKEND_PATH || '/hh19jan2026'),
           configure: (proxy) => {
             proxy.on('proxyReq', (_proxyReq, req) => {
               console.log(`[proxy] ${req.method} ${req.url} -> ${proxy.target}${req.url}`);

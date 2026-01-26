@@ -1,7 +1,7 @@
 <template>
   <div class="p-6">
     <!-- Header with Save/Cancel buttons -->
-<<<<<<< HEAD
+
     <div 
       class="flex items-center justify-between mb-6 pb-4 border-b sticky top-0 z-10 -mx-6 px-6 -mt-6 pt-6"
       :class="isDarkMode 
@@ -162,7 +162,7 @@
         <div class="space-y-3">
           <!-- Client List -->
           <div v-if="formData.clients_case.length > 0" class="space-y-2">
-<<<<<<< HEAD
+
             <div v-for="(client, index) in formData.clients_case" :key="index"
               class="flex items-center justify-between p-3 border rounded-lg" :class="isDarkMode
                 ? 'bg-black border-transparent'
@@ -191,7 +191,7 @@
           </div>
 
           <!-- Empty State -->
-<<<<<<< HEAD
+
           <div v-if="formData.clients_case.length === 0" class="text-center p-8 border border-dashed rounded-lg" :class="isDarkMode
             ? 'bg-black border-transparent text-gray-500'
             : 'bg-white border-transparent text-gray-500'">
@@ -219,7 +219,7 @@
         <div class="space-y-3">
           <!-- Perpetrator List -->
           <div v-if="formData.perpetrators_case.length > 0" class="space-y-2">
-<<<<<<< HEAD
+
             <div v-for="(perp, index) in formData.perpetrators_case" :key="index"
               class="flex items-center justify-between p-3 border rounded-lg" :class="isDarkMode
                 ? 'bg-black border-transparent'
@@ -248,7 +248,7 @@
           </div>
 
           <!-- Empty State -->
-<<<<<<< HEAD
+
           <div v-if="formData.perpetrators_case.length === 0" class="text-center p-8 border border-dashed rounded-lg" :class="isDarkMode
             ? 'bg-black border-transparent text-gray-500'
             : 'bg-white border-transparent text-gray-500'">
@@ -291,7 +291,7 @@
     </div>
 
     <!-- Bottom Save/Cancel buttons -->
-<<<<<<< HEAD
+
     <div class="flex justify-end gap-3 mt-6 pt-6 border-t sticky bottom-0 -mx-6 px-6 -mb-6 pb-6" :class="isDarkMode
       ? 'bg-black border-transparent'
       : 'bg-white border-transparent'">
