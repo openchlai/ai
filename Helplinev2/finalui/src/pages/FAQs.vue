@@ -1,14 +1,13 @@
 <template>
   <div 
-    class="min-h-screen py-8 px-4 sm:px-6 lg:px-8 transition-colors duration-300"
-    :class="isDarkMode ? 'bg-black text-gray-100' : 'bg-gray-50 text-gray-900'"
+    class="space-y-8"
   >
     <div class="max-w-4xl mx-auto space-y-8">
       
       <!-- Header Section -->
       <div 
         class="relative overflow-hidden rounded-3xl p-8 sm:p-12 shadow-2xl border border-transparent transition-all duration-500"
-        :class="isDarkMode ? 'bg-neutral-900/80 backdrop-blur-xl' : 'bg-white shadow-amber-900/5'"
+        :class="isDarkMode ? 'bg-black/80 backdrop-blur-xl' : 'bg-white shadow-amber-900/5'"
       >
         <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
           <i-mdi-book-open-page-variant class="w-32 h-32" />
@@ -49,7 +48,7 @@
           :key="nav.id"
           :href="'#' + nav.id"
           class="p-4 rounded-2xl border border-transparent text-center transition-all duration-300 hover:scale-105 active:scale-95 group"
-          :class="isDarkMode ? 'bg-neutral-900 hover:bg-neutral-800' : 'bg-white hover:bg-amber-600/5 shadow-sm'"
+          :class="isDarkMode ? 'bg-black hover:bg-neutral-800' : 'bg-white hover:bg-amber-600/5 shadow-sm'"
         >
           <component :is="nav.icon" class="w-6 h-6 mx-auto mb-2 group-hover:scale-110 transition-transform" 
             :class="isDarkMode ? 'text-amber-500' : 'text-amber-600'"
@@ -76,7 +75,7 @@
             class="rounded-2xl border transition-all duration-300 overflow-hidden"
             :class="[
               isDarkMode 
-                ? 'bg-neutral-900/40 border-neutral-800 hover:border-amber-500/30' 
+                ? 'bg-black/40 border-neutral-800 hover:border-amber-500/30' 
                 : 'bg-white border-gray-100 shadow-sm hover:border-amber-600/30',
               openItems.includes(`${section.id}-${index}`) ? (isDarkMode ? 'border-amber-500/50' : 'border-amber-600/50') : ''
             ]"
@@ -110,7 +109,7 @@
       <!-- Footer Help -->
       <div 
         class="mt-20 p-8 rounded-3xl border-2 border-dashed text-center"
-        :class="isDarkMode ? 'border-neutral-800 bg-neutral-900/20' : 'border-amber-100 bg-amber-50/20'"
+        :class="isDarkMode ? 'border-neutral-800 bg-black/20' : 'border-amber-100 bg-amber-50/20'"
       >
         <h3 class="text-lg font-black uppercase tracking-tight mb-2">Need More Help?</h3>
         <p class="text-xs font-medium opacity-60 mb-6 italic">If your question isn't answered here, please contact the appropriate support team.</p>

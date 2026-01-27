@@ -5,13 +5,13 @@
       :key="label"
       class="shadow-lg rounded-xl border overflow-hidden p-0"
       :class="isDarkMode 
-        ? 'bg-neutral-900 border-transparent' 
+        ? 'bg-black border-transparent' 
         : 'bg-white border-transparent'"
     >
       <h2 
         class="text-base font-semibold p-4 border-b uppercase tracking-wide"
         :class="isDarkMode 
-          ? 'text-amber-500 border-transparent bg-neutral-900' 
+          ? 'text-amber-500 border-transparent bg-black' 
           : 'text-amber-700 border-transparent bg-gray-50/50'"
       >
         {{ label }}
@@ -31,7 +31,7 @@
           <div 
             class="w-10 h-10 flex items-center justify-center rounded-xl flex-shrink-0"
             :class="isDarkMode 
-              ? 'text-amber-500 bg-gray-900' 
+              ? 'text-amber-500 bg-black' 
               : 'text-amber-700 bg-white border border-transparent'"
           >
             <i-mdi-phone class="w-6 h-6" />
@@ -93,7 +93,7 @@
       v-if="Object.keys(groupedCalls).length === 0" 
       class="text-center py-12 rounded-lg border"
       :class="isDarkMode 
-        ? 'text-gray-500 bg-neutral-900 border-transparent' 
+        ? 'text-gray-500 bg-black border-transparent' 
         : 'text-gray-500 bg-white border-transparent'"
     >
       No calls to show.

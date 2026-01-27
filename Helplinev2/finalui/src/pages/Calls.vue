@@ -1,27 +1,7 @@
 <template>
   <div 
-    class="p-6 space-y-6 min-h-screen"
-    :class="isDarkMode ? 'bg-black' : 'bg-gray-50'"
+    class="space-y-6"
   >
-    <!-- Page Header -->
-    <div class="mb-6">
-      <h1 
-        class="text-3xl font-bold flex items-center gap-3"
-        :class="isDarkMode ? 'text-gray-100' : 'text-gray-900'"
-      >
-        <i-mdi-phone-outline 
-          class="w-8 h-8"
-          :class="isDarkMode ? 'text-amber-500' : 'text-amber-700'"
-        />
-        Call History
-      </h1>
-      <p 
-        class="mt-2"
-        :class="isDarkMode ? 'text-gray-400' : 'text-gray-600'"
-      >
-        Track and analyze all incoming and outgoing call records
-      </p>
-    </div>
 
     <!-- Filters -->
     <CallsFilter @update:filters="applyFilters" />
@@ -30,7 +10,7 @@
       v-if="callsStore.loading" 
       class="flex justify-center items-center py-12 rounded-xl shadow-xl border"
       :class="isDarkMode 
-        ? 'bg-gray-800 border-transparent' 
+        ? 'bg-black border-transparent' 
         : 'bg-white border-transparent'"
     >
       <div 
@@ -44,22 +24,25 @@
     <div v-else>
       <!-- View Toggle Buttons and Stats Row -->
       <div class="flex justify-between items-center mb-6">
-        <!-- Total Count -->
-        <div 
+        <!-- Total Count with Pagination Info -->
+        <div
           class="flex items-center gap-2"
           :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'"
         >
-          <i-mdi-phone-outline 
+          <i-mdi-phone-outline
             class="w-5 h-5"
             :class="isDarkMode ? 'text-amber-500' : 'text-amber-700'"
           />
-          <span class="text-sm">Total Calls:</span>
-          <span 
+          <span class="text-sm">
+            Showing {{ callsStore.paginationInfo.rangeStart }} - {{ callsStore.paginationInfo.rangeEnd }} of
+          </span>
+          <span
             class="text-lg font-bold"
             :class="isDarkMode ? 'text-amber-500' : 'text-amber-700'"
           >
-            {{ callsStore.callCount }}
+            {{ callsStore.paginationInfo.total }}
           </span>
+          <span class="text-sm">calls</span>
         </div>
 
         <!-- View Toggle Buttons -->
@@ -94,7 +77,7 @@
             :class="[
               'px-5 py-2.5 rounded-xl font-medium transition-all duration-200 flex items-center gap-2 text-sm border disabled:opacity-50 disabled:cursor-not-allowed',
               isDarkMode
-                ? 'bg-gray-800 text-gray-300 border-transparent hover:border-green-500 hover:text-green-400'
+                ? 'bg-black text-gray-300 border-transparent hover:border-green-500 hover:text-green-400'
                 : 'bg-white text-gray-700 border-transparent hover:border-green-600 hover:text-green-600'
             ]"
           >
@@ -129,29 +112,65 @@
       <div v-if="activeView === 'sip'">
         <SipAgentView />
       </div>
+
+      <!-- Pagination Controls (not shown for SIP view) -->
+      <Pagination
+        v-if="activeView !== 'sip'"
+        :paginationInfo="callsStore.paginationInfo"
+        :hasNextPage="callsStore.hasNextPage"
+        :hasPrevPage="callsStore.hasPrevPage"
+        :loading="callsStore.loading"
+        :pageSize="selectedPageSize"
+        @prev="goToPrevPage"
+        @next="goToNextPage"
+        @goToPage="goToPage"
+        @changePageSize="changePageSize"
+      />
     </div>
 
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, inject } from "vue"
+import { ref, computed, onMounted, inject, watch } from "vue"
 import { useRouter } from "vue-router"
 import { toast } from 'vue-sonner'
 import Timeline from "@/components/calls/Timeline.vue"
 import Table from "@/components/calls/Table.vue"
 import CallsFilter from "@/components/calls/CallsFilter.vue"
 import SipAgentView from "@/components/calls/SipAgentView.vue"
+import Pagination from "@/components/base/Pagination.vue"
 import { useCallStore } from "@/stores/calls"
+import { useSearchStore } from "@/stores/search"
 
 // Inject theme
 const isDarkMode = inject('isDarkMode')
 
 const router = useRouter()
 const callsStore = useCallStore()
+const searchStore = useSearchStore()
 const activeView = ref("timeline")
 const selectedCallId = ref(null)
 const currentFilters = ref({})
+const selectedPageSize = ref(20)
+
+// Debounce handle for global search
+let searchDebounce = null
+
+// Watch for global search query changes
+watch(() => searchStore.query, (newQuery) => {
+  clearTimeout(searchDebounce)
+  searchDebounce = setTimeout(() => {
+    // Merge search query with existing filters
+    const searchParams = { ...currentFilters.value }
+    if (newQuery) {
+      searchParams.q = newQuery
+    } else {
+      delete searchParams.q
+    }
+    applyFilters(searchParams)
+  }, 500)
+})
 
 // Dynamic button class based on active state
 const getViewButtonClass = (isActive) => {
@@ -163,7 +182,7 @@ const getViewButtonClass = (isActive) => {
       : `${baseClasses} bg-amber-700 text-white shadow-lg shadow-amber-900/30`
   } else {
     return isDarkMode.value
-      ? `${baseClasses} bg-gray-800 text-gray-300 border border-transparent hover:border-amber-600 hover:text-amber-500`
+      ? `${baseClasses} bg-black text-gray-300 border border-transparent hover:border-amber-600 hover:text-amber-500`
       : `${baseClasses} bg-white text-gray-700 border border-transparent hover:border-amber-600 hover:text-amber-700`
   }
 }
@@ -172,7 +191,12 @@ const getViewButtonClass = (isActive) => {
 onMounted(async () => {
   try {
     console.log("Fetching calls...")
-    await callsStore.listCalls()
+    // If there is an existing search query, apply it
+    const params = { _o: 0, _c: selectedPageSize.value }
+    if (searchStore.query) {
+      params.q = searchStore.query
+    }
+    await callsStore.listCalls(params)
     console.log("Calls fetched:", callsStore.calls)
   } catch (err) {
     console.error("Error fetching calls:", err)
@@ -180,25 +204,43 @@ onMounted(async () => {
   }
 })
 
-// Apply filters and fetch calls
+// Apply filters and fetch calls (resets to first page)
 async function applyFilters(filters) {
   currentFilters.value = filters
   try {
     console.log("Applying filters:", filters)
-    await callsStore.listCalls(filters)
-    console.log("Filtered calls fetched:", callsStore.calls)
+    // Reset pagination when filters change
+    callsStore.resetPagination()
+    await callsStore.listCalls({ ...filters, _o: 0, _c: selectedPageSize.value })
+    
+    // Auto-select if a single record is found via direct search
+    if (filters.q && callsStore.calls.length === 1) {
+      const call = callsStore.calls[0]
+      const idIndex = callsStore.calls_k?.uniqueid?.[0]
+      if (idIndex !== undefined) {
+        selectCall(call[idIndex])
+        toast.success(`Found and selected call: ${call[idIndex]}`)
+      }
+    }
   } catch (err) {
     console.error("Error fetching filtered calls:", err)
     toast.error('Failed to apply filters. Please try again.')
   }
 }
 
-// Refresh calls with current filters
+// Refresh calls with current filters (maintains current page)
 async function refreshCalls() {
   try {
     console.log("Refreshing calls...")
-    await callsStore.listCalls(currentFilters.value)
-    console.log("Calls refreshed")
+    const params = {
+      ...currentFilters.value,
+      _o: callsStore.pagination.offset,
+      _c: callsStore.pagination.limit
+    }
+    if (searchStore.query) {
+      params.q = searchStore.query
+    }
+    await callsStore.listCalls(params)
     toast.success('Calls refreshed successfully!')
   } catch (err) {
     console.error("Error refreshing calls:", err)
@@ -208,7 +250,6 @@ async function refreshCalls() {
 
 // Handle create QA
 function handleCreateQA(uniqueid) {
-  console.log('Navigating to QA creation with callId:', uniqueid)
   router.push({
     name: 'QaCreation',
     query: { callId: uniqueid }
@@ -246,4 +287,51 @@ const groupedCalls = computed(() => {
 
   return sorted
 })
+
+// Pagination handlers
+async function goToNextPage() {
+  try {
+    const params = { ...currentFilters.value }
+    if (searchStore.query) params.q = searchStore.query
+    await callsStore.nextPage(params)
+  } catch (err) {
+    console.error("Error going to next page:", err)
+    toast.error('Failed to load next page.')
+  }
+}
+
+async function goToPrevPage() {
+  try {
+    const params = { ...currentFilters.value }
+    if (searchStore.query) params.q = searchStore.query
+    await callsStore.prevPage(params)
+  } catch (err) {
+    console.error("Error going to previous page:", err)
+    toast.error('Failed to load previous page.')
+  }
+}
+
+async function goToPage(page) {
+  if (page === '...') return
+  try {
+    const params = { ...currentFilters.value }
+    if (searchStore.query) params.q = searchStore.query
+    await callsStore.goToPage(page, params)
+  } catch (err) {
+    console.error("Error going to page:", err)
+    toast.error('Failed to load page.')
+  }
+}
+
+async function changePageSize(size) {
+  selectedPageSize.value = size
+  try {
+    const params = { ...currentFilters.value }
+    if (searchStore.query) params.q = searchStore.query
+    await callsStore.setPageSize(size, params)
+  } catch (err) {
+    console.error("Error changing page size:", err)
+    toast.error('Failed to change page size.')
+  }
+}
 </script>

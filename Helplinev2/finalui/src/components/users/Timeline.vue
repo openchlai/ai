@@ -9,7 +9,7 @@
       :key="getValue(user, 'id')"
       class="relative shadow-xl rounded-lg p-6 border cursor-pointer transition-all duration-200"
       :class="isDarkMode 
-        ? 'bg-neutral-900 border-transparent hover:border-amber-600' 
+        ? 'bg-black border-transparent hover:border-amber-600' 
         : 'bg-white border-transparent hover:border-amber-600'"
       @click="selectUser(user)"
     >
@@ -91,7 +91,7 @@
         <div 
           class="rounded-lg shadow-2xl p-8 border"
           :class="isDarkMode 
-            ? 'bg-neutral-900 border-transparent' 
+            ? 'bg-black border-transparent' 
             : 'bg-white border-transparent'"
         >
           <div class="flex flex-col items-center gap-4">

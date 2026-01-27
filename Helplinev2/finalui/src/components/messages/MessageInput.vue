@@ -2,7 +2,7 @@
   <div 
     class="p-4 border-t"
     :class="isDarkMode 
-      ? 'border-transparent bg-gray-800' 
+      ? 'border-transparent bg-black' 
       : 'border-transparent bg-white'"
   >
     <div class="flex gap-3">

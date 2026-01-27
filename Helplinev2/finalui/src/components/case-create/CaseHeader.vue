@@ -22,7 +22,7 @@
       <!-- AI Toggle in Header -->
       <div 
         class="flex items-center gap-4 px-4 py-3 rounded-2xl border transition-all duration-300"
-        :class="isDarkMode ? 'bg-neutral-900/50 border-neutral-800' : 'bg-white border-gray-100 shadow-sm'"
+        :class="isDarkMode ? 'bg-black/50 border-neutral-800' : 'bg-white border-gray-100 shadow-sm'"
       >
         <div class="text-right">
           <h3 

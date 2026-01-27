@@ -1,6 +1,6 @@
 <template>
-  <div class="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center p-4">
-    <div class="max-w-md w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
+  <div class="min-h-screen bg-gray-100 dark:bg-black flex items-center justify-center p-4">
+    <div class="max-w-md w-full bg-white dark:bg-black rounded-lg shadow-lg p-8">
       <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
         Password Reset Test
       </h1>
@@ -71,7 +71,7 @@
       </div>
 
       <!-- Request Details -->
-      <div class="mt-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-transparent dark:border-transparent">
+      <div class="mt-6 p-4 bg-gray-50 dark:bg-black rounded-lg border border-transparent dark:border-transparent">
         <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
           Endpoint Details
         </h3>

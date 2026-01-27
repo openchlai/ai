@@ -12,8 +12,8 @@
       :class="[
         isDarkMode 
           ? isOpen 
-            ? 'bg-gray-800 hover:bg-gray-750' 
-            : 'bg-gray-800/50 hover:bg-gray-800'
+            ? 'bg-black hover:bg-gray-750' 
+            : 'bg-black/50 hover:bg-black'
           : isOpen
             ? 'bg-gray-50 hover:bg-gray-100'
             : 'bg-white hover:bg-gray-50'
@@ -69,7 +69,7 @@
     <div
       v-show="isOpen"
       class="transition-all duration-200"
-      :class="isDarkMode ? 'bg-gray-900' : 'bg-white'"
+      :class="isDarkMode ? 'bg-black' : 'bg-white'"
     >
       <div class="p-4 border-t" :class="isDarkMode ? 'border-transparent' : 'border-transparent'">
         <slot></slot>

@@ -2,7 +2,7 @@
   <div 
     class="w-full rounded-lg p-6 shadow-xl border"
     :class="isDarkMode 
-      ? 'bg-neutral-900 border-transparent' 
+      ? 'bg-black border-transparent' 
       : 'bg-white border-transparent'"
   >
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">

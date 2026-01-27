@@ -1,7 +1,6 @@
 <template>
   <div 
-    class="min-h-screen py-8 px-4 sm:px-6 lg:px-8"
-    :class="isDarkMode ? 'bg-black' : 'bg-gray-50'"
+    class="space-y-6"
   >
     <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
       
@@ -32,7 +31,7 @@
         <div 
           class="rounded-xl shadow-xl border p-6 sm:p-8"
           :class="isDarkMode 
-            ? 'bg-neutral-900 border-transparent' 
+            ? 'bg-black border-transparent' 
             : 'bg-white border-transparent'"
         >
           <!-- Step 1: Reporter Selection -->

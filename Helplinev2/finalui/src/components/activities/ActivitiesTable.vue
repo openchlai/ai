@@ -2,7 +2,7 @@
   <div 
     class="shadow-xl rounded-lg overflow-hidden border"
     :class="isDarkMode 
-      ? 'bg-neutral-900 border-transparent' 
+      ? 'bg-black border-transparent' 
       : 'bg-white border-transparent'"
   >
     <!-- Activities Table -->

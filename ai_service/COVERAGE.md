@@ -1,10 +1,10 @@
 # 📊 Code Coverage Report - AI Service
 
-**Branch:** ai-service-dev
-**Commit:** [\`c9509ed\`](https://github.com/openchlai/ai/commit/c9509ed72dd094c4fcfd22f3751cb0416b93ced5)
-**Generated:** 2026-01-27 07:19:46 UTC
+**Branch:** 471/merge
+**Commit:** [\`cd2c006\`](https://github.com/openchlai/ai/commit/cd2c00605ae9c449362ca8ad455f1518a8359c25)
+**Generated:** 2026-01-26 11:19:42 UTC
 **Python Version:** 3.12
-**Workflow:** [\`21388038708\`](https://github.com/openchlai/ai/actions/runs/21388038708)
+**Workflow:** [\`21355592855\`](https://github.com/openchlai/ai/actions/runs/21355592855)
 
 ## 🎯 Coverage Summary
 
@@ -83,4 +83,4 @@ TOTAL                                            7169   1300    82%
 
 ---
 *Report generated automatically by GitHub Actions*
-*Access this report at: [COVERAGE.md](https://github.com/openchlai/ai/blob/ai-service-dev/ai_service/COVERAGE.md)*
+*Access this report at: [COVERAGE.md](https://github.com/openchlai/ai/blob/471/merge/ai_service/COVERAGE.md)*

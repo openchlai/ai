@@ -17,7 +17,7 @@
       class="w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-offset-0 transition-all"
       :class="[
         isDarkMode
-          ? 'bg-gray-800 border-transparent text-gray-300 placeholder-gray-500 focus:ring-amber-500'
+          ? 'bg-black border-transparent text-gray-300 placeholder-gray-500 focus:ring-amber-500'
           : 'bg-white border-transparent text-gray-900 placeholder-gray-400 focus:ring-amber-500',
         error ? 'border-red-500' : ''
       ]"
@@ -33,7 +33,7 @@
       class="w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-offset-0 transition-all resize-none"
       :class="[
         isDarkMode
-          ? 'bg-gray-800 border-transparent text-gray-300 placeholder-gray-500 focus:ring-amber-500'
+          ? 'bg-black border-transparent text-gray-300 placeholder-gray-500 focus:ring-amber-500'
           : 'bg-white border-transparent text-gray-900 placeholder-gray-400 focus:ring-amber-500',
         error ? 'border-red-500' : ''
       ]"
@@ -47,7 +47,7 @@
       class="w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-offset-0 transition-all"
       :class="[
         isDarkMode
-          ? 'bg-gray-800 border-transparent text-gray-300 focus:ring-amber-500'
+          ? 'bg-black border-transparent text-gray-300 focus:ring-amber-500'
           : 'bg-white border-transparent text-gray-900 focus:ring-amber-500',
         error ? 'border-red-500' : ''
       ]"

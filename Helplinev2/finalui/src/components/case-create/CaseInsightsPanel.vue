@@ -3,7 +3,7 @@
     <!-- AI Title Badge (Shown when expanded) -->
     <div 
       class="rounded-xl shadow-lg border p-5 transition-all duration-200"
-      :class="isDarkMode ? 'bg-neutral-900 border-transparent' : 'bg-white border-transparent'"
+      :class="isDarkMode ? 'bg-black border-transparent' : 'bg-white border-transparent'"
     >
       <div class="flex items-center gap-3">
         <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors"
@@ -29,7 +29,7 @@
     <div 
       v-if="aiEnabled"
       class="rounded-xl shadow-lg border p-6 transition-all duration-200"
-      :class="isDarkMode ? 'bg-neutral-900 border-transparent' : 'bg-white border-transparent'"
+      :class="isDarkMode ? 'bg-black border-transparent' : 'bg-white border-transparent'"
     >
       <h3 
         class="text-sm font-bold mb-4"
@@ -99,7 +99,7 @@
     <div 
       v-if="aiEnabled && audioFile"
       class="rounded-xl shadow-lg border overflow-hidden transition-all duration-500 animate-in fade-in slide-in-from-bottom-8"
-      :class="isDarkMode ? 'bg-neutral-900 border-transparent' : 'bg-white border-transparent'"
+      :class="isDarkMode ? 'bg-black border-transparent' : 'bg-white border-transparent'"
     >
       <!-- Mode Selector Tabs (Segmented Control Layout) -->
       <div class="p-1 px-5 pt-5">
@@ -175,7 +175,7 @@
           </div>
 
           <!-- 3. Classification -->
-          <div class="p-4 rounded-xl border border-dashed" :class="isDarkMode ? 'border-neutral-800 bg-neutral-900/40' : 'border-gray-200 bg-amber-50/10'">
+          <div class="p-4 rounded-xl border border-dashed" :class="isDarkMode ? 'border-neutral-800 bg-black/40' : 'border-gray-200 bg-amber-50/10'">
             <h4 class="text-[11px] font-bold uppercase tracking-widest mb-4" :class="isDarkMode ? 'text-amber-500/80' : 'text-amber-600/80'">Classification</h4>
             <div class="grid grid-cols-2 gap-6">
               <div class="space-y-4">

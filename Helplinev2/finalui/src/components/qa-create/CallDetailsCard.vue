@@ -2,7 +2,7 @@
   <div 
     class="rounded-lg shadow-xl p-6 sticky top-4 border"
     :class="isDarkMode 
-      ? 'bg-gray-800 border-transparent' 
+      ? 'bg-black border-transparent' 
       : 'bg-white border-transparent'"
   >
     <!-- Header -->
@@ -46,7 +46,7 @@
     <div class="space-y-3 mb-6">
       <div 
         class="flex items-center justify-between py-2 px-3 rounded-lg"
-        :class="isDarkMode ? 'bg-gray-900/60' : 'bg-gray-50'"
+        :class="isDarkMode ? 'bg-black/60' : 'bg-gray-50'"
       >
         <span 
           class="text-sm font-semibold"
@@ -64,7 +64,7 @@
 
       <div 
         class="flex items-center justify-between py-2 px-3 rounded-lg"
-        :class="isDarkMode ? 'bg-gray-900/60' : 'bg-gray-50'"
+        :class="isDarkMode ? 'bg-black/60' : 'bg-gray-50'"
       >
         <span 
           class="text-sm font-semibold"
@@ -82,7 +82,7 @@
 
       <div 
         class="flex items-center justify-between py-2 px-3 rounded-lg"
-        :class="isDarkMode ? 'bg-gray-900/60' : 'bg-gray-50'"
+        :class="isDarkMode ? 'bg-black/60' : 'bg-gray-50'"
       >
         <span 
           class="text-sm font-semibold"
@@ -100,7 +100,7 @@
 
       <div 
         class="flex items-center justify-between py-2 px-3 rounded-lg"
-        :class="isDarkMode ? 'bg-gray-900/60' : 'bg-gray-50'"
+        :class="isDarkMode ? 'bg-black/60' : 'bg-gray-50'"
       >
         <span 
           class="text-sm font-semibold"
@@ -118,7 +118,7 @@
 
       <div 
         class="flex items-center justify-between py-2 px-3 rounded-lg"
-        :class="isDarkMode ? 'bg-gray-900/60' : 'bg-gray-50'"
+        :class="isDarkMode ? 'bg-black/60' : 'bg-gray-50'"
       >
         <span 
           class="text-sm font-semibold"
@@ -136,7 +136,7 @@
 
       <div 
         class="flex items-center justify-between py-2 px-3 rounded-lg"
-        :class="isDarkMode ? 'bg-gray-900/60' : 'bg-gray-50'"
+        :class="isDarkMode ? 'bg-black/60' : 'bg-gray-50'"
       >
         <span 
           class="text-sm font-semibold"
