@@ -1,16 +1,16 @@
 # 📊 Code Coverage Report - AI Service
 
 **Branch:** 467/merge
-**Commit:** [\`c150d3d\`](https://github.com/openchlai/ai/commit/c150d3d2f72101474fab9021f26af264e341b244)
-**Generated:** 2026-01-26 11:04:48 UTC
+**Commit:** [\`a124f6d\`](https://github.com/openchlai/ai/commit/a124f6d749d180923f0ab06bec3d80a8c97d6f36)
+**Generated:** 2026-01-27 06:16:56 UTC
 **Python Version:** 3.12
-**Workflow:** [\`21355205162\`](https://github.com/openchlai/ai/actions/runs/21355205162)
+**Workflow:** [\`21386609440\`](https://github.com/openchlai/ai/actions/runs/21386609440)
 
 ## 🎯 Coverage Summary
 
-![Coverage](https://img.shields.io/badge/Coverage-83%25-brightgreen)
+![Coverage](https://img.shields.io/badge/Coverage-82%25-brightgreen)
 
-**Coverage:** 83%
+**Coverage:** 82%
 
 ## 📈 Detailed Coverage Report
 
@@ -52,13 +52,13 @@ app/db/session.py                                  22      0   100%
 app/main.py                                       130     26    80%   55-56, 66-68, 79-80, 86, 101-104, 118-119, 176, 243-244, 272-293
 app/model_scripts/__init__.py                       7      0   100%
 app/model_scripts/audio_processing.py               0      0   100%
-app/model_scripts/classifier_model.py             302     25    92%   20-28, 31-47, 101-102, 274-275, 505
+app/model_scripts/classifier_model.py             302     32    89%   20-28, 31-47, 101-102, 262-275, 505
 app/model_scripts/model_loader.py                 249     81    67%   16-18, 24-26, 32-34, 40-42, 48-50, 56-58, 64-66, 89-125, 177, 195, 202-203, 223-224, 260-261, 270-274, 303-307, 319-323, 331-344, 395, 410, 421
 app/model_scripts/ner_model.py                    161     36    78%   14-16, 83-103, 120-123, 136, 163-165, 193-197, 201, 224-226, 260-261
-app/model_scripts/qa_model.py                     155     25    84%   60-66, 134-158, 226-228, 259-260
+app/model_scripts/qa_model.py                     155     54    65%   47-54, 60-66, 94-127, 134-158, 226-228, 259-260
 app/model_scripts/summarizer_model.py             163      4    98%   213, 240-241, 282
-app/model_scripts/translator_model.py             178     46    74%   53-57, 60-61, 73-74, 117-122, 158-160, 164-201, 219-222, 241, 253-256, 293, 307-308
-app/model_scripts/whisper_model.py                254     81    68%   77-78, 128-171, 196-204, 231, 267-320, 344-363, 410-411, 418, 442-464, 474-475, 482-484
+app/model_scripts/translator_model.py             178     48    73%   53-57, 60-61, 70-71, 73-74, 117-122, 158-160, 164-201, 219-222, 241, 253-256, 293, 307-308
+app/model_scripts/whisper_model.py                254    117    54%   69, 77-78, 128-171, 183-211, 229-234, 248, 267-320, 344-363, 369-371, 409-484
 app/models/__init__.py                              2      0   100%
 app/models/notification_types.py                   62      0   100%
 app/services/enhanced_notification_service.py     328      4    99%   308, 524-525, 849
@@ -78,7 +78,7 @@ app/utils/mode_detector.py                         16      0   100%
 app/utils/scp_audio_downloader.py                 232     22    91%   45, 51, 124-126, 138-140, 239-241, 353, 360-361, 385, 438, 546-555
 app/utils/text_utils.py                           268     20    93%   90-91, 158-169, 186, 241-242, 302-316, 357-358, 560
 -----------------------------------------------------------------------------
-TOTAL                                            7169   1226    83%
+TOTAL                                            7169   1300    82%
 ```
 
 ---
