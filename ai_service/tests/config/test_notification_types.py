@@ -117,6 +117,10 @@ class TestNotificationType:
         """Test POSTCALL_GPT_INSIGHTS value"""
         assert NotificationType.POSTCALL_GPT_INSIGHTS.value == "postcall_gpt_insights"
 
+    def test_postcall_mistral_insights(self):
+        """Test POSTCALL_MISTRAL_INSIGHTS value"""
+        assert NotificationType.POSTCALL_MISTRAL_INSIGHTS.value == "postcall_mistral_insights"
+
     def test_postcall_complete(self):
         """Test POSTCALL_COMPLETE value"""
         assert NotificationType.POSTCALL_COMPLETE.value == "postcall_complete"
@@ -140,7 +144,7 @@ class TestNotificationType:
     def test_notification_type_count(self):
         """Test all notification types are present"""
         notification_types = list(NotificationType)
-        assert len(notification_types) == 26
+        assert len(notification_types) == 27
 
 
 class TestProcessingMode:
