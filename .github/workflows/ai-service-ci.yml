@@ -12,7 +12,7 @@ on:
     paths:
       - "ai_service/**"
       - ".github/workflows/ai-service-ci.yml"
-    branches: [main, develop]
+    branches: [main, ai-service-dev]
   workflow_dispatch:
 
 env:
@@ -76,14 +76,13 @@ jobs:
       - name: 🏗️ Setup test environment
         working-directory: ai_service
         run: |
-          mkdir -p app/models models logs temp
+          # Create directories for model storage and logs (not code!)
+          mkdir -p models logs temp
 
-          printf '"""Models package placeholder for testing"""\n' > app/models/__init__.py
+          # Create placeholder for model storage directory
+          echo "# Models storage directory for CI testing" > models/README.md
 
-          printf '"""Model loader placeholder for CI testing"""\nimport logging\n\nlogger = logging.getLogger(__name__)\n\nclass ModelLoader:\n    def __init__(self):\n        self.models = {}\n        logger.info("ModelLoader initialized (CI mode)")\n\n    async def load_all_models(self):\n        logger.info("Skipping model loading in CI environment")\n        return True\n\n    def get_model(self, model_name):\n        return None\n\nmodel_loader = ModelLoader()\n' > app/models/model_loader.py
-
-          echo "# Models directory for CI testing" > models/README.md
-
+          # Create test environment configuration
           printf 'DEBUG=true\nLOG_LEVEL=INFO\nSITE_ID=ci-test\nENABLE_MODEL_LOADING=false\nREDIS_URL=redis://localhost:6379/0\nDOCKER_CONTAINER=false\nENABLE_STREAMING=false\n' > .env.test
 
       - name: 🔍 Verify test setup
@@ -95,28 +94,10 @@ jobs:
           python -c "from app.model_scripts.model_loader import model_loader; print('Model loader OK')"
           python -c "import redis; r=redis.Redis(host='localhost', port=6379); r.ping(); print('Redis OK')"
 
-      - name: 🧪 Run Unit Tests
+      - name: 🧪 Run Unit Tests with Coverage
         working-directory: ai_service
         run: |
-          if [ -d tests ] && [ -n "$(find tests -name '*.py' -type f)" ]; then
-            python -m pytest tests/ \
-              -v \
-              --tb=short \
-              --maxfail=5 \
-              --disable-warnings \
-              --junit-xml=test-results.xml \
-              --continue-on-collection-errors \
-              || echo "Some unit tests failed, continuing..."
-          else
-            python test_runner.py < /dev/null || echo "test_runner.py failed"
-            [ -f test_progressive_system.py ] && timeout 60 python test_progressive_system.py || echo "test_progressive_system.py skipped"
-            [ -f test_agent_connectivity.py ] && timeout 30 python test_agent_connectivity.py || echo "test_agent_connectivity.py skipped"
-          fi
-
-      - name: 🧪 Run Tests with Coverage
-        working-directory: ai_service
-        run: |
-          echo "🛠 Running unit tests with coverage..."
+          echo "🛠 Running unit tests with coverage (single combined run)..."
           if [ -d tests ] && [ -n "$(find tests -name '*.py' -type f)" ]; then
             python -m pytest tests/ \
               --cov=app \
@@ -124,9 +105,12 @@ jobs:
               --cov-report=xml:coverage.xml \
               --cov-report=html:coverage-html \
               --cov-config=.coveragerc \
+              -v \
+              --tb=short \
+              --junit-xml=test-results.xml \
+              --maxfail=5 \
               --disable-warnings \
-              --continue-on-collection-errors \
-              --tb=no || {
+              --continue-on-collection-errors || {
                 echo "⚠️ Tests failed. Creating fallback coverage.xml so downstream steps still run."
                 printf '<?xml version="1.0"?>\n<coverage version="7.0" timestamp="1" lines-valid="100" lines-covered="0" line-rate="0.0">\n<sources><source>./app</source></sources>\n<packages></packages>\n</coverage>\n' > coverage.xml
               }

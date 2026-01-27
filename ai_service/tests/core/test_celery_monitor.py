@@ -1,6 +1,3 @@
-"""
-Comprehensive coverage tests for app/core/celery_monitor.py 
-"""
 import pytest
 from unittest.mock import patch, MagicMock, call
 from datetime import datetime
@@ -564,3 +561,458 @@ class TestWorkerTracking:
         for worker in workers:
             worker_tasks = [t for t in monitor.get_active_tasks()['active_tasks'] if t['worker'] == worker]
             assert len(worker_tasks) == 2
+
+
+class TestMonitorWorkerThreadExecution:
+    """Tests for the actual monitor_worker thread execution logic"""
+
+    @patch('app.core.celery_monitor.celery_app')
+    @patch('app.core.celery_monitor.EventReceiver')
+    @patch('app.core.celery_monitor.logger')
+    def test_monitor_worker_successful_connection(self, mock_logger,
+                                                   mock_event_receiver, mock_celery_app):
+        """Test monitor_worker connects successfully and sets monitoring state"""
+        monitor = CeleryEventMonitor()
+
+        # Setup mocks - let thread actually run
+        mock_connection = MagicMock()
+        mock_celery_app.connection.return_value.__enter__.return_value = mock_connection
+
+        mock_receiver_instance = MagicMock()
+        # Make capture() raise KeyboardInterrupt to exit the thread cleanly
+        mock_receiver_instance.capture.side_effect = KeyboardInterrupt
+        mock_event_receiver.return_value = mock_receiver_instance
+
+        # Start monitoring - thread actually runs
+        monitor.start_monitoring()
+
+        # Wait for thread to execute
+        import time
+        time.sleep(0.15)
+
+        # Verify connection was attempted
+        mock_celery_app.connection.assert_called()
+        mock_event_receiver.assert_called()
+
+    @patch('app.core.celery_monitor.celery_app')
+    @patch('app.core.celery_monitor.EventReceiver')
+    @patch('app.core.celery_monitor.time.sleep')
+    @patch('app.core.celery_monitor.logger')
+    def test_monitor_worker_connection_retry_logic(self, mock_logger, mock_sleep,
+                                                   mock_event_receiver, mock_celery_app):
+        """Test retry logic when connection fails"""
+        monitor = CeleryEventMonitor()
+
+        # Setup connection to fail twice, then succeed
+        call_count = [0]
+
+        def connection_side_effect():
+            call_count[0] += 1
+            if call_count[0] <= 2:
+                raise ConnectionError(f"Failed {call_count[0]}")
+            # Third call succeeds
+            ctx = MagicMock()
+            ctx.__enter__ = MagicMock(return_value=MagicMock())
+            ctx.__exit__ = MagicMock(return_value=False)
+            return ctx
+
+        mock_celery_app.connection.side_effect = connection_side_effect
+
+        mock_receiver_instance = MagicMock()
+        mock_receiver_instance.capture.side_effect = KeyboardInterrupt
+        mock_event_receiver.return_value = mock_receiver_instance
+
+        # Start monitoring
+        monitor.start_monitoring()
+
+        # Wait for thread to execute
+        import time
+        time.sleep(0.2)
+
+        # Verify sleep was called for retry delays
+        assert mock_sleep.called
+
+    @patch('app.core.celery_monitor.celery_app')
+    @patch('app.core.celery_monitor.EventReceiver')
+    @patch('app.core.celery_monitor.logger')
+    def test_event_handlers_registered(self, mock_logger, mock_event_receiver, mock_celery_app):
+        """Test that all event handlers are registered correctly"""
+        monitor = CeleryEventMonitor()
+
+        mock_connection = MagicMock()
+        mock_celery_app.connection.return_value.__enter__.return_value = mock_connection
+
+        # Capture the handlers passed to EventReceiver
+        captured_handlers = {}
+
+        def capture_handlers(connection, handlers):
+            captured_handlers.update(handlers)
+            mock_receiver = MagicMock()
+            mock_receiver.capture.side_effect = KeyboardInterrupt
+            return mock_receiver
+
+        mock_event_receiver.side_effect = capture_handlers
+
+        # Start monitoring
+        monitor.start_monitoring()
+
+        # Wait for thread to execute
+        import time
+        time.sleep(0.15)
+
+        # Verify all required handlers were registered
+        assert 'task-started' in captured_handlers
+        assert 'task-succeeded' in captured_handlers
+        assert 'task-failed' in captured_handlers
+        assert 'worker-heartbeat' in captured_handlers
+
+    @patch('app.core.celery_monitor.celery_app')
+    @patch('app.core.celery_monitor.EventReceiver')
+    @patch('app.core.celery_monitor.logger')
+    def test_task_started_handler_behavior(self, mock_logger, mock_event_receiver, mock_celery_app):
+        """Test task-started event handler updates active_tasks"""
+        monitor = CeleryEventMonitor()
+
+        # Setup mocks
+        mock_connection = MagicMock()
+        mock_celery_app.connection.return_value.__enter__.return_value = mock_connection
+
+        # Capture the handlers and call task-started
+        def capture_and_test_handlers(connection, handlers):
+            # Simulate task-started event
+            task_event = {
+                'uuid': 'test-task-123',
+                'name': 'test.task',
+                'hostname': 'worker1',
+                'timestamp': 1234567890.0,
+                'args': ['arg1', 'arg2']
+            }
+            handlers['task-started'](task_event)
+
+            mock_receiver = MagicMock()
+            mock_receiver.capture.side_effect = KeyboardInterrupt
+            return mock_receiver
+
+        mock_event_receiver.side_effect = capture_and_test_handlers
+
+        # Start monitoring
+        monitor.start_monitoring()
+
+        # Wait for thread to execute
+        import time
+        time.sleep(0.15)
+
+        # Verify task was added to active_tasks
+        assert 'test-task-123' in monitor.active_tasks
+        assert monitor.active_tasks['test-task-123']['name'] == 'test.task'
+        assert monitor.active_tasks['test-task-123']['worker'] == 'worker1'
+
+    @patch('app.core.celery_monitor.celery_app')
+    @patch('app.core.celery_monitor.EventReceiver')
+    @patch('app.core.celery_monitor.logger')
+    def test_task_succeeded_handler_behavior(self, mock_logger, mock_event_receiver, mock_celery_app):
+        """Test task-succeeded event handler removes task from active_tasks"""
+        monitor = CeleryEventMonitor()
+
+        # Prepopulate active tasks
+        monitor.active_tasks['task-123'] = {
+            'task_id': 'task-123',
+            'name': 'test_task',
+            'worker': 'worker1'
+        }
+
+        # Setup mocks
+        mock_connection = MagicMock()
+        mock_celery_app.connection.return_value.__enter__.return_value = mock_connection
+
+        # Capture handlers and simulate task-succeeded
+        def capture_and_test_handlers(connection, handlers):
+            # Simulate task-succeeded event
+            task_event = {
+                'uuid': 'task-123',
+                'timestamp': 1234567890.0
+            }
+            handlers['task-succeeded'](task_event)
+
+            mock_receiver = MagicMock()
+            mock_receiver.capture.side_effect = KeyboardInterrupt
+            return mock_receiver
+
+        mock_event_receiver.side_effect = capture_and_test_handlers
+
+        # Start monitoring
+        monitor.start_monitoring()
+
+        # Wait for thread to execute
+        import time
+        time.sleep(0.15)
+
+        # Verify task was removed
+        assert 'task-123' not in monitor.active_tasks
+
+    @patch('app.core.celery_monitor.celery_app')
+    @patch('app.core.celery_monitor.EventReceiver')
+    @patch('app.core.celery_monitor.logger')
+    def test_task_failed_handler_behavior(self, mock_logger, mock_event_receiver, mock_celery_app):
+        """Test task-failed event handler removes task from active_tasks"""
+        monitor = CeleryEventMonitor()
+
+        # Prepopulate active tasks
+        monitor.active_tasks['task-456'] = {
+            'task_id': 'task-456',
+            'name': 'failing_task',
+            'worker': 'worker1'
+        }
+
+        # Setup mocks
+        mock_connection = MagicMock()
+        mock_celery_app.connection.return_value.__enter__.return_value = mock_connection
+
+        # Capture handlers and simulate task-failed
+        def capture_and_test_handlers(connection, handlers):
+            # Simulate task-failed event
+            task_event = {
+                'uuid': 'task-456',
+                'timestamp': 1234567890.0
+            }
+            handlers['task-failed'](task_event)
+
+            mock_receiver = MagicMock()
+            mock_receiver.capture.side_effect = KeyboardInterrupt
+            return mock_receiver
+
+        mock_event_receiver.side_effect = capture_and_test_handlers
+
+        # Start monitoring
+        monitor.start_monitoring()
+
+        # Wait for thread to execute
+        import time
+        time.sleep(0.15)
+
+        # Verify task was removed
+        assert 'task-456' not in monitor.active_tasks
+
+    @patch('app.core.celery_monitor.celery_app')
+    @patch('app.core.celery_monitor.EventReceiver')
+    @patch('app.core.celery_monitor.logger')
+    def test_worker_heartbeat_handler_behavior(self, mock_logger, mock_event_receiver, mock_celery_app):
+        """Test worker-heartbeat event handler updates worker_stats"""
+        monitor = CeleryEventMonitor()
+
+        # Setup mocks
+        mock_connection = MagicMock()
+        mock_celery_app.connection.return_value.__enter__.return_value = mock_connection
+
+        # Capture handlers and simulate worker-heartbeat
+        def capture_and_test_handlers(connection, handlers):
+            # Simulate worker-heartbeat event
+            heartbeat_event = {
+                'hostname': 'worker1',
+                'timestamp': 1234567890.0
+            }
+            handlers['worker-heartbeat'](heartbeat_event)
+
+            mock_receiver = MagicMock()
+            mock_receiver.capture.side_effect = KeyboardInterrupt
+            return mock_receiver
+
+        mock_event_receiver.side_effect = capture_and_test_handlers
+
+        # Start monitoring
+        monitor.start_monitoring()
+
+        # Wait for thread to execute
+        import time
+        time.sleep(0.15)
+
+        # Verify worker stats were updated
+        assert 'worker1' in monitor.worker_stats
+        assert monitor.worker_stats['worker1']['status'] == 'online'
+
+    @patch('app.core.celery_monitor.celery_app')
+    @patch('app.core.celery_monitor.EventReceiver')
+    @patch('app.core.celery_monitor.time.sleep')
+    @patch('app.core.celery_monitor.logger')
+    def test_exponential_backoff_retry(self, mock_logger, mock_sleep,
+                                      mock_event_receiver, mock_celery_app):
+        """Test exponential backoff on repeated failures"""
+        monitor = CeleryEventMonitor()
+
+        # Track sleep intervals
+        sleep_intervals = []
+        mock_sleep.side_effect = lambda x: sleep_intervals.append(x)
+
+        # Setup connection to fail 3 times, then raise KeyboardInterrupt
+        call_count = [0]
+
+        def connection_side_effect():
+            call_count[0] += 1
+            if call_count[0] <= 3:
+                raise ConnectionError(f"Failed {call_count[0]}")
+            raise KeyboardInterrupt  # Exit after 3 failures
+
+        mock_celery_app.connection.side_effect = connection_side_effect
+
+        # Start monitoring
+        monitor.start_monitoring()
+
+        # Wait for thread to complete
+        import time
+        time.sleep(0.25)
+
+        # Verify exponential backoff: 5, 7.5, 11.25
+        assert len(sleep_intervals) >= 2
+        assert sleep_intervals[0] == 5
+        assert sleep_intervals[1] == 7.5
+
+    @patch('app.core.celery_monitor.celery_app')
+    @patch('app.core.celery_monitor.EventReceiver')
+    @patch('app.core.celery_monitor.logger')
+    def test_monitoring_state_changes_on_connection(self, mock_logger,
+                                                    mock_event_receiver, mock_celery_app):
+        """Test is_monitoring flag changes when connection established"""
+        monitor = CeleryEventMonitor()
+
+        # Track state changes
+        state_changes = []
+
+        def capture_state_and_handlers(connection, handlers):
+            # Record state when EventReceiver is created (connection established)
+            state_changes.append(('receiver_created', monitor.is_monitoring))
+
+            mock_receiver = MagicMock()
+
+            # When capture() is called, is_monitoring should be True
+            def capture_with_state_check(*args, **kwargs):
+                state_changes.append(('capture_called', monitor.is_monitoring))
+                raise KeyboardInterrupt  # Exit cleanly
+
+            mock_receiver.capture = capture_with_state_check
+            return mock_receiver
+
+        mock_event_receiver.side_effect = capture_state_and_handlers
+
+        mock_connection = MagicMock()
+        mock_celery_app.connection.return_value.__enter__.return_value = mock_connection
+
+        # Verify initial state
+        assert monitor.is_monitoring is False
+
+        # Start monitoring
+        monitor.start_monitoring()
+
+        # Wait for thread to execute
+        import time
+        time.sleep(0.15)
+
+        # Verify state was True during execution
+        assert len(state_changes) == 2
+        assert state_changes[1] == ('capture_called', True)
+
+        # After KeyboardInterrupt, should be False again
+        assert monitor.is_monitoring is False
+
+    @patch('app.core.celery_monitor.celery_app')
+    @patch('app.core.celery_monitor.EventReceiver')
+    @patch('app.core.celery_monitor.logger')
+    def test_event_with_missing_name_field(self, mock_logger, mock_event_receiver, mock_celery_app):
+        """Test handling of task-started events with missing 'name' field"""
+        monitor = CeleryEventMonitor()
+
+        # Setup mocks
+        mock_connection = MagicMock()
+        mock_celery_app.connection.return_value.__enter__.return_value = mock_connection
+
+        # Capture handlers and simulate event without 'name'
+        def capture_and_test_handlers(connection, handlers):
+            # Simulate task-started event without 'name' field
+            task_event = {
+                'uuid': 'test-task-789',
+                'timestamp': 1234567890.0,
+                # No 'name' field
+                # No 'hostname' field
+                # No 'args' field
+            }
+            handlers['task-started'](task_event)
+
+            mock_receiver = MagicMock()
+            mock_receiver.capture.side_effect = KeyboardInterrupt
+            return mock_receiver
+
+        mock_event_receiver.side_effect = capture_and_test_handlers
+
+        # Start monitoring
+        monitor.start_monitoring()
+
+        # Wait for thread to execute
+        import time
+        time.sleep(0.15)
+
+        # Verify task was added with default values
+        assert 'test-task-789' in monitor.active_tasks
+        assert monitor.active_tasks['test-task-789']['name'] == 'unknown'
+        assert monitor.active_tasks['test-task-789']['worker'] == 'unknown'
+        assert monitor.active_tasks['test-task-789']['args'] == []
+
+    @patch('app.core.celery_monitor.celery_app')
+    @patch('app.core.celery_monitor.EventReceiver')
+    @patch('app.core.celery_monitor.logger')
+    def test_system_exit_stops_monitoring(self, mock_logger, mock_event_receiver, mock_celery_app):
+        """Test that SystemExit properly stops the monitoring loop"""
+        monitor = CeleryEventMonitor()
+
+        # Setup mocks
+        mock_connection = MagicMock()
+        mock_celery_app.connection.return_value.__enter__.return_value = mock_connection
+
+        mock_receiver_instance = MagicMock()
+        mock_receiver_instance.capture.side_effect = SystemExit  # Simulate system exit
+        mock_event_receiver.return_value = mock_receiver_instance
+
+        # Start monitoring
+        monitor.start_monitoring()
+
+        # Wait for thread to execute
+        import time
+        time.sleep(0.15)
+
+        # Verify monitoring stopped cleanly
+        assert monitor.is_monitoring is False
+
+    @patch('app.core.celery_monitor.celery_app')
+    @patch('app.core.celery_monitor.EventReceiver')
+    @patch('app.core.celery_monitor.logger')
+    def test_connection_context_manager_exit(self, mock_logger, mock_event_receiver, mock_celery_app):
+        """Test that connection context manager properly exits"""
+        monitor = CeleryEventMonitor()
+
+        # Setup connection context manager tracking
+        connection_entered = [False]
+        connection_exited = [False]
+
+        class MockContextManager:
+            def __enter__(self):
+                connection_entered[0] = True
+                return MagicMock()
+
+            def __exit__(self, *args):
+                connection_exited[0] = True
+                return False
+
+        mock_celery_app.connection.return_value = MockContextManager()
+
+        mock_receiver_instance = MagicMock()
+        mock_receiver_instance.capture.side_effect = KeyboardInterrupt
+        mock_event_receiver.return_value = mock_receiver_instance
+
+        # Start monitoring
+        monitor.start_monitoring()
+
+        # Wait for thread to execute
+        import time
+        time.sleep(0.15)
+
+        # Verify context manager was properly used
+        assert connection_entered[0] is True
+        assert connection_exited[0] is True
