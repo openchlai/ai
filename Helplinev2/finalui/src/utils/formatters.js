@@ -56,10 +56,10 @@ export function formatPhoneNumber(number) {
 export function formatTime(timestamp) {
   if (!timestamp) return '--'
   const date = new Date(timestamp)
-  return date.toLocaleTimeString('en-US', { 
-    hour: '2-digit', 
-    minute: '2-digit', 
-    second: '2-digit' 
+  return date.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
   })
 }
 
@@ -90,4 +90,31 @@ export function truncateText(text, maxLength = 50) {
   if (!text) return ''
   if (text.length <= maxLength) return text
   return text.substring(0, maxLength) + '...'
+}
+
+/**
+ * Decodes a potentially base64 encoded message.
+ * Often messages in legacy system are base64 encoded JSON strings.
+ */
+export function decodeMessage(msg) {
+  if (!msg || typeof msg !== 'string') return msg
+
+  // Check if it looks like base64
+  // We check for 'eyJ' which is '{' in base64, common for JSON metadata
+  // Also check for common WhatsApp/Meta base64 patterns if any
+  if (!/^[A-Za-z0-9+/=]+$/.test(msg.trim())) return msg
+
+  try {
+    const decoded = atob(msg)
+
+    try {
+      const parsed = JSON.parse(decoded)
+      // Extracts text from common JSON structures
+      return parsed.message || parsed.text || parsed.body || parsed.src_msg || decoded
+    } catch (e) {
+      return decoded
+    }
+  } catch (e) {
+    return msg
+  }
 }

@@ -21,8 +21,8 @@
 | **Governance** | CONTRIBUTING guidelines exist | ✅ Present | [`CONTRIBUTING.md`](./CONTRIBUTING.md) | N | None | - | - | Ready |
 | **Governance** | Code of Conduct published | ✅ Present | [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md) | N | None | - | - | Ready |
 | **QA** | CI pipeline implemented | ✅ Present | [`.github/workflows/ai-service-ci.yml`](./.github/workflows/ai-service-ci.yml) | N | None | - | - | Ready |
-| **QA** | Test coverage ≥ required threshold | ⚠️ 75% vs 80% | [`TEST_HELPLINE_COVERAGE.md`](./TEST_HELPLINE_COVERAGE.md) | Y | Increase test coverage to 80% | QA Lead | TBD | Pending |
-| **QA** | Test results publicly available | ✅ Present | [`WORKFLOW_TEST_RESULTS.md`](./WORKFLOW_TEST_RESULTS.md) | N | None | - | - | Ready |
+| **QA** | Test coverage ≥ required threshold | ⚠️ 75% vs 80% | [`ai_service/COVERAGE.md`](./ai_service/COVERAGE.md) | Y | Increase test coverage to 80% | QA Lead | TBD | Pending |
+| **QA** | Test results publicly available | ✅ Present | [`ai_service/COVERAGE.md`](./ai_service/COVERAGE.md) | N | None | - | - | Ready |
 | **Privacy** | Privacy policy documented | ✅ Present | [`PRIVACY_POLICY.md`](./PRIVACY_POLICY.md) | N | None | - | - | Ready |
 | **Privacy** | Data minimization enforced | ⚠️ Unknown | - | Y | Create Data Flow Diagram / Privacy Map | Data Lead | TBD | Pending |
 | **Security** | Basic threat model documented | ✅ Present | [`.github/SECURITY.md`](./.github/SECURITY.md) | N | Review & Expand if necessary | Sec Lead | - | Ready |
