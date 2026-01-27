@@ -32,7 +32,7 @@ This document tracks the compliance status of the OpenCHS AI project against the
 | **Q3** | **Add remaining documentation type** | Publish both developer and user docs. | [`ai_docs/docs/user-guides`](./ai_docs/docs/user-guides) | ✅ |
 | **Q3** | **Review DPG compliance** | Assess alignment with Digital Public Goods criteria. | [`DPG_GAP_ANALYSIS.md`](./DPG_GAP_ANALYSIS.md) (Application Submitted) | ✅ |
 | **Q4** | **Finalize all documentation** | Ensure docs are complete and updated. | [`ai_docs/`](./ai_docs/) | ✅ |
-| **Q4** | **Achieve 80% test coverage** | Meet contractual QA threshold. | [`TEST_HELPLINE_COVERAGE.md`](.https://github.com/openchlai/ai/blob/main/helplinev1/COVERAGE.md) (Currently 89%%) | ✅|
+| **Q4** | **Achieve 80% test coverage** | Meet contractual QA threshold. | [`COVERAGE.md`](./helplinev1/COVERAGE.md) (Currently 89%) | ✅|
 | **Q4** | **Publish final test evidence** | Make all test results public. | [`coverage.xml`](./coverage.xml) | ✅ |
 | **Q4** | **Confirm perpetual public access** | Ensure all IP remains publicly accessible. | [`README.md`](./README.md) & [`LICENSE`](./LICENSE) | ✅ |
 | **Q4** | **Growth & sustainability planning** | Conduct growth planning with Open Source mentor. | [`PROJECT_CHARTER.md`](./PROJECT_CHARTER.md) (See "Sustainability") | ✅ |
