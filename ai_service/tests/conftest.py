@@ -10,7 +10,7 @@ from datetime import datetime
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 # Async test support
-pytest_plugins = ('pytest_asyncio', 'app')
+pytest_plugins = ('pytest_asyncio',)
 
 # Global fixture to patch settings for all tests .....
 @pytest.fixture(autouse=True)

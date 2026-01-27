@@ -1,5 +1,5 @@
 """
-Direct tests for audio processing Celery task functions - Phase 2A Extended
+Direct tests for audio processing Celery task functions 
 Tests the actual @celery_app.task decorated functions from audio_tasks.py
 """
 import pytest

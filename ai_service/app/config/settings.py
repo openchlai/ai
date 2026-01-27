@@ -130,6 +130,11 @@ class Settings(BaseSettings):
         description="Enable local model loading (set to false in API server mode)"
     )
 
+    ollama_model: str = Field(
+        default="mistral",
+        description="Ollama model name for insights generation"
+    )
+
     # ============================================================================
     # SECURITY & DATA RETENTION
     # ============================================================================
