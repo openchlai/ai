@@ -87,6 +87,12 @@ const routes = [
     meta: { auth: true, permission: 'cases' }
   },
   {
+    path: '/wf/case/:id/form',
+    name: 'CaseSingleForm',
+    component: () => import('@/components/case-create/CaseSingleFormView.vue'),
+    meta: { auth: true, permission: 'cases' }
+  },
+  {
     path: '/qa-creation',
     name: 'QaCreation',
     component: QaCreation,

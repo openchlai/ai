@@ -1,57 +1,114 @@
 <template>
   <div class="space-y-6">
-    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
-
-      <!-- Left Column: Case Wizard -->
-      <div class="space-y-8 transition-all duration-500" :class="aiEnabled ? 'lg:col-span-2' : 'lg:col-span-3'">
-        <!-- Header Section -->
-        <div>
-          <CaseHeader :currentStep="currentStep" :stepDescriptions="stepDescriptions" v-model:aiEnabled="aiEnabled"
-            class="mb-6" />
-
-          <ProgressTracker :currentStep="currentStep" :totalSteps="totalSteps" :stepStatus="stepStatus"
-            :stepLabels="stepLabels" @step-change="navigateToStep" />
+    <!-- Mode Selection Screen -->
+    <div v-if="mode === 'selection'" class="min-h-[60vh] flex flex-col items-center justify-center animate-in fade-in duration-500">
+      <div class="text-center mb-10">
+        <h2 class="text-3xl font-bold mb-3" :class="isDarkMode ? 'text-white' : 'text-gray-900'">
+          Create New Case
+        </h2>
+        <p :class="isDarkMode ? 'text-gray-400' : 'text-gray-600'">
+          Choose how you would like to proceed
+        </p>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl w-full px-4">
+        <!-- Step Workflow Option -->
+        <div 
+          class="group relative p-8 rounded-2xl border transition-all duration-300 hover:shadow-2xl cursor-pointer transform hover:-translate-y-1"
+          :class="isDarkMode ? 'bg-neutral-900 border-neutral-800 hover:border-amber-600' : 'bg-white border-gray-100 hover:border-amber-500'"
+          @click="selectMode('wizard')"
+        >
+          <div class="mb-4 w-14 h-14 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-500 transition-transform group-hover:scale-110">
+            <i-mdi-format-list-numbered class="w-8 h-8" />
+          </div>
+          <h3 class="text-xl font-bold mb-2" :class="isDarkMode ? 'text-white' : 'text-gray-900'">Step-by-Step Workflow</h3>
+          <p :class="isDarkMode ? 'text-gray-400' : 'text-gray-600'">
+            Guided wizard walking you through reporter selection, case details, and review steps. Best for standard procedures.
+          </p>
+          <div class="mt-6 flex items-center text-amber-600 font-medium group-hover:gap-2 transition-all">
+            Continue Step Workflow <i-mdi-arrow-right class="ml-2 group-hover:translate-x-1 transition-transform" />
+          </div>
         </div>
 
-        <!-- Step Content Area -->
-        <div class="rounded-xl shadow-xl border p-6 sm:p-8" :class="isDarkMode
-          ? 'bg-black border-transparent'
-          : 'bg-white border-transparent'">
-          <!-- Step 1: Reporter Selection -->
-          <Step1ReporterSelection v-if="currentStep === 1" :currentStep="currentStep"
-            :searchQuery="formData.step1.searchQuery" :filteredContacts="formData.step1.filteredContacts"
-            :selectedReporter="formData.step1.selectedReporter" :reporterId="reporterId"
-            @search-change="handleSearchChange" @select-reporter="selectExistingReporter"
-            @create-new-reporter="createNewReporter" @reporter-created="handleReporterCreated"
-            @validate-and-proceed="validateAndProceed(1)" @cancel-form="cancelForm" />
-
-          <!-- Step 2: Case Details -->
-          <Step2CaseDetails v-if="currentStep === 2" :currentStep="currentStep" :formData="formData.step2"
-            @form-update="updateFormData('step2', $event)" @save-and-proceed="saveAndProceed(2)"
-            @step-change="goToStep" />
-
-          <!-- Step 3: Additional Details -->
-          <Step3AdditionalDetails v-if="currentStep === 3" :currentStep="currentStep" :formData="formData.step3"
-            @form-update="updateFormData('step3', $event)" @open-client-modal="openClientModal"
-            @open-perpetrator-modal="openPerpetratorModal" @remove-client="removeClient"
-            @remove-perpetrator="removePerpetrator" @save-and-proceed="saveAndProceed(3)" @step-change="goToStep" />
-
-          <!-- Step 4: Review -->
-          <Step4Review v-if="currentStep === 4" :currentStep="currentStep" :formData="formData" :reporterId="reporterId"
-            @go-to-step="goToStep" @submit-case="submitCase" />
+        <!-- Single Form Option -->
+        <div 
+          class="group relative p-8 rounded-2xl border transition-all duration-300 hover:shadow-2xl cursor-pointer transform hover:-translate-y-1"
+          :class="isDarkMode ? 'bg-neutral-900 border-neutral-800 hover:border-blue-600' : 'bg-white border-gray-100 hover:border-blue-500'"
+          @click="selectMode('legacy')"
+        >
+          <div class="mb-4 w-14 h-14 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-500 transition-transform group-hover:scale-110">
+             <i-mdi-file-document-edit class="w-8 h-8" />
+          </div>
+          <h3 class="text-xl font-bold mb-2" :class="isDarkMode ? 'text-white' : 'text-gray-900'">Single Case Form</h3>
+          <p :class="isDarkMode ? 'text-gray-400' : 'text-gray-600'">
+            Legacy-style single page form for rapid data entry. All fields available at once on a single screen.
+          </p>
+          <div class="mt-6 flex items-center text-blue-600 font-medium group-hover:gap-2 transition-all">
+            Open Single Case Form <i-mdi-arrow-right class="ml-2 group-hover:translate-x-1 transition-transform" />
+          </div>
         </div>
       </div>
-
-      <!-- Right Column: Insights Panel (1/3 width) -->
-      <div v-if="aiEnabled" class="lg:col-span-1 animate-in fade-in slide-in-from-right-8 duration-500">
-        <div class="sticky top-6">
-          <CaseInsightsPanel :aiEnabled="aiEnabled" />
-        </div>
-      </div>
-
     </div>
 
-    <!-- Modals -->
+    <!-- Wizard Mode -->
+    <div v-else-if="mode === 'wizard'" class="space-y-4">
+      <div class="max-w-7xl mx-auto flex">
+         <button @click="mode = 'selection'" class="text-xs flex items-center gap-1 hover:underline opacity-60 hover:opacity-100 transition-opacity" :class="isDarkMode ? 'text-gray-300' : 'text-gray-600'">
+            &larr; Switch Mode
+         </button>
+      </div>
+
+      <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
+        <!-- Left Column: Case Wizard -->
+        <div class="space-y-8 transition-all duration-500" :class="aiEnabled ? 'lg:col-span-2' : 'lg:col-span-3'">
+          <!-- Header Section -->
+          <div>
+            <CaseHeader :currentStep="currentStep" :stepDescriptions="stepDescriptions" v-model:aiEnabled="aiEnabled"
+              class="mb-6" />
+
+            <ProgressTracker :currentStep="currentStep" :totalSteps="totalSteps" :stepStatus="stepStatus"
+              :stepLabels="stepLabels" @step-change="navigateToStep" />
+          </div>
+
+          <!-- Step Content Area -->
+          <div class="rounded-xl shadow-xl border p-6 sm:p-8" :class="isDarkMode
+            ? 'bg-black border-transparent'
+            : 'bg-white border-transparent'">
+            <!-- Step 1: Reporter Selection -->
+            <Step1ReporterSelection v-if="currentStep === 1" :currentStep="currentStep"
+              :searchQuery="formData.step1.searchQuery" :filteredContacts="formData.step1.filteredContacts"
+              :selectedReporter="formData.step1.selectedReporter" :reporterId="reporterId"
+              @search-change="handleSearchChange" @select-reporter="selectExistingReporter"
+              @create-new-reporter="createNewReporter" @reporter-created="handleReporterCreated"
+              @validate-and-proceed="validateAndProceed(1)" @cancel-form="cancelForm" />
+
+            <!-- Step 2: Case Details -->
+            <Step2CaseDetails v-if="currentStep === 2" :currentStep="currentStep" :formData="formData.step2"
+              @form-update="updateFormData('step2', $event)" @save-and-proceed="saveAndProceed(2)"
+              @step-change="goToStep" />
+
+            <!-- Step 3: Additional Details -->
+            <Step3AdditionalDetails v-if="currentStep === 3" :currentStep="currentStep" :formData="formData.step3"
+              @form-update="updateFormData('step3', $event)" @open-client-modal="openClientModal"
+              @open-perpetrator-modal="openPerpetratorModal" @remove-client="removeClient"
+              @remove-perpetrator="removePerpetrator" @save-and-proceed="saveAndProceed(3)" @step-change="goToStep" />
+
+            <!-- Step 4: Review -->
+            <Step4Review v-if="currentStep === 4" :currentStep="currentStep" :formData="formData" :reporterId="reporterId"
+              @go-to-step="goToStep" @submit-case="submitCase" />
+          </div>
+        </div>
+
+        <!-- Right Column: Insights Panel (1/3 width) -->
+        <div v-if="aiEnabled" class="lg:col-span-1 animate-in fade-in slide-in-from-right-8 duration-500">
+          <div class="sticky top-6">
+            <CaseInsightsPanel :aiEnabled="aiEnabled" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modals (Global) -->
     <ClientModal v-if="clientModalOpen" :clients="formData.step3.clients" :clientForm="clientForm"
       :currentClientStep="currentClientStep" :loading="clientStore.loading" @close-modal="closeClientModal"
       @remove-client="removeClient" @update-client-form="updateClientForm" @prev-client-step="prevClientStep"
@@ -108,6 +165,15 @@
 
       // Inject theme
       const isDarkMode = inject('isDarkMode');
+
+      const mode = ref('selection');
+      const selectMode = (selectedMode) => {
+        if (selectedMode === 'legacy') {
+          router.push({ name: 'CaseSingleForm', params: { id: 'new' } });
+        } else {
+          mode.value = selectedMode;
+        }
+      };
 
       const currentStep = ref(1);
       const totalSteps = 4;
@@ -172,6 +238,7 @@
           clientPassportNumber: '',
           justiceSystemState: '',
           generalAssessment: '',
+          incidentLocation: '', // Added Incident Location
           isGBVRelatedText: '',
           categoriesText: '',
           priorityText: '',
@@ -179,7 +246,8 @@
           departmentText: '',
           escalatedToText: '',
           justiceSystemStateText: '',
-          generalAssessmentText: ''
+          generalAssessmentText: '',
+          incidentLocationText: ''
         },
         step3: {
           clients: [],
@@ -347,19 +415,50 @@
 
       const saveAndProceed = (step) => {
         if (step === 2) {
+          console.group('🔍 Validating Step 2');
+          console.log('formData.step2:', JSON.parse(JSON.stringify(formData.step2)));
+          
           const errors = [];
           if (!formData.step2.isGBVRelated) errors.push('GBV Related is required');
+          else console.log('✅ GBV Related:', formData.step2.isGBVRelated);
+          
           if (!formData.step2.categories) errors.push('Case Category is required');
+          else console.log('✅ Category:', formData.step2.categories);
+          
           if (!formData.step2.priority) errors.push('Priority is required');
+          else console.log('✅ Priority:', formData.step2.priority);
+          
           if (!formData.step2.status) errors.push('Status is required');
+          else console.log('✅ Status:', formData.step2.status);
+          
           if (!formData.step2.narrative || !formData.step2.narrative.trim()) errors.push('Narrative is required');
+          else console.log('✅ Narrative:', formData.step2.narrative);
+          
           if (!formData.step2.plan || !formData.step2.plan.trim()) errors.push('Plan is required');
+          else console.log('✅ Plan:', formData.step2.plan);
+          
+          if (!formData.step2.incidentLocation) errors.push('Incident Location is required'); // Validate Location
+          else console.log('✅ Incident Location:', formData.step2.incidentLocation);
+          
+          console.groupEnd();
 
           if (errors.length > 0) {
             toast.error('Please fill in all required fields', {
               description: errors.join(', ')
             });
             return;
+          }
+        } else if (step === 3) {
+          const errors = [];
+          if (!formData.step3.clients || formData.step3.clients.length === 0) {
+            errors.push('At least one Client is required');
+          }
+
+          if (errors.length > 0) {
+             toast.error('Please complete required fields', {
+               description: errors.join(', ')
+             });
+             return;
           }
         }
 
@@ -737,9 +836,11 @@
             national_id_: getValueOrDefault(formData.step2.clientPassportNumber),
             justice_id: getValueOrDefault(formData.step2.justiceSystemState),
             assessment_id: getValueOrDefault(formData.step2.generalAssessment),
+            incident_location_id: getValueOrDefault(formData.step2.incidentLocation), // Added Location ID
 
             services: servicesPayload,
-            referals: referralsPayload,
+            referals: referralsPayload, // Legacy spelling support
+            referrals: referralsPayload, // Correct spelling support
             specify_service: getValueOrDefault(formData.step3.otherServicesDetails),
             clients_case: clientsPayload,
             perpetrators_case: perpetratorsPayload,
@@ -822,7 +923,9 @@
         selectExistingReporter,
         createNewReporter,
         handleReporterCreated,
-        submitCase
+        submitCase,
+        mode,
+        selectMode
       };
     }
   };

@@ -25,6 +25,14 @@ axiosInstance.interceptors.response.use(
         // 401 Unauthorized - redirect to login
         if (status === 401) {
             console.warn('⚠️ Session expired or unauthorized. Redirecting to login.');
+
+            // Clear local storage to prevent authentication loops
+            localStorage.removeItem('session-id');
+            localStorage.removeItem('user-id');
+            localStorage.removeItem('username');
+            localStorage.removeItem('user-role');
+            localStorage.removeItem('user-profile');
+
             // Only redirect if not already on login page to avoid loops
             if (!window.location.pathname.startsWith('/login')) {
                 window.location.href = '/login';

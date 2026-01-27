@@ -90,15 +90,15 @@ export const useSipStore = defineStore('sip', () => {
             if (!uri) throw new Error('Invalid SIP URI configuration')
 
             // AUTHENTICATION LOGIC:
-            // Profile has no password field, so we default to Global Secret.
-            // On Demo server, Auth User is likely the Extension ('100'), not the Web User ('test').
-            const password = null // Defaults to Global Secret
+            // "VA_SIP_PASS_PREFIX" is provided. Using it as the global password.
+            const password = config.SIP_PASSWORD;
+
             const authUser = extension.value // Reverting to extension based auth
 
             console.log('🔐 [SIP DEBUG] Credentials Used:', {
                 extension: extension.value,
                 authorizationUsername: authUser,
-                password: password ? 'User Profile Secret' : (config.SIP_PASSWORD || '23kdefrtgos09812100'),
+                password: 'Global Secret (VA_SIP_PASS_PREFIX)',
                 server: config.SIP_WS_URL
             })
 

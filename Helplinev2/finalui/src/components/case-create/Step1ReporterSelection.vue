@@ -444,6 +444,7 @@
                     v-model="reporterForm.location"
                     placeholder="Select location"
                     :category-id="88"
+                    :searchable="true"
                   />
                 </div>
               </div>

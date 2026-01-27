@@ -41,7 +41,16 @@ export const useMessagesStore = defineStore('messages', {
 
     // Normalized Data Getters
     normalizedMessages: (state) => {
-      return normalizeMessages(state.pmessages, state.pmessages_k)
+      const msgs = normalizeMessages(state.pmessages, state.pmessages_k)
+      return msgs.filter(m => {
+        // Filter out 'gateway' platform/source
+        if (m.platform === 'gateway' || m.src === 'gateway') return false
+
+        // Explicitly check index 9 of raw array if available (User request)
+        if (m.raw && Array.isArray(m.raw) && m.raw[9] === 'gateway') return false
+
+        return true
+      })
     },
 
     // Group by conversation (threadId) and filter active

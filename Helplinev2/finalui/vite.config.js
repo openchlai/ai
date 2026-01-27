@@ -28,8 +28,8 @@ export default defineConfig(({ mode }) => {
       cors: true, // important for dev CORS
       proxy: {
         '/api-proxy': {
-          // target: env.VITE_BACKEND_URL || 'https://demo-openchs.bitz-itc.com',
-          target: env.VITE_BACKEND_URL || 'https://https://helpline.sematanzania.org',
+          target: env.VITE_BACKEND_URL || 'https://demo-openchs.bitz-itc.com',
+          // target: env.VITE_BACKEND_URL || 'https://https://helpline.sematanzania.org',
           changeOrigin: true, // rewrite Host header
           secure: false,      // allow self-signed SSL
           rewrite: (path) => path.replace(/^\/api-proxy/, env.VITE_BACKEND_PATH || '/hh19jan2026'),
@@ -39,8 +39,45 @@ export default defineConfig(({ mode }) => {
             });
           },
         },
+        '/ati': {
+          target: (() => {
+            if (env.VITE_ATI_URL) return env.VITE_ATI_URL;
+            try {
+              const backend = new URL(env.VITE_BACKEND_URL || 'https://demo-openchs.bitz-itc.com');
+              return `${backend.protocol}//${backend.hostname}:8384`;
+            } catch (e) {
+              return 'https://demo-openchs.bitz-itc.com:8384';
+            }
+          })(),
+          changeOrigin: true,
+          secure: false, // allow self-signed SSL
+          configure: (proxy) => {
+            proxy.on('proxyReq', (proxyReq, req) => {
+              console.log(`[proxy-ati] ${req.method} ${req.url} -> ${proxy.target}${req.url}`);
+
+              // Add Basic Auth if credentials are present
+              const username = env.VITE_ASTERISK_USERNAME;
+              const password = env.VITE_ASTERISK_PASSWORD || env.VITE_VA_SIP_PASS_PREFIX;
+
+              if (username && password) {
+                const auth = Buffer.from(`${username}:${password}`).toString('base64');
+                proxyReq.setHeader('Authorization', `Basic ${auth}`);
+              }
+            });
+          },
+        },
         '/ws': {
-          target: env.VITE_BACKEND_URL || 'https://demo-openchs.bitz-itc.com',
+          target: (() => {
+            if (env.VITE_SIP_WS_URL) {
+              try {
+                const url = new URL(env.VITE_SIP_WS_URL);
+                return `${url.protocol === 'wss:' ? 'https:' : 'http:'}//${url.host}`;
+              } catch (e) {
+                // Fallback if parsing fails
+              }
+            }
+            return env.VITE_BACKEND_URL || 'https://demo-openchs.bitz-itc.com';
+          })(),
           ws: true,
           changeOrigin: true,
           secure: false,

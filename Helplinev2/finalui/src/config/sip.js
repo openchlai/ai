@@ -8,7 +8,7 @@
 // Get environment variables with fallbacks
 const SIP_HOST = import.meta.env.VITE_SIP_HOST || 'demo-openchs.bitz-itc.com';
 const SIP_WS_URL = import.meta.env.VITE_SIP_WS_URL || `wss://${SIP_HOST}/ws/`;
-const SIP_PASSWORD = import.meta.env.VITE_SIP_PASSWORD || '23kdefrtgos09812100';
+const SIP_PASSWORD = import.meta.env.VITE_VA_SIP_PASS_PREFIX || import.meta.env.VITE_SIP_PASSWORD || import.meta.env.VITE_ASTERISK_PASSWORD || '23kdefrtgos09812100';
 const SIP_CALL_TIMEOUT = parseInt(import.meta.env.VITE_SIP_CALL_TIMEOUT || '30000', 10);
 
 // AMI WebSocket configuration

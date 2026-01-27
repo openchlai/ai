@@ -238,7 +238,7 @@
           </div>
         </Transition>
 
-        <!-- Notifications Panel (Image 1 Mock) -->
+        <!-- Notifications Panel (Real-Time) -->
         <Transition enter-active-class="transition duration-150 ease-out"
           enter-from-class="transform translate-y-2 opacity-0" enter-to-class="transform translate-y-0 opacity-100">
           <div v-if="dropdown === 'notifications'"
@@ -247,45 +247,59 @@
             <div class="px-5 py-4 border-b flex items-center justify-between"
               :class="isDarkMode ? 'border-white/5' : 'border-gray-50 text-gray-900'">
               <h3 class="font-black text-sm uppercase tracking-tight">Real-Time Notifications</h3>
+              <button @click="notificationsStore.markAllAsRead()" class="text-[10px] font-bold uppercase tracking-widest text-amber-500 hover:text-amber-600">
+                  Mark all read
+              </button>
             </div>
             <div class="max-h-[500px] overflow-y-auto">
-              <div v-if="activitiesStore.activities.length === 0" class="p-12 text-center opacity-40">
+              <!-- Empty State -->
+              <div v-if="notificationsStore.allNotifications.length === 0" class="p-12 text-center opacity-40">
                 <i-mdi-bell-off-outline class="w-12 h-12 mx-auto mb-2" />
                 <p class="text-xs font-bold uppercase tracking-widest">No new notifications</p>
               </div>
-              <div v-for="(activity, index) in activitiesStore.activities"
-                :key="'notif-' + getActivityValue(activity, 'id')"
+
+              <!-- Notifications List -->
+              <div v-for="(notification, index) in notificationsStore.allNotifications"
+                :key="notification.id"
                 class="px-5 py-4 border-b last:border-0 hover:bg-white/5 transition-colors cursor-pointer group"
-                :class="isDarkMode ? 'border-white/5' : 'border-gray-100'" @click="router.push(`/cases`)">
+                :class="[
+                  isDarkMode ? 'border-white/5' : 'border-gray-100',
+                  !notification.read ? (isDarkMode ? 'bg-white/5' : 'bg-amber-50/50') : ''
+                ]" 
+                @click="notificationsStore.markAsRead(notification.id)">
+                
                 <div class="flex justify-between items-start mb-2">
                   <div class="flex items-center gap-2">
                     <span class="text-xs font-bold" :class="isDarkMode ? 'text-white' : 'text-gray-900'">
-                      {{ getActivityValue(activity, 'action') || 'Notice' }}
+                      {{ notification.title || notification.type || 'Notification' }}
                     </span>
-                    <span class="text-[10px] font-medium text-gray-500">
-                      from {{ getActivityValue(activity, 'created_by') }}
+                    <span v-if="notification.sender" class="text-[10px] font-medium text-gray-500">
+                      from {{ notification.sender }}
                     </span>
                   </div>
                   <div class="text-right">
                     <span class="text-[10px] font-bold text-gray-500 block uppercase">
-                      {{ formatTimeAgo(getActivityValue(activity, 'created_on')) }}
+                      {{ formatTimeAgo(notification.timestamp) }}
                     </span>
                   </div>
                 </div>
-                <div
-                  class="flex items-center gap-1.5 mb-3 text-[10px] font-bold text-gray-500 opacity-80 overflow-x-hidden">
-                  <span>#{{ getActivityValue(activity, 'case_id') }}</span>
-                  <i-mdi-chevron-right class="w-3 h-3 opacity-50" />
-                  <span class="truncate">{{ getActivityValue(activity, 'narrative') || 'Update detected' }}</span>
+                
+                <div class="flex items-center gap-1.5 mb-3 text-[10px] font-bold text-gray-500 opacity-80 overflow-x-hidden">
+                   <span v-if="notification.case_id">#{{ notification.case_id }}</span>
+                   <i-mdi-chevron-right v-if="notification.case_id" class="w-3 h-3 opacity-50" />
+                   <span class="truncate">{{ notification.message || notification.narrative || 'New update received' }}</span>
                 </div>
-                <span v-if="index === 0"
-                  class="px-2 py-0.5 bg-red-600 text-[9px] font-black text-white rounded uppercase tracking-widest inline-block shadow-sm">unread</span>
+
+                <span v-if="!notification.read"
+                  class="px-2 py-0.5 bg-red-600 text-[9px] font-black text-white rounded uppercase tracking-widest inline-block shadow-sm">
+                  unread
+                </span>
               </div>
             </div>
+            
             <div class="p-4 border-t" :class="isDarkMode ? 'border-white/5' : 'border-gray-50'">
               <div class="flex items-center justify-between px-2 text-[11px] font-bold text-gray-500">
-                <span>{{ activitiesStore.paginationInfo.total }} alerts</span>
-                <button @click="router.push('/cases')" class="text-amber-500 hover:underline">Mark all as read</button>
+                <span>{{ notificationsStore.allNotifications.length }} total</span>
               </div>
             </div>
           </div>
@@ -341,6 +355,9 @@
     try {
       // Fetch counts for the badge
       await notificationsStore.fetchCounts()
+      
+      // Start Real-time Polling for ATI notifications
+      await notificationsStore.startPolling()
 
       // Fetch detailed activities for the dropdown view (top 10)
       await activitiesStore.listActivities({ _c: 10 })
@@ -350,6 +367,7 @@
   })
 
   onUnmounted(() => {
+    notificationsStore.stopPolling()
     window.removeEventListener('click', handleClickOutside)
   })
 

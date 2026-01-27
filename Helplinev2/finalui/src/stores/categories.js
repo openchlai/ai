@@ -38,14 +38,14 @@ export const useCategoryStore = defineStore('categories', {
         })
 
         console.log('listCategories', data)
-        this.categories        = data.categories || []
-        this.categories_k      = data.categories_k || {}
-        this.subcategories     = data.subcategories || []
-        this.subcategories_k   = data.subcategories_k || {}
+        this.categories = data.categories || []
+        this.categories_k = data.categories_k || {}
+        this.subcategories = data.subcategories || []
+        this.subcategories_k = data.subcategories_k || {}
         this.subcategories_ctx = data.subcategories_ctx || []
         this.subcategories_count =
           Array.isArray(this.subcategories) ? this.subcategories.length :
-          (data.subcategories_nb?.[0]?.[1] ?? 0)
+            (data.subcategories_nb?.[0]?.[1] ?? 0)
 
         return data
       } catch (err) {
@@ -60,20 +60,25 @@ export const useCategoryStore = defineStore('categories', {
       this.loading = true
       this.error = null
       try {
+        // If searching, enable recursive mode
+        if (params.q) {
+          params.r = 1
+        }
+
         const { data } = await axiosInstance.get(`api/categories/${id}`, {
           params,
           headers: this.getAuthHeaders()
         })
 
         console.log('viewCategory', data)
-        this.categories        = data.categories || []
-        this.categories_k      = data.categories_k || {}
-        this.subcategories     = data.subcategories || []
-        this.subcategories_k   = data.subcategories_k || {}
+        this.categories = data.categories || []
+        this.categories_k = data.categories_k || {}
+        this.subcategories = data.subcategories || []
+        this.subcategories_k = data.subcategories_k || {}
         this.subcategories_ctx = data.subcategories_ctx || []
         this.subcategories_count =
           Array.isArray(this.subcategories) ? this.subcategories.length :
-          (data.subcategories_nb?.[0]?.[1] ?? 0)
+            (data.subcategories_nb?.[0]?.[1] ?? 0)
 
         return data
       } catch (err) {
