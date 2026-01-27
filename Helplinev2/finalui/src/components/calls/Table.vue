@@ -225,7 +225,7 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits, inject } from 'vue'
+import { inject } from 'vue'
 
 // Inject theme
 const isDarkMode = inject('isDarkMode')

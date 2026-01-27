@@ -10,25 +10,31 @@ from app.main import app
 from app.db.models import AgentFeedback
 from app.db.session import get_db
 
-# This is the mock database session that will be used for all tests
-mock_db = MagicMock()
-
-def get_db_override():
-    """Dependency override for get_db."""
-    return mock_db
-
-app.dependency_overrides[get_db] = get_db_override
-
-client = TestClient(app)
 
 @pytest.fixture(autouse=True)
-def reset_mocks():
-    """Reset mocks before each test."""
-    mock_db.reset_mock()
-    # Resetting specific method mocks if they are configured with side_effects or return_values
-    mock_db.execute.reset_mock(return_value=True, side_effect=None)
-    mock_db.query.reset_mock(return_value=None, side_effect=None)
-    mock_db.refresh.reset_mock()
+def setup_test_db():
+    """Setup and teardown for database dependency override."""
+    # Create a fresh mock for each test
+    mock_db = MagicMock()
+
+    def get_db_override():
+        """Dependency override for get_db."""
+        return mock_db
+
+    # Setup: Override the dependency
+    app.dependency_overrides[get_db] = get_db_override
+
+    # Yield the mock for use in tests
+    yield mock_db
+
+    # Teardown: Clean up the override
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def client():
+    """Test client fixture."""
+    return TestClient(app)
 
 @pytest.fixture
 def mock_feedback_repo():
@@ -36,8 +42,9 @@ def mock_feedback_repo():
     with patch('app.api.agent_feedback_routes.FeedbackRepository') as mock_repo:
         yield mock_repo
 
-def test_health_check_success():
+def test_health_check_success(setup_test_db, client):
     """Test the health check endpoint for the feedback system with a successful database connection."""
+    mock_db = setup_test_db
     mock_db.execute.return_value = None
 
     # Mock for the first db.query(...).scalar() call for total feedback
@@ -62,16 +69,18 @@ def test_health_check_success():
     assert data["rated_entries"] == 5
     assert data["rating_coverage"] == 50.0
 
-def test_health_check_db_error():
+def test_health_check_db_error(setup_test_db, client):
     """Test the health check endpoint when the database connection fails."""
+    mock_db = setup_test_db
     mock_db.execute.side_effect = Exception("DB connection error")
 
     response = client.get("/api/v1/agent-feedback/health")
     assert response.status_code == 503
     assert response.json()["detail"] == "Service unhealthy"
 
-def test_update_feedback_success(mock_feedback_repo):
+def test_update_feedback_success(setup_test_db, client, mock_feedback_repo):
     """Test successful feedback update."""
+    mock_db = setup_test_db
     feedback_entry = AgentFeedback(
         id=1,
         call_id="test_call_id",
@@ -103,7 +112,7 @@ def test_update_feedback_success(mock_feedback_repo):
     assert data["reason"] == "Accurate"
     mock_db.refresh.assert_called_once_with(feedback_entry)
 
-def test_update_feedback_not_found(mock_feedback_repo):
+def test_update_feedback_not_found(client, mock_feedback_repo):
     """Test feedback update when the entry is not found."""
     mock_feedback_repo.update_feedback.return_value = None
 
@@ -118,7 +127,7 @@ def test_update_feedback_not_found(mock_feedback_repo):
     assert response.status_code == 404
     assert "Feedback entry not found" in response.json()["detail"]
 
-def test_update_feedback_invalid_task():
+def test_update_feedback_invalid_task(client):
     """Test feedback update with an invalid task type."""
     request_data = {
         "call_id": "test_call_id",
@@ -128,7 +137,7 @@ def test_update_feedback_invalid_task():
     response = client.post("/api/v1/agent-feedback/update", json=request_data)
     assert response.status_code == 422  # Unprocessable Entity for validation errors
 
-def test_get_call_feedback_success(mock_feedback_repo):
+def test_get_call_feedback_success(client, mock_feedback_repo):
     """Test retrieving feedback for a specific call."""
     now = datetime.now()
     feedback_list = [
@@ -143,7 +152,7 @@ def test_get_call_feedback_success(mock_feedback_repo):
     assert len(data) == 2
     assert data[0]["task"] == "summarization"
 
-def test_get_call_feedback_not_found(mock_feedback_repo):
+def test_get_call_feedback_not_found(client, mock_feedback_repo):
     """Test retrieving feedback for a call with no entries."""
     mock_feedback_repo.get_feedback.return_value = []
 
@@ -151,7 +160,7 @@ def test_get_call_feedback_not_found(mock_feedback_repo):
     assert response.status_code == 404
     assert "No feedback found" in response.json()["detail"]
 
-def test_get_feedback_statistics_success(mock_feedback_repo):
+def test_get_feedback_statistics_success(client, mock_feedback_repo):
     """Test retrieving feedback statistics."""
     stats_data = {
         "period_days": 30,
@@ -168,7 +177,7 @@ def test_get_feedback_statistics_success(mock_feedback_repo):
     assert data["period_days"] == 30
     assert "classification" in data["tasks"]
 
-def test_get_feedback_statistics_error(mock_feedback_repo):
+def test_get_feedback_statistics_error(client, mock_feedback_repo):
     """Test retrieving feedback statistics when an error occurs."""
     mock_feedback_repo.get_feedback_statistics.return_value = {"error": "Database query failed"}
 
@@ -176,7 +185,7 @@ def test_get_feedback_statistics_error(mock_feedback_repo):
     assert response.status_code == 500
     assert "Database query failed" in response.json()["detail"]
 
-def test_update_feedback_value_error(mock_feedback_repo):
+def test_update_feedback_value_error(client, mock_feedback_repo):
     """Test feedback update when a ValueError occurs."""
     mock_feedback_repo.update_feedback.side_effect = ValueError("A value error occurred")
     request_data = {
@@ -189,7 +198,7 @@ def test_update_feedback_value_error(mock_feedback_repo):
     assert response.status_code == 400
     assert response.json()["detail"] == "Invalid request"
 
-def test_update_feedback_exception(mock_feedback_repo):
+def test_update_feedback_exception(client, mock_feedback_repo):
     """Test feedback update when a generic exception occurs."""
     mock_feedback_repo.update_feedback.side_effect = Exception("A generic error occurred")
     request_data = {
@@ -202,14 +211,14 @@ def test_update_feedback_exception(mock_feedback_repo):
     assert response.status_code == 500
     assert response.json()["detail"] == "Failed to update feedback"
 
-def test_get_call_feedback_exception(mock_feedback_repo):
+def test_get_call_feedback_exception(client, mock_feedback_repo):
     """Test retrieving feedback for a call when an exception occurs."""
     mock_feedback_repo.get_feedback.side_effect = Exception("A generic error occurred")
     response = client.get("/api/v1/agent-feedback/call/call123")
     assert response.status_code == 500
     assert response.json()["detail"] == "Failed to retrieve feedback"
 
-def test_get_feedback_statistics_exception(mock_feedback_repo):
+def test_get_feedback_statistics_exception(client, mock_feedback_repo):
     """Test retrieving feedback statistics when an exception occurs."""
     mock_feedback_repo.get_feedback_statistics.side_effect = Exception("A generic error occurred")
     response = client.get("/api/v1/agent-feedback/statistics")

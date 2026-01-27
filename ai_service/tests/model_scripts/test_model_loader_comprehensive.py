@@ -1,6 +1,5 @@
 """
-Fixed comprehensive tests for model_loader.py with proper Pydantic v2 Settings handling
-Target: 90%+ coverage
+ comprehensive tests for model_loader.py with proper Pydantic v2 Settings handling
 """
 import pytest
 import tempfile

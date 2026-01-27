@@ -1,6 +1,5 @@
 """
 Comprehensive tests for model_tasks.py - all Celery model tasks
-Focus: Achieving 95% coverage for all model processing tasks
 """
 import pytest
 from unittest.mock import MagicMock, patch, AsyncMock, mock_open

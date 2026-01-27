@@ -14,6 +14,7 @@ class TestProcessingStrategyManager:
         with patch('app.config.settings.settings') as mock:
             # Default mock values - we need to set them as attributes of the mock object
             mock.default_processing_mode = "hybrid"
+            mock.enable_streaming_processing = True  # Used by ProcessingStrategyManager
             mock.enable_realtime_processing = True
             mock.realtime_min_window_chars = 150
             mock.realtime_target_window_chars = 300

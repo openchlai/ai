@@ -209,8 +209,7 @@
 </template>
 
 <script setup>
-  import { reactive, ref, inject } from 'vue'
-  import BaseSelect from '@/components/base/BaseSelect.vue'
+import { reactive, inject } from 'vue'
 
   const emit = defineEmits(['update:filters'])
 
