@@ -1,6 +1,5 @@
 """
 Comprehensive tests for model_loader.py
-Focus: Achieving 95% coverage for central model loading and management
 """
 import pytest
 import asyncio

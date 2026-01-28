@@ -27,7 +27,7 @@ class TranslationModel:
         # Hugging Face repo support (hub-first)
         self.hf_repo_id = os.getenv("TRANSLATION_HF_REPO_ID") or getattr(settings, "hf_translator_model", None)
         # Target language configuration (default to English)
-        self.target_language = os.getenv("TRANSLATION_TARGET_LANGUAGE", "en").lower()
+        self.target_language = (os.getenv("TRANSLATION_TARGET_LANGUAGE", "en") or "en").lower()
         # Optional explicit target token override (e.g., ">>eng<<")
         self.target_token_override = os.getenv("TRANSLATION_TARGET_TOKEN")
 

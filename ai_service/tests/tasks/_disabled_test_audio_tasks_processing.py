@@ -1,6 +1,5 @@
 """
 Comprehensive tests for audio_tasks.py main processing functions
-Focus: process_audio_task, process_audio_quick_task, process_streaming_audio_task
 """
 import pytest
 import json

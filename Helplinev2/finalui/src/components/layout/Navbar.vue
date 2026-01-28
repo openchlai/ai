@@ -90,7 +90,13 @@
               ? (isDarkMode ? 'text-white' : 'text-gray-900')
               : (isDarkMode ? 'text-gray-500 hover:text-white' : 'text-gray-400 hover:text-gray-900')">
             <i-mdi-bell class="w-5 h-5" />
-            <NotificationBadge :count="notificationsStore.totalCount" />
+            <span
+              v-if="notificationsStore.unreadCount > 0"
+              class="absolute top-1 right-1 min-w-[17px] h-[17px] px-1 bg-red-600 text-[9px] font-black text-white flex items-center justify-center rounded-full border-2 border-black shadow-xl"
+              style="transform: translate(25%, -25%);"
+            >
+              {{ notificationsStore.unreadCount }}
+            </span>
           </button>
         </div>
 
@@ -252,24 +258,41 @@
               </button>
             </div>
             <div class="max-h-[500px] overflow-y-auto">
-              <!-- Empty State -->
-              <div v-if="notificationsStore.allNotifications.length === 0" class="p-12 text-center opacity-40">
-                <i-mdi-bell-off-outline class="w-12 h-12 mx-auto mb-2" />
-                <p class="text-xs font-bold uppercase tracking-widest">No new notifications</p>
+              <div
+                v-if="notificationsStore.loading"
+                class="px-5 py-8 text-center"
+              >
+                <div class="animate-spin w-8 h-8 mx-auto border-4 border-amber-500 border-t-transparent rounded-full"></div>
+                <p class="mt-2 text-sm text-gray-500">Loading notifications...</p>
               </div>
 
-              <!-- Notifications List -->
-              <div v-for="(notification, index) in notificationsStore.allNotifications"
+              <div
+                v-else-if="notificationsStore.notifications.length === 0"
+                class="px-5 py-8 text-center"
+              >
+                <i-mdi-bell-off class="w-12 h-12 mx-auto text-gray-400 mb-2" />
+                <p class="text-sm text-gray-500">No notifications</p>
+              </div>
+
+              <div
+                v-else
+                v-for="(notification, index) in notificationsStore.notificationsAsObjects"
                 :key="notification.id"
-                class="px-5 py-4 border-b last:border-0 hover:bg-white/5 transition-colors cursor-pointer group"
+                class="px-5 py-4 border-b last:border-0 hover:bg-white/5 transition-colors cursor-pointer"
                 :class="[
                   isDarkMode ? 'border-white/5' : 'border-gray-100',
-                  !notification.read ? (isDarkMode ? 'bg-white/5' : 'bg-amber-50/50') : ''
-                ]" 
-                @click="notificationsStore.markAsRead(notification.id)">
-                
+                  !notification.read_on || notification.read_on === '0' ? (isDarkMode ? 'bg-white/5' : 'bg-amber-50/30') : ''
+                ]"
+                @click="handleNotificationClick(notification)"
+              >
                 <div class="flex justify-between items-start mb-2">
                   <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold" :class="isDarkMode ? 'text-white' : 'text-gray-900'">
+                      {{ notification.action_verb || 'Case Update' }}
+                    </span>
+                    <span class="text-[10px] font-medium text-gray-500">
+                      from {{ notification.created_by || 'Unknown' }}
+                    </span>
                     <span class="text-xs font-bold" :class="isDarkMode ? 'text-white' : 'text-gray-900'">
                       {{ notification.title || notification.type || 'Notification' }}
                     </span>
@@ -285,13 +308,16 @@
                 </div>
                 
                 <div class="flex items-center gap-1.5 mb-3 text-[10px] font-bold text-gray-500 opacity-80 overflow-x-hidden">
-                   <span v-if="notification.case_id">#{{ notification.case_id }}</span>
-                   <i-mdi-chevron-right v-if="notification.case_id" class="w-3 h-3 opacity-50" />
-                   <span class="truncate">{{ notification.message || notification.narrative || 'New update received' }}</span>
+                  <span v-if="notification.case_id">#{{ notification.case_id }}</span>
+                  <template v-if="notification.case_details">
+                    <i-mdi-chevron-right class="w-3 h-3 opacity-50" />
+                    <span class="truncate">{{ notification.case_details }}</span>
+                  </template>
                 </div>
-
-                <span v-if="!notification.read"
-                  class="px-2 py-0.5 bg-red-600 text-[9px] font-black text-white rounded uppercase tracking-widest inline-block shadow-sm">
+                <span
+                  v-if="!notification.read_on || notification.read_on === '0'"
+                  class="px-2 py-0.5 bg-red-600 text-[9px] font-black text-white rounded uppercase tracking-widest inline-block"
+                >
                   unread
                 </span>
               </div>
@@ -299,7 +325,23 @@
             
             <div class="p-4 border-t" :class="isDarkMode ? 'border-white/5' : 'border-gray-50'">
               <div class="flex items-center justify-between px-2 text-[11px] font-bold text-gray-500">
-                <span>{{ notificationsStore.allNotifications.length }} total</span>
+                <span>{{ notificationsStore.paginationInfo.rangeStart }} - {{ notificationsStore.paginationInfo.rangeEnd }} of {{ notificationsStore.paginationInfo.total }}</span>
+                <div class="flex gap-4">
+                  <button
+                    @click="handleNotificationPrevPage"
+                    :disabled="!notificationsStore.hasPrevPage"
+                    :class="notificationsStore.hasPrevPage ? 'hover:text-amber-500 transition-colors' : 'opacity-30 cursor-not-allowed'"
+                  >
+                    <i-mdi-chevron-left class="w-5 h-5" />
+                  </button>
+                  <button
+                    @click="handleNotificationNextPage"
+                    :disabled="!notificationsStore.hasNextPage"
+                    :class="notificationsStore.hasNextPage ? 'hover:text-amber-500 transition-colors' : 'opacity-30 cursor-not-allowed'"
+                  >
+                    <i-mdi-chevron-right class="w-5 h-5" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
