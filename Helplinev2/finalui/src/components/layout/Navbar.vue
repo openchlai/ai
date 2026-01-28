@@ -395,11 +395,8 @@
     // Queue status is persisted in activeCallStore, no need for checkQueueStatus()
     window.addEventListener('click', handleClickOutside)
     try {
-      // Fetch counts for the badge
-      await notificationsStore.fetchCounts()
-      
-      // Start Real-time Polling for ATI notifications
-      await notificationsStore.startPolling()
+      // Fetch notifications for the badge and dropdown
+      await notificationsStore.fetchNotifications({ _c: 10 })
 
       // Fetch detailed activities for the dropdown view (top 10)
       await activitiesStore.listActivities({ _c: 10 })
@@ -409,7 +406,6 @@
   })
 
   onUnmounted(() => {
-    notificationsStore.stopPolling()
     window.removeEventListener('click', handleClickOutside)
   })
 
@@ -546,6 +542,39 @@
     if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
     if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
     return `${Math.floor(seconds / 86400)}d ago`
+  }
+
+  // Notification handlers
+  const handleNotificationClick = async (notification) => {
+    try {
+      // Mark as read
+      if (notification.id) {
+        await notificationsStore.markAsRead(notification.id)
+      }
+      // Navigate to case if case_id exists
+      if (notification.case_id) {
+        router.push(`/cases/${notification.case_id}`)
+        dropdown.value = null
+      }
+    } catch (e) {
+      console.error('Failed to handle notification click:', e)
+    }
+  }
+
+  const handleNotificationPrevPage = async () => {
+    try {
+      await notificationsStore.prevPage()
+    } catch (e) {
+      console.error('Failed to load previous notifications:', e)
+    }
+  }
+
+  const handleNotificationNextPage = async () => {
+    try {
+      await notificationsStore.nextPage()
+    } catch (e) {
+      console.error('Failed to load next notifications:', e)
+    }
   }
 
   const handleLogout = async () => {

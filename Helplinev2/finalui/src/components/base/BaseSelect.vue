@@ -231,7 +231,7 @@ async function loadLevel(categoryId, isRoot = true) {
   try {
     loading.value = true
     await store.viewCategory(categoryId)
-    const parsedOptions = parseRows(store.subcategories, store.subcategories_k, store.subcategories_ctx)
+    const parsedOptions = parseRows(store.subcategories, store.subcategories_k)
 
     if (isRoot) {
       levelOptions.value = parsedOptions
@@ -245,62 +245,13 @@ async function loadLevel(categoryId, isRoot = true) {
   }
 }
 
-const allOptions = ref([])
-const isIndexReady = ref(false)
-
-function parseRows(rows = [], k = {}, ctx = [], isSearchMode = false) {
+// Parse rows for normal navigation mode
+function parseRows(rows = [], k = {}) {
     const idIdx = Number(k.id?.[0] ?? 0)
     const nameIdx = Number(k.name?.[0] ?? 5)
-    
-    let parentIdx = -1
-    // Prioritize category_id as parent pointer, fallback to parent_id
-    if (k.category_id) parentIdx = Number(k.category_id[0])
-    else if (k.parent_id) parentIdx = Number(k.parent_id[0])
-    
-    if (!rows || !rows.length) return []
-    
-    // If searching (building index), we need full paths
-    if (isSearchMode) {
-        const nodeMap = new Map()
-        
-        const addToMap = (r) => {
-            if (!r) return
-            const id = r[idIdx]
-            const name = r[nameIdx]
-            const pid = parentIdx >= 0 ? r[parentIdx] : null
-            if (id) {
-               nodeMap.set(id, { id, name, parentId: pid })
-            }
-        }
-        
-        if (ctx) ctx.forEach(addToMap)
-        rows.forEach(addToMap)
-        
-        const getPath = (id) => {
-             const parts = []
-             let curr = nodeMap.get(id)
-             let safe = 0
-             while (curr && safe < 20) {
-                 parts.unshift(curr.name)
-                 if (!curr.parentId || curr.parentId == curr.id) break 
-                 curr = nodeMap.get(curr.parentId)
-                 safe++
-             }
-             return parts.length > 0 ? parts.join(' > ') : ''
-        }
 
-        return rows.map(row => {
-            const id = row[idIdx]
-            const name = row[nameIdx]
-            const fullPath = getPath(id)
-            return {
-                id: id,
-                name: fullPath || name,
-                hasChildren: null
-            }
-        })
-    }
-    
+    if (!rows || !rows.length) return []
+
     return rows
       .map(row => ({
         id: row[idIdx],
@@ -310,66 +261,74 @@ function parseRows(rows = [], k = {}, ctx = [], isSearchMode = false) {
       .filter(Boolean)
 }
 
-async function initIndex() {
-    if (!props.searchable || isIndexReady.value) return
-    try {
-         // Build Tree Index
-         const params = { r: 1, recursive: 1, limit: 10000 }
-         if (props.categoryId) params.parent_id = props.categoryId
-         
-         await store.listCategories(params)
-         
-         allOptions.value = parseRows(store.categories, store.categories_k, store.categories_ctx, true)
-         isIndexReady.value = true
-    } catch(e) {
-         console.error("Index build failed", e)
-    }
+// Parse search results - display hierarchical path from fullname field
+function parseSearchResults(rows = [], k = {}) {
+    const idIdx = Number(k.id?.[0] ?? 0)
+    const nameIdx = Number(k.name?.[0] ?? 5)
+    const fullnameIdx = Number(k.fullname?.[0] ?? 6)
+
+    if (!rows || !rows.length) return []
+
+    return rows.map(row => {
+        const fullname = row[fullnameIdx] || ''
+        // Convert "^CENTRAL^BUIKWE^KAMULI" to "CENTRAL > BUIKWE > KAMULI"
+        const displayPath = fullname
+            .split('^')
+            .filter(Boolean)
+            .join(' > ')
+
+        return {
+            id: row[idIdx],
+            name: displayPath || row[nameIdx] || `Option ${row[idIdx]}`,
+            hasChildren: false // Search results are treated as leaf nodes for direct selection
+        }
+    })
 }
 
 let searchTimeout
 watch(searchQuery, (newVal) => {
     if (!props.searchable) return
-    
+
     if (!newVal) {
-             if (navigationPath.value.length > 0) {
-                 const last = navigationPath.value[navigationPath.value.length - 1]
-                 loadLevel(last.id, false).then(opts => levelOptions.value = opts)
-             } else {
-                 if (props.categoryId) {
-                     loadLevel(props.categoryId, true)
-                 }
-             }
+        // Restore previous level when search cleared
+        if (navigationPath.value.length > 0) {
+            const last = navigationPath.value[navigationPath.value.length - 1]
+            loadLevel(last.id, false).then(opts => levelOptions.value = opts)
+        } else if (props.categoryId) {
+            loadLevel(props.categoryId, true)
+        }
     } else {
+        // Server-side search with debounce
         clearTimeout(searchTimeout)
-        searchTimeout = setTimeout(() => {
-            if (!isIndexReady.value) {
-                loading.value = true
-                initIndex().then(() => {
-                    loading.value = false
-                    filterLocal(newVal)
-                })
-            } else {
-                filterLocal(newVal)
+        searchTimeout = setTimeout(async () => {
+            loading.value = true
+            try {
+                await store.searchSubcategories(props.categoryId, newVal, 10)
+                levelOptions.value = parseSearchResults(
+                    store.subcategories,
+                    store.subcategories_k
+                )
+            } catch (e) {
+                console.error('Search failed:', e)
+                levelOptions.value = []
+            } finally {
+                loading.value = false
             }
         }, 300)
     }
 })
 
-function filterLocal(query) {
-    const q = query.toLowerCase()
-    const matches = allOptions.value.filter(opt => opt.name.toLowerCase().includes(q))
-    // Root Match First (shortest path)
-    matches.sort((a, b) => a.name.length - b.name.length)
-    levelOptions.value = matches
-}
-
 // Handle option click
 async function handleOptionClick(option) {
+  // If in search mode, directly select the option (search results show full paths)
+  if (searchQuery.value) {
+    selectOption(option)
+    return
+  }
+
+  // Normal navigation mode - check for children
   if (option.hasChildren === null) {
     try {
-      // Check if it has children by loading it effectively
-      // Optimization: If we are in search results, we might assume leaf unless we check?
-      // But let's stick to existing logic: verify by fetching.
       await store.viewCategory(option.id)
       option.hasChildren = store.subcategories && store.subcategories.length > 0
     } catch {
@@ -378,21 +337,12 @@ async function handleOptionClick(option) {
   }
 
   if (option.hasChildren) {
-    // If we dive, we consciously leave search mode
-    searchQuery.value = '' 
-    
     const subOptions = await loadLevel(option.id, false)
     if (subOptions.length > 0) {
       navigationPath.value.push({
         id: option.id,
         name: option.name,
-        options: levelOptions.value // This might be search results!
-        // If we back up from here, to search results? 
-        // No, usually back up to parent context.
-        // But if we drilled down from search, "Back" implies "Back to Search Results" or "Back to Parent"?
-        // Current logic saves `options: levelOptions.value`.
-        // If `levelOptions` was Search Results, then "Back" restores Search Results.
-        // That is excellent UX.
+        options: levelOptions.value
       })
       levelOptions.value = subOptions
     } else {
@@ -458,9 +408,7 @@ watch(() => props.categoryId, (newCategoryId) => {
     navigationPath.value = []
     selectedOption.value = null
     searchQuery.value = ''
-    isIndexReady.value = false
     loadLevel(newCategoryId)
-    if (props.searchable) initIndex()
   }
 }, { immediate: true })
 
