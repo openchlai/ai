@@ -1,10 +1,10 @@
 # 📊 Code Coverage Report - AI Service
 
-**Branch:** 476/merge
-**Commit:** [\`9f734c7\`](https://github.com/openchlai/ai/commit/9f734c74d26f0ab49128873a789804c4a7ce6f81)
-**Generated:** 2026-01-28 07:57:57 UTC
+**Branch:** 477/merge
+**Commit:** [\`bde6235\`](https://github.com/openchlai/ai/commit/bde6235450c2c83c3f9e561e7dcc1e9a943c6429)
+**Generated:** 2026-01-28 08:47:01 UTC
 **Python Version:** 3.12
-**Workflow:** [\`21429749587\`](https://github.com/openchlai/ai/actions/runs/21429749587)
+**Workflow:** [\`21431141339\`](https://github.com/openchlai/ai/actions/runs/21431141339)
 
 ## 🎯 Coverage Summary
 
@@ -45,7 +45,7 @@ app/core/processing_modes.py                       93      2    98%   149-150
 app/core/processing_strategy_manager.py           137     20    85%   150, 160, 195-210, 299-300, 304, 358-362, 366-368
 app/core/resource_manager.py                      118      0   100%
 app/core/streaming.py                             106      3    97%   246-248
-app/core/text_chunker.py                          156     15    90%   70-72, 77-79, 86-87, 98, 159-172
+app/core/text_chunker.py                          156     12    92%   77-79, 86-87, 98, 159-172
 app/db/models.py                                   18      0   100%
 app/db/repositories/feedback_repository.py         77      0   100%
 app/db/session.py                                  22      0   100%
@@ -78,9 +78,9 @@ app/utils/mode_detector.py                         16      0   100%
 app/utils/scp_audio_downloader.py                 232     22    91%   45, 51, 124-126, 138-140, 239-241, 353, 360-361, 385, 438, 546-555
 app/utils/text_utils.py                           268     20    93%   90-91, 158-169, 186, 241-242, 302-316, 357-358, 560
 -----------------------------------------------------------------------------
-TOTAL                                            7169   1300    82%
+TOTAL                                            7169   1297    82%
 ```
 
 ---
 *Report generated automatically by GitHub Actions*
-*Access this report at: [COVERAGE.md](https://github.com/openchlai/ai/blob/476/merge/ai_service/COVERAGE.md)*
+*Access this report at: [COVERAGE.md](https://github.com/openchlai/ai/blob/477/merge/ai_service/COVERAGE.md)*
