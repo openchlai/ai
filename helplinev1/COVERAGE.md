@@ -1,8 +1,8 @@
 # Code Coverage Report - HelplineV1
 
 **Branch:** justphyl
-**Commit:** [ae6467f](https://github.com/openchlai/ai/commit/ae6467f1d57ac8ac4f5446c73cb22323ebb6879a)
-**Generated:** 2026-01-28 08:39:57 UTC
+**Commit:** [d171d81](https://github.com/openchlai/ai/commit/d171d81b13908b29e51dde75551367e42ed0f9a7)
+**Generated:** 2026-01-28 10:11:46 UTC
 **PHP Version:** 8.3
 
 ## Coverage Summary
@@ -97,7 +97,7 @@ Deprecated: strlen(): Passing null to parameter #1 ($string) of type string is d
 ..rest_uri_response_error - 404
 ...                            225 / 225 (100%)
 
-Time: 00:00.454, Memory: 28.00 MB
+Time: 00:00.427, Memory: 28.00 MB
 
 There were 2 errors:
 
@@ -127,7 +127,7 @@ Failed asserting that two strings are equal.
 +++ Actual
 @@ @@
 -'test_session_123'
-+'mt084hg8brkd2af7kb276i05mm'
++'p7j72p7n6dlohkhghqdm080qo5'
 
 /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/SessionManagerTest.php:92
 /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
@@ -315,7 +315,7 @@ Failed asserting that two strings are equal.
 /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
 
 28) Tests\Unit\ValidationTest::testValidIdGeneration
-Failed asserting that 17695895963610.0 is not equal to 17695895963610.0.
+Failed asserting that 17695951057735.0 is not equal to 17695951057735.0.
 
 /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/ValidationTest.php:245
 /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
@@ -749,7 +749,7 @@ Request Response (Tests\Unit\RequestResponse)
  ✔ Kv operators
  ✘ Val id uniqueness
    │
-   │ Failed asserting that actual size 2 matches expected size 100.
+   │ Failed asserting that actual size 1 matches expected size 100.
    │
    │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/RequestResponseTest.php:220
    │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
@@ -843,7 +843,7 @@ Session Manager (Tests\Unit\SessionManager)
    │ +++ Actual
    │ @@ @@
    │ -'test_session_123'
-   │ +'kj8bui6l7d2661jcitthtomn4u'
+   │ +'tu1ad5d1dl93bgn6qssqb3qg56'
    │
    │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/SessionManagerTest.php:92
    │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
@@ -916,7 +916,7 @@ Validation (Tests\Unit\Validation)
  ✔ Validation errors
  ✘ Valid id generation
    │
-   │ Failed asserting that 17695895975773.0 is not equal to 17695895975773.0.
+   │ Failed asserting that 17695951068810.0 is not equal to 17695951068810.0.
    │
    │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/ValidationTest.php:245
    │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
@@ -990,7 +990,7 @@ rest_uri_response_error - 404
  ✔ Model id generation
  ✔ Kv function
 
-Time: 00:00.485, Memory: 28.00 MB
+Time: 00:00.429, Memory: 28.00 MB
 
 Summary of non-successful tests:
 
@@ -1012,7 +1012,7 @@ Session Manager (Tests\Unit\SessionManager)
    │ +++ Actual
    │ @@ @@
    │ -'test_session_123'
-   │ +'kj8bui6l7d2661jcitthtomn4u'
+   │ +'tu1ad5d1dl93bgn6qssqb3qg56'
    │
    │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/SessionManagerTest.php:92
    │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
@@ -1227,7 +1227,7 @@ Request Response (Tests\Unit\RequestResponse)
 
  ✘ Val id uniqueness
    │
-   │ Failed asserting that actual size 2 matches expected size 100.
+   │ Failed asserting that actual size 1 matches expected size 100.
    │
    │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/RequestResponseTest.php:220
    │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
@@ -1292,7 +1292,7 @@ Validation (Tests\Unit\Validation)
 
  ✘ Valid id generation
    │
-   │ Failed asserting that 17695895975773.0 is not equal to 17695895975773.0.
+   │ Failed asserting that 17695951068810.0 is not equal to 17695951068810.0.
    │
    │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/ValidationTest.php:245
    │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
