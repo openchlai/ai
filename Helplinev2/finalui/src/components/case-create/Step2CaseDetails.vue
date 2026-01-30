@@ -40,6 +40,7 @@
             placeholder="Select case category"
             :category-id="362557"
             @change="handleCategoryChange"
+            :searchable="true"
           />
         </div>
 
