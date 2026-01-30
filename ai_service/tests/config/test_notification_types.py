@@ -118,8 +118,12 @@ class TestNotificationType:
         assert NotificationType.POSTCALL_GPT_INSIGHTS.value == "postcall_gpt_insights"
 
     def test_postcall_mistral_insights(self):
-        """Test POSTCALL_MISTRAL_INSIGHTS value"""
+        """Test POSTCALL_MISTRAL_INSIGHTS value (deprecated)"""
         assert NotificationType.POSTCALL_MISTRAL_INSIGHTS.value == "postcall_mistral_insights"
+
+    def test_postcall_ai_service_insights(self):
+        """Test POSTCALL_AI_SERVICE_INSIGHTS value"""
+        assert NotificationType.POSTCALL_AI_SERVICE_INSIGHTS.value == "postcall_ai_service_insights"
 
     def test_postcall_complete(self):
         """Test POSTCALL_COMPLETE value"""

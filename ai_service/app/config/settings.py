@@ -116,7 +116,7 @@ class Settings(BaseSettings):
     )
 
     # ============================================================================
-    # MODEL CONFIGURATION
+    # MODEL CONFIGURATION 
     # ============================================================================
 
     cleanup_interval: int = Field(
@@ -131,7 +131,8 @@ class Settings(BaseSettings):
     )
 
     ollama_model: str = Field(
-        default="mistral",
+        # default="mistral",
+        default="ai-service",
         description="Ollama model name for insights generation"
     )
 

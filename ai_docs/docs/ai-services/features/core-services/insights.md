@@ -1,4 +1,4 @@
-# Audio Processing Insights 
+# Audio Processing Insights
 
 > **Note:** Response structures may vary slightly based on API version and configuration.
 > This documentation reflects API version 0.1.0 running in production mode.
@@ -34,27 +34,48 @@ curl -X GET "http://localhost:8125/audio/task/{task_id}"
   "progress": 100,
   "result": {
     // 1. TRANSCRIPTION DATA
-    "transcription": "...",
+    "transcript": "...",
     "translation": "...",
-    "language": "sw",
     "audio_info": {...},
-    
+    "nlp_processing_info": {...},
+
     // 2. NAMED ENTITIES (NER)
-    "entities": [...],
-    
+    "entities": {...},
+
     // 3. CASE CLASSIFICATION
     "classification": {...},
-    
+
     // 4. QUALITY ASSURANCE SCORES
-    "qa_evaluations": {...},
-    
+    "qa_scores": {...},
+
     // 5. CALL SUMMARY
     "summary": "...",
-    
+
     // 6. PROCESSING METADATA
-    "processing_time": 45.2,
-    "model_info": {...},
-    "timestamp": "2026-01-20T10:30:00"
+    "processing_steps": {...},
+    "pipeline_info": {...},
+
+    // 7. AI-GENERATED INSIGHTS (VAC Survivor-Centred)
+    "insights": {
+      "reporting_metadata": {...},
+      "ai_decision_panel": {...},
+      "case_overview": {...},
+      "classification": {...},
+      "vac_incident_profile": {...},
+      "safeguarding_flags": {...},
+      "persons_involved": {...},
+      "location_and_context": {...},
+      "service_and_referral_plan": {...},
+      "chi_unicef_reporting_indicators": {...},
+      "extracted_entities": {...},
+      "case_tags_and_keywords": {...},
+      "data_quality": {...},
+      "processing_metadata": {...},
+      // Backward-compatible fields
+      "risk_level": "...",
+      "suggested_disposition": "...",
+      "category_suggestions": {...}
+    }
   }
 }
 ```
@@ -65,8 +86,8 @@ curl -X GET "http://localhost:8125/audio/task/{task_id}"
 
 ### 1.1 Transcription (Swahili)
 
-**Field:** `result.transcription`  
-**Type:** String  
+**Field:** `result.transcription`
+**Type:** String
 **Description:** Full Swahili transcription of the audio file.
 
 **Example:**
@@ -87,8 +108,8 @@ curl -X GET "http://localhost:8125/audio/task/{task_id}"
 
 ### 1.2 Translation (English)
 
-**Field:** `result.translation`  
-**Type:** String  
+**Field:** `result.translation`
+**Type:** String
 **Description:** English translation of the Swahili transcript.
 
 **Example:**
@@ -109,8 +130,8 @@ curl -X GET "http://localhost:8125/audio/task/{task_id}"
 
 ### 1.3 Language
 
-**Field:** `result.language`  
-**Type:** String  
+**Field:** `result.language`
+**Type:** String
 **Description:** Detected/specified language code.
 
 **Example:**
@@ -130,8 +151,8 @@ curl -X GET "http://localhost:8125/audio/task/{task_id}"
 
 ### 1.4 Audio Info
 
-**Field:** `result.audio_info`  
-**Type:** Object  
+**Field:** `result.audio_info`
+**Type:** Object
 **Description:** Metadata about the processed audio file.
 
 **Example:**
@@ -162,8 +183,8 @@ curl -X GET "http://localhost:8125/audio/task/{task_id}"
 
 ### 2.1 Entities Array
 
-**Field:** `result.entities`  
-**Type:** Array of Entity objects  
+**Field:** `result.entities`
+**Type:** Array of Entity objects
 **Description:** Extracted entities from the translated text with labels and confidence scores.
 
 **Example:**
@@ -223,7 +244,7 @@ curl -X GET "http://localhost:8125/audio/task/{task_id}"
 
 ### 2.3 Entity Confidence Scores
 
-**Range:** 0.0 - 1.0  
+**Range:** 0.0 - 1.0
 **Interpretation:**
 
 | Confidence | Interpretation | Action |
@@ -264,8 +285,8 @@ phones = [e['text'] for e in entities if e['label'] == 'PHONE_NUMBER']
 
 ### 3.1 Classification Object
 
-**Field:** `result.classification`  
-**Type:** Object  
+**Field:** `result.classification`
+**Type:** Object
 **Description:** Multi-task classification with main category, sub-categories, intervention, and priority.
 
 **Example:**
@@ -362,8 +383,8 @@ for call in calls:
 
 ### 4.1 QA Evaluations Object
 
-**Field:** `result.qa_evaluations`  
-**Type:** Object  
+**Field:** `result.qa_evaluations`
+**Type:** Object
 **Description:** Detailed QA scores evaluating agent performance across 17 sub-metrics grouped into 6 main criteria.
 
 **Example:**
@@ -531,8 +552,8 @@ if qa_scores['empathy']['score'] < 6.0:
 
 ### 5.1 Summary Field
 
-**Field:** `result.summary`  
-**Type:** String  
+**Field:** `result.summary`
+**Type:** String
 **Description:** Concise AI-generated summary of the call conversation.
 
 **Example:**
@@ -601,8 +622,8 @@ index_document(
 
 ### 6.1 Processing Time
 
-**Field:** `result.processing_time`  
-**Type:** Float (seconds)  
+**Field:** `result.processing_time`
+**Type:** Float (seconds)
 **Description:** Total time taken to process the audio file.
 
 **Example:**
@@ -621,8 +642,8 @@ index_document(
 
 ### 6.2 Model Info
 
-**Field:** `result.model_info`  
-**Type:** Object  
+**Field:** `result.model_info`
+**Type:** Object
 **Description:** Information about all models used in processing.
 
 **Example:**
@@ -662,8 +683,8 @@ index_document(
 
 ### 6.3 Timestamp
 
-**Field:** `result.timestamp`  
-**Type:** ISO-8601 timestamp string  
+**Field:** `result.timestamp`
+**Type:** ISO-8601 timestamp string
 **Description:** When the processing was completed.
 
 **Example:**
@@ -675,45 +696,731 @@ index_document(
 
 ---
 
+## 7. AI-Generated Insights (VAC Survivor-Centred)
+
+The `insights` object provides comprehensive AI-powered analysis of the call using a **VAC (Violence Against Children) Survivor-Centred** approach. This is generated when `include_insights=true` is passed to the `/audio/process` endpoint.
+
+**Model Used:** AI-Service Models for advanced reasoning and analysis
+
+### 7.1 Complete Insights Structure
+
+```json
+{
+  "insights": {
+    "reporting_metadata": {...},
+    "ai_decision_panel": {...},
+    "case_overview": {...},
+    "classification": {...},
+    "vac_incident_profile": {...},
+    "safeguarding_flags": {...},
+    "persons_involved": {...},
+    "location_and_context": {...},
+    "service_and_referral_plan": {...},
+    "chi_unicef_reporting_indicators": {...},
+    "extracted_entities": {...},
+    "case_tags_and_keywords": {...},
+    "data_quality": {...},
+    "processing_metadata": {...},
+    // Backward-compatible fields
+    "risk_level": "Critical|High|Medium|Low",
+    "suggested_disposition": "...",
+    "rationale_summary": "...",
+    "confidence_score": 0.0,
+    "category_suggestions": {...}
+  }
+}
+```
+
+---
+
+### 7.2 Reporting Metadata
+
+**Field:** `insights.reporting_metadata`
+**Type:** Object
+**Description:** Schema versioning and compatibility information for reporting systems.
+
+**Example:**
+```json
+{
+  "reporting_metadata": {
+    "schema_version": "4.0",
+    "generated_by_model": "ai-service",
+    "pipeline_stage": "vac_case_intelligence",
+    "reporting_compatibility": [
+      "CHI",
+      "UNICEF_VAC",
+      "CPIMS",
+      "GOV_STATUTORY",
+      "DONOR_NGO"
+    ]
+  }
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `schema_version` | Version of the insights schema |
+| `generated_by_model` | AI model that generated the insights |
+| `pipeline_stage` | Processing pipeline stage identifier |
+| `reporting_compatibility` | List of compatible reporting frameworks |
+
+---
+
+### 7.3 AI Decision Panel
+
+**Field:** `insights.ai_decision_panel`
+**Type:** Object
+**Description:** Real-time decision support for counsellors handling the call.
+
+**Example:**
+```json
+{
+  "ai_decision_panel": {
+    "case_headline": "Child nutrition concerns reported",
+    "immediate_safety_alert": false,
+    "safety_alert_reason": null,
+    "recommended_next_step": "Provide referral information",
+    "recommended_timeframe": "Immediate|<24h|<72h|Routine",
+    "survivor_centred_guidance": [
+      "Use supportive, non-blaming language",
+      "Prioritize the child's immediate safety",
+      "Explain available referral and protection options"
+    ]
+  }
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `case_headline` | String | Brief headline summarizing the case |
+| `immediate_safety_alert` | Boolean | Whether immediate safety action is needed |
+| `safety_alert_reason` | String/null | Reason for safety alert if applicable |
+| `recommended_next_step` | String | AI-recommended immediate action |
+| `recommended_timeframe` | String | Urgency timeframe for response |
+| `survivor_centred_guidance` | Array | Guidance for survivor-centred approach |
+
+---
+
+### 7.4 Case Overview
+
+**Field:** `insights.case_overview`
+**Type:** Object
+**Description:** High-level risk assessment and disposition recommendations.
+
+**Example:**
+```json
+{
+  "case_overview": {
+    "risk_level": "High",
+    "risk_score": 0.75,
+    "urgency_window_hours": 24,
+    "suggested_disposition": "Immediate police referral and child protection services involvement",
+    "rationale_summary": "The caller expresses concerns about a child's safety with indicators of ongoing abuse."
+  }
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `risk_level` | String | Critical, High, Medium, or Low |
+| `risk_score` | Float | Numeric risk score (0.0 - 1.0) |
+| `urgency_window_hours` | Integer | Recommended response window in hours |
+| `suggested_disposition` | String | Recommended action/next steps |
+| `rationale_summary` | String | Explanation for the assessment |
+
+#### Risk Level Interpretation
+
+| Risk Level | Description | Recommended Response Time |
+|------------|-------------|---------------------------|
+| **Critical** | Immediate danger to child | < 5 minutes, emergency services |
+| **High** | Serious situation requiring urgent attention | < 1 hour |
+| **Medium** | Important but not immediately dangerous | < 24 hours |
+| **Low** | General inquiry or low-risk situation | < 72 hours |
+
+---
+
+### 7.5 Classification (AI-Enhanced)
+
+**Field:** `insights.classification`
+**Type:** Object
+**Description:** Classification results from the DistilBERT model, preserved in insights for consistency.
+
+**Example:**
+```json
+{
+  "classification": {
+    "primary_category": "VANE",
+    "sub_category": "Physical Abuse",
+    "intervention": "Referred",
+    "priority": "1",
+    "classifier_confidence": 0.89
+  }
+}
+```
+
+---
+
+### 7.6 VAC Incident Profile
+
+**Field:** `insights.vac_incident_profile`
+**Type:** Object
+**Description:** Detailed Violence Against Children incident characteristics.
+
+**Example:**
+```json
+{
+  "vac_incident_profile": {
+    "violence_type": "physical",
+    "incident_setting": "home",
+    "perpetrator_relationship": "parent",
+    "incident_reported_as_ongoing": true,
+    "child_in_immediate_danger": true
+  }
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `violence_type` | String/null | Type of violence (physical, sexual, emotional, neglect) |
+| `incident_setting` | String/null | Where the incident occurred |
+| `perpetrator_relationship` | String/null | Relationship to the child |
+| `incident_reported_as_ongoing` | Boolean | Whether abuse is ongoing |
+| `child_in_immediate_danger` | Boolean | Whether child is currently in danger |
+
+---
+
+### 7.7 Safeguarding Flags
+
+**Field:** `insights.safeguarding_flags`
+**Type:** Object
+**Description:** Boolean flags indicating presence of specific safeguarding concerns.
+
+**Example:**
+```json
+{
+  "safeguarding_flags": {
+    "physical_violence_flag": true,
+    "sexual_violence_flag": false,
+    "emotional_psychological_flag": true,
+    "neglect_flag": false,
+    "exploitation_flag": false,
+    "trafficking_flag": false,
+    "harmful_practice_flag": false,
+    "self_harm_suicide_flag": false
+  }
+}
+```
+
+| Flag | Description |
+|------|-------------|
+| `physical_violence_flag` | Physical abuse or violence detected |
+| `sexual_violence_flag` | Sexual abuse or violence detected |
+| `emotional_psychological_flag` | Emotional or psychological abuse detected |
+| `neglect_flag` | Child neglect detected |
+| `exploitation_flag` | Child exploitation detected |
+| `trafficking_flag` | Human trafficking indicators detected |
+| `harmful_practice_flag` | Harmful traditional practices detected |
+| `self_harm_suicide_flag` | Self-harm or suicide risk detected |
+
+---
+
+### 7.8 Persons Involved
+
+**Field:** `insights.persons_involved`
+**Type:** Object
+**Description:** Categorized list of persons mentioned in the call.
+
+**Example:**
+```json
+{
+  "persons_involved": {
+    "survivors": ["Mary", "8-year-old girl"],
+    "alleged_perpetrators": ["Uncle John"],
+    "callers": ["Mother"],
+    "other_named_persons": ["Teacher Mrs. Smith"]
+  }
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `survivors` | Children or persons who experienced harm |
+| `alleged_perpetrators` | Persons alleged to have caused harm |
+| `callers` | Persons who made the call |
+| `other_named_persons` | Other relevant persons mentioned |
+
+---
+
+### 7.9 Location and Context
+
+**Field:** `insights.location_and_context`
+**Type:** Object
+**Description:** Geographic and contextual information about the case.
+
+**Example:**
+```json
+{
+  "location_and_context": {
+    "locations_mentioned": ["Kibera", "Nairobi"],
+    "setting_type": "home",
+    "school_related": false,
+    "household_related": true,
+    "community_related": false
+  }
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `locations_mentioned` | Array | Places mentioned in the call |
+| `setting_type` | String/null | Primary setting (home, school, community) |
+| `school_related` | Boolean | Whether case involves school setting |
+| `household_related` | Boolean | Whether case involves home setting |
+| `community_related` | Boolean | Whether case involves community setting |
+
+---
+
+### 7.10 Service and Referral Plan
+
+**Field:** `insights.service_and_referral_plan`
+**Type:** Object
+**Description:** AI-recommended services and referral pathway.
+
+**Example:**
+```json
+{
+  "service_and_referral_plan": {
+    "immediate_referral_needed": true,
+    "mandatory_reporting_required": true,
+    "recommended_referrals": ["Police", "Child Protection Services"],
+    "recommended_services": ["Counselling", "Medical examination"],
+    "follow_up_required": true,
+    "follow_up_timeframe_hours": 24
+  }
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `immediate_referral_needed` | Boolean | Whether immediate referral is required |
+| `mandatory_reporting_required` | Boolean | Whether mandatory reporting applies |
+| `recommended_referrals` | Array | List of recommended referral agencies |
+| `recommended_services` | Array | List of recommended services |
+| `follow_up_required` | Boolean | Whether follow-up is needed |
+| `follow_up_timeframe_hours` | Integer | Recommended follow-up timeframe |
+
+---
+
+### 7.11 CHI/UNICEF Reporting Indicators
+
+**Field:** `insights.chi_unicef_reporting_indicators`
+**Type:** Object
+**Description:** Standardized indicators for Child Helpline International and UNICEF reporting.
+
+**Example:**
+```json
+{
+  "chi_unicef_reporting_indicators": {
+    "referral_made_or_needed": true,
+    "service_provided": "Counselling",
+    "case_priority_level": "1",
+    "vac_category_alignment": "Physical Abuse"
+  }
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `referral_made_or_needed` | Whether referral was made or is needed |
+| `service_provided` | Primary service provided during call |
+| `case_priority_level` | Priority level for reporting |
+| `vac_category_alignment` | VAC category for UNICEF alignment |
+
+---
+
+### 7.12 Extracted Entities
+
+**Field:** `insights.extracted_entities`
+**Type:** Object
+**Description:** Key entities extracted by AI analysis.
+
+**Example:**
+```json
+{
+  "extracted_entities": {
+    "names": ["John Doe", "Mary Smith"],
+    "locations": ["Kibera", "Nairobi Hospital"],
+    "organizations": ["Police Department", "Social Services"],
+    "dates": ["2026-01-15", "last week"]
+  }
+}
+```
+
+---
+
+### 7.13 Case Tags and Keywords
+
+**Field:** `insights.case_tags_and_keywords`
+**Type:** Object
+**Description:** Categorized tags for case indexing and search.
+
+**Example:**
+```json
+{
+  "case_tags_and_keywords": {
+    "context_tags": ["domestic", "family"],
+    "vulnerability_tags": ["young_child", "single_parent"],
+    "service_tags": ["counselling", "referral"],
+    "keywords": ["abuse", "safety", "protection"]
+  }
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `context_tags` | Tags describing case context |
+| `vulnerability_tags` | Tags identifying vulnerabilities |
+| `service_tags` | Tags for service categorization |
+| `keywords` | General keywords for search |
+
+---
+
+### 7.14 Data Quality
+
+**Field:** `insights.data_quality`
+**Type:** Object
+**Description:** Quality assessment of the AI analysis.
+
+**Example:**
+```json
+{
+  "data_quality": {
+    "insight_confidence_score": 0.85,
+    "information_completeness": "Complete",
+    "missing_information": [],
+    "contradictions_detected": false
+  }
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `insight_confidence_score` | Float | Overall confidence in the analysis (0.0-1.0) |
+| `information_completeness` | String | Complete, Partial, or Minimal |
+| `missing_information` | Array | List of missing key information |
+| `contradictions_detected` | Boolean | Whether contradictions were found |
+
+---
+
+### 7.15 Processing Metadata
+
+**Field:** `insights.processing_metadata`
+**Type:** Object
+**Description:** Technical metadata about insights generation.
+
+**Example:**
+```json
+{
+  "processing_metadata": {
+    "processing_time_ms": 27524,
+    "timestamp": "2026-01-29T08:34:00.929832+00:00",
+    "text_analyzed": "translation",
+    "text_length": 136
+  }
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `processing_time_ms` | Integer | Time to generate insights in milliseconds |
+| `timestamp` | String | ISO-8601 timestamp of generation |
+| `text_analyzed` | String | Source text used ("translation" or "transcript") |
+| `text_length` | Integer | Character count of analyzed text |
+
+---
+
+### 7.16 Backward-Compatible Fields
+
+For compatibility with existing integrations, the following top-level fields are also available:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `risk_level` | String | Same as `case_overview.risk_level` |
+| `suggested_disposition` | String | Same as `case_overview.suggested_disposition` |
+| `rationale_summary` | String | Same as `case_overview.rationale_summary` |
+| `confidence_score` | Float | Same as `data_quality.insight_confidence_score` |
+| `category_suggestions` | Object | Classification with tags |
+
+**Example:**
+```json
+{
+  "risk_level": "High",
+  "suggested_disposition": "Immediate police referral",
+  "rationale_summary": "Child safety concerns identified",
+  "confidence_score": 0.85,
+  "category_suggestions": {
+    "primary_category": "VANE",
+    "sub_category": "Physical Abuse",
+    "intervention": "Referred",
+    "priority": "1",
+    "tags": ["abuse", "urgent", "referral"]
+  }
+}
+```
+
+---
+
+### 7.17 Insights Use Cases
+
+**Risk-Based Routing:**
+```python
+insights = result['insights']
+
+# Use backward-compatible field
+if insights['risk_level'] == 'Critical':
+    escalate_to_emergency(call_id)
+    notify_supervisor_immediately(call_details)
+elif insights['risk_level'] == 'High':
+    escalate_to_supervisor(call_id)
+
+# Or use nested structure
+if insights['case_overview']['risk_level'] == 'Critical':
+    escalate_to_emergency(call_id)
+```
+
+**Safety Alert Handling:**
+```python
+if insights['ai_decision_panel']['immediate_safety_alert']:
+    reason = insights['ai_decision_panel']['safety_alert_reason']
+    trigger_emergency_protocol(call_id, reason)
+```
+
+**Safeguarding Flag Processing:**
+```python
+flags = insights['safeguarding_flags']
+
+if flags['sexual_violence_flag'] or flags['physical_violence_flag']:
+    mandatory_report_required = True
+    notify_child_protection_services(call_id)
+
+if flags['self_harm_suicide_flag']:
+    escalate_to_crisis_team(call_id)
+```
+
+**Referral Automation:**
+```python
+plan = insights['service_and_referral_plan']
+
+if plan['immediate_referral_needed']:
+    for referral in plan['recommended_referrals']:
+        create_referral_ticket(call_id, referral)
+
+if plan['mandatory_reporting_required']:
+    initiate_mandatory_report(call_id)
+```
+
+**UNICEF/CHI Reporting:**
+```python
+indicators = insights['chi_unicef_reporting_indicators']
+
+report_data = {
+    'case_id': call_id,
+    'priority': indicators['case_priority_level'],
+    'vac_category': indicators['vac_category_alignment'],
+    'referral_made': indicators['referral_made_or_needed'],
+    'service': indicators['service_provided']
+}
+submit_to_chi_database(report_data)
+```
+
+**Entity-Based Follow-up:**
+```python
+# Extract locations for local service referral
+locations = insights['extracted_entities']['locations']
+for location in locations:
+    nearby_services = find_services_near(location)
+    suggest_referral(nearby_services)
+```
+
+---
+
 ## Complete Example Response
 
 ```json
 {
-  "task_id": "abc123def456",
+  "task_id": "3dea3688-b245-4d74-8e0c-a31ea4b46185",
   "status": "completed",
   "progress": 100,
   "result": {
-    "transcription": "Habari, hii ni 116 helpline ya watoto...",
-    "translation": "Hello, this is 116 children's helpline...",
-    "language": "sw",
-    "audio_info": {
-      "filename": "call_recording.wav",
-      "duration_seconds": 120.5,
-      "file_size_mb": 2.34
-    },
-    "entities": [
-      {"text": "Central Park", "label": "LANDMARK", "confidence": 0.92},
-      {"text": "John Doe", "label": "PERPETRATOR", "confidence": 0.88}
-    ],
-    "classification": {
-      "main_category": "VANE",
-      "sub_category": "Physical Abuse",
-      "priority": "high",
-      "intervention": "Referred",
-      "confidence_scores": {
-        "main_category": 0.89,
-        "priority": 0.90
+    "status": "completed",
+    "filename": "call_recording.wav",
+    "result": {
+      "audio_info": {
+        "filename": "call_recording.wav",
+        "file_size_mb": 1.55,
+        "language_specified": "sw",
+        "processing_time": 37.78
+      },
+      "transcript": "karibu huduma ya simu kwa mtoto unaongea na mshauri joseph...",
+      "translation": "welcome to the child helpline you are speaking with counselor Joseph...",
+      "nlp_processing_info": {
+        "text_used_for_nlp": "translated_text",
+        "nlp_text_length": 136
+      },
+      "entities": {},
+      "classification": {
+        "main_category": "Child Maintenance & Custody",
+        "sub_category": "Info on Helpline",
+        "sub_category_2": "Maintenance",
+        "intervention": "Referral",
+        "priority": "2",
+        "confidence": 0.354,
+        "confidence_breakdown": {
+          "main_category": 0.216,
+          "sub_category": 0.07,
+          "intervention": 0.641,
+          "priority": 0.488
+        }
+      },
+      "qa_scores": {
+        "opening": [{"submetric": "Use of call opening phrase", "prediction": false, "score": "✗", "probability": 0.93}],
+        "listening": [{"submetric": "Caller was not interrupted", "prediction": false, "score": "✗", "probability": 0.90}],
+        "proactiveness": [{"submetric": "Willing to solve extra issues", "prediction": false, "score": "✗", "probability": 0.83}],
+        "resolution": [{"submetric": "Gives accurate information", "prediction": false, "score": "✗", "probability": 0.80}],
+        "hold": [{"submetric": "Explains before placing on hold", "prediction": false, "score": "✗", "probability": 0.22}],
+        "closing": [{"submetric": "Proper call closing phrase used", "prediction": false, "score": "✗", "probability": 0.76}]
+      },
+      "summary": "Joseph welcome to the child helpline you are speaking with counselor Joseph...",
+      "insights": {
+        "reporting_metadata": {
+          "schema_version": "4.0",
+          "generated_by_model": "ai-service",
+          "pipeline_stage": "vac_case_intelligence",
+          "reporting_compatibility": ["CHI", "UNICEF_VAC", "CPIMS", "GOV_STATUTORY", "DONOR_NGO"]
+        },
+        "ai_decision_panel": {
+          "case_headline": "",
+          "immediate_safety_alert": false,
+          "safety_alert_reason": null,
+          "recommended_next_step": "Provide referral information",
+          "recommended_timeframe": "Immediate|<24h",
+          "survivor_centred_guidance": [
+            "Use supportive, non-blaming language",
+            "Prioritize the child's immediate safety",
+            "Explain available referral and protection options"
+          ]
+        },
+        "case_overview": {
+          "risk_level": null,
+          "risk_score": 0.0,
+          "urgency_window_hours": 0,
+          "suggested_disposition": "",
+          "rationale_summary": ""
+        },
+        "classification": {
+          "primary_category": "Child Maintenance & Custody",
+          "sub_category": "Info on Helpline",
+          "intervention": "Referral",
+          "priority": "2",
+          "classifier_confidence": 0.354
+        },
+        "vac_incident_profile": {
+          "violence_type": null,
+          "incident_setting": null,
+          "perpetrator_relationship": null,
+          "incident_reported_as_ongoing": false,
+          "child_in_immediate_danger": false
+        },
+        "safeguarding_flags": {
+          "physical_violence_flag": false,
+          "sexual_violence_flag": false,
+          "emotional_psychological_flag": false,
+          "neglect_flag": false,
+          "exploitation_flag": false,
+          "trafficking_flag": false,
+          "harmful_practice_flag": false,
+          "self_harm_suicide_flag": false
+        },
+        "persons_involved": {
+          "survivors": [],
+          "alleged_perpetrators": [],
+          "callers": [],
+          "other_named_persons": []
+        },
+        "location_and_context": {
+          "locations_mentioned": [],
+          "setting_type": null,
+          "school_related": false,
+          "household_related": false,
+          "community_related": false
+        },
+        "service_and_referral_plan": {
+          "immediate_referral_needed": false,
+          "mandatory_reporting_required": false,
+          "recommended_referrals": [],
+          "recommended_services": [],
+          "follow_up_required": true,
+          "follow_up_timeframe_hours": 0
+        },
+        "chi_unicef_reporting_indicators": {
+          "referral_made_or_needed": false,
+          "service_provided": null,
+          "case_priority_level": "2",
+          "vac_category_alignment": "Info on Helpline"
+        },
+        "extracted_entities": {
+          "names": [],
+          "locations": [],
+          "organizations": [],
+          "dates": []
+        },
+        "case_tags_and_keywords": {
+          "context_tags": [],
+          "vulnerability_tags": [],
+          "service_tags": [],
+          "keywords": []
+        },
+        "data_quality": {
+          "insight_confidence_score": 0.0,
+          "information_completeness": "Complete",
+          "missing_information": [],
+          "contradictions_detected": false
+        },
+        "risk_level": null,
+        "suggested_disposition": "",
+        "rationale_summary": "",
+        "confidence_score": 0.0,
+        "category_suggestions": {
+          "primary_category": "Child Maintenance & Custody",
+          "sub_category": "Info on Helpline",
+          "intervention": "Referral",
+          "priority": "2",
+          "tags": []
+        },
+        "processing_metadata": {
+          "processing_time_ms": 27524,
+          "timestamp": "2026-01-29T08:34:00.929832+00:00",
+          "text_analyzed": "translation",
+          "text_length": 136
+        }
+      },
+      "processing_steps": {
+        "transcription": {"duration": 9.49, "status": "completed", "output_length": 108},
+        "translation": {"duration": 0.25, "status": "completed", "method": "custom_model", "output_length": 136},
+        "ner": {"duration": 0.01, "status": "completed", "entities_found": 0},
+        "classification": {"duration": 0.14, "status": "completed", "confidence": 0.354},
+        "qa_scoring": {"duration": 0.01, "status": "completed", "evaluations_count": 6},
+        "summarization": {"duration": 0.36, "status": "completed", "summary_length": 193},
+        "insights_generation": {"duration": 27.52, "status": "completed", "source": "ai_service", "risk_level": null}
+      },
+      "pipeline_info": {
+        "total_time": 37.78,
+        "models_used": ["whisper", "translator", "ner", "classifier", "summarizer", "all_qa_distilbert_v1", "ai-service"],
+        "text_flow": "transcript → translated_text → nlp_models",
+        "timestamp": "2026-01-29T08:34:00.930521",
+        "processed_by": "celery_worker"
       }
-    },
-    "qa_evaluations": {
-      "opening": {"score": 8.5},
-      "listening": {"score": 7.2},
-      "overall_score": 8.0
-    },
-    "summary": "Caller reported missing child at Central Park...",
-    "processing_time": 45.23,
-    "model_info": {...},
-    "timestamp": "2026-01-20T10:30:45"
+    }
   }
 }
 ```
@@ -739,10 +1446,10 @@ MEDIUM_CONFIDENCE_THRESHOLD = 0.60
 Make decisions based on multiple signals:
 
 ```python
-# Escalation logic
+# Escalation logic combining classification and insights
 if (classification['priority'] == 'high' and
-    classification['confidence_scores']['priority'] > 0.85 and
-    any(e['label'] == 'PERPETRATOR' for e in entities)):
+    insights['safeguarding_flags']['physical_violence_flag'] and
+    insights['case_overview']['risk_level'] in ['Critical', 'High']):
     escalate_immediately(call_id)
 ```
 
@@ -751,8 +1458,8 @@ Never fully automate critical decisions:
 
 ```python
 # Flag for review instead of auto-action
-if classification['priority'] == 'urgent':
-    if classification['confidence_scores']['priority'] > 0.90:
+if insights['ai_decision_panel']['immediate_safety_alert']:
+    if insights['data_quality']['insight_confidence_score'] > 0.90:
         flag_for_immediate_review(call_id, auto_escalate=True)
     else:
         flag_for_review(call_id, auto_escalate=False)
@@ -764,11 +1471,11 @@ Monitor how well insights match agent feedback:
 ```python
 # Compare AI predictions with agent feedback
 feedback = get_agent_feedback(call_id)
-ai_classification = result['classification']['main_category']
-agent_classification = feedback['actual_category']
+ai_risk = insights['case_overview']['risk_level']
+agent_risk = feedback['actual_risk_level']
 
-if ai_classification != agent_classification:
-    log_mismatch(call_id, ai_classification, agent_classification)
+if ai_risk != agent_risk:
+    log_mismatch(call_id, ai_risk, agent_risk)
 ```
 
 ---

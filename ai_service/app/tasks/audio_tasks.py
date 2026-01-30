@@ -340,8 +340,8 @@ def _send_pipeline_notifications(filename: str, result: Dict[str, Any], task_id:
                 else:
                     logger.warning(f"⚠️ Failed to send summary notification for {call_id}")
 
-            # 6.5. Send AI insights notification (if available with Mistral data)
-            # Check if insights contain Mistral-specific fields (risk_level, suggested_disposition)
+            # 6.5. Send AI insights notification (if available with ai-service data)
+            # Check if insights contain ai-service-specific fields (risk_level, suggested_disposition)
             insights_data = result.get('insights')
             if insights_data and 'risk_level' in insights_data and 'error' not in insights_data:
                 # Determine alert type based on risk level
@@ -350,7 +350,7 @@ def _send_pipeline_notifications(filename: str, result: Dict[str, Any], task_id:
 
                 success = await enhanced_notification_service.send_notification(
                     call_id=call_id,
-                    notification_type=NotificationType.POSTCALL_MISTRAL_INSIGHTS,
+                    notification_type=NotificationType.POSTCALL_AI_SERVICE_INSIGHTS,
                     processing_mode=ProcessingMode(processing_mode_value),
                     payload_data={
                         "insights": insights_data,
@@ -876,8 +876,8 @@ def _process_audio_sync_worker(
 
     # Step 4: Insights (if enabled)
     insights = {}
-    mistral_insights = None
-    mistral_duration = 0.0
+    llm_insights = None
+    llm_insights_duration = 0.0
     final_insights = None
     insights_source = "none"
 
@@ -887,56 +887,55 @@ def _process_audio_sync_worker(
             meta={"step": "insights", "progress": 90}
         )
         publish_update("insights", 90, "Generating insights...")
-        
+
         # Generate insights (simplified version)
         entities = ner_status["result"]
         classification = classifier_status["result"]
         summary = summary_status["result"]
         qa_scores = qa_status["result"] if "result" in qa_status else {}
-      
-      
+
+
         # Generate basic insights (always available, fast)
         insights = _generate_insights(transcript, translation, entities, classification, summary, qa_scores)
         logger.info(f"Generated basic insights: {insights}")
 
-        # Generate Mistral-powered insights (rich AI analysis)
-        mistral_start_time = datetime.now()
+        # Generate AI-Service powered insights (rich AI analysis)
+        llm_insights_start_time = datetime.now()
 
         try:
             # Use translated transcript if available (preferred), fallback to original
             analysis_text = translation if translation else transcript
 
-            logger.info(f"🤖 Generating Mistral insights for {len(analysis_text)} chars of text with DistilBERT classification context...")
-            mistral_insights = generate_case_insights(analysis_text, classification_results=classification)
+            logger.info(f"🤖 Generating ai-service insights for {len(analysis_text)} chars of text with DistilBERT classification context...")
+            llm_insights = generate_case_insights(analysis_text, classification_results=classification)
 
-            mistral_duration = (datetime.now() - mistral_start_time).total_seconds()
-            logger.info(f"✅ Generated Mistral insights in {mistral_duration:.2f}s: risk={mistral_insights.get('risk_level')}, category={mistral_insights.get('category_suggestions', {}).get('primary_category')}")
+            llm_insights_duration = (datetime.now() - llm_insights_start_time).total_seconds()
+            logger.info(f"✅ Generated ai-service insights in {llm_insights_duration:.2f}s: risk={llm_insights.get('risk_level')}, category={llm_insights.get('category_suggestions', {}).get('primary_category')}")
 
             # Add processing metadata
-            mistral_insights['processing_metadata'] = {
-                # 'model_used': settings.ollama_model,
-                'processing_time_ms': int(mistral_duration * 1000),
+            llm_insights['processing_metadata'] = {
+                'processing_time_ms': int(llm_insights_duration * 1000),
                 'timestamp': datetime.now(timezone.utc).isoformat(),
                 'text_analyzed': 'translation' if translation else 'transcript',
                 'text_length': len(analysis_text)
             }
 
         except Exception as e:
-            mistral_duration = (datetime.now() - mistral_start_time).total_seconds()
-            logger.warning(f"⚠️ Mistral insights generation failed after {mistral_duration:.2f}s: {e}", exc_info=True)
-            # Continue without Mistral insights - basic insights still available
-            mistral_insights = {
+            llm_insights_duration = (datetime.now() - llm_insights_start_time).total_seconds()
+            logger.warning(f"⚠️ ai-service insights generation failed after {llm_insights_duration:.2f}s: {e}", exc_info=True)
+            # Continue without ai-service insights - basic insights still available
+            llm_insights = {
                 "error": str(e),
                 "error_type": type(e).__name__,
                 "fallback": "basic_insights_available"
             }
 
 
-        # Use Mistral insights as primary insights if available and successful
+        # Use ai-service insights as primary insights if available and successful
         # Otherwise fall back to basic insights
         final_insights = None
-        if mistral_insights and "error" not in mistral_insights:
-            final_insights = mistral_insights
+        if llm_insights and "error" not in llm_insights:
+            final_insights = llm_insights
             insights_source = "ai_service"
         elif insights:
             final_insights = insights
@@ -1000,7 +999,7 @@ def _process_audio_sync_worker(
                 "summary_length": len(summary_status["result"]) if summary_status["result"] else 0
             },
             "insights_generation": {
-                "duration": mistral_duration,
+                "duration": llm_insights_duration,
                 "status": "completed" if final_insights and "error" not in final_insights else "failed" if include_insights else "skipped",
                 "source": insights_source if include_insights else "none",
                 "risk_level": final_insights.get("risk_level") if final_insights and "risk_level" in final_insights else "unknown"
@@ -1011,7 +1010,7 @@ def _process_audio_sync_worker(
             "models_used": ["whisper"] +
                            (["translator"] if include_translation else []) +
                            ["ner", "classifier", "summarizer", "all_qa_distilbert_v1"] +
-                           (["mistral"] if mistral_insights and "error" not in mistral_insights else []),
+                           (["ai-service"] if llm_insights and "error" not in llm_insights else []),
             "text_flow": f"transcript → {nlp_source} → nlp_models",
             "timestamp": datetime.now().isoformat(),
             "processed_by": "celery_worker"

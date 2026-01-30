@@ -601,25 +601,25 @@ class CallSessionManager:
                                 except Exception as e:
                                     logger.error(f"❌ Failed to send insights for {call_id}: {e}")
                                     
-                            # Generate and send Mistral GPT insights
+                            # Generate and send ai-service  insights
                             try:
                                 from ..services.insights_service import generate_case_insights
 
                                 transcript = pipeline_result.get('transcript', '')
                                 classification = pipeline_result.get('classification', {})
                                 if transcript and len(transcript.strip()) > 50:
-                                    logger.info(f"🧠 [session] Generating Mistral GPT insights with classification context for call {call_id}")
+                                    logger.info(f"🧠 [session] Generating ai-service insights with classification context for call {call_id}")
                                     gpt_insights = generate_case_insights(transcript, classification_results=classification)
                                     
                                     # Send GPT insights notification
                                     # Commented out to reduce notification noise - use notification manager instead
                                     # await agent_notification_service.send_gpt_insights(call_id, gpt_insights)
-                                    logger.info(f"🤖 [session] Sent Mistral GPT insights for {call_id}")
+                                    logger.info(f"🤖 [session] Sent ai-service insights for {call_id}")
                                 else:
-                                    logger.warning(f"⚠️ [session] Transcript too short for GPT insights generation: {len(transcript)} chars")
+                                    logger.warning(f"⚠️ [session] Transcript too short for ai-service insights generation: {len(transcript)} chars")
                                     
                             except Exception as e:
-                                logger.error(f"❌ Failed to generate/send GPT insights for {call_id}: {e}")
+                                logger.error(f"❌ Failed to generate/send ai-service insights for {call_id}: {e}")
                             
                         break
                     else:

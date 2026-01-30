@@ -79,7 +79,7 @@ class TestCallOllama:
         mock_session.post.return_value = mock_response
         mock_session_class.return_value = mock_session
 
-        result = call_ollama('mistral', 'Test prompt')
+        result = call_ollama( 'Test prompt')
 
         assert result == 'Generated insights'
         mock_session.post.assert_called_once()
@@ -97,7 +97,7 @@ class TestCallOllama:
         mock_session_class.return_value = mock_session
 
         custom_endpoint = "http://custom:11434/api/generate"
-        result = call_ollama('mistral', 'Test', endpoint=custom_endpoint)
+        result = call_ollama( 'Test', endpoint=custom_endpoint)
 
         assert result == 'Result'
         call_args = mock_session.post.call_args
@@ -115,7 +115,7 @@ class TestCallOllama:
         mock_session.post.return_value = mock_response
         mock_session_class.return_value = mock_session
 
-        result = call_ollama('mistral', 'Test')
+        result = call_ollama(' 'Test')
 
         assert result == 'Result with spaces'
 
@@ -128,7 +128,7 @@ class TestCallOllama:
         mock_session.post.side_effect = requests.exceptions.HTTPError("Server error")
         mock_session_class.return_value = mock_session
 
-        result = call_ollama('mistral', 'Test')
+        result = call_ollama( 'Test')
 
         assert result is None
 
@@ -141,7 +141,7 @@ class TestCallOllama:
         mock_session.post.side_effect = requests.exceptions.Timeout("Timeout")
         mock_session_class.return_value = mock_session
 
-        result = call_ollama('mistral', 'Test')
+        result = call_ollama('Test')
 
         assert result is None
 
@@ -154,7 +154,7 @@ class TestCallOllama:
         mock_session.post.side_effect = requests.exceptions.ConnectionError("Connection failed")
         mock_session_class.return_value = mock_session
 
-        result = call_ollama('mistral', 'Test')
+        result = call_ollama('Test')
 
         assert result is None
 
@@ -170,7 +170,7 @@ class TestCallOllama:
         mock_session.post.return_value = mock_response
         mock_session_class.return_value = mock_session
 
-        call_ollama('mistral', 'Test')
+        call_ollama( 'Test')
 
         # Verify session mount was called (retry adapter setup)
         assert mock_session.mount.called
@@ -187,7 +187,7 @@ class TestCallOllama:
         mock_session.post.return_value = mock_response
         mock_session_class.return_value = mock_session
 
-        call_ollama('mistral', 'Test prompt')
+        call_ollama('Test prompt')
 
         call_args = mock_session.post.call_args
         payload = call_args[1]['json']
