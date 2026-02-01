@@ -994,7 +994,13 @@ RestrictNamespaces=true
 | | Principle 7 | Storage limitation |
 | | Principle 8 | Integrity and confidentiality |
 
-### Appendix C: Document Approval
+### Appendix C: Reference Repositories
+
+- [ASR Data Augmentation Pipeline](https://github.com/BITZ-IT-Consulting-LTD/asr-data-augmentation-pipeline)
+- [VAD Audio Preprocessor](https://github.com/BITZ-IT-Consulting-LTD/vad-audio-preprocessor)
+- [Audio Annotation Platform](https://github.com/BITZ-IT-Consulting-LTD/audio-annotation-platform)
+  
+### Appendix D: Document Approval
 
 | Role | Name | Date | Signature |
 |------|------|-----------|------|
