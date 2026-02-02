@@ -26,12 +26,21 @@ if settings.enable_model_loading:
     from .celery_app import celery_app
     from .core.celery_monitor import celery_monitor
 
-# Configure logging
+# Configure logging with PII sanitization
+from .security import PIISanitizingFilter
+
 logging.basicConfig(
     level=getattr(logging, settings.log_level),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
+
+# Add PII filter to root logger (applies to all handlers)
+pii_filter = PIISanitizingFilter()
+for handler in logging.getLogger().handlers:
+    handler.addFilter(pii_filter)
+
 logger = logging.getLogger(__name__)
+logger.info("PII sanitization filter enabled for all logging")
 
 # Initialize global asterisk_server
 asterisk_server = None

@@ -148,7 +148,7 @@ class TestNotificationType:
     def test_notification_type_count(self):
         """Test all notification types are present"""
         notification_types = list(NotificationType)
-        assert len(notification_types) == 27
+        assert len(notification_types) == 28
 
 
 class TestProcessingMode:

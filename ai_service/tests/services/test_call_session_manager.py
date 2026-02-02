@@ -412,9 +412,10 @@ class TestCallSessionManager:
         manager = CallSessionManager(redis_client=None)
         # Ensure the in-memory cache is also empty so we don't get fallback data
         manager.active_sessions = {}
-        
+
         # Mock the fallback redis_task_client import that happens when redis_client is None
-        with patch('app.streaming.call_session_manager.redis_task_client', None):
+        # The import is from app.config.settings, not from call_session_manager
+        with patch('app.config.settings.redis_task_client', None):
             result = manager._get_session_from_redis(sample_call_session.call_id)
         assert result is None
 

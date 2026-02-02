@@ -1,0 +1,13 @@
+{
+  "report_timestamp": "2026-01-20T10:51:28.918085",
+  "scanner_type": "presidio",
+  "summary": {
+    "total_detections": 0,
+    "detections_by_type": {
+      
+    },
+    "files_with_pii": 0
+  },
+  "detections": []
+}
+

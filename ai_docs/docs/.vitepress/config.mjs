@@ -224,7 +224,7 @@ export default defineConfig({
                             { text: 'Named Entity Recognition (NER)', link: '/ai-services/features/models/ner_model' },
                             { text: 'Case Classification', link: '/ai-services/features/models/classifier_model' },
                             { text: 'Text Summarization', link: '/ai-services/features/models/summarizer_model' },
-                            { text: 'Question-Answering', link: '/ai-services/features/models/qa_model' },
+                            { text: 'Quality Assurance', link: '/ai-services/features/models/qa_model' },
                             { text: 'Real-time Call Sessions', link: '/ai-services/features/streaming/call_sessions' },
                             { text: 'Data Analytics & Insights', link: '/ai-services/features/core-services/insights' }
                         ]

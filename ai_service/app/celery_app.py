@@ -1,7 +1,28 @@
 # app/celery_app.py - MLOps Production Configuration
 # app/celery_app.py - Updated with Model Tasks
 from celery import Celery
+from celery.signals import setup_logging
 import os
+import logging
+
+
+@setup_logging.connect
+def configure_celery_logging(**kwargs):
+    """Configure Celery worker logging with PII sanitization"""
+    from app.security import PIISanitizingFilter
+
+    # Setup basic logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+
+    # Add PII filter to root logger
+    pii_filter = PIISanitizingFilter()
+    for handler in logging.getLogger().handlers:
+        handler.addFilter(pii_filter)
+
+    logging.getLogger(__name__).info("Celery worker logging configured with PII sanitization")
 
 def get_redis_url():
     if os.getenv("DOCKER_CONTAINER") or os.path.exists("/.dockerenv"):
