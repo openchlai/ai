@@ -174,6 +174,237 @@ The integrated pipeline supports three processing modes for different operationa
 | **Containerization** | Docker + Docker Compose | Production deployment |
 | **Monitoring** | Built-in health checks | Resource monitoring and alerting |
 
+## Data Pipeline & MLOps Infrastructure
+
+> **Data-Centric ML Approach**: The AI Pipeline's performance improvements stem from incorporating domain-specific Tanzanian telephony data through a privacy-compliant processing pipeline. Version 2.0 achieved substantial gains over Version 1.0 by addressing the domain mismatch between open-source training datasets and real-world telephony audio characteristics.
+
+The AI Pipeline Container is supported by three specialized repositories that implement a complete data processing lifecycle—from raw audio quality control through privacy-preserving annotation to training-ready dataset preparation. These systems collectively ensure GDPR compliance, UNICEF data protection standards, and child safeguarding requirements while enabling high-quality model training.
+
+### Supporting Repositories
+
+#### 1. VAD Audio Preprocessor
+**Repository**: [vad-audio-preprocessor](https://github.com/BITZ-IT-Consulting-LTD/vad-audio-preprocessor)
+
+**Purpose**: Privacy-by-design audio quality filtering system that preprocesses raw telephony recordings into clean, anonymized audio chunks suitable for transcription and model training.
+
+**Key Features**:
+- **Two-Stage Quality Filtering**: 
+  - Stage 1: File-level filtering using speech ratio and VAD SNR thresholds
+  - Stage 2: Segment-level filtering for optimal 10-30 second chunks
+- **SHA256 Anonymization**: Content-based hashing eliminates traceable identifiers
+- **SQLite Audit Logging**: Complete traceability with Write-Ahead Logging (WAL) mode
+- **Export Tracking**: Full batch processing history and quality metrics
+- **Silero VAD Integration**: State-of-the-art voice activity detection for accurate speech segmentation
+
+**Privacy Impact**:
+- Removes all PII and path information from processed audio
+- Generates anonymous chunk identifiers derived from audio content
+- Implements data minimization principles at the preprocessing stage
+- Creates comprehensive audit trails for compliance verification
+
+**Integration Point**: Feeds quality-controlled, anonymized audio chunks into the annotation platform, ensuring only high-SNR speech segments proceed to human transcription.
+
+**Technologies**: Python, Silero VAD, SQLite with WAL, SHA256 hashing, batch processing pipeline
+
+**Data Flow Output**: Filtered audio chunks with quality metrics (speech ratio, VAD SNR, duration) stored in structured SQLite database
+
+---
+
+#### 2. Audio Annotation Platform
+**Repository**: [audio-annotation-platform](https://github.com/BITZ-IT-Consulting-LTD/audio-annotation-platform)
+
+**Purpose**: Distributed transcription management system that connects Tanzanian transcription agents to Label Studio for secure, controlled audio annotation workflows.
+
+**Key Features**:
+- **FastAPI Middleware**: RESTful API for task assignment and transcription submission
+- **Redis-Based Task Locking**: Atomic distributed locking prevents duplicate transcriptions
+- **API Key Authentication**: X-API-Key header validation for secure agent access
+- **Label Studio Integration**: Seamless project and task management through Label Studio API
+- **Agent Pseudonymization**: Agent identifiers decoupled from personal information
+- **PostgreSQL Async ORM**: High-performance database with SQLAlchemy async operations
+- **Systemd Security Hardening**: PrivateTmp, NoNewPrivileges, and resource isolation
+- **Audit Trail**: Complete Redis-based logging of all agent actions with timestamps
+
+**Privacy Impact**:
+- Role-Based Access Control (RBAC) ensures agents only access assigned tasks
+- No transcription content stored in middleware—passes through to Label Studio only
+- Agent statistics aggregated without linking to identifiable information
+- VPN-secured connectivity (WireGuard) between Kenya infrastructure and Tanzania agents
+
+**Integration Point**: Manages the human-in-the-loop transcription process, converting anonymized audio chunks into ground-truth transcriptions stored in Label Studio for dataset preparation.
+
+**Technologies**: FastAPI, PostgreSQL, Redis, Label Studio API, systemd, WireGuard VPN, Python asyncio
+
+**Deployment**: CentOS 7 production server with systemd service management, deployed in Nairobi with secure VPN access for remote agents
+
+**Data Flow Output**: Completed transcriptions with session metadata (duration, timestamp, task completion status) stored in PostgreSQL
+
+---
+
+#### 3. ASR Data Augmentation Pipeline
+**Repository**: [asr-data-augmentation-pipeline](https://github.com/BITZ-IT-Consulting-LTD/asr-data-augmentation-pipeline)
+
+**Purpose**: Privacy-preserving dataset preparation pipeline that transforms annotated audio into training-ready datasets with reproducible splits, deduplication, and MLflow experiment tracking.
+
+**Key Features**:
+- **Data Deduplication**: Removes duplicate transcriptions to prevent data inflation and overfitting
+- **Reproducible Train/Test Splitting**: Fixed random seeds (42) ensure consistent dataset splits across experiments
+- **MLflow Experiment Tracking**: Comprehensive logging of dataset versions, augmentation parameters, and split statistics
+- **Path Sanitization**: Removes absolute paths and sensitive location information
+- **Configurable Augmentation**: YAML-driven pipeline configuration for flexible data processing
+- **TSV Output Format**: Standard format compatible with Hugging Face datasets and training frameworks
+- **Quality Metrics Logging**: Tracks dataset statistics (duration distribution, transcription length, vocabulary size)
+
+**Privacy Impact**:
+- No PII retained in final training datasets—only audio paths and transcriptions
+- Internal path references only (no absolute filesystem paths)
+- Reproducible splits enable deletion of source data while maintaining training consistency
+- MLflow tracking provides audit trail without storing sensitive content
+
+**Integration Point**: Consumes Label Studio exports and produces versioned, training-ready datasets in TSV format for Whisper fine-tuning, translation model training, and downstream NLP tasks.
+
+**Technologies**: Python, MLflow, pandas, PyYAML, configurable augmentation strategies
+
+**Data Flow Output**: 
+- `train.tsv`, `dev.tsv`, `test.tsv` with columns: `path`, `transcription`, `duration`
+- MLflow experiment runs with dataset versioning and quality metrics
+- Reproducible splits documented in experiment metadata
+
+---
+
+### Integrated Data Lifecycle
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    PRIVACY-COMPLIANT DATA PIPELINE                           │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Raw Telephony Audio (PBX/Asterisk)
+         │
+         ▼
+┌──────────────────────┐
+│  VAD Audio           │  • Two-stage quality filtering (SNR, speech ratio)
+│  Preprocessor        │  • 10-30 second chunk segmentation
+│                      │  • SHA256 anonymization
+└──────────┬───────────┘  • SQLite audit logging
+           │              
+           │ Quality-filtered, anonymized chunks
+           ▼
+┌──────────────────────┐
+│  Audio Annotation    │  • Label Studio task distribution
+│  Platform            │  • Redis task locking (prevents duplicates)
+│                      │  • API key authentication + RBAC
+└──────────┬───────────┘  • PostgreSQL session tracking
+           │              
+           │ Human-transcribed audio + ground truth
+           ▼
+┌──────────────────────┐
+│  ASR Data            │  • Deduplication
+│  Augmentation        │  • Reproducible train/test splits (seed=42)
+│  Pipeline            │  • Path sanitization
+└──────────┬───────────┘  • MLflow versioning
+           │              
+           │ Training-ready datasets (TSV)
+           ▼
+┌──────────────────────┐
+│  AI Pipeline         │  • Whisper fine-tuning (14hrs domain data)
+│  Container           │  • Translation model training (NLLB)
+│  (This Repository)   │  • NLP model fine-tuning (BERT, spaCy)
+└──────────────────────┘  • Production inference pipeline
+```
+
+### Privacy & Compliance Framework
+
+The three supporting repositories implement privacy-by-design principles throughout the data lifecycle:
+
+| Privacy Control | Implementation | Repository |
+|-----------------|----------------|------------|
+| **Data Minimization** | Two-stage filtering removes low-quality audio | VAD Audio Preprocessor |
+| **Anonymization** | SHA256-based chunk identifiers, no traceable PII | VAD Audio Preprocessor |
+| **Access Control** | API key authentication, agent pseudonymization | Audio Annotation Platform |
+| **Audit Trails** | SQLite WAL logging, Redis action logs, MLflow tracking | All three repositories |
+| **Storage Limitation** | Defined retention periods (90 days - 36 months) | Audio Annotation Platform |
+| **Security Hardening** | Systemd isolation, VPN encryption, TLS | Audio Annotation Platform |
+| **Reproducibility** | Fixed random seeds, versioned splits | ASR Data Augmentation Pipeline |
+| **Path Sanitization** | Internal paths only, no filesystem exposure | ASR Data Augmentation Pipeline |
+
+**Compliance Standards**: GDPR Articles 5, 25, 32 | UNICEF Data Protection Principles 3-8 | Child Safeguarding Requirements
+
+### Technology Stack Updates
+
+The complete technology stack across the data pipeline and inference system:
+
+| Layer | Technology | Purpose | Repository |
+|-------|------------|---------|------------|
+| **Audio Quality Control** | Silero VAD, SQLite WAL | Voice activity detection, audit logging | VAD Audio Preprocessor |
+| **Annotation Management** | FastAPI, PostgreSQL, Redis | Task distribution, locking, sessions | Audio Annotation Platform |
+| **Dataset Preparation** | MLflow, pandas, PyYAML | Versioning, deduplication, splitting | ASR Data Augmentation |
+| **Model Training** | Hugging Face Transformers, PyTorch | Fine-tuning Whisper, NLLB, BERT | (Training scripts - separate) |
+| **Inference Pipeline** | FastAPI, Celery, Redis | Production API, async processing | AI Pipeline Container (This Repo) |
+| **Privacy Infrastructure** | SHA256, RBAC, systemd hardening | Anonymization, access control | All repositories |
+
+### MLOps Best Practices - Extended
+
+Building on the core MLOps practices in the inference pipeline, the supporting repositories add:
+
+- **✅ Privacy-by-Design**: Data processing pipelines with built-in anonymization and minimal data retention
+- **✅ Data Versioning**: SHA256 content addressing, MLflow experiment tracking, and reproducible splits
+- **✅ Audit Trails**: Comprehensive logging across SQLite, PostgreSQL, and Redis for compliance verification
+- **✅ Reproducible Pipelines**: Fixed random seeds, documented configurations, version-controlled preprocessing
+- **✅ Quality Metrics**: VAD SNR, speech ratio tracking, transcription quality monitoring
+- **✅ Distributed Processing**: Redis-based task locking for scalable annotation workflows
+- **✅ Security Hardening**: Systemd isolation, VPN encryption, API key authentication
+
+### Dataset Statistics (January 2025)
+
+**Production Data Pipeline Performance**:
+- **Processed Audio Files**: 246 files through annotation pipeline
+- **Quality-Filtered Chunks**: ~1,000+ chunks (10-30 seconds each)
+- **Domain-Specific Data**: 14 hours of Tanzanian telephony recordings
+- **Annotation Coverage**: Real-world child helpline conversations in Swahili
+- **Training Dataset**: Reproducible train/dev/test splits with fixed seed=42
+
+**Impact on Model Performance**: 
+Version 2.0 models trained on domain-specific data demonstrated substantial improvements over Version 1.0 (trained on Common Voice Swahili), particularly in reducing ASR hallucinations and handling Tanzanian accents in telephony conditions.
+
+---
+
+### Getting Started with the Data Pipeline
+
+For teams looking to replicate the data processing workflow:
+
+1. **Clone the supporting repositories**:
+```bash
+git clone https://github.com/BITZ-IT-Consulting-LTD/vad-audio-preprocessor
+git clone https://github.com/BITZ-IT-Consulting-LTD/audio-annotation-platform
+git clone https://github.com/BITZ-IT-Consulting-LTD/asr-data-augmentation-pipeline
+```
+
+2. **Follow the privacy-compliant workflow**:
+   - Start with VAD Audio Preprocessor for quality filtering and anonymization
+   - Use Audio Annotation Platform for secure, distributed transcription
+   - Apply ASR Data Augmentation Pipeline for dataset preparation
+   - Train models using the prepared datasets
+   - Deploy trained models in this AI Pipeline Container for inference
+
+3. **Refer to individual repository READMEs** for detailed setup instructions, configuration options, and deployment guides.
+
+### Documentation & Compliance
+
+For comprehensive privacy and compliance documentation, see:
+- **Data Privacy Strategy**: [Internal compliance documentation](path-to-compliance-docs)
+- **Entity Relationship Diagrams**: Data schemas across all three systems
+- **Data Flow Documentation**: Complete lifecycle from raw audio to production models
+- **GDPR Compliance Mapping**: Article-by-article compliance verification
+- **UNICEF Data Protection**: Alignment with child protection standards
+
+---
+
+**Related Repositories**:
+- [VAD Audio Preprocessor](https://github.com/BITZ-IT-Consulting-LTD/vad-audio-preprocessor) - Audio quality filtering
+- [Audio Annotation Platform](https://github.com/BITZ-IT-Consulting-LTD/audio-annotation-platform) - Transcription management
+- [ASR Data Augmentation Pipeline](https://github.com/BITZ-IT-Consulting-LTD/asr-data-augmentation-pipeline) - Dataset preparation
+
 ## 🚀 Quick Start
 
 ### Prerequisites
