@@ -10,7 +10,16 @@ export const useCallStore = defineStore('callStore', {
     calls_ctx: [],     // context (pagination etc.)
     raw: {},           // full API response
     loading: false,
-    error: null
+    error: null,
+    // Pagination state
+    pagination: {
+      offset: 0,       // _o parameter - current offset
+      limit: 20,       // _c parameter - items per page
+      currentPage: 1,  // current page number
+      totalRecords: 0, // total records from calls_ctx
+      rangeStart: 1,   // display range start
+      rangeEnd: 20     // display range end
+    }
   }),
 
   getters: {
@@ -39,7 +48,22 @@ export const useCallStore = defineStore('callStore', {
           readableDate
         };
       });
-    }
+    },
+
+    // Pagination getters
+    totalRecords: (state) => state.pagination.totalRecords,
+    currentPage: (state) => state.pagination.currentPage,
+    pageSize: (state) => state.pagination.limit,
+    totalPages: (state) => Math.ceil(state.pagination.totalRecords / state.pagination.limit) || 1,
+    hasNextPage: (state) => state.pagination.rangeEnd < state.pagination.totalRecords,
+    hasPrevPage: (state) => state.pagination.currentPage > 1,
+    paginationInfo: (state) => ({
+      rangeStart: state.pagination.rangeStart,
+      rangeEnd: state.pagination.rangeEnd,
+      total: state.pagination.totalRecords,
+      currentPage: state.pagination.currentPage,
+      totalPages: Math.ceil(state.pagination.totalRecords / state.pagination.limit) || 1
+    })
   },
 
   actions: {
@@ -51,14 +75,39 @@ export const useCallStore = defineStore('callStore', {
       };
     },
 
-    // 1. List Calls
+    // Parse calls_ctx to update pagination state
+    // Format: [["offset", "limit", "rangeStart", "rangeEnd", "total", "", ""]]
+    parsePaginationContext(ctx) {
+      if (ctx && ctx[0] && Array.isArray(ctx[0])) {
+        const [offset, limit, rangeStart, rangeEnd, total] = ctx[0];
+        this.pagination.offset = parseInt(offset) || 0;
+        this.pagination.limit = parseInt(limit) || 20;
+        this.pagination.rangeStart = parseInt(rangeStart) || 1;
+        this.pagination.rangeEnd = parseInt(rangeEnd) || 20;
+        this.pagination.totalRecords = parseInt(total) || 0;
+        this.pagination.currentPage = Math.floor(this.pagination.offset / this.pagination.limit) + 1;
+      }
+    },
+
+    // 1. List Calls with pagination support
     async listCalls(params = {}) {
       this.loading = true;
       this.error = null;
 
       try {
+        // Build pagination params matching control UI format
+        const paginationParams = {
+          _c: params._c || this.pagination.limit,  // count/limit
+          _o: params._o !== undefined ? params._o : this.pagination.offset,  // offset
+          _a: 0,  // flag used by control UI
+          ...params
+        };
+
+        // Remove our internal pagination keys from params if they exist
+        delete paginationParams.page;
+
         const { data } = await axiosInstance.get('api/calls/', {
-          params,
+          params: paginationParams,
           headers: this.getAuthHeaders()
         });
         console.log('API Response:', data);
@@ -66,11 +115,49 @@ export const useCallStore = defineStore('callStore', {
         this.calls = data.calls || [];
         this.calls_k = data.calls_k || {};
         this.calls_ctx = data.calls_ctx || [];
+
+        // Parse pagination context from response
+        this.parsePaginationContext(data.calls_ctx);
       } catch (err) {
         this.error = err.message || 'Request failed';
       } finally {
         this.loading = false;
       }
+    },
+
+    // Go to next page
+    async nextPage(filters = {}) {
+      if (!this.hasNextPage) return;
+      const newOffset = this.pagination.offset + this.pagination.limit;
+      await this.listCalls({ ...filters, _o: newOffset, _c: this.pagination.limit });
+    },
+
+    // Go to previous page
+    async prevPage(filters = {}) {
+      if (!this.hasPrevPage) return;
+      const newOffset = Math.max(0, this.pagination.offset - this.pagination.limit);
+      await this.listCalls({ ...filters, _o: newOffset, _c: this.pagination.limit });
+    },
+
+    // Go to specific page
+    async goToPage(page, filters = {}) {
+      const newOffset = (page - 1) * this.pagination.limit;
+      await this.listCalls({ ...filters, _o: newOffset, _c: this.pagination.limit });
+    },
+
+    // Change page size
+    async setPageSize(size, filters = {}) {
+      this.pagination.limit = size;
+      this.pagination.offset = 0;
+      await this.listCalls({ ...filters, _o: 0, _c: size });
+    },
+
+    // Reset pagination to first page
+    resetPagination() {
+      this.pagination.offset = 0;
+      this.pagination.currentPage = 1;
+      this.pagination.rangeStart = 1;
+      this.pagination.rangeEnd = this.pagination.limit;
     },
 
     // 2. View Call

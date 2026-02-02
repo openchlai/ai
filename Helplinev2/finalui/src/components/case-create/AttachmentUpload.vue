@@ -25,7 +25,7 @@
               ? 'border-amber-500 bg-amber-600/10 scale-[1.02]' 
               : 'border-amber-600 bg-amber-50 scale-[1.02]'
             : isDarkMode
-              ? 'border-transparent bg-gray-800/50'
+              ? 'border-transparent bg-black/50'
               : 'border-transparent bg-gray-50',
           filesStore.loading 
             ? 'opacity-60 cursor-not-allowed' 
@@ -85,7 +85,7 @@
         v-if="attachments && attachments.length > 0" 
         class="border rounded-lg p-4"
         :class="isDarkMode 
-          ? 'bg-gray-800 border-transparent' 
+          ? 'bg-black border-transparent' 
           : 'bg-white border-transparent'"
       >
         <h4 
@@ -156,7 +156,7 @@
         v-if="uploadProgress > 0 && uploadProgress < 100" 
         class="border rounded-lg p-4"
         :class="isDarkMode 
-          ? 'bg-gray-800 border-transparent' 
+          ? 'bg-black border-transparent' 
           : 'bg-white border-transparent'"
       >
         <div 
@@ -182,7 +182,7 @@
         v-if="filesStore.loading" 
         class="border rounded-lg p-4"
         :class="isDarkMode 
-          ? 'bg-gray-800 border-transparent' 
+          ? 'bg-black border-transparent' 
           : 'bg-white border-transparent'"
       >
         <div 

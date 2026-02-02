@@ -18,6 +18,21 @@ npm run build        # Production build
 npm run preview      # Preview production build
 ```
 
+## Environment Configuration
+
+The application uses environment variables for configuration. Copy `.env.example` to `.env` and configure:
+
+```bash
+cp .env.example .env
+```
+
+Key environment variables:
+- `VITE_BACKEND_URL` - Backend server URL (default: https://demo-openchs.bitz-itc.com)
+- `VITE_BACKEND_PATH` - Backend API path (default: /helpline)
+- `VITE_SIP_HOST` - SIP server hostname
+- `VITE_SIP_WS_URL` - WebSocket URL for SIP connection
+- `VITE_AMI_WS_URL` - Asterisk Manager Interface WebSocket URL
+
 ## Tech Stack
 
 - **Framework**: Vue 3 with Composition API (`<script setup>` syntax)
@@ -86,7 +101,7 @@ Router guard (`router/index.js:123-174`) checks authentication and permissions b
 
 ### Axios Setup
 - **Base URL**: `/api-proxy` (proxied in dev, configured in nginx for production)
-- **Dev Proxy**: Vite proxies `/api-proxy` → `https://demo-openchs.bitz-itc.com/helpline`
+- **Dev Proxy**: Vite proxies `/api-proxy` → backend URL configured via `VITE_BACKEND_URL` and `VITE_BACKEND_PATH` environment variables
 - **Interceptors**:
   - Request: Adds `Session-Id` header from localStorage
   - Request: Adds `X-API-Key: 08m9cujgjlk0epqqms1q99bbvc` for `/cases/` endpoints

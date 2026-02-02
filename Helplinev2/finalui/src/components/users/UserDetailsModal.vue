@@ -2,14 +2,14 @@
   <div 
     class="max-w-2xl w-full rounded-xl shadow-2xl border overflow-hidden"
     :class="isDarkMode 
-      ? 'bg-gray-800 border-transparent' 
+      ? 'bg-black border-transparent' 
       : 'bg-white border-transparent'"
   >
     <!-- Header -->
     <div 
       class="px-8 py-5 border-b flex items-center justify-between"
       :class="isDarkMode 
-        ? 'border-transparent bg-gray-900/50' 
+        ? 'border-transparent bg-black/50' 
         : 'border-transparent bg-gray-50'"
     >
       <div class="flex items-center gap-3">
@@ -88,7 +88,7 @@
             <div 
               class="rounded-xl p-4 border"
               :class="isDarkMode 
-                ? 'bg-gray-800 border-transparent' 
+                ? 'bg-black border-transparent' 
                 : 'bg-white border-green-300'"
             >
               <label 
@@ -137,7 +137,7 @@
     <!-- User Details -->
     <div 
       class="px-8 py-6 space-y-4"
-      :class="isDarkMode ? 'bg-gray-800' : 'bg-white'"
+      :class="isDarkMode ? 'bg-black' : 'bg-white'"
     >
       <!-- Role Badge -->
       <div>
@@ -272,7 +272,7 @@
     <div 
       class="px-8 py-5 border-t flex gap-3"
       :class="isDarkMode 
-        ? 'border-transparent bg-gray-900/30' 
+        ? 'border-transparent bg-black/30' 
         : 'border-transparent bg-gray-50'"
     >
       <!-- Show different buttons based on reset state -->

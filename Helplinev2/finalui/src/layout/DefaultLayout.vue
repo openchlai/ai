@@ -1,20 +1,24 @@
 <template>
-  <div class="flex min-h-screen" :class="isDarkMode ? 'bg-gray-900' : 'bg-gray-50'">
+  <div class="flex min-h-screen" :class="isDarkMode ? 'bg-black' : 'bg-gray-50'">
     <!-- Fixed Sidebar - Only show when NOT on login page -->
     <Sidebar v-if="showSidebar" :isDarkMode="isDarkMode" @toggle-theme="toggleTheme" />
     
     <!-- Main Content Area with conditional left margin -->
-    <main 
-      class="flex-1 overflow-auto" 
+    <div 
+      class="flex-1 flex flex-col min-h-screen relative" 
       :class="[
         showSidebar ? 'ml-64' : '',
-        isDarkMode ? 'bg-gray-900' : 'bg-gray-50'
+        isDarkMode ? 'bg-black' : 'bg-gray-50'
       ]"
     >
-      <div>
+      <!-- Static Navbar -->
+      <Navbar v-if="showSidebar" :isDarkMode="isDarkMode" />
+
+      <!-- Main Content Container -->
+      <main class="flex-1 overflow-auto p-6">
         <RouterView />
-      </div>
-    </main>
+      </main>
+    </div>
   </div>
 </template>
 
@@ -23,6 +27,7 @@ import { computed, provide } from 'vue'
 import { useRoute } from 'vue-router'
 import { useTheme } from '@/composables/useTheme'
 import Sidebar from '@/components/layout/Sidebar.vue'
+import Navbar from '@/components/layout/Navbar.vue'
 
 const route = useRoute()
 const { isDarkMode, toggleTheme } = useTheme()
@@ -31,7 +36,7 @@ const { isDarkMode, toggleTheme } = useTheme()
 provide('isDarkMode', isDarkMode)
 provide('toggleTheme', toggleTheme)
 
-// Hide sidebar on login page
+// Hide sidebar and navbar on login page
 const showSidebar = computed(() => {
   return route.path !== '/login'
 })

@@ -85,7 +85,7 @@
                 ? 'border-amber-600 bg-amber-900/20' 
                 : 'border-amber-600 bg-amber-100'
               : isDarkMode
-                ? 'border-transparent bg-neutral-900 hover:bg-neutral-800 hover:border-amber-600'
+                ? 'border-transparent bg-black hover:bg-neutral-800 hover:border-amber-600'
                 : 'border-transparent bg-white hover:bg-gray-50 hover:border-amber-600'"
             @click="selectExistingReporter(contact)"
           >
@@ -166,7 +166,7 @@
           v-else-if="shouldShowResults && !filteredContacts.length" 
           class="text-center p-10 rounded-lg border"
           :class="isDarkMode 
-            ? 'text-gray-400 bg-neutral-900 border-transparent' 
+            ? 'text-gray-400 bg-black border-transparent' 
             : 'text-gray-500 bg-white border-transparent'"
         >
           <i-mdi-account-search class="mx-auto text-5xl mb-3 opacity-50" />
@@ -179,7 +179,7 @@
           v-else-if="!searchQuery.trim() && !showCreateForm" 
           class="text-center p-10 rounded-lg border"
           :class="isDarkMode 
-            ? 'text-gray-400 bg-neutral-900 border-transparent' 
+            ? 'text-gray-400 bg-black border-transparent' 
             : 'text-gray-500 bg-white border-transparent'"
         >
           <i-mdi-account-group class="mx-auto text-5xl mb-3 opacity-50" />
@@ -306,7 +306,7 @@
           v-if="showCreateForm" 
           class="mt-5 p-5 border rounded-lg"
           :class="isDarkMode 
-            ? 'bg-neutral-900 border-transparent' 
+            ? 'bg-black border-transparent' 
             : 'bg-white border-transparent'"
         >
           <div class="flex items-center justify-between mb-4">

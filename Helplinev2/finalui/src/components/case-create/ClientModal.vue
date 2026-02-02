@@ -7,14 +7,14 @@
     <div 
       class="border rounded-lg shadow-2xl max-w-[90%] max-h-[90%] overflow-y-auto w-[95%] max-w-[95vw]"
       :class="isDarkMode 
-        ? 'bg-gray-800 border-transparent' 
+        ? 'bg-black border-transparent' 
         : 'bg-white border-transparent'"
     >
       <!-- Header -->
       <div 
         class="flex justify-between items-center p-5 border-b"
         :class="isDarkMode 
-          ? 'border-transparent bg-gray-900/60' 
+          ? 'border-transparent bg-black/60' 
           : 'border-transparent bg-gray-50'"
       >
         <h3 
@@ -36,14 +36,14 @@
 
       <div 
         class="p-5"
-        :class="isDarkMode ? 'bg-gray-900/40' : 'bg-gray-50'"
+        :class="isDarkMode ? 'bg-black/40' : 'bg-gray-50'"
       >
         <!-- Show existing clients -->
         <div
           v-if="clients && clients.length > 0"
           class="mb-5 p-4 border rounded-lg"
           :class="isDarkMode 
-            ? 'bg-gray-800 border-transparent' 
+            ? 'bg-black border-transparent' 
             : 'bg-white border-transparent'"
         >
           <h4 
@@ -586,7 +586,7 @@
                     v-if="showSpouseFields" 
                     class="mt-4 p-4 border rounded-lg"
                     :class="isDarkMode 
-                      ? 'bg-gray-800 border-transparent' 
+                      ? 'bg-black border-transparent' 
                       : 'bg-gray-50 border-transparent'"
                   >
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -686,7 +686,7 @@
                     v-if="localClientForm.attendingSchool === 'yes'" 
                     class="mt-4 p-4 border rounded-lg"
                     :class="isDarkMode 
-                      ? 'bg-gray-800 border-transparent' 
+                      ? 'bg-black border-transparent' 
                       : 'bg-gray-50 border-transparent'"
                   >
                     <div class="grid grid-cols-1 gap-3">
@@ -776,7 +776,7 @@
                     v-if="localClientForm.attendingSchool === 'no'" 
                     class="mt-4 p-4 border rounded-lg"
                     :class="isDarkMode 
-                      ? 'bg-gray-800 border-transparent' 
+                      ? 'bg-black border-transparent' 
                       : 'bg-gray-50 border-transparent'"
                   >
                     <div class="flex flex-col gap-2">
@@ -863,7 +863,7 @@
                     v-if="localClientForm.isDisabled === 'yes'" 
                     class="mt-4 p-4 border rounded-lg"
                     :class="isDarkMode 
-                      ? 'bg-gray-800 border-transparent' 
+                      ? 'bg-black border-transparent' 
                       : 'bg-gray-50 border-transparent'"
                   >
                     <div class="grid grid-cols-1 gap-3">

@@ -16,7 +16,7 @@
     <div 
       class="flex items-center justify-between p-4 border-b"
       :class="isDarkMode 
-        ? 'bg-neutral-900 border-transparent' 
+        ? 'bg-black border-transparent' 
         : 'bg-gray-50 border-transparent'"
     >
       <div class="flex items-center gap-3">
@@ -72,7 +72,7 @@
           <div 
             class="rounded-lg rounded-tl-none p-3 border"
             :class="isDarkMode 
-              ? 'bg-neutral-900 border-transparent' 
+              ? 'bg-black border-transparent' 
               : 'bg-white border-transparent'"
           >
             <p 

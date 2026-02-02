@@ -2,7 +2,7 @@
   <div 
     class="max-w-3xl w-full rounded-xl shadow-2xl border max-h-[90vh] flex flex-col"
     :class="isDarkMode 
-      ? 'bg-gray-800 border-transparent' 
+      ? 'bg-black border-transparent' 
       : 'bg-white border-transparent'"
   >
     <!-- Header -->

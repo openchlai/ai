@@ -4,7 +4,7 @@
     <div 
       class="flex items-center justify-between mb-6 pb-4 border-b sticky top-0 z-10 -mx-6 px-6 -mt-6 pt-6"
       :class="isDarkMode 
-        ? 'bg-gray-900 border-transparent' 
+        ? 'bg-black border-transparent' 
         : 'bg-white border-transparent'"
     >
       <div>
@@ -229,7 +229,7 @@
               :key="index"
               class="flex items-center justify-between p-3 border rounded-lg"
               :class="isDarkMode 
-                ? 'bg-gray-800 border-transparent' 
+                ? 'bg-black border-transparent' 
                 : 'bg-gray-50 border-transparent'"
             >
               <div class="flex-1">
@@ -273,7 +273,7 @@
             v-else
             class="text-center p-8 border border-dashed rounded-lg"
             :class="isDarkMode 
-              ? 'bg-gray-800 border-transparent text-gray-500' 
+              ? 'bg-black border-transparent text-gray-500' 
               : 'bg-white border-transparent text-gray-500'"
           >
             No clients added yet
@@ -312,7 +312,7 @@
               :key="index"
               class="flex items-center justify-between p-3 border rounded-lg"
               :class="isDarkMode 
-                ? 'bg-gray-800 border-transparent' 
+                ? 'bg-black border-transparent' 
                 : 'bg-gray-50 border-transparent'"
             >
               <div class="flex-1">
@@ -356,7 +356,7 @@
             v-else
             class="text-center p-8 border border-dashed rounded-lg"
             :class="isDarkMode 
-              ? 'bg-gray-800 border-transparent text-gray-500' 
+              ? 'bg-black border-transparent text-gray-500' 
               : 'bg-white border-transparent text-gray-500'"
           >
             No perpetrators added yet
@@ -419,7 +419,7 @@
     <div 
       class="flex justify-end gap-3 mt-6 pt-6 border-t sticky bottom-0 -mx-6 px-6 -mb-6 pb-6"
       :class="isDarkMode 
-        ? 'bg-gray-900 border-transparent' 
+        ? 'bg-black border-transparent' 
         : 'bg-white border-transparent'"
     >
       <button
