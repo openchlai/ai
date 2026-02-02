@@ -79,7 +79,7 @@ class TestCallOllama:
         mock_session.post.return_value = mock_response
         mock_session_class.return_value = mock_session
 
-        result = call_ollama('mistral', 'Test prompt')
+        result = call_ollama( 'Test prompt')
 
         assert result == 'Generated insights'
         mock_session.post.assert_called_once()
@@ -97,7 +97,7 @@ class TestCallOllama:
         mock_session_class.return_value = mock_session
 
         custom_endpoint = "http://custom:11434/api/generate"
-        result = call_ollama('mistral', 'Test', endpoint=custom_endpoint)
+        result = call_ollama( 'Test', endpoint=custom_endpoint)
 
         assert result == 'Result'
         call_args = mock_session.post.call_args
@@ -115,7 +115,7 @@ class TestCallOllama:
         mock_session.post.return_value = mock_response
         mock_session_class.return_value = mock_session
 
-        result = call_ollama('mistral', 'Test')
+        result = call_ollama('Test')
 
         assert result == 'Result with spaces'
 
@@ -128,7 +128,7 @@ class TestCallOllama:
         mock_session.post.side_effect = requests.exceptions.HTTPError("Server error")
         mock_session_class.return_value = mock_session
 
-        result = call_ollama('mistral', 'Test')
+        result = call_ollama( 'Test')
 
         assert result is None
 
@@ -141,7 +141,7 @@ class TestCallOllama:
         mock_session.post.side_effect = requests.exceptions.Timeout("Timeout")
         mock_session_class.return_value = mock_session
 
-        result = call_ollama('mistral', 'Test')
+        result = call_ollama('Test')
 
         assert result is None
 
@@ -154,7 +154,7 @@ class TestCallOllama:
         mock_session.post.side_effect = requests.exceptions.ConnectionError("Connection failed")
         mock_session_class.return_value = mock_session
 
-        result = call_ollama('mistral', 'Test')
+        result = call_ollama('Test')
 
         assert result is None
 
@@ -170,7 +170,7 @@ class TestCallOllama:
         mock_session.post.return_value = mock_response
         mock_session_class.return_value = mock_session
 
-        call_ollama('mistral', 'Test')
+        call_ollama( 'Test')
 
         # Verify session mount was called (retry adapter setup)
         assert mock_session.mount.called
@@ -187,7 +187,7 @@ class TestCallOllama:
         mock_session.post.return_value = mock_response
         mock_session_class.return_value = mock_session
 
-        call_ollama('mistral', 'Test prompt')
+        call_ollama('Test prompt')
 
         call_args = mock_session.post.call_args
         payload = call_args[1]['json']
@@ -205,24 +205,29 @@ class TestGenerateCaseInsights:
         from app.core.insights_service import generate_case_insights
 
         mock_response = json.dumps({
-            "risk_level": "High",
-            "suggested_disposition": "Immediate action",
-            "rationale_summary": "Case requires attention",
-            "confidence_score": 0.85,
+            "case_overview": {
+                "risk_level": "High",
+                "suggested_disposition": "Immediate action",
+                "rationale_summary": "Case requires attention"
+            },
+            "data_quality": {
+                "insight_confidence_score": 0.85
+            },
             "extracted_entities": {
                 "names": ["John Doe"],
                 "locations": ["Nairobi"],
                 "organizations": ["UNICEF"],
                 "dates": ["2024-01-15"]
             },
-            "category_suggestions": {
+            "classification": {
                 "primary_category": "Abuse",
                 "sub_category": "Physical",
                 "intervention": "Referral",
-                "priority": "High",
-                "tags": ["urgent", "child_protection"]
+                "priority": "High"
             },
-            "priority": "High"
+            "case_tags_and_keywords": {
+                "keywords": ["urgent", "child_protection"]
+            }
         })
         mock_call_ollama.return_value = mock_response
 
@@ -281,7 +286,7 @@ class TestGenerateCaseInsights:
 
         result = generate_case_insights("Test transcript", None)
 
-        assert result == {"error": "Ollama unavailable"}
+        assert result == {"error": "ai-service unavailable"}
 
     @patch('app.core.insights_service.call_ollama')
     @patch('app.core.insights_service.sanitize_json_response')
@@ -305,38 +310,46 @@ class TestGenerateCaseInsights:
         from app.core.insights_service import generate_case_insights
 
         mock_response = json.dumps({
-            "risk_level": "Medium",
-            "suggested_disposition": "Monitor",
-            "rationale_summary": "Standard case",
-            "confidence_score": 0.7,
+            "case_overview": {
+                "risk_level": "Medium",
+                "suggested_disposition": "Monitor",
+                "rationale_summary": "Standard case"
+            },
+            "data_quality": {
+                "insight_confidence_score": 0.7
+            },
             "extracted_entities": {
                 "names": [],
                 "locations": [],
                 "organizations": [],
                 "dates": []
             },
-            "category_suggestions": {
-                "primary_category": "N/A",
-                "sub_category": "N/A",
-                "intervention": "N/A",
-                "priority": "N/A",
-                "tags": []
+            "classification": {
+                "primary_category": "Unknown",
+                "sub_category": "Unknown",
+                "intervention": "Unknown",
+                "priority": "Unknown"
             },
-            "priority": "Medium"
+            "case_tags_and_keywords": {
+                "keywords": []
+            }
         })
         mock_call_ollama.return_value = mock_response
 
         result = generate_case_insights("Test transcript", None)
 
-        # Should have N/A values when no classification provided
-        assert result['category_suggestions']['primary_category'] == 'N/A'
+        # Should have Unknown values when no classification provided
+        assert result['category_suggestions']['primary_category'] == 'Unknown'
 
     @patch('app.core.insights_service.call_ollama')
     def test_generate_case_insights_builds_prompt_correctly(self, mock_call_ollama):
         """Test that prompt is built with correct structure"""
         from app.core.insights_service import generate_case_insights
 
-        mock_response = json.dumps({"risk_level": "Low"})
+        mock_response = json.dumps({
+            "case_overview": {"risk_level": "Low"},
+            "classification": {}
+        })
         mock_call_ollama.return_value = mock_response
 
         test_transcript = "Test case narrative"
@@ -350,12 +363,11 @@ class TestGenerateCaseInsights:
 
         generate_case_insights(test_transcript, classification)
 
-        # Verify call_ollama was called with mistral model
+        # Verify call_ollama was called with prompt as first argument
         call_args = mock_call_ollama.call_args
-        assert call_args[0][0] == 'mistral'
+        prompt = call_args[0][0]
 
         # Verify prompt contains transcript and classification
-        prompt = call_args[0][1]
         assert test_transcript in prompt
         assert 'Neglect' in prompt
         assert 'Supervision' in prompt
@@ -365,14 +377,17 @@ class TestGenerateCaseInsights:
         """Test prompt without classification section"""
         from app.core.insights_service import generate_case_insights
 
-        mock_response = json.dumps({"risk_level": "Low"})
+        mock_response = json.dumps({
+            "case_overview": {"risk_level": "Low"},
+            "classification": {}
+        })
         mock_call_ollama.return_value = mock_response
 
         generate_case_insights("Transcript", None)
 
-        # Verify prompt was built
+        # Verify prompt was built - prompt is now the first argument
         call_args = mock_call_ollama.call_args
-        prompt = call_args[0][1]
+        prompt = call_args[0][0]
 
-        # Should not have classification section
-        assert 'PRE-CLASSIFIED CATEGORIES' not in prompt
+        # Should have Unknown defaults when no classification provided
+        assert 'Unknown' in prompt

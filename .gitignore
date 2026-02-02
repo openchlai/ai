@@ -168,3 +168,4 @@ ai_service/tests/test_agent_feedback.py
 ai_service/MagicMock/
 ai_service/transcription_data_set_1/1737217551.180138.txt
 ai_service/mock_astteriisk_110_calls.out
+ai_service/.env.tz
