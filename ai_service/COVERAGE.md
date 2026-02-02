@@ -1,16 +1,16 @@
 # 📊 Code Coverage Report - AI Service
 
-**Branch:** 466/merge
-**Commit:** [\`e77148d\`](https://github.com/openchlai/ai/commit/e77148d592820e5e3a2803661cb49f56fef32eb6)
-**Generated:** 2026-01-27 07:34:18 UTC
+**Branch:** rogendo_test
+**Commit:** [\`1241120\`](https://github.com/openchlai/ai/commit/1241120234221bad4c20365bedcb9b8e2e6a8bb9)
+**Generated:** 2026-02-02 09:01:09 UTC
 **Python Version:** 3.12
-**Workflow:** [\`21388396927\`](https://github.com/openchlai/ai/actions/runs/21388396927)
+**Workflow:** [\`21583446010\`](https://github.com/openchlai/ai/actions/runs/21583446010)
 
 ## 🎯 Coverage Summary
 
-![Coverage](https://img.shields.io/badge/Coverage-82%25-brightgreen)
+![Coverage](https://img.shields.io/badge/Coverage-83%25-brightgreen)
 
-**Coverage:** 82%
+**Coverage:** 83%
 
 ## 📈 Detailed Coverage Report
 
@@ -32,13 +32,13 @@ app/api/qa_route.py                                85      2    98%   90, 161
 app/api/summarizer_routes.py                       80      0   100%
 app/api/translator_routes.py                       77      0   100%
 app/api/whisper_routes.py                         109      1    99%   74
-app/celery_app.py                                  10      0   100%
+app/celery_app.py                                  20      6    70%   12-25
 app/config/__init__.py                              0      0   100%
 app/config/settings.py                            173      0   100%
 app/core/__init__.py                                0      0   100%
 app/core/celery_monitor.py                         61      0   100%
 app/core/enhanced_processing_manager.py            75      0   100%
-app/core/insights_service.py                       56      3    95%   188-190
+app/core/insights_service.py                       70      0   100%
 app/core/metrics.py                                68      0   100%
 app/core/notification_manager.py                  159     11    93%   113-114, 223-225, 258-259, 282-284, 288
 app/core/processing_modes.py                       93      2    98%   149-150
@@ -49,7 +49,7 @@ app/core/text_chunker.py                          156     15    90%   70-72, 77-
 app/db/models.py                                   18      0   100%
 app/db/repositories/feedback_repository.py         77      0   100%
 app/db/session.py                                  22      0   100%
-app/main.py                                       130     26    80%   55-56, 66-68, 79-80, 86, 101-104, 118-119, 176, 243-244, 272-293
+app/main.py                                       135     26    81%   64-65, 75-77, 88-89, 95, 110-113, 127-128, 185, 252-253, 281-302
 app/model_scripts/__init__.py                       7      0   100%
 app/model_scripts/audio_processing.py               0      0   100%
 app/model_scripts/classifier_model.py             302     32    89%   20-28, 31-47, 101-102, 262-275, 505
@@ -60,7 +60,11 @@ app/model_scripts/summarizer_model.py             163      4    98%   213, 240-2
 app/model_scripts/translator_model.py             178     48    73%   53-57, 60-61, 70-71, 73-74, 117-122, 158-160, 164-201, 219-222, 241, 253-256, 293, 307-308
 app/model_scripts/whisper_model.py                254    117    54%   69, 77-78, 128-171, 183-211, 229-234, 248, 267-320, 344-363, 369-371, 409-484
 app/models/__init__.py                              2      0   100%
-app/models/notification_types.py                   62      0   100%
+app/models/notification_types.py                   63      0   100%
+app/security/__init__.py                            2      0   100%
+app/security/pii_log_scanner.py                   359     20    94%   40-41, 49-50, 53-59, 270, 355, 432-446, 536, 991
+app/security/pii_logging_filter.py                132     20    85%   357-415
+app/security/pii_monitor.py                       184      3    98%   23-24, 487
 app/services/enhanced_notification_service.py     328      4    99%   308, 524-525, 849
 app/streaming/__init__.py                           3      0   100%
 app/streaming/audio_buffer.py                      36      0   100%
@@ -69,7 +73,7 @@ app/streaming/progressive_processor.py            247     10    96%   16-18, 79,
 app/streaming/tcp_server.py                       111      4    96%   131-132, 136-137
 app/streaming/websocket_server.py                  57      0   100%
 app/tasks/__init__.py                               0      0   100%
-app/tasks/audio_tasks.py                          510    450    12%   28-167, 197-198, 209-418, 450-473, 513-1036, 1060-1088, 1104, 1110-1144, 1198-1306, 1310-1312
+app/tasks/audio_tasks.py                          510    450    12%   28-167, 197-198, 209-418, 450-473, 513-1035, 1059-1087, 1103, 1109-1143, 1197-1305, 1309-1311
 app/tasks/health_tasks.py                          11      0   100%
 app/tasks/model_tasks.py                          300     20    93%   34-59, 67, 559
 app/utils/__init__.py                               2      0   100%
@@ -78,9 +82,9 @@ app/utils/mode_detector.py                         16      0   100%
 app/utils/scp_audio_downloader.py                 232     22    91%   45, 51, 124-126, 138-140, 239-241, 353, 360-361, 385, 438, 546-555
 app/utils/text_utils.py                           268     20    93%   90-91, 158-169, 186, 241-242, 302-316, 357-358, 560
 -----------------------------------------------------------------------------
-TOTAL                                            7169   1300    82%
+TOTAL                                            7876   1346    83%
 ```
 
 ---
 *Report generated automatically by GitHub Actions*
-*Access this report at: [COVERAGE.md](https://github.com/openchlai/ai/blob/466/merge/ai_service/COVERAGE.md)*
+*Access this report at: [COVERAGE.md](https://github.com/openchlai/ai/blob/rogendo_test/ai_service/COVERAGE.md)*

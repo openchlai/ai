@@ -51,7 +51,8 @@ RUN touch /app/app/__init__.py \
     && touch /app/app/utils/__init__.py \
     && touch /app/app/services/__init__.py \
     && touch /app/app/streaming/__init__.py \
-    && touch /app/app/db/__init__.py
+    && touch /app/app/db/__init__.py \
+    && touch /app/app/security/__init__.py
 
 # Set ownership
 RUN chown -R appuser:appuser /app
