@@ -10,7 +10,7 @@ export function useWebSocketConnection(wsHost) {
 
   const handleMessage = (payload, fetchCounsellorName, fetchCounsellorStats) => {
     lastUpdate.value = new Date().toLocaleString()
-    
+
     let obj = payload
     if (typeof payload === 'string') {
       try {
@@ -71,10 +71,13 @@ export function useWebSocketConnection(wsHost) {
             _raw: arr
           }
         }
+        if (key === Object.keys(obj.channels)[0]) {
+          console.log('[WebSocket] Sample raw channel structure:', arr)
+        }
         return { _uid: key, ...arr }
       })
     }
-    
+
     channels.value = chArr
 
     // Trigger name and stats fetching for new counsellor extensions
@@ -82,10 +85,10 @@ export function useWebSocketConnection(wsHost) {
       const context = (ch.CHAN_CONTEXT || '').toLowerCase()
       return context === 'agentlogin'
     })
-    
+
     counsellorChannels.forEach((ch) => {
       const extension = ch.CHAN_EXTEN
-      
+
       if (extension && extension !== '--') {
         if (fetchCounsellorName) {
           fetchCounsellorName(extension)
@@ -111,7 +114,7 @@ export function useWebSocketConnection(wsHost) {
 
       ws.value.onmessage = (ev) => {
         try {
-          console.log('WebSocket message received', ev.data)
+          // console.log('WebSocket message received', ev.data)
           handleMessage(ev.data, fetchCounsellorName, fetchCounsellorStats)
         } catch (err) {
           // Handle silently
@@ -149,9 +152,9 @@ export function useWebSocketConnection(wsHost) {
       reconnectTimer.value = null
     }
     if (ws.value) {
-      try { 
-        ws.value.close() 
-      } catch (e) { 
+      try {
+        ws.value.close()
+      } catch (e) {
         // ignore cleanup errors
       }
       ws.value = null

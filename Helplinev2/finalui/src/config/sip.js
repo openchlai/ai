@@ -8,7 +8,7 @@
 // Get environment variables with fallbacks
 const SIP_HOST = import.meta.env.VITE_SIP_HOST || 'demo-openchs.bitz-itc.com';
 const SIP_WS_URL = import.meta.env.VITE_SIP_WS_URL || `wss://${SIP_HOST}/ws/`;
-const SIP_PASSWORD = import.meta.env.VITE_SIP_PASSWORD || '23kdefrtgos09812100';
+const SIP_PASSWORD = import.meta.env.VITE_VA_SIP_PASS_PREFIX || import.meta.env.VITE_SIP_PASSWORD || import.meta.env.VITE_ASTERISK_PASSWORD || '23kdefrtgos09812100';
 const SIP_CALL_TIMEOUT = parseInt(import.meta.env.VITE_SIP_CALL_TIMEOUT || '30000', 10);
 
 // AMI WebSocket configuration
@@ -68,18 +68,18 @@ export function getIceServers() {
  * @param {Object} delegates - Callback delegates for SIP events
  * @returns {Object} SIP UserAgent configuration object
  */
-export function getSipConfig(extension, delegates = {}) {
+export function getSipConfig(extension, delegates = {}, password = null) {
   const iceServers = getIceServers();
 
   return {
     uri: null, // Set by caller using SIP.UserAgent.makeURI
     authorizationUsername: extension,
-    authorizationPassword: SIP_PASSWORD,
+    authorizationPassword: password || SIP_PASSWORD || extension,
     displayName: extension,
     userAgentString: 'OPENCHS UA (SIP.js)',
     transportOptions: {
       server: SIP_WS_URL,
-      traceSip: import.meta.env.DEV, // Only trace in development
+      traceSip: false, // Silence SIP capture
     },
     sessionDescriptionHandlerFactoryOptions: {
       peerConnectionConfiguration: {
@@ -89,9 +89,10 @@ export function getSipConfig(extension, delegates = {}) {
         rtcpMuxPolicy: 'require'
       }
     },
-    log: {
-      level: import.meta.env.DEV ? 'debug' : 'warn'
-    },
+    // Aggressive silence of internal SIP.js library logs
+    logBuiltinEnabled: false,
+    logConfiguration: false,
+    logLevel: 'error',
     delegate: delegates
   };
 }
@@ -120,6 +121,7 @@ export const config = {
   SIP_HOST,
   SIP_WS_URL,
   AMI_WS_URL,
+  SIP_PASSWORD, // Export for debugging
   SIP_CALL_TIMEOUT,
 
   // Helper to build SIP URI

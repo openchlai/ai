@@ -16,87 +16,99 @@ import CaseCreation from '@/pages/CaseCreation.vue'
 import QaCreation from '@/pages/QaCreation.vue'
 import Activities from '../pages/Activities.vue'
 import FAQs from '@/pages/FAQs.vue'
-// import Categories from '../pages/Categories.vue'
+import AiPredictions from '@/pages/AiPredictions.vue'
 
 const routes = [
   {
     path: '/login',
     name: 'Login',
     component: Login,
-    meta: { requiresAuth: false }
+    meta: { auth: false }
   },
 
   {
     path: '/',
     name: 'Dashboard',
     component: Dashboard,
-    meta: { requiresAuth: true, permission: 'dashboard' }
+    meta: { auth: true, permission: 'dashboard' }
   },
   {
     path: '/reports',
     name: 'Reports',
     component: Reports,
-    meta: { requiresAuth: true, permission: 'reports' }
+    meta: { auth: true, permission: 'reports' }
   },
   {
     path: '/calls',
     name: 'Calls',
     component: Calls,
-    meta: { requiresAuth: true, permission: 'calls' }
+    meta: { auth: true, permission: 'calls' }
   },
   {
     path: '/cases',
     name: 'Cases',
     component: Cases,
-    meta: { requiresAuth: true, permission: 'cases' }
+    meta: { auth: true, permission: 'cases' }
   },
   {
     path: '/messages',
     name: 'Messages',
     component: Messages,
-    meta: { requiresAuth: true, permission: 'messages' }
+    meta: { auth: true, permission: 'messages' }
+  },
+  {
+    path: '/ai-predictions',
+    name: 'AiPredictions',
+    component: AiPredictions,
+    meta: { auth: true, permission: 'messages' }
   },
   {
     path: '/wallboard',
     name: 'Wallboard',
     component: Wallboard,
-    meta: { requiresAuth: true, permission: 'wallboard' }
+    meta: { auth: true, permission: 'wallboard' }
   },
   {
     path: '/qa',
     name: 'Qa',
     component: Qa,
-    meta: { requiresAuth: true, permission: 'qa' }
+    meta: { auth: true, permission: 'qa' }
   },
   {
     path: '/users',
     name: 'Users',
     component: Users,
-    meta: { requiresAuth: true, permission: 'users' }
+    meta: { auth: true, permission: 'users' }
   },
   {
     path: '/case-creation',
     name: 'CaseCreation',
     component: CaseCreation,
-    meta: { requiresAuth: true, permission: 'cases' }
+    meta: { auth: true, permission: 'cases' }
+  },
+  {
+    path: '/wf/case/:id/form',
+    name: 'CaseSingleForm',
+    component: () => import('@/components/case-create/CaseSingleFormView.vue'),
+    meta: { auth: true, permission: 'cases' }
   },
   {
     path: '/qa-creation',
     name: 'QaCreation',
     component: QaCreation,
-    meta: { requiresAuth: true, permission: 'qa' }
+    meta: { auth: true, permission: 'qa' }
   },
   {
     path: '/activities',
     name: 'Activities',
     component: Activities,
-    meta: { requiresAuth: true, permission: 'activities' }
+    meta: { auth: true, permission: 'activities' }
   },
   {
     path: '/faqs',
     name: 'FAQs',
     component: FAQs,
-    meta: { requiresAuth: true, permission: 'faqs' }
+    meta: { auth: true, permission: 'faqs' }
   },
   // { 
   //   path: '/categories', 
@@ -123,17 +135,9 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
 
-  console.log('🔄 Navigation Guard:', {
-    to: to.path,
-    isAuthenticated: authStore.isAuthenticated,
-    hasSession: !!authStore.sessionId,
-    hasRole: !!authStore.userRole
-  })
-
   // Allow access to routes that don't require auth
-  if (to.meta.requiresAuth === false) {
+  if (to.meta.auth === false) {
     if (to.name === 'Login' && authStore.isAuthenticated) {
-      console.log('✅ Already authenticated, redirecting to dashboard')
       next('/')
     } else {
       next()
@@ -141,14 +145,9 @@ router.beforeEach((to, from, next) => {
     return
   }
 
-  // Check authentication - ALL fields required
-  if (!authStore.isAuthenticated) {
-    console.warn('🔒 Not properly authenticated, redirecting to login')
-    console.warn('Session ID:', authStore.sessionId)
-    console.warn('User Role:', authStore.userRole)
-
-    // Clear any partial data
-    authStore.clearAuthData()
+  // Check authentication via sessionId existence
+  if (!authStore.sessionId) {
+    console.warn('🔒 No session ID found, redirecting to login')
     next('/login')
     return
   }
@@ -156,16 +155,10 @@ router.beforeEach((to, from, next) => {
   // Check permissions
   if (to.meta.permission) {
     if (authStore.hasPermission(to.meta.permission)) {
-      console.log('✅ Permission granted for', to.meta.permission)
       next()
     } else {
-      console.warn(`⚠️ Access denied to ${to.path} for role ${authStore.roleDisplayName}`)
-
-      if (to.path === '/') {
-        next(false)
-      } else {
-        next('/')
-      }
+      console.warn(`⚠️ Access denied to ${to.path} for role ${authStore.userRole}`)
+      next('/')
     }
     return
   }

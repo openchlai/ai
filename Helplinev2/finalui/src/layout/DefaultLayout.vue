@@ -19,6 +19,9 @@
         <RouterView />
       </main>
     </div>
+
+    <!-- Global Active Call Toolbar -->
+    <ActiveCallToolbar />
   </div>
 </template>
 
@@ -28,6 +31,7 @@ import { useRoute } from 'vue-router'
 import { useTheme } from '@/composables/useTheme'
 import Sidebar from '@/components/layout/Sidebar.vue'
 import Navbar from '@/components/layout/Navbar.vue'
+import ActiveCallToolbar from '@/components/softphone/ActiveCallToolbar.vue'
 
 const route = useRoute()
 const { isDarkMode, toggleTheme } = useTheme()

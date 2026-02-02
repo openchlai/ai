@@ -38,14 +38,14 @@ export const useCategoryStore = defineStore('categories', {
         })
 
         console.log('listCategories', data)
-        this.categories        = data.categories || []
-        this.categories_k      = data.categories_k || {}
-        this.subcategories     = data.subcategories || []
-        this.subcategories_k   = data.subcategories_k || {}
+        this.categories = data.categories || []
+        this.categories_k = data.categories_k || {}
+        this.subcategories = data.subcategories || []
+        this.subcategories_k = data.subcategories_k || {}
         this.subcategories_ctx = data.subcategories_ctx || []
         this.subcategories_count =
           Array.isArray(this.subcategories) ? this.subcategories.length :
-          (data.subcategories_nb?.[0]?.[1] ?? 0)
+            (data.subcategories_nb?.[0]?.[1] ?? 0)
 
         return data
       } catch (err) {
@@ -60,24 +60,69 @@ export const useCategoryStore = defineStore('categories', {
       this.loading = true
       this.error = null
       try {
+        // If searching, enable recursive mode
+        if (params.q) {
+          params.r = 1
+        }
+
         const { data } = await axiosInstance.get(`api/categories/${id}`, {
           params,
           headers: this.getAuthHeaders()
         })
 
         console.log('viewCategory', data)
-        this.categories        = data.categories || []
-        this.categories_k      = data.categories_k || {}
-        this.subcategories     = data.subcategories || []
-        this.subcategories_k   = data.subcategories_k || {}
+        this.categories = data.categories || []
+        this.categories_k = data.categories_k || {}
+        this.subcategories = data.subcategories || []
+        this.subcategories_k = data.subcategories_k || {}
         this.subcategories_ctx = data.subcategories_ctx || []
         this.subcategories_count =
           Array.isArray(this.subcategories) ? this.subcategories.length :
-          (data.subcategories_nb?.[0]?.[1] ?? 0)
+            (data.subcategories_nb?.[0]?.[1] ?? 0)
 
         return data
       } catch (err) {
         this.error = err?.message || 'Failed to view category'
+        throw err
+      } finally {
+        this.loading = false
+      }
+    },
+
+    /**
+     * Search subcategories by fullname with server-side filtering
+     * Uses the subcategories endpoint with fullname__ parameter for partial matching
+     * @param {string|number} rootId - The root category ID to search within
+     * @param {string} query - The search query to match against fullname
+     * @param {number} limit - Maximum number of results (default: 10)
+     */
+    async searchSubcategories(rootId, query, limit = 10) {
+      this.loading = true
+      this.error = null
+      try {
+        const params = {
+          fullname__: query,
+          root_id_: rootId,
+          sort: 'fullname',
+          _c: limit
+        }
+
+        const { data } = await axiosInstance.get('api/subcategories/', {
+          params,
+          headers: this.getAuthHeaders()
+        })
+
+        console.log('searchSubcategories', data)
+        this.subcategories = data.subcategories || []
+        this.subcategories_k = data.subcategories_k || {}
+        this.subcategories_ctx = data.subcategories_ctx || []
+        this.subcategories_count =
+          Array.isArray(this.subcategories) ? this.subcategories.length :
+            (data.subcategories_nb?.[0]?.[1] ?? 0)
+
+        return data
+      } catch (err) {
+        this.error = err?.message || 'Failed to search subcategories'
         throw err
       } finally {
         this.loading = false

@@ -54,6 +54,18 @@
         ? 'border-transparent bg-black' 
         : 'border-transparent bg-white'"
     >
+      <!-- Search Input -->
+      <div v-if="searchable" class="p-2 border-b sticky top-0 bg-inherit z-10" :class="isDarkMode ? 'border-neutral-800' : 'border-gray-100'">
+        <input 
+          v-model="searchQuery"
+          type="text" 
+          placeholder="Search..." 
+          class="w-full px-3 py-1.5 text-sm rounded border outline-none focus:ring-2 focus:ring-amber-500/50"
+          :class="isDarkMode ? 'bg-neutral-800 border-neutral-700 text-white placeholder-gray-500' : 'bg-gray-50 border-gray-200 text-gray-900'"
+          @click.stop
+        />
+      </div>
+
       <!-- Breadcrumb navigation -->
       <div 
         v-if="breadcrumb.length" 
@@ -182,7 +194,8 @@ const props = defineProps({
   id: String,
   placeholder: String,
   disabled: Boolean,
-  categoryId: [String, Number]
+  categoryId: [String, Number],
+  searchable: Boolean
 })
 
 const emit = defineEmits(['update:modelValue', 'change'])
@@ -193,6 +206,7 @@ const loading = ref(false)
 const navigationPath = ref([])
 const levelOptions = ref([])
 const selectedOption = ref(null)
+const searchQuery = ref('')
 
 // Toggle dropdown
 function toggleDropdown() {
@@ -201,10 +215,14 @@ function toggleDropdown() {
     loadLevel(props.categoryId)
   }
   isOpen.value = !isOpen.value
+  if (!isOpen.value) {
+     searchQuery.value = ''
+  }
 }
 
 function closeDropdown() {
   isOpen.value = false
+  searchQuery.value = ''
 }
 
 // Load options for a specific category level
@@ -213,18 +231,7 @@ async function loadLevel(categoryId, isRoot = true) {
   try {
     loading.value = true
     await store.viewCategory(categoryId)
-
-    const k = store.subcategories_k
-    const idIdx = Number(k?.id?.[0] ?? 0)
-    const nameIdx = Number(k?.name?.[0] ?? 5)
-
-    const parsedOptions = (store.subcategories || [])
-      .map(row => ({
-        id: row[idIdx],
-        name: row[nameIdx] || `Option ${row[idIdx]}`,
-        hasChildren: null
-      }))
-      .filter(Boolean)
+    const parsedOptions = parseRows(store.subcategories, store.subcategories_k)
 
     if (isRoot) {
       levelOptions.value = parsedOptions
@@ -238,8 +245,88 @@ async function loadLevel(categoryId, isRoot = true) {
   }
 }
 
+// Parse rows for normal navigation mode
+function parseRows(rows = [], k = {}) {
+    const idIdx = Number(k.id?.[0] ?? 0)
+    const nameIdx = Number(k.name?.[0] ?? 5)
+
+    if (!rows || !rows.length) return []
+
+    return rows
+      .map(row => ({
+        id: row[idIdx],
+        name: row[nameIdx] || `Option ${row[idIdx]}`,
+        hasChildren: null
+      }))
+      .filter(Boolean)
+}
+
+// Parse search results - display hierarchical path from fullname field
+function parseSearchResults(rows = [], k = {}) {
+    const idIdx = Number(k.id?.[0] ?? 0)
+    const nameIdx = Number(k.name?.[0] ?? 5)
+    const fullnameIdx = Number(k.fullname?.[0] ?? 6)
+
+    if (!rows || !rows.length) return []
+
+    return rows.map(row => {
+        const fullname = row[fullnameIdx] || ''
+        // Convert "^CENTRAL^BUIKWE^KAMULI" to "CENTRAL > BUIKWE > KAMULI"
+        const displayPath = fullname
+            .split('^')
+            .filter(Boolean)
+            .join(' > ')
+
+        return {
+            id: row[idIdx],
+            name: displayPath || row[nameIdx] || `Option ${row[idIdx]}`,
+            hasChildren: false // Search results are treated as leaf nodes for direct selection
+        }
+    })
+}
+
+let searchTimeout
+watch(searchQuery, (newVal) => {
+    if (!props.searchable) return
+
+    if (!newVal) {
+        // Restore previous level when search cleared
+        if (navigationPath.value.length > 0) {
+            const last = navigationPath.value[navigationPath.value.length - 1]
+            loadLevel(last.id, false).then(opts => levelOptions.value = opts)
+        } else if (props.categoryId) {
+            loadLevel(props.categoryId, true)
+        }
+    } else {
+        // Server-side search with debounce
+        clearTimeout(searchTimeout)
+        searchTimeout = setTimeout(async () => {
+            loading.value = true
+            try {
+                await store.searchSubcategories(props.categoryId, newVal, 10)
+                levelOptions.value = parseSearchResults(
+                    store.subcategories,
+                    store.subcategories_k
+                )
+            } catch (e) {
+                console.error('Search failed:', e)
+                levelOptions.value = []
+            } finally {
+                loading.value = false
+            }
+        }, 300)
+    }
+})
+
 // Handle option click
 async function handleOptionClick(option) {
+  // If in search mode, directly select the option (search results show full paths)
+  if (searchQuery.value) {
+    selectOption(option)
+    return
+  }
+
+  // Normal navigation mode - check for children
   if (option.hasChildren === null) {
     try {
       await store.viewCategory(option.id)
@@ -272,7 +359,7 @@ function selectOption(option) {
   emit('update:modelValue', option.id)
   // IMPORTANT: Emit change with both ID and text
   emit('change', option.id, option.name)
-  isOpen.value = false
+  closeDropdown()
 }
 
 // Go back a level
@@ -280,6 +367,11 @@ function goBack() {
   if (navigationPath.value.length === 0) return
   const previousLevel = navigationPath.value.pop()
   levelOptions.value = previousLevel.options
+  // Should we restore search query?
+  // If we backed up to search results, maybe?
+  // But levelOptions is restored. SearchQuery text might be empty if we cleared it on dive.
+  // Ideally clear search query on Back to ensure consistent state/UI match.
+  searchQuery.value = ''
 }
 
 // Clear selection
@@ -289,16 +381,19 @@ function clearSelection() {
   if (props.categoryId) loadLevel(props.categoryId)
   emit('update:modelValue', '')
   emit('change', '', '')
-  isOpen.value = false
+  closeDropdown()
 }
 
 // Watch modelValue and update display name
 watch(() => props.modelValue, async (newValue) => {
   if (newValue && newValue !== selectedOption.value?.id) {
+    // If not in current options, we might need to fetch info about this ID?
+    // Current logic tries to find in levelOptions.
     const matchingOption = levelOptions.value.find(opt => opt.id == newValue)
     if (matchingOption) {
       selectedOption.value = matchingOption
     } else {
+      // Fallback display if not found in current list
       selectedOption.value = { id: newValue, name: `Option ${newValue}`, hasChildren: false }
     }
   } else if (!newValue) {
@@ -312,12 +407,24 @@ watch(() => props.categoryId, (newCategoryId) => {
     levelOptions.value = []
     navigationPath.value = []
     selectedOption.value = null
+    searchQuery.value = ''
     loadLevel(newCategoryId)
   }
 }, { immediate: true })
 
 // Computed
-const currentOptions = computed(() => levelOptions.value)
+const currentOptions = computed(() => {
+   // Since search replaces levelOptions via backend call, 
+   // we don't filter client side anymore if we rely on backend.
+   // BUT, to be safe (if backend ignores q), we can still filter.
+   // However, if backend returns partial matches, client filter is fine.
+   // If backend returns hierarchy, client filter might break it.
+   // Let's assume levelOptions contains what we want to show.
+   // Only filter if we want local filtering capability as well?
+   // The requirements say "search through hierarchy", so local filter of visible level is wrong.
+   // We trust levelOptions is updated by performSearch.
+   return levelOptions.value
+})
 const breadcrumb = computed(() => navigationPath.value.map(level => level.name))
 const displayValue = computed(() => selectedOption.value?.name || '')
 

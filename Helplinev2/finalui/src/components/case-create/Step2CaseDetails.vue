@@ -40,6 +40,7 @@
             placeholder="Select case category"
             :category-id="362557"
             @change="handleCategoryChange"
+            :searchable="true"
           />
         </div>
 
@@ -197,6 +198,18 @@
           </div>
         </div>
 
+        <!-- Incident Location (Required) -->
+        <div class="mb-5">
+          <BaseSelect
+            id="incident-location"
+            label="Incident Location *"
+            v-model="localForm.incidentLocation"
+            placeholder="Select incident location (District)"
+            :category-id="88"
+            @change="handleIncidentLocationChange"
+          />
+        </div>
+
         <!-- Justice System State and General Assessment -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
           <div>
@@ -344,6 +357,7 @@ const localForm = reactive({
   clientPassportNumber: props.formData.clientPassportNumber || '',
   justiceSystemState: props.formData.justiceSystemState || '',
   generalAssessment: props.formData.generalAssessment || '',
+  incidentLocation: props.formData.incidentLocation || '',
   // Text fields
   isGBVRelatedText: props.formData.isGBVRelatedText || '',
   categoriesText: props.formData.categoriesText || '',
@@ -352,7 +366,8 @@ const localForm = reactive({
   departmentText: props.formData.departmentText || '',
   escalatedToText: props.formData.escalatedToText || '',
   justiceSystemStateText: props.formData.justiceSystemStateText || '',
-  generalAssessmentText: props.formData.generalAssessmentText || ''
+  generalAssessmentText: props.formData.generalAssessmentText || '',
+  incidentLocationText: props.formData.incidentLocationText || ''
 })
 
 // Load users on mount
@@ -483,16 +498,24 @@ const getCategoryText = async (categoryId, parentCategoryId) => {
 }
 
 // Change handlers to capture text
-const handleGBVChange = async (value) => {
+const handleGBVChange = (value) => {
   localForm.isGBVRelated = value
-  localForm.isGBVRelatedText = await getCategoryText(value, 118)
   updateForm()
+  
+  getCategoryText(value, 118).then(text => {
+    localForm.isGBVRelatedText = text
+    updateForm()
+  })
 }
 
-const handleCategoryChange = async (value) => {
+const handleCategoryChange = (value) => {
   localForm.categories = value
-  localForm.categoriesText = await getCategoryText(value, 362557)
   updateForm()
+
+  getCategoryText(value, 362557).then(text => {
+    localForm.categoriesText = text
+    updateForm()
+  })
 }
 
 const handlePriorityChange = (event) => {
@@ -521,16 +544,34 @@ const handleDepartmentChange = () => {
   updateForm()
 }
 
-const handleJusticeSystemChange = async (value) => {
+const handleJusticeSystemChange = (value) => {
   localForm.justiceSystemState = value
-  localForm.justiceSystemStateText = await getCategoryText(value, 236687)
   updateForm()
+
+  getCategoryText(value, 236687).then(text => {
+    localForm.justiceSystemStateText = text
+    updateForm()
+  })
 }
 
-const handleGeneralAssessmentChange = async (value) => {
+const handleGeneralAssessmentChange = (value) => {
   localForm.generalAssessment = value
-  localForm.generalAssessmentText = await getCategoryText(value, 236694)
   updateForm()
+
+  getCategoryText(value, 236694).then(text => {
+    localForm.generalAssessmentText = text
+    updateForm()
+  })
+}
+
+const handleIncidentLocationChange = (value) => {
+  localForm.incidentLocation = value
+  updateForm()
+
+  getCategoryText(value, 88).then(text => {
+    localForm.incidentLocationText = text
+    updateForm()
+  })
 }
 
 const handleEscalationChange = (event) => {

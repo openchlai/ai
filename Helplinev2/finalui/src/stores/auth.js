@@ -42,6 +42,8 @@ const ROLE_PERMISSIONS = {
   [ROLES.ADMINISTRATOR]: ['dashboard', 'cases', 'calls', 'messages', 'wallboard', 'activities', 'qa', 'users', 'reports', 'categories', 'faqs']
 }
 
+const DEFAULT_PERMISSIONS = ['dashboard', 'cases', 'calls', 'faqs']
+
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     sessionId: null,
@@ -69,13 +71,24 @@ export const useAuthStore = defineStore('auth', {
       return ROLE_DISPLAY_NAMES[state.userRole] || 'User'
     },
 
+    roleTitle: (state) => {
+      if (!state.userRole) return 'User'
+      return ROLE_DISPLAY_NAMES[state.userRole] || 'User'
+    },
+
     isCounsellor: (state) => state.userRole === 1 || state.userRole === '1',
-    isSupervisor: (state) => state.userRole === 2 || state.userRole === '2',
+    isSupervisor: (state) => [2, 3, 99].includes(state.userRole) || [2, 3, 99].includes(parseInt(state.userRole)),
     isCaseManager: (state) => state.userRole === 3 || state.userRole === '3',
     isCaseWorker: (state) => state.userRole === 4 || state.userRole === '4',
     isPartner: (state) => state.userRole === 5 || state.userRole === '5',
     isMediaAccount: (state) => state.userRole === 6 || state.userRole === '6',
     isAdministrator: (state) => state.userRole === 99 || state.userRole === '99',
+
+    // Permission check for UI elements
+    canExport: (state) => [2, 3, 99].includes(state.userRole) || [2, 3, 99].includes(parseInt(state.userRole)),
+    canDelete: (state) => [99].includes(state.userRole) || [99].includes(parseInt(state.userRole)),
+    canManageUsers: (state) => [3, 99].includes(state.userRole) || [3, 99].includes(parseInt(state.userRole)),
+    isAgent: (state) => [1, 4].includes(state.userRole) || [1, 4].includes(parseInt(state.userRole)),
 
     isMainRole: (state) => {
       const mainRoles = [1, 2, 3, 4, 99, '1', '2', '3', '4', '99']
@@ -91,7 +104,7 @@ export const useAuthStore = defineStore('auth', {
 
     permissions: (state) => {
       const role = ROLE_ID_MAP[state.userRole]
-      return role ? ROLE_PERMISSIONS[role] || [] : []
+      return role ? ROLE_PERMISSIONS[role] || DEFAULT_PERMISSIONS : DEFAULT_PERMISSIONS
     }
   },
 
@@ -110,8 +123,7 @@ export const useAuthStore = defineStore('auth', {
         const credentials = btoa(`${username}:${password}`)
 
         // Use POST request with Basic Auth (matching control UI)
-        // Send empty body (not null) to avoid "Invalid Request" error
-        const response = await axiosInstance.post('/api/', '', {
+        const response = await axiosInstance.post('api/', '', {
           headers: {
             'Authorization': `Basic ${credentials}`,
             'Content-Type': 'text/plain',
@@ -131,29 +143,45 @@ export const useAuthStore = defineStore('auth', {
         this.userId = sessionData[1]
         this.username = sessionData[2]
         this.userRole = sessionData[3]
-        this.profile = response.data.auth?.[0] || null
+        // Create profile object from auth array/object
+        const rawAuth = response.data.auth
+
+        // Handle array-based auth response if applicable
+        if (Array.isArray(rawAuth) && rawAuth.length > 0) {
+          const authRow = rawAuth[0]
+          // Create a mapped profile if keys are known, otherwise store raw
+          // Assuming keys might be in response.data.auth_k (keys)
+          const keys = response.data.auth_k || {}
+
+          // Map keys to values
+          if (keys) {
+            const mappedProfile = {}
+            Object.keys(keys).forEach(key => {
+              const idx = keys[key][0] // Indicies are usually arrays like [0]
+              mappedProfile[key] = authRow[idx]
+            })
+            this.profile = mappedProfile
+          } else {
+            this.profile = authRow
+          }
+        } else {
+          this.profile = rawAuth?.[0] || null
+        }
 
         // VALIDATE: All required fields must exist
         if (!this.sessionId || !this.userId || !this.username || !this.userRole) {
           console.error('❌ Incomplete authentication data')
-          console.error('SessionId:', this.sessionId)
-          console.error('UserId:', this.userId)
-          console.error('Username:', this.username)
-          console.error('UserRole:', this.userRole)
           throw new Error('Incomplete authentication data from server')
         }
-
-        console.log('🎫 Session ID:', this.sessionId)
-        console.log('👤 User ID:', this.userId)
-        console.log('📛 Username:', this.username)
-        console.log('🔑 User Role:', this.userRole)
-        console.log('👔 Role Display:', this.roleDisplayName)
 
         // Store ALL data in localStorage
         localStorage.setItem('session-id', this.sessionId)
         localStorage.setItem('user-id', this.userId)
         localStorage.setItem('username', this.username)
         localStorage.setItem('user-role', this.userRole)
+        if (this.profile) {
+          localStorage.setItem('user-profile', JSON.stringify(this.profile))
+        }
 
         axiosInstance.defaults.headers.common['Session-Id'] = this.sessionId
 
@@ -162,27 +190,8 @@ export const useAuthStore = defineStore('auth', {
 
       } catch (err) {
         console.error('❌ Login failed:', err)
-        console.error('❌ Error response:', err.response)
-
-        // Clear any partial data
         this.clearAuthData()
-
-        if (err.response) {
-          const errorMsg = err.response.data?.errors?.[0]?.[1] ||
-            err.response.data?.message ||
-            err.response.data?.error ||
-            'Invalid username or password'
-
-          this.error = errorMsg
-          console.error('❌ Server error:', errorMsg)
-        } else if (err.request) {
-          this.error = 'Unable to connect to server. Please try again.'
-          console.error('❌ No response received')
-        } else {
-          this.error = err.message || 'Login failed. Please try again.'
-          console.error('❌ Error:', err.message)
-        }
-
+        this.error = err.response?.data?.message || 'Invalid username or password'
         return false
       } finally {
         this.loading = false
@@ -206,44 +215,43 @@ export const useAuthStore = defineStore('auth', {
       localStorage.removeItem('user-id')
       localStorage.removeItem('username')
       localStorage.removeItem('user-role')
+      localStorage.removeItem('user-profile')
+
+      // Clear Telephony state
+      localStorage.removeItem('sipEnabled')
+      localStorage.removeItem('sipConnected')
+      localStorage.removeItem('queueStatus')
 
       delete axiosInstance.defaults.headers.common['Session-Id']
     },
 
-    // Initialize auth state - STRICT validation
+    // Initialize auth state
     initializeAuth() {
       const sessionId = localStorage.getItem('session-id')
       const userId = localStorage.getItem('user-id')
       const username = localStorage.getItem('username')
       const userRole = localStorage.getItem('user-role')
+      const userProfile = localStorage.getItem('user-profile')
 
-      console.log('🔄 Initializing auth from localStorage...')
-      console.log('Session ID:', sessionId)
-      console.log('User ID:', userId)
-      console.log('Username:', username)
-      console.log('User Role:', userRole)
-
-      // CRITICAL: ALL fields must exist, or authentication is invalid
       if (!sessionId || !userId || !username || !userRole) {
-        console.warn('⚠️ Incomplete auth data in localStorage - clearing all data')
         this.clearAuthData()
         return
       }
 
-      // Restore state
       this.sessionId = sessionId
       this.userId = userId
       this.username = username
-      this.userRole = parseInt(userRole) // Convert back to number
+      this.userRole = parseInt(userRole)
+
+      if (userProfile) {
+        try {
+          this.profile = JSON.parse(userProfile)
+        } catch (e) {
+          console.error('Failed to parse user profile from storage', e)
+        }
+      }
 
       axiosInstance.defaults.headers.common['Session-Id'] = sessionId
-
-      console.log('✅ Auth initialized successfully')
-      console.log('👤 User ID:', this.userId)
-      console.log('📛 Username:', this.username)
-      console.log('🔑 User Role:', this.userRole)
-      console.log('👔 Role Display:', this.roleDisplayName)
-      console.log('🛡️ Permissions:', this.permissions)
-    },
-  },
+    }
+  }
 })
