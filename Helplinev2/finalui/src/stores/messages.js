@@ -43,11 +43,12 @@ export const useMessagesStore = defineStore('messages', {
     normalizedMessages: (state) => {
       const msgs = normalizeMessages(state.pmessages, state.pmessages_k)
       return msgs.filter(m => {
-        // Filter out 'gateway' platform/source
-        if (m.platform === 'gateway' || m.src === 'gateway') return false
+        // Filter out 'gateway' platform/source if it's not an AI insight (aii)
+        // Some systems use 'gateway' for both system logs and AI records.
+        if ((m.platform === 'gateway' || m.src === 'gateway') && m.platform !== 'aii') return false
 
         // Explicitly check index 9 of raw array if available (User request)
-        if (m.raw && Array.isArray(m.raw) && m.raw[9] === 'gateway') return false
+        if (m.raw && Array.isArray(m.raw) && m.raw[9] === 'gateway' && m.raw[1] !== 'aii') return false
 
         return true
       })

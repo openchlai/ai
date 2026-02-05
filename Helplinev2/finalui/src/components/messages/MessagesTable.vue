@@ -10,25 +10,33 @@
             : 'bg-gray-50 border-transparent'">
             <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider whitespace-nowrap"
               :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'">
-              Contact
+              Date
             </th>
             <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider whitespace-nowrap"
               :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'">
-              Platform
+              Direction
             </th>
             <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider whitespace-nowrap"
               :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'">
-              Message
+              Phone
             </th>
             <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider whitespace-nowrap"
               :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'">
-              Time
+              Extension
             </th>
             <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider whitespace-nowrap"
               :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'">
-              Status
+              Source
             </th>
-            <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider whitespace-nowrap"
+            <th class="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider whitespace-nowrap"
+              :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'">
+              Messages
+            </th>
+            <th class="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider whitespace-nowrap"
+              :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'">
+              Replies
+            </th>
+            <th class="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider whitespace-nowrap"
               :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'">
               Actions
             </th>
@@ -45,71 +53,55 @@
                 ? 'hover:bg-neutral-800'
                 : 'hover:bg-gray-50'
           ]" @click="openChatPanel(message)">
-            <!-- Contact -->
-            <td class="px-6 py-4 whitespace-nowrap">
-              <div class="flex items-center gap-3">
-                <div v-if="message.platform === 'gateway'"
-                  class="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0 text-sm shadow-md"
-                  :class="isDarkMode ? 'bg-indigo-600' : 'bg-indigo-700'">
-                  <i-mdi-robot-outline class="w-6 h-6" />
-                </div>
-                <div v-else
-                  class="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0"
-                  :style="{ background: getAvatarColor(message.sender || '') }">
-                  {{ (message.sender || '?').charAt(0).toUpperCase() }}
-                </div>
-                <div class="flex flex-col">
-                  <span class="text-sm font-medium" :class="isDarkMode ? 'text-gray-200' : 'text-gray-900'">
-                    {{ message.platform === 'gateway' ? 'AI Assistant' : (message.sender || 'Unknown') }}
-                  </span>
-                  <span v-if="message.platform !== 'gateway' && message.address" 
-                        class="text-xs" :class="isDarkMode ? 'text-gray-400' : 'text-gray-500'">
-                    {{ message.address }}
-                  </span>
-                </div>
-              </div>
-            </td>
-
-            <!-- Platform -->
-            <td class="px-6 py-4 whitespace-nowrap">
-              <span class="px-3 py-1 rounded-full text-xs font-bold uppercase border tracking-wider"
-                :class="message.platform === 'gateway'
-                  ? (isDarkMode ? 'bg-indigo-600/20 text-indigo-400 border-indigo-600/30' : 'bg-indigo-100 text-indigo-700 border-indigo-300')
-                  : (isDarkMode ? 'bg-amber-600/20 text-amber-500 border-amber-600/30' : 'bg-amber-100 text-amber-700 border-amber-300')">
-                {{ message.platform === 'gateway' ? 'AI Insight' : (message.platform || 'Chat') }}
-              </span>
-            </td>
-
-            <!-- Message -->
-            <td class="px-6 py-4">
-              <div class="text-sm max-w-md truncate" :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'">
-                <template v-if="message.platform === 'gateway'">
-                  Classification: {{ getPredictionCategory(message) }}
-                </template>
-                <template v-else>
-                  {{ message.text || '' }}
-                </template>
-              </div>
-            </td>
-
-            <!-- Time -->
-            <td class="px-6 py-4 whitespace-nowrap text-sm" :class="isDarkMode ? 'text-gray-400' : 'text-gray-600'">
+            <!-- Date -->
+            <td class="px-6 py-4 whitespace-nowrap text-sm" :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'">
               {{ formatDateTime(message.timestamp) }}
             </td>
 
-            <!-- Status -->
+            <!-- Direction -->
             <td class="px-6 py-4 whitespace-nowrap">
-              <span class="px-3 py-1 rounded-full text-xs font-semibold uppercase border tracking-wider"
-                :class="message.platform === 'gateway'
-                  ? (isDarkMode ? 'bg-emerald-600/20 text-emerald-400 border-emerald-600/30' : 'bg-emerald-100 text-emerald-700 border-emerald-300')
-                  : (isDarkMode ? 'bg-green-600/20 text-green-400 border-green-600/30' : 'bg-green-100 text-green-700 border-green-300')">
-                {{ message.platform === 'gateway' ? 'High Conf.' : (message.status || 'Active')
-                }}
+              <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border"
+                :class="message.direction == 1
+                  ? (isDarkMode ? 'bg-blue-900/10 text-blue-400 border-blue-800/30' : 'bg-blue-50 text-blue-600 border-blue-100')
+                  : (isDarkMode ? 'bg-green-900/10 text-green-400 border-green-800/30' : 'bg-green-50 text-green-600 border-green-100')">
+                {{ message.direction == 1 ? 'Inbound' : 'Outbound' }}
               </span>
             </td>
 
+            <!-- Phone -->
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold font-mono tracking-tight"
+              :class="isDarkMode ? 'text-gray-100' : 'text-gray-900'">
+              {{ message.address || 'Unknown' }}
+            </td>
+
+            <!-- Extension -->
+            <td class="px-6 py-4 whitespace-nowrap text-xs opacity-50">---</td>
+
+            <!-- Source -->
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="flex items-center gap-2">
+                <div class="w-1.5 h-1.5 rounded-full"
+                  :class="message.platform === 'gateway' ? 'bg-indigo-500' : 'bg-amber-500'"></div>
+                <span class="text-[11px] font-black uppercase tracking-wider"
+                  :class="isDarkMode ? 'text-gray-400' : 'text-gray-700'">
+                  {{ message.platform === 'gateway' ? 'AI' : (message.platform || 'Text') }}
+                </span>
+              </div>
+            </td>
+
+            <!-- Messages Count -->
+            <td class="px-6 py-4 text-center">
+              <span class="font-mono text-sm font-bold underline decoration-amber-500/30 underline-offset-4"
+                :class="isDarkMode ? 'text-amber-400' : 'text-amber-600'">
+                {{ message.message_count }}
+              </span>
+            </td>
+
+            <!-- Replies -->
+            <td class="px-6 py-4 text-center text-xs opacity-50">0</td>
+
             <!-- Actions -->
-            <td class="px-6 py-4 whitespace-nowrap text-sm">
+            <td class="px-6 py-4 whitespace-nowrap text-right">
               <button class="p-2 rounded-lg text-white transition-all duration-200 shadow-md" :class="message.platform === 'gateway'
                 ? (isDarkMode ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-indigo-700 hover:bg-indigo-800')
                 : (isDarkMode ? 'bg-amber-600 hover:bg-amber-700' : 'bg-amber-700 hover:bg-amber-800')"
@@ -126,7 +118,7 @@
           </tr>
 
           <tr v-if="!messages || messages.length === 0">
-            <td colspan="6" class="text-center py-12" :class="isDarkMode ? 'text-gray-500' : 'text-gray-500'">
+            <td colspan="8" class="text-center py-12" :class="isDarkMode ? 'text-gray-500' : 'text-gray-500'">
               No messages to display
             </td>
           </tr>
@@ -159,9 +151,9 @@
   const formatDateTime = (timestamp) => {
     if (!timestamp) return 'N/A'
     // Normalized timestamp
-    const ts = typeof timestamp === 'string' && timestamp.length === 10 ? parseInt(timestamp) * 1000 : 
-               typeof timestamp === 'number' && String(timestamp).length === 10 ? timestamp * 1000 : timestamp
-    
+    const ts = typeof timestamp === 'string' && timestamp.length === 10 ? parseInt(timestamp) * 1000 :
+      typeof timestamp === 'number' && String(timestamp).length === 10 ? timestamp * 1000 : timestamp
+
     const date = new Date(ts)
     return date.toLocaleString('en-US', {
       day: 'numeric',

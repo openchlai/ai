@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { useActivitiesStore } from './activities'
 import { useMessagesStore } from './messages'
 import axiosInstance from '@/utils/axios'
+import { useTaxonomyStore } from './taxonomy'
 
 export const useNotificationsStore = defineStore('notifications', {
     state: () => ({
@@ -46,9 +47,12 @@ export const useNotificationsStore = defineStore('notifications', {
         },
 
         async startPolling() {
+            // Temporarily disabled polling for ati/sync per user request
+            /*
             if (this.isPolling) return
             this.isPolling = true
             this.poll()
+            */
         },
 
         stopPolling() {
@@ -63,11 +67,30 @@ export const useNotificationsStore = defineStore('notifications', {
             if (!this.isPolling) return
 
             try {
-                // Using fetch directly or axios instance if we configured proxy
-                // Since we added /ati proxy, we can use /ati/sync
-                // We must bypass the default baseURL (/api-proxy) to hit the /ati proxy rule
-                const response = await axiosInstance.get(`/ati/sync?c=${this.syncCursor}`, {
-                    baseURL: '/'
+                const taxonomyStore = useTaxonomyStore()
+                const atiHost = taxonomyStore.endpoints?.ATI_HOST || '/ati/sync'
+
+                let targetHost = atiHost;
+                // Smart Dev Proxy: Route traffic through dynamic registry paths
+                if (import.meta.env.DEV) {
+                    const endpoints = taxonomyStore.endpoints || {};
+                    const targetDomain = endpoints.DEV_TARGET_ATI?.replace('https://', '').replace('http://', '').split(':')[0];
+
+                    if (atiHost.includes(targetDomain) || atiHost.includes('192.168.10.3')) {
+                        if (atiHost.includes(':8384/ati/sync')) targetHost = endpoints.ATI_WS_PATH || '/ati/sync';
+                    }
+                }
+
+                // If it's a URL (starts with http/ws), convert to http for ajax
+                let syncUrl = targetHost.replace('wss://', 'https://').replace('ws://', 'http://')
+
+                const params = this.syncCursor !== -1 ? `${syncUrl.includes('?') ? '&' : '?'}c=${this.syncCursor}` : ''
+
+                // Use absolute URL if it starts with http, otherwise relative to current host
+                const fullUrl = syncUrl.startsWith('http') ? `${syncUrl}${params}` : `${window.location.origin}${syncUrl}${params}`
+
+                const response = await axiosInstance.get(fullUrl, {
+                    baseURL: '' // Bypass global baseURL
                 })
 
                 const data = response.data
@@ -101,12 +124,14 @@ export const useNotificationsStore = defineStore('notifications', {
 
             sortedKeys.forEach(key => {
                 const row = atiData[key]
-                // Index 27 is the base64 content based on analysis
-                const base64Content = row[27]
+                // Try multiple potential indices for the message payload (21 or 27)
+                const base64Content = row[21] || row[27]
 
-                if (base64Content && typeof base64Content === 'string' && base64Content.startsWith('ey')) {
+                if (base64Content && typeof base64Content === 'string' && base64Content.length > 4) {
                     try {
-                        const decodedString = atob(base64Content)
+                        // Resilient decoding: clean up string and fix padding if necessary
+                        const cleanBase64 = base64Content.trim().replace(/[^A-Za-z0-9+/=]/g, "");
+                        const decodedString = atob(cleanBase64)
                         const payload = JSON.parse(decodedString)
 
                         // Add metadata

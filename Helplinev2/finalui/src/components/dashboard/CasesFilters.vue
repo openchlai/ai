@@ -16,6 +16,7 @@
       </label>
       <select 
         v-model="filters.period" 
+        @change="emitFilters"
         class="rounded px-3 py-2 text-sm focus:ring-1 outline-none"
         :class="isDarkMode 
           ? 'bg-neutral-800 border border-transparent text-gray-100 focus:border-amber-600 focus:ring-amber-500' 
@@ -42,6 +43,7 @@
       </label>
       <select 
         v-model="filters.gbv" 
+        @change="emitFilters"
         class="rounded px-3 py-2 text-sm focus:ring-1 outline-none"
         :class="isDarkMode 
           ? 'bg-neutral-800 border border-transparent text-gray-100 focus:border-amber-600 focus:ring-amber-500' 
@@ -63,6 +65,7 @@
       </label>
       <select 
         v-model="filters.source" 
+        @change="emitFilters"
         class="rounded px-3 py-2 text-sm focus:ring-1 outline-none"
         :class="isDarkMode 
           ? 'bg-neutral-800 border border-transparent text-gray-100 focus:border-amber-600 focus:ring-amber-500' 
@@ -202,13 +205,13 @@ function getPeriodTimestamp(period) {
 function getGbvRelated(gbv) {
   switch(gbv) {
     case 'both':
-      return '1,2'
+      return null // Return all (no filter)
     case 'vac':
       return '1'
     case 'gbv':
       return '2'
     default:
-      return '1,2'
+      return null
   }
 }
 

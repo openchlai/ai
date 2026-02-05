@@ -1,6 +1,6 @@
 <template>
   <aside class="fixed left-0 top-0 h-screen w-64 border-r border-transparent flex flex-col shadow-xl" :class="isDarkMode
-    ? 'bg-black'
+    ? 'bg-[#111827] border-gray-800'
     : 'bg-white'">
 
     <!-- Header with Logo - Fixed -->
@@ -118,13 +118,8 @@
     </nav>
 
     <!-- User Profile Section with Theme Toggle - Fixed at Bottom -->
-    <div 
-      class="flex-shrink-0 p-6 pt-4 border-t border-transparent"
-    >
-      <div 
-        class="flex items-center gap-3 px-4 py-3 rounded-xl mb-3"
-        :class="isDarkMode ? 'bg-black' : 'bg-gray-50'"
-      >
+    <div class="flex-shrink-0 p-6 pt-4 border-t border-transparent">
+      <div class="flex items-center gap-3 px-4 py-3 rounded-xl mb-3" :class="isDarkMode ? 'bg-black' : 'bg-gray-50'">
         <div
           class="w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0 transition-colors"
           :class="isDarkMode ? 'bg-amber-600' : 'bg-amber-700'">
@@ -143,7 +138,7 @@
         <button class="p-2 rounded-lg transition-all duration-300 flex items-center justify-center flex-shrink-0"
           :class="isDarkMode
             ? 'hover:bg-amber-500/10 text-amber-500'
-            : 'hover:bg-amber-600/10 text-amber-600'" @click="$emit('toggle-theme')"
+            : 'hover:bg-amber-600/10 text-amber-700'" @click="$emit('toggle-theme')"
           :title="isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
           <i-mdi-weather-sunny v-if="isDarkMode" class="w-5 h-5" />
           <i-mdi-weather-night v-else class="w-5 h-5" />

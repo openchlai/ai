@@ -185,7 +185,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, inject } from 'vue';
-import { useCategoryStore } from '@/stores/categories';
+import { useTaxonomyStore } from '@/stores/taxonomy';
 
 // Inject theme
 const isDarkMode = inject('isDarkMode')
@@ -207,7 +207,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'change', 'selection-change']);
 
 // Store and state
-const store = useCategoryStore();
+const store = useTaxonomyStore();
 const isOpen = ref(false);
 const loading = ref(false);
 const error = ref(null);

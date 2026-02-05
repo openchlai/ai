@@ -112,6 +112,28 @@ export const useCaseStore = defineStore('cases', {
       }
     },
 
+    // 4.5 Get Analytics Data (No State Mutation)
+    async getAnalytics(params = {}) {
+      try {
+        // Default to high limit if not specified to ensure charts get all data
+        const queryParams = {
+          _c: 1000,
+          _o: 0,
+          _a: 0,
+          ...params
+        };
+
+        const { data } = await axiosInstance.get('api/cases/', {
+          params: queryParams,
+          headers: this.getAuthHeaders()
+        });
+
+        return data; // Return raw data, do not mutate store state
+      } catch (err) {
+        throw new Error(err.message || 'Failed to fetch analytics');
+      }
+    },
+
     // 4. List Cases with pagination support
     async listCases(params = {}) {
       try {

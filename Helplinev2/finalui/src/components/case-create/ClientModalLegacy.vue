@@ -20,19 +20,19 @@
           <BaseInput label="Client Name" v-model="form.name" placeholder="Name" />
           <BaseInput label="Age" type="number" v-model="form.age" placeholder="Age" />
           <BaseInput label="DOB" type="date" v-model="form.dob" />
-          <BaseSelect label="Age Group" v-model="form.ageGroup" :category-id="101" placeholder="Select" />
+          <TaxonomySelect label="Age Group" v-model="form.ageGroup" root-key="AGE_GROUP" placeholder="Select" />
         </div>
 
         <!-- Row 2: Location, Sex -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <BaseSelect label="Location" v-model="form.location" :category-id="88" placeholder="Select Location" :searchable="true" />
-          <BaseSelect label="Sex" v-model="form.sex" :category-id="120" placeholder="Select Sex" />
+          <TaxonomySelect label="Location" v-model="form.location" root-key="LOCATION" placeholder="Select Location" :searchable="true" />
+          <TaxonomySelect label="Sex" v-model="form.sex" root-key="GENDER" placeholder="Select Sex" />
         </div>
 
         <!-- Row 3: Landmark, Nationality -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <BaseInput label="Nearest Landmark" v-model="form.landmark" placeholder="Landmark" />
-          <BaseSelect label="Nationality" v-model="form.nationality" :category-id="126" placeholder="Select Nationality" />
+          <TaxonomySelect label="Nationality" v-model="form.nationality" root-key="NATIONALITY" placeholder="Select Nationality" />
         </div>
 
         <!-- Row 4: Phones, Email -->
@@ -44,21 +44,21 @@
 
         <!-- Row 5: Relationship, Comment -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <BaseSelect label="Reporter’s Relationship with Client" v-model="form.relationship" :category-id="236634" placeholder="Select Relationship" />
+          <TaxonomySelect label="Reporter’s Relationship with Client" v-model="form.relationship" root-key="RELATIONSHIP" placeholder="Select Relationship" />
           <BaseTextarea label="Relationship Comment" v-model="form.relationshipComment" placeholder="Comment..." :rows="1" />
         </div>
 
         <!-- Row 6: Household Info -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <BaseInput label="Number of Adults in Household" type="number" v-model="form.adultsInHousehold" placeholder="#" />
-          <BaseSelect label="Household Type" v-model="form.householdType" :category-id="362432" placeholder="Select Type" />
-          <BaseSelect label="Head of Household Occupation" v-model="form.headOccupation" :category-id="362484" placeholder="Select Occupation" />
+          <TaxonomySelect label="Household Type" v-model="form.householdType" root-key="HOUSEHOLD_TYPE" placeholder="Select Type" />
+          <TaxonomySelect label="Head of Household Occupation" v-model="form.headOccupation" root-key="OCCUPATION" placeholder="Select Occupation" />
         </div>
 
         <!-- Row 7: Parent Info -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <BaseInput label="Parent/Guardian Name" v-model="form.parentGuardianName" placeholder="Name" />
-          <BaseSelect label="Parent/Guardian Marital Status" v-model="form.parentMaritalStatus" :category-id="362010" placeholder="Select Status" />
+          <TaxonomySelect label="Parent/Guardian Marital Status" v-model="form.parentMaritalStatus" root-key="MARITAL_STATUS" placeholder="Select Status" />
         </div>
 
         <!-- Row 8: Parent ID -->
@@ -68,9 +68,9 @@
 
         <!-- Row 9: Health, HIV, Marital -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <BaseSelect label="Client Health Status" v-model="form.healthStatus" :category-id="363087" placeholder="Select Health" />
-          <BaseSelect label="Client HIV Status" v-model="form.hivStatus" :category-id="236727" placeholder="Select HIV Status" />
-          <BaseSelect label="Client Marital Status" v-model="form.maritalStatus" :category-id="362010" placeholder="Select Marital Status" />
+          <TaxonomySelect label="Client Health Status" v-model="form.healthStatus" root-key="HEALTH_STATUS" placeholder="Select Health" />
+          <TaxonomySelect label="Client HIV Status" v-model="form.hivStatus" root-key="HIV_STATUS" placeholder="Select HIV Status" />
+          <TaxonomySelect label="Client Marital Status" v-model="form.maritalStatus" root-key="MARITAL_STATUS" placeholder="Select Marital Status" />
         </div>
 
         <!-- Row 10: School, Disabled -->
@@ -122,6 +122,7 @@ import { reactive, watch, inject, ref } from 'vue';
 import BaseInput from '@/components/base/BaseInput.vue';
 import BaseSelect from '@/components/base/BaseSelect.vue';
 import BaseTextarea from '@/components/base/BaseTextarea.vue';
+import TaxonomySelect from '@/components/base/TaxonomySelect.vue';
 import { useAgeCalculator } from '@/composables/useAgeCalculator';
 
 const props = defineProps({

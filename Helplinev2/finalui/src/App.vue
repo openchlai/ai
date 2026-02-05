@@ -1,5 +1,5 @@
 <template>
-  <div id="app" class="min-h-screen font-sans" :class="isDarkMode ? 'bg-black' : 'bg-gray-50'">
+  <div id="app" class="min-h-screen font-sans" :class="isDarkMode ? 'bg-[#0B1120]' : 'bg-gray-50'">
     <Toaster position="top-center" :theme="isDarkMode ? 'dark' : 'light'" :rich-colors="false" :expand="false"
       :duration="4000" :close-button="true" />
     <component :is="layout" />

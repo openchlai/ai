@@ -7,16 +7,10 @@
 
 
     <!-- Loading State -->
-    <div 
-      v-if="messagesStore.loading" 
-      class="text-center py-12 rounded-lg shadow-xl border"
-      :class="isDarkMode 
-        ? 'bg-black border-transparent' 
-        : 'bg-white border-transparent'"
-    >
-      <div 
-        :class="isDarkMode ? 'text-gray-400' : 'text-gray-600'"
-      >
+    <div v-if="messagesStore.loading" class="text-center py-12 rounded-lg shadow-xl border" :class="isDarkMode
+      ? 'bg-black border-transparent'
+      : 'bg-white border-transparent'">
+      <div :class="isDarkMode ? 'text-gray-400' : 'text-gray-600'">
         Loading messages...
       </div>
     </div>
@@ -44,25 +38,27 @@
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <i-mdi-magnify class="w-5 h-5 text-gray-400 group-focus-within:text-amber-500 transition-colors" />
             </div>
-            <input type="text" v-model="searchQuery" placeholder="Search messages..." 
+            <input type="text" v-model="searchQuery" placeholder="Search messages..."
               class="block w-full md:w-64 pl-10 pr-10 py-2.5 rounded-lg text-sm border focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all outline-none shadow-sm"
-              :class="isDarkMode 
-                ? 'bg-black border-gray-800 text-gray-200 placeholder-gray-600' 
+              :class="isDarkMode
+                ? 'bg-black border-gray-800 text-gray-200 placeholder-gray-600'
                 : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400'" />
             <!-- Clear Search -->
-            <button v-if="searchQuery" @click="searchQuery = ''" 
+            <button v-if="searchQuery" @click="searchQuery = ''"
               class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer">
-               <i-mdi-close-circle class="w-4 h-4" />
+              <i-mdi-close-circle class="w-4 h-4" />
             </button>
           </div>
 
           <!-- View Toggle Buttons -->
           <div class="flex gap-2 w-full md:w-auto">
-            <button :class="getViewButtonClass(activeView === 'timeline')" @click="activeView = 'timeline'" title="Timeline View" class="flex-1 md:flex-none justify-center">
+            <button :class="getViewButtonClass(activeView === 'timeline')" @click="activeView = 'timeline'"
+              title="Timeline View" class="flex-1 md:flex-none justify-center">
               <i-mdi-timeline-text-outline class="w-5 h-5" />
               <span class="hidden sm:inline">Timeline</span>
             </button>
-            <button :class="getViewButtonClass(activeView === 'table')" @click="activeView = 'table'" title="Table View" class="flex-1 md:flex-none justify-center">
+            <button :class="getViewButtonClass(activeView === 'table')" @click="activeView = 'table'" title="Table View"
+              class="flex-1 md:flex-none justify-center">
               <i-mdi-table class="w-5 h-5" />
               <span class="hidden sm:inline">Table</span>
             </button>
@@ -71,7 +67,7 @@
               :class="isDarkMode
                 ? 'bg-black text-gray-300 border-transparent hover:border-green-500 hover:text-green-400'
                 : 'bg-white text-gray-700 border-transparent hover:border-green-600 hover:text-green-700'"
-               title="Refresh Messages">
+              title="Refresh Messages">
               <i-mdi-refresh class="w-5 h-5" />
             </button>
           </div>
@@ -92,8 +88,9 @@
 
     <!-- Chat & AI Panels -->
     <template v-if="showChatPanel">
-      <AIPredictionPanel v-if="selectedMessage?.platform === 'gateway' || getValue(selectedMessage, 'src') === 'gateway'" :msg="selectedMessage"
-        :pmessages_k="messagesStore.pmessages_k" @close="closeChatPanel" />
+      <AIPredictionPanel
+        v-if="selectedMessage?.platform === 'gateway' || getValue(selectedMessage, 'src') === 'gateway'"
+        :msg="selectedMessage" :pmessages_k="messagesStore.pmessages_k" @close="closeChatPanel" />
       <ChatPanel v-else :selectedMessage="selectedMessage" :newMessage="newMessage" @close="closeChatPanel"
         @sendMessage="sendMessage" />
     </template>
@@ -155,21 +152,52 @@
   const messageMatchesSearch = (msg) => {
     if (!searchQuery.value) return true
     const query = searchQuery.value.toLowerCase()
-    
+
     const sender = (msg.sender || '').toLowerCase()
     const text = (msg.text || '').toLowerCase()
     const address = (msg.address || '').toLowerCase()
     const platform = (msg.platform || '').toLowerCase()
-    
-    return sender.includes(query) || 
-           text.includes(query) || 
-           address.includes(query) || 
-           platform.includes(query)
+
+    return sender.includes(query) ||
+      text.includes(query) ||
+      address.includes(query) ||
+      platform.includes(query)
   }
 
-  // Filtered Table Messages
+  // Filtered and Grouped Table Messages
   const filteredTableMessages = computed(() => {
-     return messagesStore.normalizedMessages.filter(messageMatchesSearch)
+    const rawFiltered = messagesStore.normalizedMessages.filter(messageMatchesSearch)
+    const groups = {}
+    const getTs = (ts) => {
+      if (!ts) return 0
+      return (typeof ts === 'number' && String(ts).length === 10) ? ts * 1000 : new Date(ts).getTime()
+    }
+
+    for (const msg of rawFiltered) {
+      // Group by address (Caller ID) as requested
+      const callerId = msg.address || `unknown-${msg.id}`
+      if (!groups[callerId]) {
+        groups[callerId] = {
+          ...msg,
+          message_count: 0
+        }
+      }
+
+      groups[callerId].message_count++
+
+      // Update with the most recent message metadata
+      const currentTs = getTs(msg.timestamp)
+      const existingTs = getTs(groups[callerId].timestamp)
+
+      if (currentTs > existingTs) {
+        const count = groups[callerId].message_count
+        groups[callerId] = { ...msg, message_count: count }
+      }
+    }
+
+    return Object.values(groups).sort((a, b) => {
+      return getTs(b.timestamp) - getTs(a.timestamp)
+    })
   })
 
   // Group messages by date for timeline view (Conversations view)
@@ -192,7 +220,7 @@
       // Normalizer keeps original value. Let's assume Unix seconds if number, or ISO string.
       const ts = typeof timestamp === 'number' && String(timestamp).length === 10 ? timestamp * 1000 : timestamp
       const date = new Date(ts)
-      
+
       let label = date.toDateString() === today.toDateString()
         ? 'Today'
         : date.toDateString() === yesterday.toDateString()
@@ -307,14 +335,14 @@
   const getValue = (msg, key) => {
     // legacy support for raw msg if still used anywhere (e.g. AIPrediction which expects raw?)
     if (msg && typeof msg === 'object' && !Array.isArray(msg) && msg[key] !== undefined) {
-         return msg[key] // if normalized object matches key (unlikely for src_msg etc)
+      return msg[key] // if normalized object matches key (unlikely for src_msg etc)
     }
     // Fallback to normalized map if needed, but we mostly use .text, .platform etc now.
     // If AIPredictionPanel receives a raw array, this still works. 
     // If it receives a normalized object, it might need updating. 
     // Assuming AIPredictionPanel handles raw arrays primarily if passed raw. 
     // But normalizedMessages returns objects. 
-    
+
     if (!msg || !messagesStore.pmessages_k?.[key]) return null
     const index = messagesStore.pmessages_k[key][0]
     return msg[index]

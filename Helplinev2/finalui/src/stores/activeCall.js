@@ -22,6 +22,30 @@ export const useActiveCallStore = defineStore('activeCall', () => {
 
     let timerInterval = null
     let pollInterval = null
+    const ringtoneAudio = new Audio('/sounds/ringtone.mp3')
+    ringtoneAudio.loop = true
+
+    // Warm-up function to be called on user interaction (e.g., 'Go Online' click)
+    function initRingtone() {
+        console.log('[ActiveCall] Initializing ringtone audio context...')
+        ringtoneAudio.volume = 0
+        ringtoneAudio.play().then(() => {
+            ringtoneAudio.pause()
+            ringtoneAudio.currentTime = 0
+            ringtoneAudio.volume = 1
+        }).catch(e => console.warn('Ringtone init failed (autoplay blocked):', e))
+    }
+
+    function playRingtone() {
+        ringtoneAudio.currentTime = 0
+        ringtoneAudio.volume = 1
+        ringtoneAudio.play().catch(e => console.warn('Ringtone playback failed (user interaction required):', e))
+    }
+
+    function stopRingtone() {
+        ringtoneAudio.pause()
+        ringtoneAudio.currentTime = 0
+    }
 
     // Actions
     function onIncomingCall(session) {
@@ -61,6 +85,8 @@ export const useActiveCallStore = defineStore('activeCall', () => {
 
         src_uid.value = null // Will be set later via AMI or header
 
+        playRingtone()
+
         console.error('[ActiveCall] POPUP STATE SHOULD NOW BE RINGING');
 
         /* Disable auto-answer during diagnosis to ensure popup remains visible 
@@ -96,6 +122,7 @@ export const useActiveCallStore = defineStore('activeCall', () => {
         if (!currentSession.value) return
 
         console.log('Call established')
+        stopRingtone()
         callState.value = 'active'
         startedAt.value = new Date()
         startTimer()
@@ -167,6 +194,7 @@ export const useActiveCallStore = defineStore('activeCall', () => {
     }
 
     function resetCall() {
+        stopRingtone()
         stopTimer()
         currentSession.value = null
         callState.value = 'idle'
@@ -207,6 +235,8 @@ export const useActiveCallStore = defineStore('activeCall', () => {
         if (pollInterval) return
         console.log('[ActiveCall] Starting live status polling for exten:', extension)
 
+        // Temporarily disabled polling as per user request
+        /*
         pollInterval = setInterval(async () => {
             if (queueStatus.value !== 'online') {
                 stopPollingLiveStatus()
@@ -258,21 +288,13 @@ export const useActiveCallStore = defineStore('activeCall', () => {
                                 src_uid.value = uniqueid
                             }
                         }
-
-                        // Fallback: If we detect a call in wallboard but SIP hasn't fired yet
-                        // (Usually wallboard is slightly ahead or bypasses SIP WebSocket delays)
-                        /* 
-                        if (callState.value === 'idle' && uniqueid) {
-                             // potential for auto-trigger if needed, 
-                             // but we usually prefer SIP for actual media
-                        }
-                        */
                     }
                 }
             } catch (e) {
                 console.warn('[ActiveCall] Live polling failed:', e)
             }
         }, 3000)
+        */
     }
 
     function stopPollingLiveStatus() {
@@ -282,6 +304,7 @@ export const useActiveCallStore = defineStore('activeCall', () => {
             pollInterval = null
         }
     }
+
 
     // Queue status persistence
     const queueStatus = ref(localStorage.getItem('queueStatus') || 'offline') // 'offline' | 'online'
@@ -322,6 +345,9 @@ export const useActiveCallStore = defineStore('activeCall', () => {
             if (!ext) {
                 throw new Error('No extension assigned to your account.')
             }
+
+            // Warm up audio context on user click
+            initRingtone()
 
             setQueueStatus('joining')
 

@@ -90,24 +90,19 @@ export const useSipStore = defineStore('sip', () => {
             if (!uri) throw new Error('Invalid SIP URI configuration')
 
             // AUTHENTICATION LOGIC:
-            // "VA_SIP_PASS_PREFIX" is provided. Using it as the global password.
+            // Uses resolve logic from global config which handles prefixes for TZ and global secrets for DEMO.
             const password = config.SIP_PASSWORD;
-
-            const authUser = extension.value // Reverting to extension based auth
-
-            console.log('🔐 [SIP DEBUG] Credentials Used:', {
-                extension: extension.value,
-                authorizationUsername: authUser,
-                password: 'Global Secret (VA_SIP_PASS_PREFIX)',
-                server: config.SIP_WS_URL
-            })
 
             const sipConfig = getSipConfig(extension.value, {
                 onInvite: (invitation) => handleIncomingCall(invitation)
             }, password)
 
-            // Explicitly set Auth User
-            sipConfig.authorizationUsername = authUser
+            console.log('🔐 [SIP DEBUG] Credentials Resolved:', {
+                extension: extension.value,
+                authorizationUsername: sipConfig.authorizationUsername,
+                password: '***',
+                server: config.SIP_WS_URL
+            })
 
             sipConfig.uri = uri
 

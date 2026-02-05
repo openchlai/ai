@@ -22,7 +22,11 @@ export function useWebSocketConnection(wsHost) {
 
     let chArr = []
     if (Array.isArray(obj.channels)) {
-      chArr = obj.channels
+      // Handle array of objects or array of arrays
+      chArr = obj.channels.map(item => {
+        if (Array.isArray(item)) return { _uid: item[2] || Math.random(), _raw: item } // Not expected but safe
+        return item
+      })
     } else if (obj.channels && typeof obj.channels === 'object') {
       chArr = Object.entries(obj.channels).map(([key, arr]) => {
         if (Array.isArray(arr)) {

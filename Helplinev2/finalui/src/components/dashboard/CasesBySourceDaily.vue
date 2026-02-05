@@ -16,13 +16,14 @@ const store = useCaseStore()
 const localData = ref([])
 
 const fetchData = async () => {
-  await store.listCases({
+  const data = await store.getAnalytics({
     xaxis: "src",
     yaxis: "dt",
     metrics: "case_count",
+    _c: 9999,
     ...props.filters
   })
-  localData.value = [...store.cases]
+  localData.value = data.cases || []
 }
 
 // Convert unix timestamp to readable date
@@ -209,31 +210,55 @@ watch(() => props.filters, () => {
         </svg>
       </div>
 
-      <!-- Legend -->
-      <div class="flex flex-wrap gap-3 text-sm">
-        <div 
-          v-for="serie in chartData.series" 
-          :key="serie.name"
-          class="flex items-center gap-2 px-3 py-1.5 rounded"
-          :class="isDarkMode ? 'bg-black/40' : 'bg-gray-50'"
-        >
-          <div 
-            class="w-3 h-3 rounded-sm flex-shrink-0"
-            :style="{ backgroundColor: serie.color }"
-          ></div>
-          <span 
-            class="capitalize"
-            :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'"
-          >
-            {{ serie.name }}
-          </span>
-          <span 
-            class="font-medium"
-            :class="isDarkMode ? 'text-gray-500' : 'text-gray-500'"
-          >
-            ({{ serie.data.reduce((a, b) => a + b, 0) }})
-          </span>
-        </div>
+      <!-- Pivot Table -->
+      <div class="overflow-x-auto rounded-lg border text-sm mt-4" :class="isDarkMode ? 'border-gray-700' : 'border-gray-200'">
+        <table class="w-full text-left border-collapse">
+          <thead :class="isDarkMode ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-700'">
+            <tr>
+              <th class="p-2 border-r font-semibold sticky left-0 z-10" :class="isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-100 border-gray-200'">
+                Source
+              </th>
+              <th 
+                v-for="date in chartData.dates" 
+                :key="date" 
+                class="p-2 text-center font-semibold min-w-[80px]"
+              >
+                {{ formatDate(date) }}
+              </th>
+            </tr>
+          </thead>
+          <tbody :class="isDarkMode ? 'divide-y divide-gray-700' : 'divide-y divide-gray-200'">
+            <tr v-for="serie in chartData.series" :key="serie.name">
+              <td class="p-2 border-r font-medium sticky left-0" :class="isDarkMode ? 'bg-[#111827] border-gray-700 text-gray-300' : 'bg-white border-gray-200 text-gray-700'">
+                <div class="flex items-center gap-2">
+                  <div class="w-3 h-3 rounded-sm" :style="{ backgroundColor: serie.color }"></div>
+                  <span class="capitalize">{{ serie.name }}</span>
+                </div>
+              </td>
+              <td 
+                v-for="(val, idx) in serie.data" 
+                :key="idx" 
+                class="p-2 text-center"
+                :class="isDarkMode ? 'text-gray-400' : 'text-gray-600'"
+              >
+                {{ val }}
+              </td>
+            </tr>
+            <!-- Total Row -->
+            <tr class="font-bold border-t" :class="isDarkMode ? 'bg-gray-800/50 border-gray-700 text-gray-200' : 'bg-gray-50 border-gray-200 text-gray-900'">
+              <td class="p-2 border-r sticky left-0" :class="isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'">
+                Total
+              </td>
+              <td 
+                v-for="(date, idx) in chartData.dates" 
+                :key="date" 
+                class="p-2 text-center"
+              >
+                {{ chartData.series.reduce((sum, s) => sum + (s.data[idx] || 0), 0) }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>

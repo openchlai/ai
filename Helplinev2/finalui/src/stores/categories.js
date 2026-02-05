@@ -56,6 +56,31 @@ export const useCategoryStore = defineStore('categories', {
       }
     },
 
+    async searchSubcategories(params = {}) {
+      this.loading = true
+      this.error = null
+      try {
+        const { data } = await axiosInstance.get('api/subcategories/', {
+          params,
+          headers: this.getAuthHeaders()
+        })
+
+        console.log('searchSubcategories', data)
+        // Store results in subcategories (reusing existing state structure)
+        this.subcategories = data.subcategories || []
+        this.subcategories_k = data.subcategories_k || {}
+        this.subcategories_ctx = data.subcategories_ctx || []
+        this.subcategories_count = (data.subcategories_nb?.[0]?.[1] ?? 0)
+
+        return data
+      } catch (err) {
+        this.error = err?.message || 'Failed to search subcategories'
+        throw err
+      } finally {
+        this.loading = false
+      }
+    },
+
     async viewCategory(id, params = {}) {
       this.loading = true
       this.error = null

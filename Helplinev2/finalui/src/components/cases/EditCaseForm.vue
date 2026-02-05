@@ -2,12 +2,9 @@
   <div class="p-6">
     <!-- Header with Save/Cancel buttons -->
 
-    <div 
-      class="flex items-center justify-between mb-6 pb-4 border-b sticky top-0 z-10 -mx-6 px-6 -mt-6 pt-6"
-      :class="isDarkMode 
-        ? 'bg-black border-transparent' 
-        : 'bg-white border-transparent'"
-    >
+    <div class="flex items-center justify-between mb-6 pb-4 border-b sticky top-0 z-10 -mx-6 px-6 -mt-6 pt-6" :class="isDarkMode
+      ? 'bg-black border-transparent'
+      : 'bg-white border-transparent'">
       <div>
         <h2 class="text-xl font-bold" :class="isDarkMode ? 'text-gray-100' : 'text-gray-900'">
           Edit Case #{{ getCaseValue('id') }}
@@ -69,11 +66,11 @@
 
           <!-- Category & GBV -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <BaseSelect id="case-category" label="Case Category *" v-model="formData.case_category_id"
-              placeholder="Select category" :category-id="362557" @change="handleCategoryChange" />
+            <TaxonomySelect id="case-category" label="Case Category *" v-model="formData.case_category_id"
+              placeholder="Select category" root-key="CASE_CATEGORY" searchable @change="handleCategoryChange" />
 
-            <BaseSelect id="gbv-related" label="GBV Related *" v-model="formData.gbv_related"
-              placeholder="Select option" :category-id="118" @change="handleGBVChange" />
+            <TaxonomySelect id="gbv-related" label="GBV Related *" v-model="formData.gbv_related"
+              placeholder="Select option" rootId="118" @change="handleGBVChange" />
 
             <div>
               <label class="block text-sm font-semibold mb-2" :class="isDarkMode ? 'text-gray-100' : 'text-gray-900'">
@@ -127,11 +124,11 @@
 
           <!-- Justice System & Assessment -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <BaseSelect id="justice-system" label="Justice System State" v-model="formData.justice_id"
-              placeholder="Select option" :category-id="236687" @change="handleJusticeChange" />
+            <TaxonomySelect id="justice-system" label="Justice System State" v-model="formData.justice_id"
+              placeholder="Select option" root-key="JUSTICE_SYSTEM_STATE" @change="handleJusticeChange" />
 
-            <BaseSelect id="assessment" label="General Assessment" v-model="formData.assessment_id"
-              placeholder="Select option" :category-id="236694" @change="handleAssessmentChange" />
+            <TaxonomySelect id="assessment" label="General Assessment" v-model="formData.assessment_id"
+              placeholder="Select option" root-key="GENERAL_ASSESSMENT" @change="handleAssessmentChange" />
           </div>
 
           <!-- Escalated To & Disposition -->
@@ -150,8 +147,8 @@
               </select>
             </div>
 
-            <BaseSelect id="disposition" label="Disposition" v-model="formData.disposition_id"
-              placeholder="Select disposition" :category-id="363034" @change="handleDispositionChange" />
+            <TaxonomySelect id="disposition" label="Disposition" v-model="formData.disposition_id"
+              placeholder="Select disposition" root-key="DISPOSITION" @change="handleDispositionChange" />
           </div>
         </div>
       </AccordionSection>
@@ -249,9 +246,10 @@
 
           <!-- Empty State -->
 
-          <div v-if="formData.perpetrators_case.length === 0" class="text-center p-8 border border-dashed rounded-lg" :class="isDarkMode
-            ? 'bg-black border-transparent text-gray-500'
-            : 'bg-white border-transparent text-gray-500'">
+          <div v-if="formData.perpetrators_case.length === 0" class="text-center p-8 border border-dashed rounded-lg"
+            :class="isDarkMode
+              ? 'bg-black border-transparent text-gray-500'
+              : 'bg-white border-transparent text-gray-500'">
             No perpetrators added yet
           </div>
 
@@ -274,11 +272,11 @@
       <AccordionSection title="Services & Referrals" :isOpen="openSections.services" :badge="formData.services.length"
         @toggle="toggleSection('services')">
         <div class="space-y-4">
-          <BaseOptions id="services-offered" label="Services Offered" v-model="formData.services"
-            placeholder="Select services..." :category-id="113" @selection-change="handleServicesChange" />
+          <TaxonomyOptions id="services-offered" label="Services Offered" v-model="formData.services"
+            placeholder="Select services..." root-key="SERVICE_OFFERED" @selection-change="handleServicesChange" />
 
-          <BaseOptions id="referrals-type" label="Referrals" v-model="formData.referals"
-            placeholder="Select referrals..." :category-id="114" @selection-change="handleReferralsChange" />
+          <TaxonomyOptions id="referrals-type" label="Referrals" v-model="formData.referals"
+            placeholder="Select referrals..." root-key="REFERRAL_TYPE" @selection-change="handleReferralsChange" />
         </div>
       </AccordionSection>
 
@@ -330,6 +328,8 @@
   import { toast } from 'vue-sonner'
   import BaseSelect from '@/components/base/BaseSelect.vue'
   import BaseOptions from '@/components/base/BaseOptions.vue'
+  import TaxonomySelect from '@/components/base/TaxonomySelect.vue'
+  import TaxonomyOptions from '@/components/base/TaxonomyOptions.vue'
   import AttachmentUpload from '@/components/case-create/AttachmentUpload.vue'
   import ClientModal from '@/components/case-create/ClientModal.vue'
   import PerpetratorModal from '@/components/case-create/PerpetratorModal.vue'

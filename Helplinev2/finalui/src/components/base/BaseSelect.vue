@@ -51,11 +51,11 @@
       v-if="isOpen" 
       class="border rounded-lg mt-1 p-1.5 max-h-[300px] overflow-y-auto shadow-xl absolute w-full z-[1000]"
       :class="isDarkMode 
-        ? 'border-transparent bg-black' 
+        ? 'border-gray-700 bg-[#1F2937]' 
         : 'border-transparent bg-white'"
     >
       <!-- Search Input -->
-      <div v-if="searchable" class="p-2 border-b sticky top-0 bg-inherit z-10" :class="isDarkMode ? 'border-neutral-800' : 'border-gray-100'">
+      <div v-if="searchable" class="p-2 border-b sticky top-0 bg-inherit z-10" :class="isDarkMode ? 'border-gray-600' : 'border-gray-100'">
         <input 
           v-model="searchQuery"
           type="text" 
@@ -111,7 +111,7 @@
                 : 'text-gray-900 hover:bg-gray-100'
           ]"
         >
-          <span class="option-text">{{ option.name }}</span>
+          <span class="option-text" v-html="option.nameHtml || option.name"></span>
           <span 
             v-if="option.hasChildren === true" 
             class="float-right"
@@ -181,7 +181,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, inject } from 'vue'
-import { useCategoryStore } from '@/stores/categories'
+import { useTaxonomyStore } from '@/stores/taxonomy'
 
 // Inject theme
 const isDarkMode = inject('isDarkMode')
@@ -200,7 +200,7 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'change'])
 
-const store = useCategoryStore()
+const store = useTaxonomyStore()
 const isOpen = ref(false)
 const loading = ref(false)
 const navigationPath = ref([])
@@ -225,13 +225,16 @@ function closeDropdown() {
   searchQuery.value = ''
 }
 
+// Cache for search index
+let cachedAllOptions = null
+
 // Load options for a specific category level
 async function loadLevel(categoryId, isRoot = true) {
   if (!categoryId) return []
   try {
     loading.value = true
     await store.viewCategory(categoryId)
-    const parsedOptions = parseRows(store.subcategories, store.subcategories_k, store.subcategories_ctx)
+    const parsedOptions = parseRows(store.subcategories, store.subcategories_k, store.subcategories_ctx, false)
 
     if (isRoot) {
       levelOptions.value = parsedOptions
@@ -245,9 +248,6 @@ async function loadLevel(categoryId, isRoot = true) {
   }
 }
 
-const allOptions = ref([])
-const isIndexReady = ref(false)
-
 function parseRows(rows = [], k = {}, ctx = [], isSearchMode = false) {
     const idIdx = Number(k.id?.[0] ?? 0)
     const nameIdx = Number(k.name?.[0] ?? 5)
@@ -259,15 +259,14 @@ function parseRows(rows = [], k = {}, ctx = [], isSearchMode = false) {
     
     if (!rows || !rows.length) return []
     
-    // If searching (building index), we need full paths
     if (isSearchMode) {
         const nodeMap = new Map()
         
         const addToMap = (r) => {
             if (!r) return
-            const id = r[idIdx]
+            const id = Number(r[idIdx])
             const name = r[nameIdx]
-            const pid = parentIdx >= 0 ? r[parentIdx] : null
+            const pid = parentIdx >= 0 ? Number(r[parentIdx]) : null
             if (id) {
                nodeMap.set(id, { id, name, parentId: pid })
             }
@@ -282,25 +281,41 @@ function parseRows(rows = [], k = {}, ctx = [], isSearchMode = false) {
              let safe = 0
              while (curr && safe < 20) {
                  parts.unshift(curr.name)
-                 if (!curr.parentId || curr.parentId == curr.id) break 
+                 if (!curr.parentId || curr.parentId === curr.id) break 
                  curr = nodeMap.get(curr.parentId)
                  safe++
              }
              return parts.length > 0 ? parts.join(' > ') : ''
         }
+        
+        const getPathIds = (id) => {
+             const path = []
+             let curr = nodeMap.get(id)
+             let safe = 0
+             while (curr && safe < 20) {
+                 path.push(curr.id)
+                 if (!curr.parentId || curr.parentId === curr.id) break 
+                 curr = nodeMap.get(curr.parentId)
+                 safe++
+             }
+             return path
+        }
 
         return rows.map(row => {
-            const id = row[idIdx]
+            const id = Number(row[idIdx])
             const name = row[nameIdx]
             const fullPath = getPath(id)
+            const pathIds = getPathIds(id)
             return {
                 id: id,
                 name: fullPath || name,
+                pathIds: pathIds,
                 hasChildren: null
             }
         })
     }
     
+    // Normal mode
     return rows
       .map(row => ({
         id: row[idIdx],
@@ -310,58 +325,99 @@ function parseRows(rows = [], k = {}, ctx = [], isSearchMode = false) {
       .filter(Boolean)
 }
 
-async function initIndex() {
-    if (!props.searchable || isIndexReady.value) return
-    try {
-         // Build Tree Index
-         const params = { r: 1, recursive: 1, limit: 10000 }
-         if (props.categoryId) params.parent_id = props.categoryId
-         
-         await store.listCategories(params)
-         
-         allOptions.value = parseRows(store.categories, store.categories_k, store.categories_ctx, true)
-         isIndexReady.value = true
-    } catch(e) {
-         console.error("Index build failed", e)
-    }
-}
-
 let searchTimeout
 watch(searchQuery, (newVal) => {
     if (!props.searchable) return
+    clearTimeout(searchTimeout)
     
     if (!newVal) {
-             if (navigationPath.value.length > 0) {
-                 const last = navigationPath.value[navigationPath.value.length - 1]
-                 loadLevel(last.id, false).then(opts => levelOptions.value = opts)
-             } else {
-                 if (props.categoryId) {
-                     loadLevel(props.categoryId, true)
-                 }
+        // Restore view
+         if (navigationPath.value.length > 0) {
+             const last = navigationPath.value[navigationPath.value.length - 1]
+             loadLevel(last.id, false).then(opts => levelOptions.value = opts)
+         } else {
+             if (props.categoryId) {
+                 loadLevel(props.categoryId, true)
              }
-    } else {
-        clearTimeout(searchTimeout)
-        searchTimeout = setTimeout(() => {
-            if (!isIndexReady.value) {
-                loading.value = true
-                initIndex().then(() => {
-                    loading.value = false
-                    filterLocal(newVal)
-                })
-            } else {
-                filterLocal(newVal)
-            }
-        }, 300)
+         }
+         return
     }
-})
 
-function filterLocal(query) {
-    const q = query.toLowerCase()
-    const matches = allOptions.value.filter(opt => opt.name.toLowerCase().includes(q))
-    // Root Match First (shortest path)
-    matches.sort((a, b) => a.name.length - b.name.length)
-    levelOptions.value = matches
-}
+    searchTimeout = setTimeout(async () => {
+        if (newVal.length < 2) return
+
+        console.log('[BaseSelect] Server Search:', newVal)
+        loading.value = true
+        
+        try {
+            // Legacy System Search Parameter Structure
+            const params = {
+                fullname__: newVal, 
+                sort: 'fullname',
+                limit: 100
+            }
+
+            // Scope to root if provided
+             if (props.categoryId) {
+                 params.root_id_ = props.categoryId
+             }
+
+            await store.searchSubcategories(params)
+            
+            // Custom parsing for Search Results to include Hierarchy
+            const k = store.subcategories_k
+            const nameIdx = Number(k.name?.[0] ?? 5)
+            const parentFullnameIdx = Number(k.category_fullname?.[0] ?? 10) 
+            const idIdx = Number(k.id?.[0] ?? 0)
+
+            const rawOptions = (store.subcategories || []).map(row => {
+                const id = row[idIdx]
+                const name = row[nameIdx]
+                const parentFullname = row[parentFullnameIdx]
+                
+                let displayHtml = name
+
+                if (parentFullname && parentFullname !== '0' && parentFullname.length > 1) {
+                    // 1. Clean up ^ and commas
+                    const cleanParent = parentFullname.replace(/\^/g, ' ').replace(/,/g, '').trim()
+                    
+                    // 2. Format: <Gray Parent> <Name>
+                    displayHtml = `<span class="text-gray-400 text-xs uppercase mr-2 tracking-wide">${cleanParent}</span> <span class="font-semibold text-sm">${name}</span>` 
+                } else {
+                    displayHtml = `<span class="font-semibold text-sm">${name}</span>`
+                }
+
+                return {
+                    id: id,
+                    name: name,
+                    displayHtml: displayHtml,
+                    hasChildren: false
+                }
+            })
+            
+            // Add Highlighting
+            levelOptions.value = rawOptions.map(r => {
+                 const regex = new RegExp(`(${newVal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
+                 // Only highlight text outside of HTML tags. 
+                 // Since our tags are simple class attributes, simplistic replacement is usually safe provided query isn't "span" or "class".
+                 const finalHtml = r.displayHtml.replace(regex, '<b class="font-extrabold text-amber-600 dark:text-amber-500 bg-amber-100/50 px-0.5 rounded">$1</b>')
+                 
+                 return {
+                     ...r,
+                     nameHtml: finalHtml 
+                 }
+            })
+            
+            console.log(`[BaseSelect] Server returned ${levelOptions.value.length} matches`)
+
+        } catch(e) {
+            console.error("Search failed", e)
+            levelOptions.value = []
+        } finally {
+            loading.value = false
+        }
+    }, 300)
+})
 
 // Handle option click
 async function handleOptionClick(option) {
@@ -458,9 +514,7 @@ watch(() => props.categoryId, (newCategoryId) => {
     navigationPath.value = []
     selectedOption.value = null
     searchQuery.value = ''
-    isIndexReady.value = false
     loadLevel(newCategoryId)
-    if (props.searchable) initIndex()
   }
 }, { immediate: true })
 
