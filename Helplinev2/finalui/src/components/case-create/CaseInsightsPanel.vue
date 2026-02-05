@@ -9,19 +9,19 @@
           <i-mdi-robot class="w-5 h-5" />
         </div>
         <div>
-          <h3 class="text-sm font-bold leading-none mb-1" :class="isDarkMode ? 'text-amber-500' : 'text-amber-700'">
-            Decision Support
+          <h3 class="text-sm font-bold leading-none mb-1" :class="isDarkMode ? 'text-[#008080]' : 'text-[#003366]'">
+            Caseworker Support
           </h3>
           <p class="text-[10px] font-medium text-gray-500 leading-none">
-            {{ isProcessing ? processingStatus : 'Ready to assist' }}
+            {{ isProcessing ? processingStatus : 'Supportive insight — human review required' }}
           </p>
         </div>
         <!-- Status Indicator -->
         <div v-if="isProcessing" class="ml-auto">
           <div class="flex gap-1">
-            <span class="w-1.5 h-1.5 bg-amber-500 rounded-full animate-bounce" style="animation-delay: 0s"></span>
-            <span class="w-1.5 h-1.5 bg-amber-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
-            <span class="w-1.5 h-1.5 bg-amber-500 rounded-full animate-bounce" style="animation-delay: 0.4s"></span>
+            <span class="w-1.5 h-1.5 bg-[#008080] rounded-full animate-bounce" style="animation-delay: 0s"></span>
+            <span class="w-1.5 h-1.5 bg-[#008080] rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+            <span class="w-1.5 h-1.5 bg-[#008080] rounded-full animate-bounce" style="animation-delay: 0.4s"></span>
           </div>
         </div>
       </div>
@@ -98,11 +98,11 @@
         </div>
         <div class="flex-1 min-w-0">
           <div class="flex justify-between items-end mb-1">
-            <p class="text-[10px] font-black uppercase tracking-wider text-amber-500">{{ processingStatus }}</p>
+            <p class="text-[10px] font-black uppercase tracking-wider text-[#003366]">{{ processingStatus }}</p>
             <p class="text-[10px] font-bold text-gray-500">{{ processingProgress }}%</p>
           </div>
           <div class="h-1 w-full bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
-            <div class="h-full bg-amber-500 transition-all duration-500" :style="{ width: processingProgress + '%' }">
+            <div class="h-full bg-[#008080] transition-all duration-500" :style="{ width: processingProgress + '%' }">
             </div>
           </div>
         </div>
@@ -119,14 +119,14 @@
           <button @click="activeMode = 'insights'"
             class="flex-1 py-1.5 text-[11px] font-bold transition-all duration-300 rounded-lg uppercase tracking-wider"
             :class="activeMode === 'insights'
-              ? (isDarkMode ? 'bg-amber-600 text-white shadow-lg' : 'bg-amber-700 text-white shadow-lg')
+              ? (isDarkMode ? 'bg-[#008080] text-white shadow-lg' : 'bg-[#003366] text-white shadow-lg')
               : (isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')">
             Insights
           </button>
           <button @click="activeMode = 'feedback'"
             class="flex-1 py-1.5 text-[11px] font-bold transition-all duration-300 rounded-lg uppercase tracking-wider"
             :class="activeMode === 'feedback'
-              ? (isDarkMode ? 'bg-amber-600 text-white shadow-lg' : 'bg-amber-700 text-white shadow-lg')
+              ? (isDarkMode ? 'bg-[#008080] text-white shadow-lg' : 'bg-[#003366] text-white shadow-lg')
               : (isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')">
             Feedback
           </button>
@@ -152,8 +152,8 @@
             </div>
 
             <!-- Summary Section -->
-            <div class="p-5 rounded-2xl border-2 border-amber-500/20 bg-amber-500/5">
-              <span class="text-[9px] font-bold text-amber-500 uppercase block mb-2 tracking-widest">Rationale
+            <div class="p-5 rounded-2xl border-2 border-[#003366]/20 bg-[#003366]/5">
+              <span class="text-[9px] font-bold text-[#003366] uppercase block mb-2 tracking-widest">Rationale
                 Summary</span>
               <p class="text-[11px] leading-relaxed italic font-medium"
                 :class="isDarkMode ? 'text-gray-200' : 'text-gray-900'">
@@ -173,7 +173,7 @@
                 <div>
                   <span class="text-[8px] font-bold text-gray-500 uppercase block mb-1">Primary Category</span>
                   <p class="text-[10px] font-bold">{{ processedData.tabs.insights.category_suggestions.primary_category
-                    }}</p>
+                  }}</p>
                 </div>
                 <div>
                   <span class="text-[8px] font-bold text-gray-500 uppercase block mb-1">Recommended Intervention</span>
@@ -291,17 +291,17 @@
               <div class="text-center p-2 rounded-lg bg-gray-800 border border-gray-700">
                 <span class="text-[8px] font-bold text-gray-500 uppercase block mb-1">Opening</span>
                 <span class="text-[11px] font-black text-white">{{ processedData.tabs.feedback.qa_scores.opening
-                  }}%</span>
+                }}%</span>
               </div>
               <div class="text-center p-2 rounded-lg bg-gray-800 border border-gray-700">
                 <span class="text-[8px] font-bold text-gray-500 uppercase block mb-1">Listening</span>
                 <span class="text-[11px] font-black text-white">{{ processedData.tabs.feedback.qa_scores.listening
-                  }}%</span>
+                }}%</span>
               </div>
               <div class="text-center p-2 rounded-lg bg-gray-800 border border-gray-700">
                 <span class="text-[8px] font-bold text-gray-500 uppercase block mb-1">Closing</span>
                 <span class="text-[11px] font-black text-white">{{ processedData.tabs.feedback.qa_scores.closing
-                  }}%</span>
+                }}%</span>
               </div>
             </div>
           </section>
@@ -553,9 +553,9 @@
 
   const getRiskColor = (level) => {
     const l = (level || '').toLowerCase()
-    if (l === 'high' || l === 'critical' || l === '1') return 'bg-red-500/10 text-red-500 border-red-500/20'
-    if (l === 'medium' || l === '2') return 'bg-amber-500/10 text-amber-500 border-amber-500/20'
-    return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+    if (l === 'high' || l === 'critical' || l === '1') return 'bg-[#003366]/10 text-[#003366] border-[#003366]/20'
+    if (l === 'medium' || l === '2') return 'bg-[#008080]/10 text-[#008080] border-[#008080]/20'
+    return 'bg-gray-100 text-gray-600 border-gray-200'
   }
 </script>
 

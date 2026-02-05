@@ -91,8 +91,8 @@
             <button type="button"
               class="self-start mt-2 px-3 py-1.5 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
               :class="isDarkMode
-                ? 'bg-amber-600 hover:bg-amber-700'
-                : 'bg-amber-700 hover:bg-amber-800'" @click="$emit('open-perpetrator-modal')">
+                ? 'bg-[#008080] hover:bg-[#006666]'
+                : 'bg-[#003366] hover:bg-[#002244]'" @click="$emit('open-perpetrator-modal')">
               <i-mdi-plus class="w-4 h-4" />
               Add Perpetrator
             </button>
@@ -121,8 +121,8 @@
             <textarea id="police-details" v-model="localForm.policeDetails"
               class="w-full px-3 py-2 border rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:border-transparent resize-vertical"
               :class="isDarkMode
-                ? 'bg-gray-700 border-transparent text-gray-100 placeholder-gray-500 focus:ring-amber-500'
-                : 'bg-white border-transparent text-gray-900 placeholder-gray-400 focus:ring-amber-600'"
+                ? 'bg-gray-700 border-transparent text-gray-100 placeholder-gray-500 focus:ring-[#008080]'
+                : 'bg-white border-transparent text-gray-900 placeholder-gray-400 focus:ring-[#003366]'"
               placeholder="Enter police report details, case number, station, etc." rows="3"
               @input="updateForm"></textarea>
           </div>
@@ -137,8 +137,8 @@
             <textarea id="other-services" v-model="localForm.otherServicesDetails"
               class="w-full px-3 py-2 border rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:border-transparent resize-vertical"
               :class="isDarkMode
-                ? 'bg-gray-700 border-transparent text-gray-100 placeholder-gray-500 focus:ring-amber-500'
-                : 'bg-white border-transparent text-gray-900 placeholder-gray-400 focus:ring-amber-600'"
+                ? 'bg-gray-700 border-transparent text-gray-100 placeholder-gray-500 focus:ring-[#008080]'
+                : 'bg-white border-transparent text-gray-900 placeholder-gray-400 focus:ring-[#003366]'"
               placeholder="Please specify the other services provided" rows="3" @input="updateForm"></textarea>
           </div>
         </div>
@@ -166,8 +166,8 @@
         </button>
         <div class="flex gap-3">
           <button type="submit" class="px-4 py-2 text-white rounded-lg transition-colors" :class="isDarkMode
-            ? 'bg-amber-600 hover:bg-amber-700'
-            : 'bg-amber-700 hover:bg-amber-800'">
+            ? 'bg-[#008080] hover:bg-[#006666]'
+            : 'bg-[#003366] hover:bg-[#002244]'">
             Continue to Review
           </button>
         </div>

@@ -16,10 +16,10 @@
         <!-- Step Workflow Option -->
         <div
           class="group relative p-8 rounded-2xl border transition-all duration-300 hover:shadow-2xl cursor-pointer transform hover:-translate-y-1"
-          :class="isDarkMode ? 'bg-neutral-900 border-neutral-800 hover:border-amber-600' : 'bg-white border-gray-100 hover:border-amber-500'"
+          :class="isDarkMode ? 'bg-neutral-900 border-neutral-800 hover:border-[#008080]' : 'bg-white border-gray-100 hover:border-[#003366]'"
           @click="selectMode('wizard')">
           <div
-            class="mb-4 w-14 h-14 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-500 transition-transform group-hover:scale-110">
+            class="mb-4 w-14 h-14 rounded-full bg-[#003366]/10 dark:bg-[#008080]/20 flex items-center justify-center text-[#003366] dark:text-[#008080] transition-transform group-hover:scale-110">
             <i-mdi-format-list-numbered class="w-8 h-8" />
           </div>
           <h3 class="text-xl font-bold mb-2" :class="isDarkMode ? 'text-white' : 'text-gray-900'">Step-by-Step Workflow
@@ -28,7 +28,7 @@
             Guided wizard walking you through reporter selection, case details, and review steps. Best for standard
             procedures.
           </p>
-          <div class="mt-6 flex items-center text-amber-700 font-medium group-hover:gap-2 transition-all">
+          <div class="mt-6 flex items-center text-[#003366] font-medium group-hover:gap-2 transition-all">
             Continue Step Workflow <i-mdi-arrow-right class="ml-2 group-hover:translate-x-1 transition-transform" />
           </div>
         </div>
@@ -36,17 +36,17 @@
         <!-- Single Form Option -->
         <div
           class="group relative p-8 rounded-2xl border transition-all duration-300 hover:shadow-2xl cursor-pointer transform hover:-translate-y-1"
-          :class="isDarkMode ? 'bg-neutral-900 border-neutral-800 hover:border-amber-600' : 'bg-white border-gray-100 hover:border-amber-500'"
+          :class="isDarkMode ? 'bg-neutral-900 border-neutral-800 hover:border-[#008080]' : 'bg-white border-gray-100 hover:border-[#003366]'"
           @click="selectMode('legacy')">
           <div
-            class="mb-4 w-14 h-14 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-500 transition-transform group-hover:scale-110">
+            class="mb-4 w-14 h-14 rounded-full bg-[#003366]/10 dark:bg-[#008080]/20 flex items-center justify-center text-[#003366] dark:text-[#008080] transition-transform group-hover:scale-110">
             <i-mdi-file-document-edit class="w-8 h-8" />
           </div>
           <h3 class="text-xl font-bold mb-2" :class="isDarkMode ? 'text-white' : 'text-gray-900'">Single Case Form</h3>
           <p :class="isDarkMode ? 'text-gray-400' : 'text-gray-600'">
             Legacy-style single page form for rapid data entry. All fields available at once on a single screen.
           </p>
-          <div class="mt-6 flex items-center text-amber-700 font-medium group-hover:gap-2 transition-all">
+          <div class="mt-6 flex items-center text-[#003366] font-medium group-hover:gap-2 transition-all">
             Open Single Case Form <i-mdi-arrow-right class="ml-2 group-hover:translate-x-1 transition-transform" />
           </div>
         </div>
@@ -58,7 +58,7 @@
       <div class="max-w-7xl mx-auto mb-4 px-4 lg:px-0">
         <button @click="mode = 'wizard'"
           class="text-xs font-bold flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all"
-          :class="isDarkMode ? 'bg-gray-800 border-gray-700 text-amber-500 hover:bg-gray-700' : 'bg-white border-gray-200 text-amber-700 hover:bg-gray-50'">
+          :class="isDarkMode ? 'bg-gray-800 border-gray-700 text-[#008080] hover:bg-gray-700' : 'bg-white border-gray-200 text-[#003366] hover:bg-gray-50'">
           <i-mdi-format-list-numbered class="w-4 h-4" />
           Switch to Step-by-Step Wizard
         </button>
