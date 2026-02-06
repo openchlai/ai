@@ -28,7 +28,7 @@ class FeedbackUpdateRequest(BaseModel):
     @field_validator('task')
     @classmethod
     def validate_task(cls, v):
-        valid_tasks = ['transcription', 'classification', 'ner', 'summarization', 'translation', 'qa']
+        valid_tasks = ['transcription', 'classification', 'ner', 'summarization', 'translation', 'qa','insights']
         if v not in valid_tasks:
             raise ValueError(f"Task must be one of: {', '.join(valid_tasks)}")
         return v

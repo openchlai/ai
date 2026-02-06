@@ -52,6 +52,8 @@ class NotificationType(str, Enum):
     POSTCALL_QA_SCORING = "postcall_qa_scoring"
     POSTCALL_INSIGHTS = "postcall_insights"
     POSTCALL_GPT_INSIGHTS = "postcall_gpt_insights"
+    POSTCALL_MISTRAL_INSIGHTS = "postcall_mistral_insights"  # Deprecated: use POSTCALL_AI_SERVICE_INSIGHTS
+    POSTCALL_AI_SERVICE_INSIGHTS = "postcall_ai_service_insights"
     POSTCALL_COMPLETE = "postcall_complete"
 
     # ===== SYSTEM Notifications =====
@@ -190,6 +192,8 @@ NOTIFICATION_IMPORTANCE: Dict[NotificationType, NotificationImportance] = {
     NotificationType.POSTCALL_QA_SCORING: NotificationImportance.RESULT,
     NotificationType.POSTCALL_INSIGHTS: NotificationImportance.RESULT,
     NotificationType.POSTCALL_GPT_INSIGHTS: NotificationImportance.RESULT,
+    NotificationType.POSTCALL_MISTRAL_INSIGHTS: NotificationImportance.RESULT,  # Deprecated
+    NotificationType.POSTCALL_AI_SERVICE_INSIGHTS: NotificationImportance.RESULT,
     NotificationType.UNIFIED_INSIGHT: NotificationImportance.RESULT,
 
     # Critical notifications (always important)

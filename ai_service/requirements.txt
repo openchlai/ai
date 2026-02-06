@@ -183,3 +183,7 @@ locust==2.32.3
 
 # Performance Monitoring
 pynvml==11.5.3  # For GPU monitoring (NVIDIA)
+
+# PII Detection
+presidio_analyzer==2.2.360
+presidio_anonymizer==2.2.360

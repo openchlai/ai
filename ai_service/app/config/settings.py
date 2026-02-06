@@ -116,7 +116,7 @@ class Settings(BaseSettings):
     )
 
     # ============================================================================
-    # MODEL CONFIGURATION
+    # MODEL CONFIGURATION 
     # ============================================================================
 
     cleanup_interval: int = Field(
@@ -128,6 +128,12 @@ class Settings(BaseSettings):
     enable_model_loading: bool = Field(
         default=True,
         description="Enable local model loading (set to false in API server mode)"
+    )
+
+    ollama_model: str = Field(
+        # default="mistral",
+        default="ai-service",
+        description="Ollama model name for insights generation"
     )
 
     # ============================================================================

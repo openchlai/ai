@@ -28,7 +28,7 @@ def session_manager(mock_redis):
 def sample_connection_info():
     """Sample connection info for testing"""
     return {
-        "source_ip": "192.168.1.100",
+        "source_ip": "192.168.10.6",
         "source_port": 5060,
         "protocol": "SIP",
         "user_agent": "Asterisk"
@@ -42,7 +42,7 @@ def sample_call_session():
         call_id="test_call_123",
         start_time=now,
         last_activity=now,
-        connection_info={"source_ip": "192.168.1.100"},
+        connection_info={"source_ip": "192.168.10.6"},
         transcript_segments=[],
         cumulative_transcript="",
         total_audio_duration=0.0,
@@ -410,8 +410,13 @@ class TestCallSessionManager:
     def test_get_session_from_redis_no_client(self, sample_call_session):
         """Test retrieving session without Redis client"""
         manager = CallSessionManager(redis_client=None)
-        
-        result = manager._get_session_from_redis(sample_call_session.call_id)
+        # Ensure the in-memory cache is also empty so we don't get fallback data
+        manager.active_sessions = {}
+
+        # Mock the fallback redis_task_client import that happens when redis_client is None
+        # The import is from app.config.settings, not from call_session_manager
+        with patch('app.config.settings.redis_task_client', None):
+            result = manager._get_session_from_redis(sample_call_session.call_id)
         assert result is None
 
     @pytest.mark.asyncio

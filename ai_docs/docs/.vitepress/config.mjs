@@ -219,14 +219,14 @@ export default defineConfig({
                     {
                         text: 'Core Features',
                         items: [
-                            { text: 'Speech-to-Text (Whisper)', link: '/ai-services/features/whisper_model' },
-                            { text: 'Translation', link: '/ai-services/features/translator_model' },
-                            { text: 'Named Entity Recognition (NER)', link: '/ai-services/features/ner_model' },
-                            { text: 'Case Classification', link: '/ai-services/features/classifier_model' },
-                            { text: 'Text Summarization', link: '/ai-services/features/summarizer_model' },
-                            { text: 'Question-Answering', link: '/ai-services/features/qa_model' },
-                            { text: 'Real-time Call Sessions', link: '/ai-services/features/call_sessions' },
-                            { text: 'Data Analytics & Insights', link: '/ai-services/features/insights' }
+                            { text: 'Speech-to-Text (Whisper)', link: '/ai-services/features/models/whisper_model' },
+                            { text: 'Translation', link: '/ai-services/features/models/translator_model' },
+                            { text: 'Named Entity Recognition (NER)', link: '/ai-services/features/models/ner_model' },
+                            { text: 'Case Classification', link: '/ai-services/features/models/classifier_model' },
+                            { text: 'Text Summarization', link: '/ai-services/features/models/summarizer_model' },
+                            { text: 'Quality Assurance', link: '/ai-services/features/models/qa_model' },
+                            { text: 'Real-time Call Sessions', link: '/ai-services/features/streaming/call_sessions' },
+                            { text: 'Data Analytics & Insights', link: '/ai-services/features/core-services/insights' }
                         ]
                     },
 

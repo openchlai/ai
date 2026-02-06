@@ -1,6 +1,5 @@
 """
-Comprehensive tests for audio_tasks.py Celery tasks - Phase 2A
-Focuses on achieving 95% coverage for audio processing pipeline
+Comprehensive tests for audio_tasks.py Celery tasks
 """
 import pytest
 import json

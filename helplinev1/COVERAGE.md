@@ -1,8 +1,8 @@
 # Code Coverage Report - HelplineV1
 
-**Branch:** 456/merge
-**Commit:** [ab7a529](https://github.com/openchlai/ai/commit/ab7a529cd82d8dbb9c7883b7afcf62993af5c108)
-**Generated:** 2026-01-20 19:02:55 UTC
+**Branch:** justphyl
+**Commit:** [d171d81](https://github.com/openchlai/ai/commit/d171d81b13908b29e51dde75551367e42ed0f9a7)
+**Generated:** 2026-01-28 10:11:46 UTC
 **PHP Version:** 8.3
 
 ## Coverage Summary
@@ -10,12 +10,7 @@
 ![Coverage](https://img.shields.io/badge/Coverage-89%25-brightgreen)
 ![Tests](https://img.shields.io/badge/Tests-PHPUnit-blue)
 
-| Metric | Value |
-|--------| ------|
-| **Coverage** | 89% |
-| **Generated** | 2026-01-20 19:02:55 UTC |
-| **Branch** | 456/merge |
-| **PHP Version** | 8.3 |
+**Coverage:** 89%
 
 ## Detailed Coverage Analysis
 
@@ -102,7 +97,7 @@ Deprecated: strlen(): Passing null to parameter #1 ($string) of type string is d
 ..rest_uri_response_error - 404
 ...                            225 / 225 (100%)
 
-Time: 00:00.453, Memory: 28.00 MB
+Time: 00:00.427, Memory: 28.00 MB
 
 There were 2 errors:
 
@@ -132,7 +127,7 @@ Failed asserting that two strings are equal.
 +++ Actual
 @@ @@
 -'test_session_123'
-+'a3s7s8q29b3f517hp3vkqnojnf'
++'p7j72p7n6dlohkhghqdm080qo5'
 
 /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/SessionManagerTest.php:92
 /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
@@ -275,7 +270,7 @@ Failed asserting that actual size 1 matches expected size 100.
 /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
 
 23) Tests\Unit\RequestResponseTest::testStr2tsAllTimePeriods
-Failed asserting that 1768867200 is of type "string".
+Failed asserting that 1769558400 is of type "string".
 
 /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/RequestResponseTest.php:263
 /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
@@ -320,7 +315,7 @@ Failed asserting that two strings are equal.
 /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
 
 28) Tests\Unit\ValidationTest::testValidIdGeneration
-Failed asserting that 17689357742017.0 is not equal to 17689357742017.0.
+Failed asserting that 17695951057735.0 is not equal to 17695951057735.0.
 
 /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/ValidationTest.php:245
 /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
@@ -763,7 +758,7 @@ Request Response (Tests\Unit\RequestResponse)
  ✔ Model k id variations
  ✘ Str 2ts all time periods
    │
-   │ Failed asserting that 1768867200 is of type "string".
+   │ Failed asserting that 1769558400 is of type "string".
    │
    │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/RequestResponseTest.php:263
    │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
@@ -848,7 +843,7 @@ Session Manager (Tests\Unit\SessionManager)
    │ +++ Actual
    │ @@ @@
    │ -'test_session_123'
-   │ +'p5ig5k0tpg01cau560sf3g5fh6'
+   │ +'tu1ad5d1dl93bgn6qssqb3qg56'
    │
    │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/SessionManagerTest.php:92
    │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
@@ -921,7 +916,7 @@ Validation (Tests\Unit\Validation)
  ✔ Validation errors
  ✘ Valid id generation
    │
-   │ Failed asserting that 17689357753671.0 is not equal to 17689357753671.0.
+   │ Failed asserting that 17695951068810.0 is not equal to 17695951068810.0.
    │
    │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/ValidationTest.php:245
    │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
@@ -995,7 +990,7 @@ rest_uri_response_error - 404
  ✔ Model id generation
  ✔ Kv function
 
-Time: 00:00.462, Memory: 28.00 MB
+Time: 00:00.429, Memory: 28.00 MB
 
 Summary of non-successful tests:
 
@@ -1017,7 +1012,7 @@ Session Manager (Tests\Unit\SessionManager)
    │ +++ Actual
    │ @@ @@
    │ -'test_session_123'
-   │ +'p5ig5k0tpg01cau560sf3g5fh6'
+   │ +'tu1ad5d1dl93bgn6qssqb3qg56'
    │
    │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/SessionManagerTest.php:92
    │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
@@ -1240,7 +1235,7 @@ Request Response (Tests\Unit\RequestResponse)
 
  ✘ Str 2ts all time periods
    │
-   │ Failed asserting that 1768867200 is of type "string".
+   │ Failed asserting that 1769558400 is of type "string".
    │
    │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/RequestResponseTest.php:263
    │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122
@@ -1297,7 +1292,7 @@ Validation (Tests\Unit\Validation)
 
  ✘ Valid id generation
    │
-   │ Failed asserting that 17689357753671.0 is not equal to 17689357753671.0.
+   │ Failed asserting that 17695951068810.0 is not equal to 17695951068810.0.
    │
    │ /home/runner/work/ai/ai/helplinev1/rest_api/tests/Unit/ValidationTest.php:245
    │ /home/runner/work/ai/ai/helplinev1/rest_api/vendor/bin/phpunit:122

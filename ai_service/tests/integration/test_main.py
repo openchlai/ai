@@ -1,8 +1,3 @@
-"""
-Tests for app/main.py
-Tests FastAPI application configuration, routes, and lifespan events
-"""
-
 import pytest
 import asyncio
 import os
@@ -474,4 +469,75 @@ class TestErrorHandling:
             response = client.get("/invalid/path/that/does/not/exist")
 
             assert response.status_code == 404
+
+
+class TestLifespanEvents:
+    """Test application lifespan startup and shutdown events"""
+
+    def test_lifespan_events_execute(self):
+        """Test that lifespan events execute when app starts"""
+        from app.main import app
+
+        # TestClient automatically triggers lifespan events
+        # Just verify app starts and responds
+        with TestClient(app) as client:
+            response = client.get("/")
+            assert response.status_code == 200
+
+
+class TestConditionalImports:
+    """Test conditional imports based on settings"""
+
+    def test_celery_imports_when_model_loading_enabled(self):
+        """Test that Celery is imported when enable_model_loading=True"""
+        # This test checks that the import logic works
+        # The imports happen at module level based on settings
+
+        from app.config.settings import settings
+
+        if settings.enable_model_loading:
+            # If model loading is enabled, celery should be importable from main
+            from app import main
+            assert hasattr(main, 'celery_app') or not settings.enable_model_loading
+
+
+class TestParseArguments:
+    """Test command line argument parsing"""
+
+    @patch('sys.argv', ['script.py'])
+    def test_parse_arguments_default(self):
+        """Test argument parsing with defaults"""
+        from app.main import parse_arguments
+
+        args = parse_arguments()
+
+        assert hasattr(args, 'enable_streaming')
+        assert args.enable_streaming is False
+
+    @patch('sys.argv', ['script.py', '--enable-streaming'])
+    def test_parse_arguments_with_streaming(self):
+        """Test argument parsing with streaming enabled"""
+        from app.main import parse_arguments
+
+        args = parse_arguments()
+
+        assert args.enable_streaming is True
+
+
+class TestWebSocketHandler:
+    """Test WebSocket audio streaming endpoint"""
+
+    @patch('app.main.websocket_manager')
+    def test_websocket_audio_stream_handler(self, mock_ws_manager):
+        """Test WebSocket audio stream calls websocket_manager"""
+        from app.main import app
+
+        # Mock websocket manager
+        mock_ws_manager.handle_websocket = AsyncMock()
+
+        # Note: Testing actual WebSocket connections requires special setup
+        # This test verifies the handler is registered
+        ws_routes = [route for route in app.routes if hasattr(route, 'path') and '/audio/stream' in route.path]
+
+        assert len(ws_routes) > 0
 

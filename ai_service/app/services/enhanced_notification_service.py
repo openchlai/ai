@@ -835,6 +835,7 @@ class EnhancedNotificationService:
                 'summarization': pipeline_results.get('summary'),
                 'translation': pipeline_results.get('translation'),
                 'qa': pipeline_results.get('qa_analysis') or pipeline_results.get('qa_scores'),
+                'insights': pipeline_results.get('insights'),
             }
 
             created_count = 0
