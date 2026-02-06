@@ -182,34 +182,34 @@
                 </div>
 
                 <div class="flex flex-col gap-2">
-                  <BaseSelect
+                  <TaxonomySelect
                     id="perpetrator-age-group"
                     label="Age Group"
                     v-model="localPerpetratorForm.ageGroup"
                     placeholder="Select Age Group"
-                    :category-id="101"
+                    root-key="AGE_GROUP"
                     @change="updatePerpetratorForm"
                   />
                 </div>
 
                 <div class="flex flex-col gap-2">
-                  <BaseSelect
+                  <TaxonomySelect
                     id="perpetrator-location"
                     label="Location"
                     v-model="localPerpetratorForm.location"
                     placeholder="Select Location"
-                    :category-id="88"
+                    root-key="LOCATION"
                     @change="updatePerpetratorForm"
                   />
                 </div>
 
                 <div class="flex flex-col gap-2">
-                  <BaseSelect
+                  <TaxonomySelect
                     id="perpetrator-sex"
                     label="Sex"
                     v-model="localPerpetratorForm.sex"
                     placeholder="Select Gender"
-                    :category-id="120"
+                    root-key="GENDER"
                     @change="updatePerpetratorForm"
                   />
                 </div>
@@ -239,23 +239,23 @@
                 </div>
 
                 <div class="flex flex-col gap-2">
-                  <BaseSelect
+                  <TaxonomySelect
                     id="perpetrator-nationality"
                     label="Nationality"
                     v-model="localPerpetratorForm.nationality"
                     placeholder="Select Nationality"
-                    :category-id="126"
+                    root-key="NATIONALITY"
                     @change="updatePerpetratorForm"
                   />
                 </div>
 
                 <div class="flex flex-col gap-2">
-                  <BaseSelect
+                  <TaxonomySelect
                     id="perpetrator-id-type"
                     label="ID Type"
                     v-model="localPerpetratorForm.idType"
                     placeholder="Select ID Type"
-                    :category-id="362409"
+                    root-key="ID_TYPE"
                     @change="updatePerpetratorForm"
                   />
                 </div>
@@ -280,12 +280,12 @@
                 </div>
 
                 <div class="flex flex-col gap-2">
-                  <BaseSelect
+                  <TaxonomySelect
                     id="perpetrator-language"
                     label="Language"
                     v-model="localPerpetratorForm.language"
                     placeholder="Select Language"
-                    :category-id="123"
+                    root-key="LANGUAGE"
                     @change="updatePerpetratorForm"
                   />
                 </div>
@@ -355,12 +355,12 @@
             <div v-if="currentPerpetratorStep === 2" class="py-5 animate-fadeIn">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
                 <div class="flex flex-col gap-2">
-                  <BaseSelect
+                  <TaxonomySelect
                     id="perpetrator-tribe"
                     label="Tribe"
                     v-model="localPerpetratorForm.tribe"
                     placeholder="Select Tribe"
-                    :category-id="133"
+                    root-key="TRIBE"
                     @change="updatePerpetratorForm"
                   />
                 </div>
@@ -423,23 +423,23 @@
                 </div>
 
                 <div class="flex flex-col gap-2">
-                  <BaseSelect
+                  <TaxonomySelect
                     id="Relationship with Client"
                     label="Relationship with Client?"
                     v-model="localPerpetratorForm.relationship"
                     placeholder="Select relationship"
-                    :category-id="236634"
+                    root-key="RELATIONSHIP"
                     @change="updatePerpetratorForm"
                   />
                 </div>
 
                 <div class="flex flex-col gap-2">
-                  <BaseSelect
+                  <TaxonomySelect
                     id="Shares Home with Client"
                     label="Shares Home with Client?"
                     v-model="localPerpetratorForm.sharesHome"
                     placeholder="Select option"
-                    :category-id="236631"
+                    root-key="SHARES_HOME"
                     @change="updatePerpetratorForm"
                   />
                 </div>
@@ -450,34 +450,34 @@
             <div v-if="currentPerpetratorStep === 3" class="py-5 animate-fadeIn">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
                 <div class="flex flex-col gap-2">
-                  <BaseSelect
+                  <TaxonomySelect
                     id="Health Status"
                     label="Health Status"
                     v-model="localPerpetratorForm.healthStatus"
                     placeholder="Select health status"
-                    :category-id="236660"
+                    root-key="HEALTH_STATUS"
                     @change="updatePerpetratorForm"
                   />
                 </div>
 
                 <div class="flex flex-col gap-2">
-                  <BaseSelect
+                  <TaxonomySelect
                     id="Perpetrator's Profession"
                     label="Perpetrator's Profession"
                     v-model="localPerpetratorForm.profession"
                     placeholder="Select profession"
-                    :category-id="236648"
+                    root-key="OCCUPATION"
                     @change="updatePerpetratorForm"
                   />
                 </div>
 
                 <div class="flex flex-col gap-2">
-                  <BaseSelect
+                  <TaxonomySelect
                     id="Perpetrator's Marital Status"
                     label="Perpetrator's Marital Status"
                     v-model="localPerpetratorForm.maritalStatus"
                     placeholder="Select marital status"
-                    :category-id="236654"
+                    root-key="MARITAL_STATUS"
                     @change="handleMaritalStatusChange"
                   />
 
@@ -510,12 +510,12 @@
                       </div>
                       
                       <div class="flex flex-col gap-2">
-                        <BaseSelect
+                        <TaxonomySelect
                           id="spouse-profession"
                           label="Spouse Profession"
                           v-model="localPerpetratorForm.spouseProfession"
                           placeholder="Select spouse's profession"
-                          :category-id="236648"
+                          root-key="OCCUPATION"
                           @change="updatePerpetratorForm"
                         />
                       </div>
@@ -613,7 +613,7 @@
 
 <script setup>
 import { computed, reactive, watch, inject } from "vue";
-import BaseSelect from "@/components/base/BaseSelect.vue";
+import TaxonomySelect from "@/components/base/TaxonomySelect.vue";
 
 // Inject theme
 const isDarkMode = inject('isDarkMode')

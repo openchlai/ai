@@ -6,12 +6,12 @@
     <!-- Sliding Panel -->
     <div v-if="show"
         class="fixed top-0 right-0 h-full w-full md:w-[600px] shadow-2xl z-50 transform transition-all duration-300 ease-out flex flex-col overflow-hidden"
-        :class="isDarkMode ? 'bg-black border-l border-transparent' : 'bg-white border-l border-transparent'">
+        :class="isDarkMode ? 'bg-gray-950 border-l border-gray-800' : 'bg-white border-l border-gray-200'">
 
         <!-- Header -->
         <div class="flex items-center justify-between px-6 py-4 border-b" :class="isDarkMode
-            ? 'bg-black/50 border-transparent'
-            : 'bg-gray-50 border-transparent'">
+            ? 'bg-gray-900/50 border-gray-800'
+            : 'bg-gray-50 border-gray-100'">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white"
                     :class="isDarkMode ? 'bg-indigo-600' : 'bg-indigo-700'">
@@ -44,12 +44,12 @@
 
         <!-- Content -->
         <div class="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar"
-            :class="isDarkMode ? 'bg-black' : 'bg-gray-50'">
+            :class="isDarkMode ? 'bg-gray-950' : 'bg-gray-50'">
 
             <!-- Basic Info Grid -->
             <section class="grid grid-cols-2 gap-4">
                 <div class="p-4 rounded-xl border transition-all"
-                    :class="isDarkMode ? 'bg-neutral-900/50 border-neutral-800' : 'bg-white border-gray-100'">
+                    :class="isDarkMode ? 'bg-gray-900/50 border-gray-800' : 'bg-white border-gray-100'">
                     <p class="text-[10px] uppercase font-bold text-gray-500 mb-1">Call ID</p>
                     <p class="text-sm font-mono font-semibold truncate"
                         :class="isDarkMode ? 'text-indigo-400' : 'text-indigo-700'">
@@ -57,7 +57,7 @@
                     </p>
                 </div>
                 <div class="p-4 rounded-xl border transition-all"
-                    :class="isDarkMode ? 'bg-neutral-900/50 border-neutral-800' : 'bg-white border-gray-100'">
+                    :class="isDarkMode ? 'bg-gray-900/50 border-gray-800' : 'bg-white border-gray-100'">
                     <p class="text-[10px] uppercase font-bold text-gray-500 mb-1">Created At</p>
                     <p class="text-sm font-semibold" :class="isDarkMode ? 'text-gray-200' : 'text-gray-900'">
                         {{ formatDateTime(getPredictionValue('created_on')) }}
@@ -68,7 +68,7 @@
             <!-- Processing Info -->
             <section class="grid grid-cols-2 gap-4">
                 <div class="p-4 rounded-xl border transition-all"
-                    :class="isDarkMode ? 'bg-neutral-900/50 border-neutral-800' : 'bg-white border-gray-100'">
+                    :class="isDarkMode ? 'bg-gray-900/50 border-gray-800' : 'bg-white border-gray-100'">
                     <p class="text-[10px] uppercase font-bold text-gray-500 mb-1">Processing Mode</p>
                     <p class="text-sm font-bold uppercase tracking-wider"
                         :class="isDarkMode ? 'text-gray-200' : 'text-gray-900'">
@@ -76,7 +76,7 @@
                     </p>
                 </div>
                 <div class="p-4 rounded-xl border transition-all"
-                    :class="isDarkMode ? 'bg-neutral-900/50 border-neutral-800' : 'bg-white border-gray-100'">
+                    :class="isDarkMode ? 'bg-gray-900/50 border-gray-800' : 'bg-white border-gray-100'">
                     <p class="text-[10px] uppercase font-bold text-gray-500 mb-1">Status</p>
                     <span
                         class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase border tracking-widest shadow-sm inline-block"
@@ -92,7 +92,7 @@
 
                 <!-- Classification Summary -->
                 <div v-if="decodedPayload.payload?.classification" class="p-5 rounded-2xl border bg-gradient-to-br"
-                    :class="isDarkMode ? 'from-neutral-900 to-black border-neutral-800' : 'from-white to-gray-50 border-gray-100'">
+                    :class="isDarkMode ? 'from-gray-900 to-gray-950 border-gray-800' : 'from-white to-gray-50 border-gray-100'">
 
                     <div class="flex justify-between items-center mb-6">
                         <div>

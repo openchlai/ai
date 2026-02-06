@@ -33,27 +33,27 @@
             type="date"
             v-model="form.dob"
           />
-          <BaseSelect
+          <TaxonomySelect
             label="Age Group"
             v-model="form.ageGroup"
-            :category-id="101"
+            root-key="AGE_GROUP"
             placeholder="Select"
           />
         </div>
 
         <!-- Row 2: Location, Sex -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <BaseSelect
+          <TaxonomySelect
             label="Location"
             v-model="form.location"
-            :category-id="88"
+            root-key="LOCATION"
             placeholder="Select Location"
             :searchable="true"
           />
-          <BaseSelect
+          <TaxonomySelect
             label="Sex"
             v-model="form.sex"
-            :category-id="120"
+            root-key="GENDER"
             placeholder="Select Sex"
           />
         </div>
@@ -65,20 +65,20 @@
             v-model="form.landmark"
             placeholder="Enter Landmark"
           />
-          <BaseSelect
+          <TaxonomySelect
             label="Nationality"
             v-model="form.nationality"
-            :category-id="126"
+            root-key="NATIONALITY"
             placeholder="Select Nationality"
           />
         </div>
 
         <!-- Row 4: ID Type, ID Number, Language -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <BaseSelect
+          <TaxonomySelect
             label="ID Type"
             v-model="form.idType"
-            :category-id="362409"
+            root-key="ID_TYPE"
             placeholder="Select Type"
           />
           <BaseInput
@@ -86,10 +86,10 @@
             v-model="form.idNumber"
             placeholder="ID Number"
           />
-          <BaseSelect
+          <TaxonomySelect
             label="Language"
             v-model="form.language"
-            :category-id="123"
+            root-key="LANGUAGE"
             placeholder="Select Language"
           />
         </div>
@@ -110,10 +110,10 @@
               </div>
            </div>
 
-           <BaseSelect
+           <TaxonomySelect
             label="Tribe"
             v-model="form.tribe"
-            :category-id="133"
+            root-key="TRIBE"
             placeholder="Select Tribe"
           />
         </div>
@@ -164,6 +164,7 @@
 import { reactive, watch, inject, ref } from 'vue';
 import BaseInput from '@/components/base/BaseInput.vue';
 import BaseSelect from '@/components/base/BaseSelect.vue';
+import TaxonomySelect from '@/components/base/TaxonomySelect.vue';
 import { useAgeCalculator } from '@/composables/useAgeCalculator';
 
 const props = defineProps({

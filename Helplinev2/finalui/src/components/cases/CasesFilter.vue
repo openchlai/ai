@@ -1,10 +1,7 @@
 <template>
-  <div 
-    class="w-full rounded-lg p-4 shadow-xl border border-transparent mb-4"
-    :class="isDarkMode 
-      ? 'bg-black' 
-      : 'bg-white'"
-  >
+  <div class="w-full rounded-lg p-4 shadow-xl border border-transparent mb-4" :class="isDarkMode
+    ? 'bg-black'
+    : 'bg-white'">
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <!-- Global Search -->
       <div class="flex flex-col">
@@ -167,20 +164,20 @@
 
         <!-- Category -->
         <div class="flex flex-col">
-          <BaseSelect v-model="filters.case_category_id" label="Category" placeholder="Select category"
-            :category-id="362557" />
+          <TaxonomySelect v-model="filters.case_category_id" label="Category" placeholder="Select category"
+            root-key="CASE_CATEGORY" />
         </div>
 
         <!-- Justice System State -->
         <div class="flex flex-col">
-          <BaseSelect v-model="filters.justice_id" label="Justice State" placeholder="Select state"
-            :category-id="236687" />
+          <TaxonomySelect v-model="filters.justice_id" label="Justice State" placeholder="Select state"
+            root-key="JUSTICE_SYSTEM_STATE" />
         </div>
 
         <!-- General Assessment -->
         <div class="flex flex-col">
-          <BaseSelect v-model="filters.assessment_id" label="Assessment" placeholder="Select assessment"
-            :category-id="236694" />
+          <TaxonomySelect v-model="filters.assessment_id" label="Assessment" placeholder="Select assessment"
+            root-key="GENERAL_ASSESSMENT" />
         </div>
       </div>
     </Transition>
@@ -209,7 +206,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, inject } from 'vue'
+  import { reactive, ref, inject } from 'vue'
+  import BaseSelect from '@/components/base/BaseSelect.vue'
+  import TaxonomySelect from '@/components/base/TaxonomySelect.vue'
 
   const emit = defineEmits(['update:filters'])
 

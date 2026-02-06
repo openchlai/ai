@@ -20,26 +20,26 @@
           <BaseInput label="Perpetrator Name" v-model="form.name" placeholder="Name" />
           <BaseInput label="Age" type="number" v-model="form.age" placeholder="Age" />
           <BaseInput label="DOB" type="date" v-model="form.dob" />
-          <BaseSelect label="Age Group" v-model="form.ageGroup" :category-id="101" placeholder="Select" />
+          <TaxonomySelect label="Age Group" v-model="form.ageGroup" root-key="AGE_GROUP" placeholder="Select" />
         </div>
 
         <!-- Row 2: Location, Sex -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <BaseSelect label="Location" v-model="form.location" :category-id="88" placeholder="Select Location" :searchable="true" />
-          <BaseSelect label="Sex" v-model="form.sex" :category-id="120" placeholder="Select Sex" />
+          <TaxonomySelect label="Location" v-model="form.location" root-key="LOCATION" placeholder="Select Location" :searchable="true" />
+          <TaxonomySelect label="Sex" v-model="form.sex" root-key="GENDER" placeholder="Select Sex" />
         </div>
 
         <!-- Row 3: Landmark, Nationality -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <BaseInput label="Nearest Landmark" v-model="form.landmark" placeholder="Landmark" />
-          <BaseSelect label="Nationality" v-model="form.nationality" :category-id="126" placeholder="Select Nationality" />
+          <TaxonomySelect label="Nationality" v-model="form.nationality" root-key="NATIONALITY" placeholder="Select Nationality" />
         </div>
 
         <!-- Row 4: ID Type, ID Number, Language -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <BaseSelect label="ID Type" v-model="form.idType" :category-id="362409" placeholder="Select Type" />
+          <TaxonomySelect label="ID Type" v-model="form.idType" root-key="ID_TYPE" placeholder="Select Type" />
           <BaseInput label="ID Number" v-model="form.idNumber" placeholder="ID Number" />
-          <BaseSelect label="Language" v-model="form.language" :category-id="123" placeholder="Select Language" />
+          <TaxonomySelect label="Language" v-model="form.language" root-key="LANGUAGE" placeholder="Select Language" />
         </div>
 
         <!-- Row 5: Refugee, Tribe -->
@@ -53,7 +53,7 @@
               </div>
            </div>
            
-           <BaseSelect label="Tribe" v-model="form.tribe" :category-id="133" placeholder="Select Tribe" />
+           <TaxonomySelect label="Tribe" v-model="form.tribe" root-key="TRIBE" placeholder="Select Tribe" />
         </div>
 
         <!-- Row 6: Phones, Email -->
@@ -65,7 +65,7 @@
 
         <!-- Row 7: Relationship, Shares Home -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <BaseSelect label="Relationship with Client?" v-model="form.relationship" :category-id="236634" placeholder="Select Relationship" />
+          <TaxonomySelect label="Relationship with Client?" v-model="form.relationship" root-key="RELATIONSHIP" placeholder="Select Relationship" />
           
           <div>
               <label class="block text-sm font-semibold mb-2" :class="isDarkMode ? 'text-gray-100' : 'text-gray-900'">Shares Home with Client?</label>
@@ -92,9 +92,9 @@
 
         <!-- Row 8: Health, Profession, Marital -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <BaseSelect label="Health Status" v-model="form.healthStatus" :category-id="363087" placeholder="Select Health" />
-          <BaseSelect label="Profession" v-model="form.profession" :category-id="362484" placeholder="Select Profession" />
-          <BaseSelect label="Marital Status" v-model="form.maritalStatus" :category-id="362010" placeholder="Select Status" />
+          <TaxonomySelect label="Health Status" v-model="form.healthStatus" root-key="HEALTH_STATUS" placeholder="Select Health" />
+          <TaxonomySelect label="Profession" v-model="form.profession" root-key="OCCUPATION" placeholder="Select Profession" />
+          <TaxonomySelect label="Marital Status" v-model="form.maritalStatus" root-key="MARITAL_STATUS" placeholder="Select Status" />
         </div>
 
         <!-- Row 9: Guardian Name -->
@@ -135,6 +135,7 @@ import { reactive, watch, inject, ref } from 'vue';
 import BaseInput from '@/components/base/BaseInput.vue';
 import BaseSelect from '@/components/base/BaseSelect.vue';
 import BaseTextarea from '@/components/base/BaseTextarea.vue';
+import TaxonomySelect from '@/components/base/TaxonomySelect.vue';
 import { useAgeCalculator } from '@/composables/useAgeCalculator';
 
 const props = defineProps({

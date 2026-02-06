@@ -1,6 +1,6 @@
 <template>
   <aside class="fixed left-0 top-0 h-screen w-64 border-r border-transparent flex flex-col shadow-xl" :class="isDarkMode
-    ? 'bg-black'
+    ? 'bg-[#111827] border-gray-800'
     : 'bg-white'">
 
     <!-- Header with Logo - Fixed -->
@@ -118,16 +118,11 @@
     </nav>
 
     <!-- User Profile Section with Theme Toggle - Fixed at Bottom -->
-    <div 
-      class="flex-shrink-0 p-6 pt-4 border-t border-transparent"
-    >
-      <div 
-        class="flex items-center gap-3 px-4 py-3 rounded-xl mb-3"
-        :class="isDarkMode ? 'bg-black' : 'bg-gray-50'"
-      >
+    <div class="flex-shrink-0 p-6 pt-4 border-t border-transparent">
+      <div class="flex items-center gap-3 px-4 py-3 rounded-xl mb-3" :class="isDarkMode ? 'bg-black' : 'bg-gray-50'">
         <div
           class="w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0 transition-colors"
-          :class="isDarkMode ? 'bg-amber-600' : 'bg-amber-700'">
+          :class="isDarkMode ? 'bg-[#008080]' : 'bg-[#003366]'">
           {{ authStore.userInitials }}
         </div>
         <div class="flex-1 min-w-0">
@@ -142,8 +137,8 @@
         <!-- Theme Toggle Button -->
         <button class="p-2 rounded-lg transition-all duration-300 flex items-center justify-center flex-shrink-0"
           :class="isDarkMode
-            ? 'hover:bg-amber-500/10 text-amber-500'
-            : 'hover:bg-amber-600/10 text-amber-600'" @click="$emit('toggle-theme')"
+            ? 'hover:bg-[#008080]/10 text-[#008080]'
+            : 'hover:bg-[#003366]/10 text-[#003366]'" @click="$emit('toggle-theme')"
           :title="isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
           <i-mdi-weather-sunny v-if="isDarkMode" class="w-5 h-5" />
           <i-mdi-weather-night v-else class="w-5 h-5" />
@@ -184,8 +179,8 @@
     if (isActive) {
       // Active state with brown for light mode, blue for dark mode
       return props.isDarkMode
-        ? 'bg-amber-600 text-white font-medium shadow-lg shadow-amber-900/50'
-        : 'bg-amber-700 text-white font-medium shadow-lg shadow-amber-900/30'
+        ? 'bg-[#008080] text-white font-medium shadow-lg shadow-[#008080]/30'
+        : 'bg-[#003366] text-white font-medium shadow-lg shadow-[#003366]/30'
     } else {
       // Inactive state
       return props.isDarkMode

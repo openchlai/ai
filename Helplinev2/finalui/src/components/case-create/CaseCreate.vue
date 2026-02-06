@@ -1,7 +1,8 @@
 <template>
   <div class="space-y-6">
     <!-- Mode Selection Screen -->
-    <div v-if="mode === 'selection'" class="min-h-[60vh] flex flex-col items-center justify-center animate-in fade-in duration-500">
+    <div v-if="mode === 'selection'"
+      class="min-h-[60vh] flex flex-col items-center justify-center animate-in fade-in duration-500">
       <div class="text-center mb-10">
         <h2 class="text-3xl font-bold mb-3" :class="isDarkMode ? 'text-white' : 'text-gray-900'">
           Create New Case
@@ -10,52 +11,69 @@
           Choose how you would like to proceed
         </p>
       </div>
-      
+
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl w-full px-4">
         <!-- Step Workflow Option -->
-        <div 
+        <div
           class="group relative p-8 rounded-2xl border transition-all duration-300 hover:shadow-2xl cursor-pointer transform hover:-translate-y-1"
-          :class="isDarkMode ? 'bg-neutral-900 border-neutral-800 hover:border-amber-600' : 'bg-white border-gray-100 hover:border-amber-500'"
-          @click="selectMode('wizard')"
-        >
-          <div class="mb-4 w-14 h-14 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-500 transition-transform group-hover:scale-110">
+          :class="isDarkMode ? 'bg-neutral-900 border-neutral-800 hover:border-[#008080]' : 'bg-white border-gray-100 hover:border-[#003366]'"
+          @click="selectMode('wizard')">
+          <div
+            class="mb-4 w-14 h-14 rounded-full bg-[#003366]/10 dark:bg-[#008080]/20 flex items-center justify-center text-[#003366] dark:text-[#008080] transition-transform group-hover:scale-110">
             <i-mdi-format-list-numbered class="w-8 h-8" />
           </div>
-          <h3 class="text-xl font-bold mb-2" :class="isDarkMode ? 'text-white' : 'text-gray-900'">Step-by-Step Workflow</h3>
+          <h3 class="text-xl font-bold mb-2" :class="isDarkMode ? 'text-white' : 'text-gray-900'">Step-by-Step Workflow
+          </h3>
           <p :class="isDarkMode ? 'text-gray-400' : 'text-gray-600'">
-            Guided wizard walking you through reporter selection, case details, and review steps. Best for standard procedures.
+            Guided wizard walking you through reporter selection, case details, and review steps. Best for standard
+            procedures.
           </p>
-          <div class="mt-6 flex items-center text-amber-600 font-medium group-hover:gap-2 transition-all">
+          <div class="mt-6 flex items-center text-[#003366] font-medium group-hover:gap-2 transition-all">
             Continue Step Workflow <i-mdi-arrow-right class="ml-2 group-hover:translate-x-1 transition-transform" />
           </div>
         </div>
 
         <!-- Single Form Option -->
-        <div 
+        <div
           class="group relative p-8 rounded-2xl border transition-all duration-300 hover:shadow-2xl cursor-pointer transform hover:-translate-y-1"
-          :class="isDarkMode ? 'bg-neutral-900 border-neutral-800 hover:border-blue-600' : 'bg-white border-gray-100 hover:border-blue-500'"
-          @click="selectMode('legacy')"
-        >
-          <div class="mb-4 w-14 h-14 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-500 transition-transform group-hover:scale-110">
-             <i-mdi-file-document-edit class="w-8 h-8" />
+          :class="isDarkMode ? 'bg-neutral-900 border-neutral-800 hover:border-[#008080]' : 'bg-white border-gray-100 hover:border-[#003366]'"
+          @click="selectMode('legacy')">
+          <div
+            class="mb-4 w-14 h-14 rounded-full bg-[#003366]/10 dark:bg-[#008080]/20 flex items-center justify-center text-[#003366] dark:text-[#008080] transition-transform group-hover:scale-110">
+            <i-mdi-file-document-edit class="w-8 h-8" />
           </div>
           <h3 class="text-xl font-bold mb-2" :class="isDarkMode ? 'text-white' : 'text-gray-900'">Single Case Form</h3>
           <p :class="isDarkMode ? 'text-gray-400' : 'text-gray-600'">
             Legacy-style single page form for rapid data entry. All fields available at once on a single screen.
           </p>
-          <div class="mt-6 flex items-center text-blue-600 font-medium group-hover:gap-2 transition-all">
+          <div class="mt-6 flex items-center text-[#003366] font-medium group-hover:gap-2 transition-all">
             Open Single Case Form <i-mdi-arrow-right class="ml-2 group-hover:translate-x-1 transition-transform" />
           </div>
         </div>
       </div>
     </div>
 
+    <!-- Legacy / Single Form Mode -->
+    <div v-else-if="mode === 'legacy'" class="animate-in fade-in duration-500">
+      <div class="max-w-7xl mx-auto mb-4 px-4 lg:px-0">
+        <button @click="mode = 'wizard'"
+          class="text-xs font-bold flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all"
+          :class="isDarkMode ? 'bg-gray-800 border-gray-700 text-[#008080] hover:bg-gray-700' : 'bg-white border-gray-200 text-[#003366] hover:bg-gray-50'">
+          <i-mdi-format-list-numbered class="w-4 h-4" />
+          Switch to Step-by-Step Wizard
+        </button>
+      </div>
+      <CaseSingleFormView @switch-to-wizard="mode = 'wizard'" />
+    </div>
+
     <!-- Wizard Mode -->
     <div v-else-if="mode === 'wizard'" class="space-y-4">
       <div class="max-w-7xl mx-auto flex">
-         <button @click="mode = 'selection'" class="text-xs flex items-center gap-1 hover:underline opacity-60 hover:opacity-100 transition-opacity" :class="isDarkMode ? 'text-gray-300' : 'text-gray-600'">
-            &larr; Switch Mode
-         </button>
+        <button @click="mode = 'selection'"
+          class="text-xs flex items-center gap-1 hover:underline opacity-60 hover:opacity-100 transition-opacity"
+          :class="isDarkMode ? 'text-gray-300' : 'text-gray-600'">
+          &larr; Switch Mode
+        </button>
       </div>
 
       <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
@@ -94,8 +112,8 @@
               @remove-perpetrator="removePerpetrator" @save-and-proceed="saveAndProceed(3)" @step-change="goToStep" />
 
             <!-- Step 4: Review -->
-            <Step4Review v-if="currentStep === 4" :currentStep="currentStep" :formData="formData" :reporterId="reporterId"
-              @go-to-step="goToStep" @submit-case="submitCase" />
+            <Step4Review v-if="currentStep === 4" :currentStep="currentStep" :formData="formData"
+              :reporterId="reporterId" @go-to-step="goToStep" @submit-case="submitCase" />
           </div>
         </div>
 
@@ -141,6 +159,7 @@
   import ClientModal from '@/components/case-create/ClientModal.vue';
   import PerpetratorModal from '@/components/case-create/PerpetratorModal.vue';
   import CaseInsightsPanel from '@/components/case-create/CaseInsightsPanel.vue';
+  import CaseSingleFormView from '@/components/case-create/CaseSingleFormView.vue';
 
   export default {
     name: 'CaseCreation',
@@ -153,7 +172,8 @@
       Step4Review,
       ClientModal,
       PerpetratorModal,
-      CaseInsightsPanel
+      CaseInsightsPanel,
+      CaseSingleFormView
     },
     setup() {
       const router = useRouter();
@@ -166,19 +186,15 @@
       // Inject theme
       const isDarkMode = inject('isDarkMode');
 
-      const mode = ref('selection');
+      const mode = ref('legacy');
       const selectMode = (selectedMode) => {
-        if (selectedMode === 'legacy') {
-          router.push({ name: 'CaseSingleForm', params: { id: 'new' } });
-        } else {
-          mode.value = selectedMode;
-        }
+        mode.value = selectedMode;
       };
 
       const currentStep = ref(1);
       const totalSteps = 4;
       const isSubmittingCase = ref(false);
-      const aiEnabled = ref(false);
+      const aiEnabled = ref(true);
 
       onMounted(() => {
         if (route.query.phone) {
@@ -261,6 +277,10 @@
           referralsTypeText: [],
           policeDetails: '',
           otherServicesDetails: ''
+        },
+        step4: {
+          disposition: '',
+          dispositionText: ''
         }
       });
 
@@ -417,29 +437,29 @@
         if (step === 2) {
           console.group('🔍 Validating Step 2');
           console.log('formData.step2:', JSON.parse(JSON.stringify(formData.step2)));
-          
+
           const errors = [];
           if (!formData.step2.isGBVRelated) errors.push('GBV Related is required');
           else console.log('✅ GBV Related:', formData.step2.isGBVRelated);
-          
+
           if (!formData.step2.categories) errors.push('Case Category is required');
           else console.log('✅ Category:', formData.step2.categories);
-          
+
           if (!formData.step2.priority) errors.push('Priority is required');
           else console.log('✅ Priority:', formData.step2.priority);
-          
+
           if (!formData.step2.status) errors.push('Status is required');
           else console.log('✅ Status:', formData.step2.status);
-          
+
           if (!formData.step2.narrative || !formData.step2.narrative.trim()) errors.push('Narrative is required');
           else console.log('✅ Narrative:', formData.step2.narrative);
-          
+
           if (!formData.step2.plan || !formData.step2.plan.trim()) errors.push('Plan is required');
           else console.log('✅ Plan:', formData.step2.plan);
-          
+
           if (!formData.step2.incidentLocation) errors.push('Incident Location is required'); // Validate Location
           else console.log('✅ Incident Location:', formData.step2.incidentLocation);
-          
+
           console.groupEnd();
 
           if (errors.length > 0) {
@@ -455,10 +475,10 @@
           }
 
           if (errors.length > 0) {
-             toast.error('Please complete required fields', {
-               description: errors.join(', ')
-             });
-             return;
+            toast.error('Please complete required fields', {
+              description: errors.join(', ')
+            });
+            return;
           }
         }
 
@@ -825,7 +845,7 @@
             narrative: getValueOrDefault(formData.step2.narrative),
             plan: getValueOrDefault(formData.step2.plan),
             dept: mapDepartmentToBackend(formData.step2.department),
-            disposition_id: "363037",
+            disposition_id: getValueOrDefault(formData.step4.disposition),
             escalated_to_id: getValueOrDefault(formData.step2.escalatedTo, "0"),
             gbv_related: mapGBVRelatedToBackend(formData.step2.isGBVRelated),
             knowabout116_id: getValueOrDefault(formData.step3.referralSource),

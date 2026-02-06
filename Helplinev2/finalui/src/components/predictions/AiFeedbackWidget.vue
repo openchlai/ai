@@ -5,13 +5,14 @@
                 :class="isDarkMode ? 'text-gray-400' : 'text-gray-500'">
                 Feedback
             </h4>
-            <div class="flex gap-1">
+            <div v-if="callId && taskType" class="flex gap-1">
                 <button v-for="star in 5" :key="star" @click="setRating(star)"
                     class="focus:outline-none transition-colors duration-200"
-                    :class="star <= rating ? 'text-amber-400' : (isDarkMode ? 'text-gray-700 hover:text-gray-600' : 'text-gray-300 hover:text-gray-400')">
+                    :class="star <= rating ? 'text-amber-400' : (isDarkMode ? 'text-neutral-700 hover:text-neutral-500' : 'text-gray-300 hover:text-gray-400')">
                     <i-mdi-star class="w-5 h-5" />
                 </button>
             </div>
+            <div v-else class="text-[10px] opacity-30 italic">Feedback unavailable</div>
         </div>
 
         <div v-if="rating > 0" class="mt-3 space-y-3 animate-fadeIn">
@@ -40,7 +41,7 @@
 
     const props = defineProps({
         callId: {
-            type: String,
+            type: [String, Number],
             required: true
         },
         taskType: {

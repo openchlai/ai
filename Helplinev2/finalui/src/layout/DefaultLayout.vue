@@ -1,5 +1,5 @@
 <template>
-  <div class="flex min-h-screen" :class="isDarkMode ? 'bg-black' : 'bg-gray-50'">
+  <div class="flex min-h-screen" :class="isDarkMode ? 'bg-[#0B1120]' : 'bg-gray-50'">
     <!-- Fixed Sidebar - Only show when NOT on login page -->
     <Sidebar v-if="showSidebar" :isDarkMode="isDarkMode" @toggle-theme="toggleTheme" />
     
@@ -8,7 +8,7 @@
       class="flex-1 flex flex-col min-h-screen relative" 
       :class="[
         showSidebar ? 'ml-64' : '',
-        isDarkMode ? 'bg-black' : 'bg-gray-50'
+        isDarkMode ? 'bg-[#0B1120]' : 'bg-gray-50'
       ]"
     >
       <!-- Static Navbar -->

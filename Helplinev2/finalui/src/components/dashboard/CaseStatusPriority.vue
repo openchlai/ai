@@ -16,13 +16,14 @@ const store = useCaseStore()
 const localData = ref([])
 
 const fetchData = async () => {
-  await store.listCases({
+  const data = await store.getAnalytics({
     xaxis: "final_status,priority",
     yaxis: "-",
     metrics: "case_count",
+    _c: 9999,
     ...props.filters
   })
-  localData.value = [...store.cases]
+  localData.value = data.cases || []
 }
 
 // Theme-aware status and priority colors
@@ -197,50 +198,31 @@ watch(() => props.filters, () => {
         </div>
       </div>
 
-      <!-- Priority Section -->
-      <div class="space-y-4">
-        <h3 
-          class="font-medium text-sm uppercase tracking-wide"
-          :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'"
-        >
-          By Priority
-        </h3>
-        
-        <div v-for="item in processedData.priority" :key="item.label" class="space-y-2">
-          <div class="flex justify-between text-sm">
-            <span 
-              class="font-medium"
-              :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'"
-            >
-              {{ item.label }}
-            </span>
-            <span 
-              :class="isDarkMode ? 'text-gray-500' : 'text-gray-600'"
-            >
-              {{ item.value }} 
-              <span 
-                :class="isDarkMode ? 'text-gray-600' : 'text-gray-500'"
-              >
-                ({{ ((item.value / priorityTotal) * 100).toFixed(1) }}%)
-              </span>
-            </span>
-          </div>
-          <div 
-            class="w-full rounded-full h-7 relative overflow-hidden border"
-            :class="isDarkMode 
-              ? 'bg-black/60 border-transparent' 
-              : 'bg-gray-100 border-transparent'"
-          >
-            <div 
-              class="h-full rounded-full transition-all duration-500 flex items-center justify-end pr-3"
-              :style="{ 
-                width: `${(item.value / priorityTotal) * 100}%`,
-                backgroundColor: item.color
-              }"
-            >
-              <span class="text-white text-xs font-semibold">{{ item.value }}</span>
-            </div>
-          </div>
+      <!-- Priority & Stats Section -->
+      <div class="space-y-6">
+        <!-- Priority Big Numbers -->
+        <div>
+           <h3 class="font-medium text-sm uppercase tracking-wide mb-4" :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'">
+             Priority Breakdown
+           </h3>
+           <div class="grid grid-cols-3 gap-4 text-center">
+             <div v-for="item in processedData.priority" :key="item.label" class="flex flex-col items-center">
+                <span class="text-xs font-medium" :class="isDarkMode ? 'text-gray-400' : 'text-gray-600'">
+                  {{ item.label }} Priority
+                </span>
+                <span class="text-3xl font-bold mt-1" :class="isDarkMode ? 'text-gray-200' : 'text-gray-800'">
+                  {{ item.value }}
+                </span>
+             </div>
+           </div>
+        </div>
+
+        <!-- Total Box -->
+        <div class="flex justify-end pt-4">
+           <div class="bg-black text-white px-8 py-4 rounded-lg flex flex-col items-center min-w-[120px]">
+              <span class="text-sm font-medium opacity-80">Total</span>
+              <span class="text-3xl font-bold">{{ totalCases }}</span>
+           </div>
         </div>
       </div>
     </div>
