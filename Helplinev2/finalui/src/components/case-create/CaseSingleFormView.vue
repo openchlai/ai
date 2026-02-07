@@ -17,11 +17,11 @@
         <div v-if="!formData.step1.selectedReporter">
           <div class="relative">
             <input v-model="formData.step1.searchQuery" type="text" placeholder="Search reporter..."
-              class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none"
+              class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#003366] dark:focus:ring-[#2DD4BF] focus:border-transparent outline-none"
               :class="isDarkMode ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500' : 'bg-gray-50 border-gray-200 text-gray-900'"
               @input="handleReporterSearch" />
             <div v-if="isSearchingReporter" class="absolute right-3 top-2.5">
-              <div class="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+              <div class="w-4 h-4 border-2 border-[#2DD4BF] border-t-transparent rounded-full animate-spin"></div>
             </div>
           </div>
 
@@ -40,7 +40,7 @@
 
           <div class="mt-3">
             <button type="button"
-              class="w-full py-2 text-sm text-amber-600 font-medium hover:text-amber-700 flex justify-center items-center gap-1"
+              class="w-full py-2 text-sm text-[#003366] font-medium hover:text-[#002244] flex justify-center items-center gap-1"
               @click="openCreateReporter">
               <span>+ Create New Reporter</span>
             </button>
@@ -50,7 +50,7 @@
         <!-- Selected Reporter Card -->
         <div v-else class="space-y-3">
           <div class="flex items-start gap-3">
-            <div class="w-10 h-10 rounded-full bg-amber-600 text-white flex items-center justify-center font-bold">
+            <div class="w-10 h-10 rounded-full bg-[#003366] text-white flex items-center justify-center font-bold">
               {{ getInitials(getReporterName(formData.step1.selectedReporter)) }}
             </div>
             <div>
@@ -74,7 +74,7 @@
 
           <label class="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" v-model="formData.step1.reporterIsClient"
-              class="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 border-gray-300">
+              class="w-4 h-4 rounded text-[#003366] focus:ring-[#003366] border-gray-300">
             <span class="text-sm" :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'">Reporter is also a
               Client</span>
           </label>
@@ -180,12 +180,12 @@
           <div class="flex gap-4">
             <label class="flex items-center gap-2 cursor-pointer">
               <input v-model="formData.step2.department" type="radio" value="116"
-                class="w-4 h-4 text-amber-600 focus:ring-amber-500">
+                class="w-4 h-4 text-[#003366] dark:text-[#2DD4BF] focus:ring-[#003366] dark:focus:ring-[#2DD4BF]">
               <span :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'">116</span>
             </label>
             <label class="flex items-center gap-2 cursor-pointer">
               <input v-model="formData.step2.department" type="radio" value="labor"
-                class="w-4 h-4 text-amber-600 focus:ring-amber-500">
+                class="w-4 h-4 text-[#003366] dark:text-[#2DD4BF] focus:ring-[#003366] dark:focus:ring-[#2DD4BF]">
               <span :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'">Labor</span>
             </label>
           </div>
@@ -214,7 +214,7 @@
           <label class="block font-semibold mb-2" :class="isDarkMode ? 'text-gray-100' : 'text-gray-900'">Case
             Plan</label>
           <textarea v-model="formData.step2.plan"
-            class="w-full px-3 py-2 border rounded-lg resize-y focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-all"
+            class="w-full px-3 py-2 border rounded-lg resize-y focus:ring-2 focus:ring-[#003366] dark:focus:ring-[#2DD4BF] focus:border-transparent outline-none transition-all"
             :class="isDarkMode ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500' : 'bg-gray-50 border-gray-200 text-gray-900'"
             rows="4" placeholder="Enter case plan..."></textarea>
         </div>
@@ -243,7 +243,7 @@
             <label class="block font-semibold mb-2" :class="isDarkMode ? 'text-gray-100' : 'text-gray-900'">Priority
               *</label>
             <select v-model="formData.step2.priority"
-              class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
+              class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#003366] dark:focus:ring-[#2DD4BF] outline-none"
               :class="isDarkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'">
               <option value="">Select</option>
               <option value="3">High</option>
@@ -257,7 +257,7 @@
             <label class="block font-semibold mb-2" :class="isDarkMode ? 'text-gray-100' : 'text-gray-900'">Status
               *</label>
             <select v-model="formData.step2.status"
-              class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
+              class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#003366] dark:focus:ring-[#2DD4BF] outline-none"
               :class="isDarkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'">
               <option value="">Select</option>
               <option value="1">Open</option>
@@ -271,7 +271,7 @@
             <label class="block font-semibold mb-2" :class="isDarkMode ? 'text-gray-100' : 'text-gray-900'">Escalated
               To</label>
             <select v-model="formData.step2.escalatedTo"
-              class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
+              class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#003366] dark:focus:ring-[#2DD4BF] outline-none"
               :class="isDarkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'">
               <option value="0">None</option>
               <option v-for="user in escalatedToUsers" :key="user.id" :value="user.id">

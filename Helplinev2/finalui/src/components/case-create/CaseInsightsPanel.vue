@@ -9,7 +9,7 @@
           <i-mdi-robot class="w-5 h-5" />
         </div>
         <div>
-          <h3 class="text-sm font-bold leading-none mb-1" :class="isDarkMode ? 'text-[#008080]' : 'text-[#003366]'">
+          <h3 class="text-sm font-bold leading-none mb-1" :class="isDarkMode ? 'text-[#2DD4BF]' : 'text-[#003366]'">
             Caseworker Support
           </h3>
           <p class="text-[10px] font-medium text-gray-500 leading-none">
@@ -554,7 +554,7 @@
   const getRiskColor = (level) => {
     const l = (level || '').toLowerCase()
     if (l === 'high' || l === 'critical' || l === '1') return 'bg-[#003366]/10 text-[#003366] border-[#003366]/20'
-    if (l === 'medium' || l === '2') return 'bg-[#008080]/10 text-[#008080] border-[#008080]/20'
+    if (l === 'medium' || l === '2') return 'bg-[#008080]/10 text-[#2DD4BF] border-[#2DD4BF]/20'
     return 'bg-gray-100 text-gray-600 border-gray-200'
   }
 </script>

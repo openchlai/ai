@@ -137,7 +137,7 @@
         <!-- Theme Toggle Button -->
         <button class="p-2 rounded-lg transition-all duration-300 flex items-center justify-center flex-shrink-0"
           :class="isDarkMode
-            ? 'hover:bg-[#008080]/10 text-[#008080]'
+            ? 'hover:bg-[#008080]/10 text-[#2DD4BF]'
             : 'hover:bg-[#003366]/10 text-[#003366]'" @click="$emit('toggle-theme')"
           :title="isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
           <i-mdi-weather-sunny v-if="isDarkMode" class="w-5 h-5" />

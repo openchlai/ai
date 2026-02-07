@@ -16,7 +16,7 @@
           :class="isDarkMode ? 'border-transparent' : 'border-transparent'">
           <div class="text-xl font-semibold flex items-center gap-2"
             :class="isDarkMode ? 'text-gray-100' : 'text-gray-900'">
-            <i-mdi-account class="w-5 h-5" :class="isDarkMode ? 'text-amber-500' : 'text-amber-700'" />
+            <i-mdi-account class="w-5 h-5" :class="isDarkMode ? 'text-[#2DD4BF]' : 'text-[#003366]'" />
             Reporter Information
           </div>
           <button class="flex items-center gap-2 px-3 py-1.5 border rounded-lg text-sm transition-colors" :class="isDarkMode
@@ -28,12 +28,12 @@
         </div>
         <div class="p-4">
           <div v-if="formData.step1.selectedReporter || reporterId" class="p-4 border rounded-lg" :class="isDarkMode
-            ? 'bg-amber-900/20 border-amber-600/30'
-            : 'bg-amber-50 border-amber-300'">
+            ? 'bg-[#008080]/20 border-[#2DD4BF]/30'
+            : 'bg-[#003366]/5 border-[#003366]/20'">
             <div class="flex items-start gap-3">
               <div
                 class="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0"
-                :class="isDarkMode ? 'bg-amber-600' : 'bg-amber-700'">
+                :class="isDarkMode ? 'bg-[#008080]' : 'bg-[#003366]'">
                 <span>{{ getReporterInitials() }}</span>
               </div>
 
@@ -93,7 +93,7 @@
           :class="isDarkMode ? 'border-transparent' : 'border-transparent'">
           <div class="text-xl font-semibold flex items-center gap-2"
             :class="isDarkMode ? 'text-gray-100' : 'text-gray-900'">
-            <i-mdi-folder class="w-5 h-5" :class="isDarkMode ? 'text-amber-500' : 'text-amber-700'" />
+            <i-mdi-folder class="w-5 h-5" :class="isDarkMode ? 'text-[#2DD4BF]' : 'text-[#003366]'" />
             Case Details
           </div>
           <button class="flex items-center gap-2 px-3 py-1.5 border rounded-lg text-sm transition-colors" :class="isDarkMode
@@ -193,7 +193,7 @@
           :class="isDarkMode ? 'border-transparent' : 'border-transparent'">
           <div class="text-xl font-semibold flex items-center gap-2"
             :class="isDarkMode ? 'text-gray-100' : 'text-gray-900'">
-            <i-mdi-information class="w-5 h-5" :class="isDarkMode ? 'text-amber-500' : 'text-amber-700'" />
+            <i-mdi-information class="w-5 h-5" :class="isDarkMode ? 'text-[#2DD4BF]' : 'text-[#003366]'" />
             Additional Information
           </div>
           <button class="flex items-center gap-2 px-3 py-1.5 border rounded-lg text-sm transition-colors" :class="isDarkMode
@@ -295,10 +295,10 @@
 
     <!-- Disposition Selection (Mandatory) -->
     <div class="mt-6 p-6 border-2 rounded-xl animate-in fade-in slide-in-from-bottom-4 duration-500" :class="isDarkMode
-      ? 'bg-amber-900/10 border-amber-600/30'
-      : 'bg-amber-50 border-amber-200'">
+      ? 'bg-[#008080]/10 border-[#2DD4BF]/30'
+      : 'bg-[#003366]/5 border-[#003366]/20'">
       <div class="text-base font-bold mb-4 flex items-center gap-2"
-        :class="isDarkMode ? 'text-amber-500' : 'text-amber-800'">
+        :class="isDarkMode ? 'text-[#2DD4BF]' : 'text-[#003366]'">
         <i-mdi-check-all class="w-5 h-5" />
         Final Case Disposition *
       </div>
@@ -458,8 +458,8 @@
           : `${baseClasses} bg-red-100 text-red-700 border-red-300`
       case 2:
         return isDarkMode.value
-          ? `${baseClasses} bg-amber-600/20 text-amber-400 border-amber-600/30`
-          : `${baseClasses} bg-amber-100 text-amber-700 border-amber-300`
+          ? `${baseClasses} bg-[#008080]/20 text-[#2DD4BF] border-[#2DD4BF]/30`
+          : `${baseClasses} bg-[#003366]/10 text-[#003366] border-[#003366]/30`
       case 1:
         return isDarkMode.value
           ? `${baseClasses} bg-green-600/20 text-green-400 border-green-600/30`
@@ -488,8 +488,8 @@
     switch (Number(status)) {
       case 1:
         return isDarkMode.value
-          ? `${baseClasses} bg-amber-600/20 text-amber-500 border-amber-600/30`
-          : `${baseClasses} bg-amber-100 text-amber-700 border-amber-300`
+          ? `${baseClasses} bg-[#008080]/20 text-[#2DD4BF] border-[#2DD4BF]/30`
+          : `${baseClasses} bg-[#003366]/10 text-[#003366] border-[#003366]/30`
       case 2:
         return isDarkMode.value
           ? `${baseClasses} bg-gray-600/20 text-gray-400 border-transparent/30`
