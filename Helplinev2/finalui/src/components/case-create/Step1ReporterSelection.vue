@@ -15,7 +15,7 @@
             <div
               class="relative flex items-center gap-2 border rounded-lg px-3 py-2.5 flex-1 max-w-xs focus-within:ring-2 transition-all"
               :class="isDarkMode
-                ? 'border-transparent bg-neutral-800 focus-within:border-[#008080] focus-within:ring-[#008080]/50'
+                ? 'border-transparent bg-neutral-800 focus-within:border-[#2DD4BF] focus-within:ring-[#2DD4BF]/50'
                 : 'border-transparent bg-gray-50 focus-within:border-[#003366] focus-within:ring-[#003366]/50'">
               <i-mdi-magnify class="w-5 h-5" :class="isDarkMode ? 'text-gray-400' : 'text-gray-500'" />
               <input v-model="searchQuery" type="text" placeholder="Search by name or phone..."
@@ -37,7 +37,7 @@
         <div v-if="isLoading" class="flex items-center gap-3 p-5 text-center"
           :class="isDarkMode ? 'text-gray-400' : 'text-gray-600'">
           <div class="w-5 h-5 border-2 rounded-full animate-spin" :class="isDarkMode
-            ? 'border-transparent border-t-[#008080]'
+            ? 'border-transparent border-t-[#2DD4BF]'
             : 'border-transparent border-t-[#003366]'"></div>
           <span>Searching reporters...</span>
         </div>
@@ -137,7 +137,7 @@
             : 'bg-amber-50 border-amber-300'">
           <div class="flex items-start justify-between mb-3">
             <div class="text-sm font-bold uppercase tracking-tight transition-colors"
-              :class="isDarkMode ? 'text-[#008080]' : 'text-[#003366]'">
+              :class="isDarkMode ? 'text-[#2DD4BF]' : 'text-[#003366]'">
               Selected Reporter:
             </div>
             <button type="button" @click="clearSelection" class="p-1.5 rounded-md border transition-colors" :class="isDarkMode

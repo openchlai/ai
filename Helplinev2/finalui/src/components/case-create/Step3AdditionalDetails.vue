@@ -121,7 +121,7 @@
             <textarea id="police-details" v-model="localForm.policeDetails"
               class="w-full px-3 py-2 border rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:border-transparent resize-vertical"
               :class="isDarkMode
-                ? 'bg-gray-700 border-transparent text-gray-100 placeholder-gray-500 focus:ring-[#008080]'
+                ? 'bg-gray-700 border-transparent text-gray-100 placeholder-gray-500 focus:ring-[#2DD4BF]'
                 : 'bg-white border-transparent text-gray-900 placeholder-gray-400 focus:ring-[#003366]'"
               placeholder="Enter police report details, case number, station, etc." rows="3"
               @input="updateForm"></textarea>
@@ -137,7 +137,7 @@
             <textarea id="other-services" v-model="localForm.otherServicesDetails"
               class="w-full px-3 py-2 border rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:border-transparent resize-vertical"
               :class="isDarkMode
-                ? 'bg-gray-700 border-transparent text-gray-100 placeholder-gray-500 focus:ring-[#008080]'
+                ? 'bg-gray-700 border-transparent text-gray-100 placeholder-gray-500 focus:ring-[#2DD4BF]'
                 : 'bg-white border-transparent text-gray-900 placeholder-gray-400 focus:ring-[#003366]'"
               placeholder="Please specify the other services provided" rows="3" @input="updateForm"></textarea>
           </div>

@@ -41,7 +41,7 @@
           <textarea v-model="localForm.plan" id="case-plan"
             class="w-full px-3 py-2 border rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:border-transparent resize-vertical"
             :class="isDarkMode
-              ? 'bg-gray-700 border-transparent text-gray-100 placeholder-gray-500 focus:ring-[#008080]'
+              ? 'bg-gray-700 border-transparent text-gray-100 placeholder-gray-500 focus:ring-[#2DD4BF]'
               : 'bg-gray-50 border-transparent text-gray-900 placeholder-gray-400 focus:ring-[#003366]'"
             placeholder="Outline the planned interventions and support services..." rows="4"
             @input="updateForm"></textarea>
@@ -57,7 +57,7 @@
             <select v-model="localForm.priority"
               class="w-full px-3 py-2 border rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:border-transparent"
               :class="isDarkMode
-                ? 'bg-gray-700 border-transparent text-gray-100 focus:ring-[#008080]'
+                ? 'bg-gray-700 border-transparent text-gray-100 focus:ring-[#2DD4BF]'
                 : 'bg-gray-50 border-transparent text-gray-900 focus:ring-[#003366]'" @change="handlePriorityChange">
               <option value="">Select priority</option>
               <option value="3">High</option>
@@ -74,7 +74,7 @@
             <select v-model="localForm.status"
               class="w-full px-3 py-2 border rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:border-transparent"
               :class="isDarkMode
-                ? 'bg-gray-700 border-transparent text-gray-100 focus:ring-[#008080]'
+                ? 'bg-gray-700 border-transparent text-gray-100 focus:ring-[#2DD4BF]'
                 : 'bg-gray-50 border-transparent text-gray-900 focus:ring-[#003366]'" @change="handleStatusChange">
               <option value="">Select status</option>
               <option value="1">Open</option>
@@ -91,14 +91,14 @@
           <div class="flex gap-4 mt-2">
             <label class="flex items-center gap-1.5 cursor-pointer">
               <input v-model="localForm.department" type="radio" value="116" @change="handleDepartmentChange"
-                class="w-4 h-4" :class="isDarkMode ? 'text-[#008080]' : 'text-[#003366]'" />
+                class="w-4 h-4" :class="isDarkMode ? 'text-[#2DD4BF]' : 'text-[#003366]'" />
               <span class="text-sm" :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'">
                 116
               </span>
             </label>
             <label class="flex items-center gap-1.5 cursor-pointer">
               <input v-model="localForm.department" type="radio" value="labor" @change="handleDepartmentChange"
-                class="w-4 h-4" :class="isDarkMode ? 'text-[#008080]' : 'text-[#003366]'" />
+                class="w-4 h-4" :class="isDarkMode ? 'text-[#2DD4BF]' : 'text-[#003366]'" />
               <span class="text-sm" :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'">
                 Labor
               </span>
@@ -154,7 +154,7 @@
             ? 'bg-gray-700 border-transparent'
             : 'bg-gray-50 border-transparent'">
             <div class="w-4 h-4 border-2 rounded-full animate-spin" :class="isDarkMode
-              ? 'border-transparent border-t-[#008080]'
+              ? 'border-transparent border-t-[#2DD4BF]'
               : 'border-transparent border-t-[#003366]'"></div>
             <span class="text-sm" :class="isDarkMode ? 'text-gray-400' : 'text-gray-600'">
               Loading users...
@@ -165,7 +165,7 @@
           <select v-else v-model="localForm.escalatedTo"
             class="w-full px-3 py-2 border rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:border-transparent"
             :class="isDarkMode
-              ? 'bg-gray-700 border-transparent text-gray-100 focus:ring-[#008080]'
+              ? 'bg-gray-700 border-transparent text-gray-100 focus:ring-[#2DD4BF]'
               : 'bg-gray-50 border-transparent text-gray-900 focus:ring-[#003366]'" @change="handleEscalationChange">
             <option value="0">None</option>
             <option v-for="user in filteredUsers" :key="getUserId(user)" :value="getUserId(user)">

@@ -85,8 +85,8 @@
                   <input v-model="localClientForm.name" type="text" placeholder="Enter Client's Names"
                     class="px-4 py-3 border rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:border-transparent"
                     :class="isDarkMode
-                      ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-amber-500'
-                      : 'border-transparent bg-gray-50 text-gray-900 placeholder-gray-400 focus:ring-amber-600'"
+                      ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-[#2DD4BF]'
+                      : 'border-transparent bg-gray-50 text-gray-900 placeholder-gray-400 focus:ring-[#003366]'"
                     @input="updateClientForm" />
                 </div>
 
@@ -97,8 +97,8 @@
                   <input v-model="localClientForm.age" type="number" placeholder="Enter age"
                     class="px-4 py-3 border rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:border-transparent"
                     :class="isDarkMode
-                      ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-amber-500'
-                      : 'border-transparent bg-gray-50 text-gray-900 placeholder-gray-400 focus:ring-amber-600'"
+                      ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-[#2DD4BF]'
+                      : 'border-transparent bg-gray-50 text-gray-900 placeholder-gray-400 focus:ring-[#003366]'"
                     @input="updateClientForm" />
                 </div>
 
@@ -109,8 +109,8 @@
                   <input v-model="localClientForm.dob" type="date"
                     class="px-4 py-3 border rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:border-transparent"
                     :class="isDarkMode
-                      ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-amber-500'
-                      : 'border-transparent bg-gray-50 text-gray-900 placeholder-gray-400 focus:ring-amber-600'"
+                      ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-[#2DD4BF]'
+                      : 'border-transparent bg-gray-50 text-gray-900 placeholder-gray-400 focus:ring-[#003366]'"
                     @input="updateClientForm" />
                 </div>
 
@@ -141,8 +141,8 @@
                   <input v-model="localClientForm.landmark" type="text" placeholder="Enter Nearest Landmark"
                     class="px-4 py-3 border rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:border-transparent"
                     :class="isDarkMode
-                      ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-amber-500'
-                      : 'border-transparent bg-gray-50 text-gray-900 placeholder-gray-400 focus:ring-amber-600'"
+                      ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-[#2DD4BF]'
+                      : 'border-transparent bg-gray-50 text-gray-900 placeholder-gray-400 focus:ring-[#003366]'"
                     @input="updateClientForm" />
                 </div>
 
@@ -163,8 +163,8 @@
                   <input v-model="localClientForm.idNumber" type="text" placeholder="Enter ID Number"
                     class="px-4 py-3 border rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:border-transparent"
                     :class="isDarkMode
-                      ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-amber-500'
-                      : 'border-transparent bg-gray-50 text-gray-900 placeholder-gray-400 focus:ring-amber-600'"
+                      ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-[#2DD4BF]'
+                      : 'border-transparent bg-gray-50 text-gray-900 placeholder-gray-400 focus:ring-[#003366]'"
                     @input="updateClientForm" />
                 </div>
 
@@ -180,21 +180,21 @@
                   <div class="flex gap-4 flex-wrap">
                     <label class="flex items-center gap-1.5 cursor-pointer">
                       <input type="radio" v-model="localClientForm.isRefugee" value="yes" class="w-4 h-4"
-                        :class="isDarkMode ? 'text-amber-600' : 'text-amber-700'" @change="updateClientForm" />
+                        :class="isDarkMode ? 'text-[#2DD4BF]' : 'text-[#003366]'" @change="updateClientForm" />
                       <span class="text-sm" :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'">
                         Yes
                       </span>
                     </label>
                     <label class="flex items-center gap-1.5 cursor-pointer">
                       <input type="radio" v-model="localClientForm.isRefugee" value="no" class="w-4 h-4"
-                        :class="isDarkMode ? 'text-amber-600' : 'text-amber-700'" @change="updateClientForm" />
+                        :class="isDarkMode ? 'text-[#2DD4BF]' : 'text-[#003366]'" @change="updateClientForm" />
                       <span class="text-sm" :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'">
                         No
                       </span>
                     </label>
                     <label class="flex items-center gap-1.5 cursor-pointer">
                       <input type="radio" v-model="localClientForm.isRefugee" value="unknown" class="w-4 h-4"
-                        :class="isDarkMode ? 'text-amber-600' : 'text-amber-700'" @change="updateClientForm" />
+                        :class="isDarkMode ? 'text-[#2DD4BF]' : 'text-[#003366]'" @change="updateClientForm" />
                       <span class="text-sm" :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'">
                         Unknown
                       </span>
@@ -219,8 +219,8 @@
                   <input v-model="localClientForm.phone" type="tel" placeholder="Enter Phone Number"
                     class="px-4 py-3 border rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:border-transparent"
                     :class="isDarkMode
-                      ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-amber-500'
-                      : 'border-transparent bg-gray-50 text-gray-900 placeholder-gray-400 focus:ring-amber-600'"
+                      ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-[#2DD4BF]'
+                      : 'border-transparent bg-gray-50 text-gray-900 placeholder-gray-400 focus:ring-[#003366]'"
                     @input="updateClientForm" />
                 </div>
 
@@ -232,8 +232,8 @@
                     placeholder="Enter Alternate Phone Number"
                     class="px-4 py-3 border rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:border-transparent"
                     :class="isDarkMode
-                      ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-amber-500'
-                      : 'border-transparent bg-gray-50 text-gray-900 placeholder-gray-400 focus:ring-amber-600'"
+                      ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-[#2DD4BF]'
+                      : 'border-transparent bg-gray-50 text-gray-900 placeholder-gray-400 focus:ring-[#003366]'"
                     @input="updateClientForm" />
                 </div>
 
@@ -244,8 +244,8 @@
                   <input v-model="localClientForm.email" type="email" placeholder="Enter Email Address"
                     class="px-4 py-3 border rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:border-transparent"
                     :class="isDarkMode
-                      ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-amber-500'
-                      : 'border-transparent bg-gray-50 text-gray-900 placeholder-gray-400 focus:ring-amber-600'"
+                      ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-[#2DD4BF]'
+                      : 'border-transparent bg-gray-50 text-gray-900 placeholder-gray-400 focus:ring-[#003366]'"
                     @input="updateClientForm" />
                 </div>
 
@@ -262,8 +262,8 @@
                     placeholder="Enter Comments about the relationship" rows="3"
                     class="px-4 py-3 border rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:border-transparent"
                     :class="isDarkMode
-                      ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-amber-500'
-                      : 'border-transparent bg-gray-50 text-gray-900 placeholder-gray-400 focus:ring-amber-600'"
+                      ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-[#2DD4BF]'
+                      : 'border-transparent bg-gray-50 text-gray-900 placeholder-gray-400 focus:ring-[#003366]'"
                     @input="updateClientForm"></textarea>
                 </div>
               </div>
@@ -279,8 +279,8 @@
                   <input v-model="localClientForm.adultsInHousehold" type="number" placeholder="Enter number"
                     class="px-4 py-3 border rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:border-transparent"
                     :class="isDarkMode
-                      ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-amber-500'
-                      : 'border-transparent bg-gray-50 text-gray-900 placeholder-gray-400 focus:ring-amber-600'"
+                      ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-[#2DD4BF]'
+                      : 'border-transparent bg-gray-50 text-gray-900 placeholder-gray-400 focus:ring-[#003366]'"
                     @input="updateClientForm" />
                 </div>
 
@@ -301,8 +301,8 @@
                   <input v-model="localClientForm.parentGuardianName" type="text" placeholder="Enter name"
                     class="px-4 py-3 border rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:border-transparent"
                     :class="isDarkMode
-                      ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-amber-500'
-                      : 'border-transparent bg-gray-50 text-gray-900 placeholder-gray-400 focus:ring-amber-600'"
+                      ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-[#2DD4BF]'
+                      : 'border-transparent bg-gray-50 text-gray-900 placeholder-gray-400 focus:ring-[#003366]'"
                     @input="updateClientForm" />
                 </div>
 
@@ -323,8 +323,8 @@
                   <input v-model="localClientForm.parentIdNumber" type="text" placeholder="Enter ID number"
                     class="px-4 py-3 border rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:border-transparent"
                     :class="isDarkMode
-                      ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-amber-500'
-                      : 'border-transparent bg-gray-50 text-gray-900 placeholder-gray-400 focus:ring-amber-600'"
+                      ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-[#2DD4BF]'
+                      : 'border-transparent bg-gray-50 text-gray-900 placeholder-gray-400 focus:ring-[#003366]'"
                     @input="updateClientForm" />
                 </div>
               </div>
@@ -361,8 +361,8 @@
                         <input v-model="localClientForm.spouseName" type="text" placeholder="Enter spouse's name"
                           class="px-4 py-3 border rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:border-transparent"
                           :class="isDarkMode
-                            ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-amber-500'
-                            : 'border-transparent bg-white text-gray-900 placeholder-gray-400 focus:ring-amber-600'"
+                            ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-[#2DD4BF]'
+                            : 'border-transparent bg-white text-gray-900 placeholder-gray-400 focus:ring-[#003366]'"
                           @input="updateClientForm" />
                       </div>
 
@@ -382,21 +382,21 @@
                   <div class="flex gap-4 flex-wrap">
                     <label class="flex items-center gap-1.5 cursor-pointer">
                       <input type="radio" v-model="localClientForm.attendingSchool" value="yes" class="w-4 h-4"
-                        :class="isDarkMode ? 'text-amber-600' : 'text-amber-700'" @change="updateClientForm" />
+                        :class="isDarkMode ? 'text-[#2DD4BF]' : 'text-[#003366]'" @change="updateClientForm" />
                       <span class="text-sm" :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'">
                         Yes
                       </span>
                     </label>
                     <label class="flex items-center gap-1.5 cursor-pointer">
                       <input type="radio" v-model="localClientForm.attendingSchool" value="no" class="w-4 h-4"
-                        :class="isDarkMode ? 'text-amber-600' : 'text-amber-700'" @change="updateClientForm" />
+                        :class="isDarkMode ? 'text-[#2DD4BF]' : 'text-[#003366]'" @change="updateClientForm" />
                       <span class="text-sm" :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'">
                         No
                       </span>
                     </label>
                     <label class="flex items-center gap-1.5 cursor-pointer">
                       <input type="radio" v-model="localClientForm.attendingSchool" value="unknown" class="w-4 h-4"
-                        :class="isDarkMode ? 'text-amber-600' : 'text-amber-700'" @change="updateClientForm" />
+                        :class="isDarkMode ? 'text-[#2DD4BF]' : 'text-[#003366]'" @change="updateClientForm" />
                       <span class="text-sm" :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'">
                         Unknown
                       </span>
@@ -416,8 +416,8 @@
                         <input v-model="localClientForm.schoolName" type="text" placeholder="Enter school name"
                           class="px-4 py-3 border rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:border-transparent"
                           :class="isDarkMode
-                            ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-amber-500'
-                            : 'border-transparent bg-white text-gray-900 placeholder-gray-400 focus:ring-amber-600'"
+                            ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-[#2DD4BF]'
+                            : 'border-transparent bg-white text-gray-900 placeholder-gray-400 focus:ring-[#003366]'"
                           @input="updateClientForm" />
                       </div>
 
@@ -429,8 +429,8 @@
                         <input v-model="localClientForm.schoolAddress" type="text" placeholder="Enter school address"
                           class="px-4 py-3 border rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:border-transparent"
                           :class="isDarkMode
-                            ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-amber-500'
-                            : 'border-transparent bg-white text-gray-900 placeholder-gray-400 focus:ring-amber-600'"
+                            ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-[#2DD4BF]'
+                            : 'border-transparent bg-white text-gray-900 placeholder-gray-400 focus:ring-[#003366]'"
                           @input="updateClientForm" />
                       </div>
 
@@ -453,8 +453,8 @@
                           placeholder="Enter attendance pattern (e.g., Regular, Irregular)"
                           class="px-4 py-3 border rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:border-transparent"
                           :class="isDarkMode
-                            ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-amber-500'
-                            : 'border-transparent bg-white text-gray-900 placeholder-gray-400 focus:ring-amber-600'"
+                            ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-[#2DD4BF]'
+                            : 'border-transparent bg-white text-gray-900 placeholder-gray-400 focus:ring-[#003366]'"
                           @input="updateClientForm" />
                       </div>
                     </div>
@@ -472,8 +472,8 @@
                         placeholder="Enter reason for not attending school"
                         class="px-4 py-3 border rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:border-transparent"
                         :class="isDarkMode
-                          ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-amber-500'
-                          : 'border-transparent bg-white text-gray-900 placeholder-gray-400 focus:ring-amber-600'"
+                          ? 'border-transparent bg-gray-700 text-gray-100 placeholder-gray-500 focus:ring-[#2DD4BF]'
+                          : 'border-transparent bg-white text-gray-900 placeholder-gray-400 focus:ring-[#003366]'"
                         @input="updateClientForm" />
                     </div>
                   </div>
@@ -486,21 +486,21 @@
                   <div class="flex gap-4 flex-wrap">
                     <label class="flex items-center gap-1.5 cursor-pointer">
                       <input type="radio" v-model="localClientForm.isDisabled" value="yes" class="w-4 h-4"
-                        :class="isDarkMode ? 'text-amber-600' : 'text-amber-700'" @change="updateClientForm" />
+                        :class="isDarkMode ? 'text-[#2DD4BF]' : 'text-[#003366]'" @change="updateClientForm" />
                       <span class="text-sm" :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'">
                         Yes
                       </span>
                     </label>
                     <label class="flex items-center gap-1.5 cursor-pointer">
                       <input type="radio" v-model="localClientForm.isDisabled" value="no" class="w-4 h-4"
-                        :class="isDarkMode ? 'text-amber-600' : 'text-amber-700'" @change="updateClientForm" />
+                        :class="isDarkMode ? 'text-[#2DD4BF]' : 'text-[#003366]'" @change="updateClientForm" />
                       <span class="text-sm" :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'">
                         No
                       </span>
                     </label>
                     <label class="flex items-center gap-1.5 cursor-pointer">
                       <input type="radio" v-model="localClientForm.isDisabled" value="unknown" class="w-4 h-4"
-                        :class="isDarkMode ? 'text-amber-600' : 'text-amber-700'" @change="updateClientForm" />
+                        :class="isDarkMode ? 'text-[#2DD4BF]' : 'text-[#003366]'" @change="updateClientForm" />
                       <span class="text-sm" :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'">
                         Unknown
                       </span>
@@ -526,7 +526,7 @@
                         <div class="flex gap-4">
                           <label class="flex items-center gap-1.5 cursor-pointer">
                             <input type="radio" v-model="localClientForm.specialServicesRequired" value="yes"
-                              class="w-4 h-4" :class="isDarkMode ? 'text-amber-600' : 'text-amber-700'"
+                              class="w-4 h-4" :class="isDarkMode ? 'text-[#2DD4BF]' : 'text-[#003366]'"
                               @change="updateClientForm" />
                             <span class="text-sm" :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'">
                               Yes
@@ -534,7 +534,7 @@
                           </label>
                           <label class="flex items-center gap-1.5 cursor-pointer">
                             <input type="radio" v-model="localClientForm.specialServicesRequired" value="no"
-                              class="w-4 h-4" :class="isDarkMode ? 'text-amber-600' : 'text-amber-700'"
+                              class="w-4 h-4" :class="isDarkMode ? 'text-[#2DD4BF]' : 'text-[#003366]'"
                               @change="updateClientForm" />
                             <span class="text-sm" :class="isDarkMode ? 'text-gray-300' : 'text-gray-700'">
                               No
@@ -577,8 +577,8 @@
             <button v-if="currentClientStep < clientSteps.length - 1" @click="$emit('next-client-step')" type="button"
               class="px-5 py-2.5 border-none rounded-lg font-medium cursor-pointer transition-all duration-200 text-white flex items-center gap-2"
               :class="isDarkMode
-                ? 'bg-amber-600 hover:bg-amber-700'
-                : 'bg-amber-700 hover:bg-amber-800'">
+                ? 'bg-[#008080] hover:bg-[#006666]'
+                : 'bg-[#003366] hover:bg-[#002244]'">
               Next
               <i-mdi-chevron-right class="w-5 h-5" />
             </button>
@@ -698,7 +698,7 @@
       return `${baseClasses} ${isDarkMode.value ? 'bg-green-600 text-white' : 'bg-green-600 text-white'}`
     } else if (props.currentClientStep === index) {
       // Active
-      return `${baseClasses} ${isDarkMode.value ? 'bg-amber-600 text-white ring-4 ring-blue-900/50' : 'bg-amber-700 text-white ring-4 ring-amber-100'}`
+      return `${baseClasses} ${isDarkMode.value ? 'bg-[#008080] text-white ring-4 ring-blue-900/50' : 'bg-[#003366] text-white ring-4 ring-blue-100'}`
     } else {
       // Future
       return `${baseClasses} ${isDarkMode.value ? 'bg-gray-700 text-gray-500 border-2 border-transparent' : 'bg-white text-gray-400 border-2 border-transparent'}`
@@ -712,7 +712,7 @@
     if (props.currentClientStep > index) {
       return `${baseClasses} ${isDarkMode.value ? 'text-green-400 font-semibold' : 'text-green-600 font-semibold'}`
     } else if (props.currentClientStep === index) {
-      return `${baseClasses} ${isDarkMode.value ? 'text-amber-500 font-semibold' : 'text-amber-700 font-semibold'}`
+      return `${baseClasses} ${isDarkMode.value ? 'text-[#2DD4BF] font-semibold' : 'text-[#003366] font-semibold'}`
     } else {
       return `${baseClasses} ${isDarkMode.value ? 'text-gray-500' : 'text-gray-500'}`
     }

@@ -16,10 +16,10 @@
         <!-- Step Workflow Option -->
         <div
           class="group relative p-8 rounded-2xl border transition-all duration-300 hover:shadow-2xl cursor-pointer transform hover:-translate-y-1"
-          :class="isDarkMode ? 'bg-neutral-900 border-neutral-800 hover:border-[#008080]' : 'bg-white border-gray-100 hover:border-[#003366]'"
+          :class="isDarkMode ? 'bg-neutral-900 border-neutral-800 hover:border-[#2DD4BF]' : 'bg-white border-gray-100 hover:border-[#003366]'"
           @click="selectMode('wizard')">
           <div
-            class="mb-4 w-14 h-14 rounded-full bg-[#003366]/10 dark:bg-[#008080]/20 flex items-center justify-center text-[#003366] dark:text-[#008080] transition-transform group-hover:scale-110">
+            class="mb-4 w-14 h-14 rounded-full bg-[#003366]/10 dark:bg-[#008080]/20 flex items-center justify-center text-[#003366] dark:text-[#2DD4BF] transition-transform group-hover:scale-110">
             <i-mdi-format-list-numbered class="w-8 h-8" />
           </div>
           <h3 class="text-xl font-bold mb-2" :class="isDarkMode ? 'text-white' : 'text-gray-900'">Step-by-Step Workflow
@@ -36,10 +36,10 @@
         <!-- Single Form Option -->
         <div
           class="group relative p-8 rounded-2xl border transition-all duration-300 hover:shadow-2xl cursor-pointer transform hover:-translate-y-1"
-          :class="isDarkMode ? 'bg-neutral-900 border-neutral-800 hover:border-[#008080]' : 'bg-white border-gray-100 hover:border-[#003366]'"
+          :class="isDarkMode ? 'bg-neutral-900 border-neutral-800 hover:border-[#2DD4BF]' : 'bg-white border-gray-100 hover:border-[#003366]'"
           @click="selectMode('legacy')">
           <div
-            class="mb-4 w-14 h-14 rounded-full bg-[#003366]/10 dark:bg-[#008080]/20 flex items-center justify-center text-[#003366] dark:text-[#008080] transition-transform group-hover:scale-110">
+            class="mb-4 w-14 h-14 rounded-full bg-[#003366]/10 dark:bg-[#008080]/20 flex items-center justify-center text-[#003366] dark:text-[#2DD4BF] transition-transform group-hover:scale-110">
             <i-mdi-file-document-edit class="w-8 h-8" />
           </div>
           <h3 class="text-xl font-bold mb-2" :class="isDarkMode ? 'text-white' : 'text-gray-900'">Single Case Form</h3>
@@ -58,7 +58,7 @@
       <div class="max-w-7xl mx-auto mb-4 px-4 lg:px-0">
         <button @click="mode = 'wizard'"
           class="text-xs font-bold flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all"
-          :class="isDarkMode ? 'bg-gray-800 border-gray-700 text-[#008080] hover:bg-gray-700' : 'bg-white border-gray-200 text-[#003366] hover:bg-gray-50'">
+          :class="isDarkMode ? 'bg-gray-800 border-gray-700 text-[#2DD4BF] hover:bg-gray-700' : 'bg-white border-gray-200 text-[#003366] hover:bg-gray-50'">
           <i-mdi-format-list-numbered class="w-4 h-4" />
           Switch to Step-by-Step Wizard
         </button>
