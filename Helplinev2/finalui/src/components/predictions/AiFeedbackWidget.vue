@@ -66,14 +66,11 @@
         try {
             await axiosInstance.post('api/feedback/', {
                 call_id: props.callId,
-                task_type: props.taskType,
-                rating: rating.value,
-                comment: comment.value
+                task: props.taskType,
+                feedback: rating.value,
+                reason: comment.value || null
             })
             toast.success('Feedback submitted successfully')
-            // Reset after success if desired, or keep it to show state
-            // comment.value = '' 
-            // rating.value = 0
         } catch (err) {
             console.error('Feedback error:', err)
             toast.error('Failed to submit feedback')
