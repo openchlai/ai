@@ -59,6 +59,20 @@
         rating.value = val
     }
 
+    const taskMap = {
+        'postcall_transcription': 'transcription',
+        'postcall_translation': 'translation',
+        'postcall_classification': 'classification',
+        'postcall_entities': 'ner',
+        'postcall_summary': 'summarization',
+        'postcall_summarization': 'summarization',
+        'postcall_mistral_insights': 'insights',
+        'postcall_insights': 'insights',
+        'postcall_ai_service_insights': 'insights',
+        'postcall_qa_scoring': 'qa',
+        'postcall_complete': 'insights'
+    }
+
     const submitFeedback = async () => {
         if (rating.value === 0) return
 
@@ -66,7 +80,7 @@
         try {
             await axiosInstance.post('api/feedback/', {
                 call_id: props.callId,
-                task: props.taskType,
+                task: taskMap[props.taskType] || props.taskType,
                 feedback: rating.value,
                 reason: comment.value || null
             })
