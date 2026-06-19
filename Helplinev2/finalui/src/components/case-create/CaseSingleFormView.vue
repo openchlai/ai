@@ -338,6 +338,8 @@
   import { usePerpetratorStore } from '@/stores/perpetrators';
   import { useUserStore } from '@/stores/users';
   import { useTaxonomyStore } from '@/stores/taxonomy';
+  import { useActiveCallStore } from '@/stores/activeCall';
+  import { useAiInsightsFetcher } from '@/composables/useAiInsightsFetcher';
 
   const taxonomyStore = useTaxonomyStore();
   import { useAuthStore } from '@/stores/auth';
@@ -351,6 +353,8 @@
   const perpetratorStore = usePerpetratorStore();
   const userStore = useUserStore();
   const authStore = useAuthStore();
+  const activeCallStore = useActiveCallStore();
+  const { fetchAiInsightsForCall } = useAiInsightsFetcher();
 
   // State
   const isSearchingReporter = ref(false);
@@ -406,6 +410,13 @@
   onMounted(async () => {
     await reporterStore.listReporters();
     await userStore.listUsers();
+
+    // Catch-up fetch: if we landed here after a call ended and insights haven't
+    // been loaded yet, try fetching using the persisted call ID from the store.
+    const catchUpId = activeCallStore.lastCallUniqueId
+    if (catchUpId && activeCallStore.aiInsights.length === 0) {
+      fetchAiInsightsForCall(catchUpId)
+    }
   });
 
   // Reporter Logic

@@ -150,6 +150,7 @@
   import { useClientStore } from '@/stores/clients';
   import { usePerpetratorStore } from '@/stores/perpetrators';
   import { useActiveCallStore } from '@/stores/activeCall';
+  import { useAiInsightsFetcher } from '@/composables/useAiInsightsFetcher';
 
   import CaseHeader from '@/components/case-create/CaseHeader.vue';
   import ProgressTracker from '@/components/case-create/ProgressTracker.vue';
@@ -193,6 +194,7 @@
       };
 
       const activeCallStore = useActiveCallStore();
+      const { fetchAiInsightsForCall } = useAiInsightsFetcher();
       const currentStep = ref(1);
       const totalSteps = 4;
       const isSubmittingCase = ref(false);
@@ -217,6 +219,14 @@
         if (route.query.src) formData.metadata.src = route.query.src;
         if (route.query.uniqueid) formData.metadata.src_uid = route.query.uniqueid;
         if (route.query.call_id) formData.metadata.src_callid = route.query.call_id;
+
+        // Catch-up fetch: if we landed here after a call ended and insights haven't
+        // been loaded yet (e.g. ATI notification arrived before navigation completed),
+        // try fetching now using the persisted call ID.
+        const catchUpId = route.query.uniqueid || activeCallStore.lastCallUniqueId
+        if (catchUpId && activeCallStore.aiInsights.length === 0) {
+          fetchAiInsightsForCall(catchUpId)
+        }
       });
 
       // ✅ Store BOTH reporter IDs separately

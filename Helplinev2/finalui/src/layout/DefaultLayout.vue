@@ -26,13 +26,13 @@
 </template>
 
 <script setup>
-import { computed, provide, watch, ref, onMounted, onBeforeUnmount } from 'vue'
+import { computed, provide, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import { useTheme } from '@/composables/useTheme'
 import { useAuthStore } from '@/stores/auth'
 import { useRealtimeStore } from '@/stores/realtime'
 import { useActiveCallStore } from '@/stores/activeCall'
-import axiosInstance from '@/utils/axios'
+import { useAiInsightsFetcher } from '@/composables/useAiInsightsFetcher'
 import Sidebar from '@/components/layout/Sidebar.vue'
 import Navbar from '@/components/layout/Navbar.vue'
 import ActiveCallToolbar from '@/components/softphone/ActiveCallToolbar.vue'
@@ -101,92 +101,10 @@ watch(
 
 // ── ATI → activeCall AI Insights Bridge ─────────────────────────
 // Monitors ATI text channel for AI notifications (src='aii', context='trunk')
-// and matches them against the active call via bridge_id or uniqueid, then
-// fetches the full insight payloads from the predictions API.
-//
-// Key: The AI service sends notifications with ATI_BRIDGE_ID = call UniqueID
-// (e.g. "1770654584.401"), NOT the Asterisk bridge UUID. Also, insights arrive
-// AFTER the call ends (20-120s processing), so we must keep matching even
-// during case-creation after wrapup.
-const _aiFetchInProgress = ref(false)
-const _lastCallUniqueId = ref('')
-const _fetchedCallIds = new Set() // Calls we've already fetched insights for
-let _retryTimer = null
-
-// Persist the call's UniqueID so it survives wrapup/idle transitions
-watch(() => activeCallStore.src_uid, (uid) => {
-  if (uid) {
-    console.log('[AI Panel] Tracking call UniqueID:', uid)
-    _lastCallUniqueId.value = uid
-  }
-})
-
-// Core function: fetch all individual AI messages for a call via two-step API
-async function fetchAiInsightsForCall(queryCallId) {
-  if (_aiFetchInProgress.value) return
-  _aiFetchInProgress.value = true
-
-  try {
-    console.log('[AI Panel] Fetching insights for call_id:', queryCallId)
-
-    // Step 1: Get conversation list to find the pmessage ID
-    const { data: listData } = await axiosInstance.get('api/pmessages/', {
-      params: { src_callid: queryCallId, src: 'aii', _c: 30 },
-      headers: { 'Session-Id': authStore.sessionId }
-    })
-
-    const conversations = listData.pmessages || []
-    const listKeys = listData.pmessages_k || {}
-
-    if (!conversations.length || !listKeys.id) {
-      console.log('[AI Panel] No conversations found for call_id:', queryCallId)
-      return
-    }
-
-    const idIdx = listKeys.id[0]
-
-    // Step 2: For each conversation, fetch ALL individual messages
-    for (const conv of conversations) {
-      const pmessageId = conv[idIdx]
-      if (!pmessageId) continue
-
-      console.log('[AI Panel] Fetching message details for pmessage:', pmessageId)
-
-      const { data: detailData } = await axiosInstance.get(`api/pmessages/${pmessageId}?`, {
-        headers: { 'Session-Id': authStore.sessionId }
-      })
-
-      // Step 3: Parse individual messages from the detail response
-      if (detailData.messages && detailData.messages_k) {
-        const msgKeys = detailData.messages_k
-        const srcMsgIdx = msgKeys.src_msg ? msgKeys.src_msg[0] : -1
-
-        if (srcMsgIdx === -1) continue
-
-        let added = 0
-        for (const row of detailData.messages) {
-          const rawMsg = row[srcMsgIdx]
-          if (!rawMsg) continue
-
-          try {
-            const decoded = JSON.parse(atob(rawMsg))
-            if (decoded && decoded.notification_type) {
-              activeCallStore.addAiInsight(decoded)
-              added++
-            }
-          } catch (e) {
-            // Skip non-JSON or invalid base64 entries
-          }
-        }
-        console.log(`[AI Panel] Decoded ${added} insights from pmessage ${pmessageId} (${detailData.messages.length} total messages)`)
-      }
-    }
-  } catch (err) {
-    console.warn('[AI Panel] Failed to fetch AI insights:', err.message)
-  } finally {
-    _aiFetchInProgress.value = false
-  }
-}
+// and matches them against the active call via bridge_id, src_uid, src_callid,
+// or lastCallUniqueId (persisted in store through wrapup into case-creation).
+// Insights arrive AFTER the call ends (20–120s processing).
+const { fetchAiInsightsForCall, scheduleRetry } = useAiInsightsFetcher()
 
 watch(
   () => realtimeStore.aiNotifications,
@@ -203,7 +121,8 @@ watch(
     const callIds = new Set()
     if (activeCallStore.bridge_id) callIds.add(activeCallStore.bridge_id)
     if (activeCallStore.src_uid) callIds.add(activeCallStore.src_uid)
-    if (_lastCallUniqueId.value) callIds.add(_lastCallUniqueId.value)
+    if (activeCallStore.src_callid) callIds.add(activeCallStore.src_callid)
+    if (activeCallStore.lastCallUniqueId) callIds.add(activeCallStore.lastCallUniqueId)
     if (route.query.uniqueid) callIds.add(route.query.uniqueid)
 
     if (callIds.size === 0) return
@@ -214,27 +133,10 @@ watch(
 
     const queryCallId = matchedNotif.ATI_BRIDGE_ID
 
-    // Already fetched for this call — skip
-    if (_fetchedCallIds.has(queryCallId)) return
-
-    // Prevent concurrent fetches
-    if (_aiFetchInProgress.value) return
-
     console.log('[AI Panel] ATI notification matched call_id:', queryCallId)
 
-    // Mark as fetched so we don't re-trigger on every ATI poll
-    _fetchedCallIds.add(queryCallId)
-
-    // Immediate fetch
     await fetchAiInsightsForCall(queryCallId)
-
-    // Schedule a retry after 15s to catch any late-arriving insights
-    // (AI pipeline may still be writing messages)
-    if (_retryTimer) clearTimeout(_retryTimer)
-    _retryTimer = setTimeout(() => {
-      console.log('[AI Panel] Retry fetch for late-arriving insights:', queryCallId)
-      fetchAiInsightsForCall(queryCallId)
-    }, 15000)
+    scheduleRetry(queryCallId)
   },
   { deep: true }
 )
