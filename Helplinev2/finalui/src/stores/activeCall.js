@@ -13,6 +13,7 @@ export const useActiveCallStore = defineStore('activeCall', () => {
     const bridge_id = ref('') // AMI CHAN_BRIDGE_ID — used for AI insight matching
     const aiInsights = ref([]) // Decoded AI insight payloads for current call
     const _seenInsightTypes = new Set() // Dedup tracker (notification_type keys)
+    const lastCallUniqueId = ref('') // Persists the call's CHAN_UNIQUEID across wrapup into case-creation
     const startedAt = ref(null)
     const durationSeconds = ref(0)
     const hasAudioTrack = ref(false)
@@ -89,6 +90,10 @@ export const useActiveCallStore = defineStore('activeCall', () => {
         }
 
         src_uid.value = null // Will be set later via AMI or header
+
+        // Seed lastCallUniqueId from SIP call-id immediately as a fallback.
+        // The AMI enrichment bridge will overwrite this with the accurate CHAN_UNIQUEID once available.
+        if (src_callid.value) lastCallUniqueId.value = src_callid.value
 
         // Queue confirmation call: Asterisk sends INVITE after agent joins queue.
         // Auto-answer this to complete the login, same as the old UI behavior.
@@ -266,6 +271,7 @@ export const useActiveCallStore = defineStore('activeCall', () => {
         src_callid.value = ''
         src_uid.value = null
         bridge_id.value = ''
+        lastCallUniqueId.value = ''
         startedAt.value = null
         durationSeconds.value = 0
         hasAudioTrack.value = false
@@ -287,6 +293,7 @@ export const useActiveCallStore = defineStore('activeCall', () => {
 
     function setAmiUniqueId(uid) {
         src_uid.value = uid
+        if (uid) lastCallUniqueId.value = uid // Overwrite fallback with accurate CHAN_UNIQUEID
     }
 
     function setBridgeId(id) {
@@ -521,6 +528,7 @@ export const useActiveCallStore = defineStore('activeCall', () => {
         src_uid,
         bridge_id,
         aiInsights,
+        lastCallUniqueId,
         startedAt,
         durationSeconds,
         hasAudioTrack,
