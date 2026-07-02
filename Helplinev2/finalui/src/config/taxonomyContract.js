@@ -31,6 +31,7 @@ export const ENVIRONMENT_REGISTRY = {
             DEV_TARGET_AMI: "https://192.168.10.3:8384",
             DEV_TARGET_ATI: "https://192.168.10.3:8384",
             DEV_TARGET_SIP: "https://192.168.10.3:8089",
+            DEV_TARGET_AI_SERVICE: "http://192.168.10.6:8125",
             SIP_WS_PATH: "/ws/",
             AMI_WS_PATH: "/ami/sync",
             ATI_WS_PATH: "/ati/sync"
@@ -101,6 +102,7 @@ export const ENVIRONMENT_REGISTRY = {
             DEV_TARGET_AMI: "https://192.168.8.13:8384",
             DEV_TARGET_ATI: "https://192.168.8.13:8384",
             DEV_TARGET_SIP: "https://192.168.8.13:8089",
+            DEV_TARGET_AI_SERVICE: "http://192.168.8.18:8125",
             SIP_WS_PATH: "/ws/",
             AMI_WS_PATH: "/ami/sync",
             ATI_WS_PATH: "/ati/sync"
@@ -171,6 +173,7 @@ export const ENVIRONMENT_REGISTRY = {
             DEV_TARGET_AMI: "https://192.168.10.119:8384",
             DEV_TARGET_ATI: "https://192.168.10.119:8384",
             DEV_TARGET_SIP: "https://192.168.10.119:8089",
+            DEV_TARGET_AI_SERVICE: "http://192.168.10.6:8125",
             SIP_WS_PATH: "/ws/",
             AMI_WS_PATH: "/ami/sync",
             ATI_WS_PATH: "/ati/sync"
@@ -241,6 +244,7 @@ export const ENVIRONMENT_REGISTRY = {
             DEV_TARGET_AMI: "https://demo-openchs.bitz-itc.com:8384",
             DEV_TARGET_ATI: "https://demo-openchs.bitz-itc.com:8384",
             DEV_TARGET_SIP: "https://demo-openchs.bitz-itc.com:8089",
+            DEV_TARGET_AI_SERVICE: "http://192.168.10.6:8125",
             SIP_WS_PATH: "/ws/",
             AMI_WS_PATH: "/ami/sync",
             ATI_WS_PATH: "/ati/sync"

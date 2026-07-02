@@ -37,7 +37,6 @@
 <script setup>
     import { ref, inject } from 'vue'
     import { toast } from 'vue-sonner'
-    import axiosInstance from '@/utils/axios'
 
     const props = defineProps({
         callId: {
@@ -70,7 +69,18 @@
         'postcall_insights': 'insights',
         'postcall_ai_service_insights': 'insights',
         'postcall_qa_scoring': 'qa',
-        'postcall_complete': 'insights'
+        'postcall_complete': 'insights',
+        'post_call_transcription': 'transcription',
+        'post_call_translation': 'translation',
+        'post_call_classification': 'classification',
+        'post_call_entities': 'ner',
+        'post_call_summary': 'summarization',
+        'post_call_summarization': 'summarization',
+        'post_call_mistral_insights': 'insights',
+        'post_call_insights': 'insights',
+        'post_call_ai_service_insights': 'insights',
+        'post_call_qa_scoring': 'qa',
+        'post_call_complete': 'insights'
     }
 
     const submitFeedback = async () => {
@@ -78,13 +88,20 @@
 
         submitting.value = true
         try {
-            await axiosInstance.post('api/feedback/', {
-                call_id: props.callId,
-                task: taskMap[props.taskType] || props.taskType,
-                feedback: rating.value,
-                reason: comment.value || null
+            const resp = await fetch('/audio-api/api/v1/agent-feedback/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    call_id: props.callId,
+                    task: taskMap[props.taskType] || props.taskType,
+                    feedback: rating.value,
+                    reason: comment.value || null
+                })
             })
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
             toast.success('Feedback submitted successfully')
+            rating.value = 0
+            comment.value = ''
         } catch (err) {
             console.error('Feedback error:', err)
             toast.error('Failed to submit feedback')
