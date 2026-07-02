@@ -460,12 +460,8 @@
   const getInitials = (name) => name ? name.substring(0, 2).toUpperCase() : '??';
 
   const openCreateReporter = () => { createReporterOpen.value = true; };
-  const handleCreateReporter = async () => {
-    // Simplified creation logic
-    // In real impl, would call reporterStore.createReporter
-    // For now, mock success
+  const handleCreateReporter = () => {
     createReporterOpen.value = false;
-    toast.success("Reporter Created (Simulated)");
   };
 
   // Client/Perp Modal Logic
@@ -513,16 +509,66 @@
     toast.success("Perpetrator Added");
   };
 
-  const handleLegacyReporterUpdate = (data) => {
-    // Update local form state
-    Object.assign(reporterForm, data);
-    // treating as selected reporter for display
-    formData.step1.selectedReporter = {
-      ...data,
-      [reporterStore.reporters_k?.contact_fullname?.[0] || 2]: data.fname,
-      [reporterStore.reporters_k?.contact_phone?.[0] || 5]: data.phone
-    };
-    toast.success("Reporter Details Updated");
+  const handleLegacyReporterUpdate = async (data) => {
+    try {
+      const timestamp = Date.now();
+      const timestampSeconds = (timestamp / 1000).toFixed(3);
+      const userId = authStore.user?.id || "100";
+      const srcUid = `walkin-${userId}-${timestamp}`;
+      const srcUid2 = `${srcUid}-1`;
+      const getVal = (v) => (v !== null && v !== undefined && v !== '') ? v : '';
+      const dobTimestamp = data.dob ? Math.floor(new Date(data.dob).getTime() / 1000).toString() : '';
+
+      const payload = {
+        ".id": "",
+        src: "walkin",
+        src_ts: timestampSeconds,
+        src_uid: srcUid,
+        src_uid2: srcUid2,
+        src_callid: srcUid2,
+        src_usr: userId,
+        src_vector: "2",
+        src_address: getVal(data.phone),
+        fname: data.fname,
+        age_t: "0",
+        age: getVal(data.age),
+        dob: dobTimestamp,
+        age_group: "",
+        age_group_id: getVal(data.ageGroup),
+        sex: data.sex ? `^${data.sex}` : "",
+        sex_id: getVal(data.sex),
+        location_id: getVal(data.location),
+        landmark: getVal(data.landmark),
+        nationality_id: getVal(data.nationality),
+        lang_id: getVal(data.language),
+        tribe_id: getVal(data.tribe),
+        phone: getVal(data.phone),
+        phone2: getVal(data.phone2),
+        email: getVal(data.email),
+        national_id_type_id: getVal(data.idType),
+        national_id: getVal(data.idNumber),
+        is_refugee: getVal(data.isRefugee) || "0",
+        contact_uuid_id: "-1",
+        disposition_id: "363034",
+        activity_id: "",
+        activity_ca_id: ""
+      };
+
+      const result = await reporterStore.createReporter(payload);
+
+      if (result?.reporters?.length) {
+        const reporterArray = result.reporters[0];
+        reporterRecordId.value = reporterArray[0];
+        reporterContactId.value = reporterArray[5];
+        formData.step1.selectedReporter = reporterArray;
+        toast.success("Reporter created successfully");
+      } else {
+        throw new Error('No reporter data returned from server');
+      }
+    } catch (e) {
+      console.error('Failed to create reporter:', e);
+      toast.error("Failed to create reporter", { description: e.message });
+    }
   };
 
   // Escalation Users
