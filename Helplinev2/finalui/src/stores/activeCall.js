@@ -253,7 +253,8 @@ export const useActiveCallStore = defineStore('activeCall', () => {
         ssid.value = ''
         src_callid.value = ''
         src_uid.value = null
-        bridge_id.value = ''
+        // bridge_id is intentionally kept here — cleared by resetCall() on the next call.
+        // This ensures catch-up fetches on case-creation can still match src_callid after wrapup expires.
         startedAt.value = null
         durationSeconds.value = 0
         // Don't clear aiInsights here — insights arrive AFTER call ends (20-120s processing)

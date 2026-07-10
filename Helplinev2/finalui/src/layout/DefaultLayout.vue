@@ -124,12 +124,22 @@ watch(
     if (activeCallStore.src_callid) callIds.add(activeCallStore.src_callid)
     if (activeCallStore.lastCallUniqueId) callIds.add(activeCallStore.lastCallUniqueId)
     if (route.query.uniqueid) callIds.add(route.query.uniqueid)
+    if (route.query.call_id) callIds.add(route.query.call_id)
 
     if (callIds.size === 0) return
 
     // Find matching notification
-    const matchedNotif = notifications.find(n => callIds.has(n.ATI_BRIDGE_ID))
-    if (!matchedNotif) return
+    let matchedNotif = notifications.find(n => callIds.has(n.ATI_BRIDGE_ID))
+
+    if (!matchedNotif) {
+      // Fallback: on case-creation page, accept the first AI notification even without
+      // an ID match. bridge_id may be missing if AMI didn't connect during the call.
+      if (!isCaseCreation) return
+      matchedNotif = notifications[0]
+      if (!matchedNotif) return
+      console.log('[AI Panel] No ID match — using fallback ATI_BRIDGE_ID:', matchedNotif.ATI_BRIDGE_ID)
+      activeCallStore.setBridgeId(matchedNotif.ATI_BRIDGE_ID) // Sync for dedup + retry consistency
+    }
 
     const queryCallId = matchedNotif.ATI_BRIDGE_ID
 

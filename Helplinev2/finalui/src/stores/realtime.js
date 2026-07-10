@@ -237,6 +237,11 @@ export const useRealtimeStore = defineStore('realtime', {
       }
 
       this.atiInteractions = parsed
+
+      const aiCount = Object.values(parsed).filter(i => i.ATI_SRC === 'aii').length
+      if (aiCount > 0) {
+        console.log(`[Realtime] ATI poll: ${aiCount} AI notification(s) present`)
+      }
     },
 
     // ── Host Resolution ────────────────────────────────────────────

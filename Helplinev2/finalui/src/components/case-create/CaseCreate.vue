@@ -223,7 +223,7 @@
         // Catch-up fetch: if we landed here after a call ended and insights haven't
         // been loaded yet (e.g. ATI notification arrived before navigation completed),
         // try fetching now using the persisted call ID.
-        const catchUpId = route.query.uniqueid || activeCallStore.lastCallUniqueId
+        const catchUpId = route.query.call_id || route.query.uniqueid || activeCallStore.bridge_id || activeCallStore.lastCallUniqueId
         if (catchUpId && activeCallStore.aiInsights.length === 0) {
           fetchAiInsightsForCall(catchUpId)
         }

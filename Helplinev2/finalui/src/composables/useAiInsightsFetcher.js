@@ -25,55 +25,39 @@ export function useAiInsightsFetcher() {
     console.log('[AI Panel] Fetching insights for call_id:', queryCallId)
 
     try {
-      // Step 1: Get conversation list to find the pmessage ID
-      const { data: listData } = await axiosInstance.get('api/pmessages/', {
-        params: { src_callid: queryCallId, src: 'aii', _c: 30 },
+      // Fetch all AI messages for this call directly from the flat messages table.
+      // The ATI service stores insights via rest_uri_post("messages") — they live in
+      // the msg table (api/messages/), NOT in pmessage sessions (api/pmessages/).
+      const { data } = await axiosInstance.get('api/messages/', {
+        params: { src_callid: queryCallId, src: 'aii', _c: 30, sort: 'id' },
         headers: { 'Session-Id': authStore.sessionId }
       })
 
-      const conversations = listData.pmessages || []
-      const listKeys = listData.pmessages_k || {}
+      const messages = data.messages || []
+      const msgKeys = data.messages_k || {}
+      const srcMsgIdx = msgKeys.src_msg ? msgKeys.src_msg[0] : 17 // src_msg is at index 17
 
-      if (!conversations.length || !listKeys.id) {
-        console.log('[AI Panel] No conversations found for call_id:', queryCallId)
+      if (!messages.length) {
+        console.log('[AI Panel] No AI messages yet for call_id:', queryCallId)
+        _fetchedCallIds.delete(queryCallId)  // Allow retry when ATI notification arrives later
         return
       }
 
-      const idIdx = listKeys.id[0]
-
-      // Step 2: For each conversation fetch all individual messages
-      for (const conv of conversations) {
-        const pmessageId = conv[idIdx]
-        if (!pmessageId) continue
-
-        console.log('[AI Panel] Fetching message details for pmessage:', pmessageId)
-
-        const { data: detailData } = await axiosInstance.get(`api/pmessages/${pmessageId}?`, {
-          headers: { 'Session-Id': authStore.sessionId }
-        })
-
-        if (detailData.messages && detailData.messages_k) {
-          const msgKeys = detailData.messages_k
-          const srcMsgIdx = msgKeys.src_msg ? msgKeys.src_msg[0] : -1
-          if (srcMsgIdx === -1) continue
-
-          let added = 0
-          for (const row of detailData.messages) {
-            const rawMsg = row[srcMsgIdx]
-            if (!rawMsg) continue
-            try {
-              const decoded = JSON.parse(atob(rawMsg))
-              if (decoded && decoded.notification_type) {
-                activeCallStore.addAiInsight(decoded)
-                added++
-              }
-            } catch (e) {
-              // Skip non-JSON or invalid base64 entries
-            }
+      let added = 0
+      for (const row of messages) {
+        const rawMsg = row[srcMsgIdx]
+        if (!rawMsg) continue
+        try {
+          const decoded = JSON.parse(atob(rawMsg))
+          if (decoded && decoded.notification_type) {
+            activeCallStore.addAiInsight(decoded)
+            added++
           }
-          console.log(`[AI Panel] Decoded ${added} insights from pmessage ${pmessageId} (${detailData.messages.length} total messages)`)
+        } catch (e) {
+          // Skip non-JSON or invalid base64 entries
         }
       }
+      console.log(`[AI Panel] Decoded ${added} insights from ${messages.length} messages for call_id ${queryCallId}`)
     } catch (err) {
       console.warn('[AI Panel] Failed to fetch AI insights:', err.message)
       // Remove from fetched set so a retry is possible
