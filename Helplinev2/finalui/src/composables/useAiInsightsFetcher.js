@@ -22,7 +22,11 @@ export function useAiInsightsFetcher() {
     _aiFetchInProgress.value = true
     _fetchedCallIds.add(queryCallId)
 
-    console.log('[AI Panel] Fetching insights for call_id:', queryCallId)
+    console.group(`[AI DEBUG] fetchAiInsightsForCall — call_id: ${queryCallId}`)
+    console.log('In progress:', _aiFetchInProgress.value)
+    console.log('Already fetched:', _fetchedCallIds.has(queryCallId))
+    console.log('Fetched IDs set:', [..._fetchedCallIds])
+    console.groupEnd()
 
     try {
       // Fetch all AI messages for this call directly from the flat messages table.
@@ -37,7 +41,18 @@ export function useAiInsightsFetcher() {
       const msgKeys = data.messages_k || {}
       const srcMsgIdx = msgKeys.src_msg ? msgKeys.src_msg[0] : 17 // src_msg is at index 17
 
+      console.group('[AI DEBUG] api/messages/ response')
+      console.log('params sent        :', { src_callid: queryCallId, src: 'aii', _c: 30, sort: 'id' })
+      console.log('messages count     :', messages.length)
+      console.log('messages_k         :', msgKeys)
+      console.log('srcMsgIdx used     :', srcMsgIdx)
+      if (messages.length > 0) {
+        console.log('first raw row      :', messages[0])
+      }
+      console.groupEnd()
+
       if (!messages.length) {
+        console.warn('[AI DEBUG] api/messages/ returned 0 results for call_id:', queryCallId, '— will allow retry')
         console.log('[AI Panel] No AI messages yet for call_id:', queryCallId)
         _fetchedCallIds.delete(queryCallId)  // Allow retry when ATI notification arrives later
         return
@@ -49,6 +64,7 @@ export function useAiInsightsFetcher() {
         if (!rawMsg) continue
         try {
           const decoded = JSON.parse(atob(rawMsg))
+          console.log('[AI DEBUG] decoded insight:', decoded?.notification_type, decoded)
           if (decoded && decoded.notification_type) {
             activeCallStore.addAiInsight(decoded)
             added++
@@ -72,6 +88,7 @@ export function useAiInsightsFetcher() {
     if (_retryTimer) clearTimeout(_retryTimer)
     _retryTimer = setTimeout(() => {
       _retryTimer = null
+      console.log('[AI DEBUG] scheduleRetry firing for call_id:', queryCallId, 'after', delayMs, 'ms')
       console.log('[AI Panel] Retry fetch for late-arriving insights:', queryCallId)
       _fetchedCallIds.delete(queryCallId)
       fetchAiInsightsForCall(queryCallId)

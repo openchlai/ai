@@ -11,6 +11,7 @@ export const useActiveCallStore = defineStore('activeCall', () => {
     const src_callid = ref('')
     const src_uid = ref(null) // AMI CHAN_UNIQUEID
     const bridge_id = ref('') // AMI CHAN_BRIDGE_ID — used for AI insight matching
+    const lastCallerUniqueId = ref('') // CHAN_UNIQUEID_2 — the caller's Asterisk uniqueid, equals ATI_BRIDGE_ID
     const aiInsights = ref([]) // Decoded AI insight payloads for current call
     const _seenInsightTypes = new Set() // Dedup tracker (notification_type keys)
     const lastCallUniqueId = ref('') // Persists the call's CHAN_UNIQUEID across wrapup into case-creation
@@ -61,6 +62,12 @@ export const useActiveCallStore = defineStore('activeCall', () => {
         if (callState.value !== 'idle') {
             console.warn('[STORE-DEBUG] Incoming call while busy - overriding session', callState.value)
             resetCall() // Force clear previous outbound state
+        } else {
+            // New call on idle — clear previous call's AI state for fresh start
+            clearAiInsights()
+            bridge_id.value = ''
+            lastCallUniqueId.value = ''
+            lastCallerUniqueId.value = ''
         }
 
         currentSession.value = session
@@ -273,6 +280,7 @@ export const useActiveCallStore = defineStore('activeCall', () => {
         src_uid.value = null
         bridge_id.value = ''
         lastCallUniqueId.value = ''
+        lastCallerUniqueId.value = ''
         startedAt.value = null
         durationSeconds.value = 0
         hasAudioTrack.value = false
@@ -302,6 +310,10 @@ export const useActiveCallStore = defineStore('activeCall', () => {
             console.log('[ActiveCall] Bridge ID set:', id)
             bridge_id.value = id
         }
+    }
+
+    function setCallerUniqueId(uid) {
+        if (uid) lastCallerUniqueId.value = uid
     }
 
     function addAiInsight(payload) {
@@ -528,6 +540,7 @@ export const useActiveCallStore = defineStore('activeCall', () => {
         src_callid,
         src_uid,
         bridge_id,
+        lastCallerUniqueId,
         aiInsights,
         lastCallUniqueId,
         startedAt,
@@ -549,6 +562,7 @@ export const useActiveCallStore = defineStore('activeCall', () => {
         endWrapup,
         setAmiUniqueId,
         setBridgeId,
+        setCallerUniqueId,
         addAiInsight,
         clearAiInsights,
         autoAnswerEnabled,

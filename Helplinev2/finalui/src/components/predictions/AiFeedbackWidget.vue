@@ -15,7 +15,13 @@
             <div v-else class="text-[10px] opacity-30 italic">Feedback unavailable</div>
         </div>
 
-        <div v-if="rating > 0" class="mt-3 space-y-3 animate-fadeIn">
+        <div v-if="submitted" class="mt-3 flex items-center gap-2 animate-fadeIn"
+            :class="isDarkMode ? 'text-green-400' : 'text-green-600'">
+            <i-mdi-check-circle class="w-4 h-4 flex-shrink-0" />
+            <span class="text-xs font-medium">Feedback submitted. Thank you!</span>
+        </div>
+
+        <div v-else-if="rating > 0" class="mt-3 space-y-3 animate-fadeIn">
             <textarea v-model="comment" rows="2" placeholder="Optional comments..."
                 class="w-full rounded-lg text-sm p-3 focus:outline-none focus:ring-2 transition-all resize-none" :class="isDarkMode
                     ? 'bg-neutral-900 border border-neutral-700 text-gray-200 focus:ring-indigo-500/50'
@@ -54,6 +60,7 @@
     const rating = ref(0)
     const comment = ref('')
     const submitting = ref(false)
+    const submitted = ref(false)
 
     const setRating = (val) => {
         rating.value = val
@@ -78,12 +85,18 @@
 
         submitting.value = true
         try {
-            await axiosInstance.post('api/feedback/', {
-                call_id: props.callId,
-                task: taskMap[props.taskType] || props.taskType,
-                feedback: rating.value,
-                reason: comment.value || null
+            const res = await fetch('/audio-api/api/v1/agent-feedback/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    call_id: props.callId,
+                    task: taskMap[props.taskType] || props.taskType,
+                    feedback: rating.value,
+                    reason: comment.value || null
+                })
             })
+            if (!res.ok) throw new Error(`HTTP ${res.status}`)
+            submitted.value = true
             toast.success('Feedback submitted successfully')
         } catch (err) {
             console.error('Feedback error:', err)
