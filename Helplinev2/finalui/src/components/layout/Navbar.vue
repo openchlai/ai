@@ -29,10 +29,10 @@
           </span>
 
           <!-- Extension -->
-          <span v-if="authStore.user?.extension && queueStatus !== 'offline'"
+          <span v-if="sipStore.extension && queueStatus !== 'offline'"
             class="text-[10px] font-medium opacity-50 border-l pl-3"
             :class="isDarkMode ? 'border-white/10' : 'border-gray-200'">
-            Ext {{ authStore.user.extension }}
+            Ext {{ sipStore.extension }}
           </span>
 
           <!-- Caller Number (ringing/active/wrapup) -->
@@ -169,7 +169,7 @@
 
                 <div class="px-4 py-2 text-[11px] font-bold text-gray-500 opacity-80 flex items-center gap-2">
                   <i-mdi-phone-outline class="w-4 h-4" />
-                  Extension {{ authStore.user?.extension || '---' }}
+                  Extension {{ sipStore.extension || authStore.profile?.extension || authStore.profile?.exten || '---' }}
                 </div>
 
                 <!-- Auto Answer Toggle -->
