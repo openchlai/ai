@@ -237,6 +237,11 @@ export const useRealtimeStore = defineStore('realtime', {
       }
 
       this.atiInteractions = parsed
+
+      const aiCount = Object.values(parsed).filter(i => i.ATI_SRC === 'aii').length
+      if (aiCount > 0) {
+        console.log(`[Realtime] ATI poll: ${aiCount} AI notification(s) present`)
+      }
     },
 
     // ── Host Resolution ────────────────────────────────────────────
@@ -263,9 +268,10 @@ export const useRealtimeStore = defineStore('realtime', {
       if (this._amiWs && this.amiReady === 'open') return
 
       const taxonomyStore = useTaxonomyStore()
-      // Use proxy path so requests go through Vite (dev) or nginx (prod)
+      const amiEnvUrl = import.meta.env.VITE_AMI_WS_URL
       const amiPath = taxonomyStore.endpoints?.AMI_WS_PATH || '/ami/sync'
-      const resolved = this.resolveWsHost(amiPath)
+      const base = amiEnvUrl || amiPath
+      const resolved = this.resolveWsHost(base)
       const url = `${resolved}${resolved.includes('?') ? '&' : '?'}c=-2`
 
       console.log('[Realtime] Connecting AMI:', url)
@@ -284,14 +290,15 @@ export const useRealtimeStore = defineStore('realtime', {
           try { this.handleAmiMessage(ev.data) } catch {}
         }
 
-        ws.onclose = () => {
-          console.log('[Realtime] AMI disconnected')
+        ws.onclose = (ev) => {
+          console.log(`[Realtime] AMI disconnected — code=${ev.code} reason="${ev.reason}" wasClean=${ev.wasClean}`)
           this.amiReady = 'closed'
           this._amiWs = null
           this.scheduleReconnect('ami')
         }
 
-        ws.onerror = () => {
+        ws.onerror = (ev) => {
+          console.warn('[Realtime] AMI error', ev)
           this.amiReady = 'error'
         }
 

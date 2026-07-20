@@ -20,28 +20,27 @@ export const ENVIRONMENT_REGISTRY = {
         COUNTRY_CODE: "255",
         ENDPOINTS: {
             API_BASE: "/api-proxy",
-            BACKEND_URL: "https://192.168.10.3",
+            BACKEND_URL: "https://10.200.0.3",
             BACKEND_PATH: "/hh19jan2026",
-            GATEWAY_AUTH: "https://192.168.10.3/v1/token/",
-            GATEWAY_SEND_MSG: "https://192.168.10.3/v1/chat/",
-            AMI_HOST: "wss://192.168.10.3:8384/ami/sync",
-            ATI_HOST: "wss://192.168.10.3:8384/ati/sync",
+            GATEWAY_AUTH: "https://10.200.0.3/v1/token/",
+            GATEWAY_SEND_MSG: "https://10.200.0.3/v1/chat/",
+            AMI_HOST: "wss://10.200.0.3:8384/ami/sync",
+            ATI_HOST: "wss://10.200.0.3:8384/ati/sync",
             // Dev Proxy Targets (used by vite.config.js and smart proxy logic)
-            DEV_TARGET_API: "https://192.168.10.3",
-            DEV_TARGET_AMI: "https://192.168.10.3:8384",
-            DEV_TARGET_ATI: "https://192.168.10.3:8384",
-            DEV_TARGET_SIP: "https://192.168.10.3:8089",
-            DEV_TARGET_AI_SERVICE: "http://192.168.10.6:8125",
+            DEV_TARGET_API: "https://10.200.0.3",
+            DEV_TARGET_AMI: "https://10.200.0.3:8384",
+            DEV_TARGET_ATI: "https://10.200.0.3:8384",
+            DEV_TARGET_SIP: "https://10.200.0.3:8089",
             SIP_WS_PATH: "/ws/",
             AMI_WS_PATH: "/ami/sync",
             ATI_WS_PATH: "/ati/sync"
         },
         VOIP: {
-            SIP_HOST: "192.168.10.3",
-            SIP_WS_URL: "wss://192.168.10.3:8089/ws",
+            SIP_HOST: "10.200.0.3",
+            SIP_WS_URL: "wss://10.200.0.3:8089/ws",
             SIP_USER_PREFIX: "0",
             SIP_PASS_PREFIX: "0",
-            ICE_SERVERS: parseIceServers(import.meta.env?.VITE_TZ_STUN_SERVERS || 'stun:stun.l.google.com:19302,stun:192.168.10.3:3479')
+            ICE_SERVERS: parseIceServers(import.meta.env?.VITE_TZ_STUN_SERVERS || 'stun:stun.l.google.com:19302,stun:10.200.0.3:3479')
         },
         ROOTS: {
             CASE_CATEGORY: "362559",
@@ -85,31 +84,30 @@ export const ENVIRONMENT_REGISTRY = {
         }
     },
 
-    // --- KENYA LOCAL / LAN CONFIG (192.168.8.13) ---
+    // --- KENYA LOCAL / LAN CONFIG (10.200.0.3) ---
     'KE_LOCAL': {
         COUNTRY_NAME: "Kenya Local",
         COUNTRY_CODE: "254",
         ENDPOINTS: {
             API_BASE: "/api-proxy",
-            BACKEND_URL: "https://192.168.8.13",
+            BACKEND_URL: "https://10.200.0.3",
             BACKEND_PATH: "/helpline",
             GATEWAY_AUTH: "https://demo-openchs.bitz-itc.com/api/token/",
             GATEWAY_SEND_MSG: "https://backend.bitz-itc.com/api/whatsapp/whatsapp/send/",
-            AMI_HOST: "wss://192.168.8.13:8384/ami/sync",
-            ATI_HOST: "wss://192.168.8.13:8384/ati/sync",
+            AMI_HOST: "wss://10.200.0.3:8384/ami/sync",
+            ATI_HOST: "wss://10.200.0.3:8384/ati/sync",
             // Dev Proxy Targets
-            DEV_TARGET_API: "https://192.168.8.13",
-            DEV_TARGET_AMI: "https://192.168.8.13:8384",
-            DEV_TARGET_ATI: "https://192.168.8.13:8384",
-            DEV_TARGET_SIP: "https://192.168.8.13:8089",
-            DEV_TARGET_AI_SERVICE: "http://192.168.8.18:8125",
+            DEV_TARGET_API: "https://10.200.0.3",
+            DEV_TARGET_AMI: "https://10.200.0.3:8384",
+            DEV_TARGET_ATI: "https://10.200.0.3:8384",
+            DEV_TARGET_SIP: "https://10.200.0.3:8089",
             SIP_WS_PATH: "/ws/",
             AMI_WS_PATH: "/ami/sync",
             ATI_WS_PATH: "/ati/sync"
         },
         VOIP: {
-            SIP_HOST: "192.168.8.13",
-            SIP_WS_URL: "wss://192.168.8.13/ws/",
+            SIP_HOST: "10.200.0.3",
+            SIP_WS_URL: "wss://10.200.0.3/ws/",
             SIP_USER_PREFIX: "",
             SIP_PASS_PREFIX: import.meta.env?.VITE_SIP_PASS_PREFIX || '',
             ICE_SERVERS: parseIceServers()
@@ -156,31 +154,30 @@ export const ENVIRONMENT_REGISTRY = {
         }
     },
 
-    // --- KENYA VPN CONFIG (192.168.10.119 → same backend as KE_LOCAL) ---
+    // --- KENYA VPN CONFIG (10.200.0.3 → same backend as KE_LOCAL) ---
     'KE_VPN': {
         COUNTRY_NAME: "Kenya VPN",
         COUNTRY_CODE: "254",
         ENDPOINTS: {
             API_BASE: "/api-proxy",
-            BACKEND_URL: "https://192.168.10.119",
+            BACKEND_URL: "https://10.200.0.3",
             BACKEND_PATH: "/helpline",
             GATEWAY_AUTH: "https://demo-openchs.bitz-itc.com/api/token/",
             GATEWAY_SEND_MSG: "https://backend.bitz-itc.com/api/whatsapp/whatsapp/send/",
-            AMI_HOST: "wss://192.168.10.119:8384/ami/sync",
-            ATI_HOST: "wss://192.168.10.119:8384/ati/sync",
+            AMI_HOST: "wss://10.200.0.3:8384/ami/sync",
+            ATI_HOST: "wss://10.200.0.3:8384/ati/sync",
             // Dev Proxy Targets
-            DEV_TARGET_API: "https://192.168.10.119",
-            DEV_TARGET_AMI: "https://192.168.10.119:8384",
-            DEV_TARGET_ATI: "https://192.168.10.119:8384",
-            DEV_TARGET_SIP: "https://192.168.10.119:8089",
-            DEV_TARGET_AI_SERVICE: "http://192.168.10.6:8125",
+            DEV_TARGET_API: "https://10.200.0.3",
+            DEV_TARGET_AMI: "https://10.200.0.3:8384",
+            DEV_TARGET_ATI: "https://10.200.0.3:8384",
+            DEV_TARGET_SIP: "https://10.200.0.3:8089",
             SIP_WS_PATH: "/ws/",
             AMI_WS_PATH: "/ami/sync",
             ATI_WS_PATH: "/ati/sync"
         },
         VOIP: {
-            SIP_HOST: "192.168.10.119",
-            SIP_WS_URL: "wss://192.168.10.119/ws/",
+            SIP_HOST: "10.200.0.3",
+            SIP_WS_URL: "wss://10.200.0.3/ws/",
             SIP_USER_PREFIX: "",
             SIP_PASS_PREFIX: import.meta.env?.VITE_SIP_PASS_PREFIX || '',
             ICE_SERVERS: parseIceServers()
@@ -244,7 +241,6 @@ export const ENVIRONMENT_REGISTRY = {
             DEV_TARGET_AMI: "https://demo-openchs.bitz-itc.com:8384",
             DEV_TARGET_ATI: "https://demo-openchs.bitz-itc.com:8384",
             DEV_TARGET_SIP: "https://demo-openchs.bitz-itc.com:8089",
-            DEV_TARGET_AI_SERVICE: "http://192.168.10.6:8125",
             SIP_WS_PATH: "/ws/",
             AMI_WS_PATH: "/ami/sync",
             ATI_WS_PATH: "/ati/sync"

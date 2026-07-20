@@ -317,7 +317,7 @@
 
 <script setup>
   import { ref, reactive, inject, onMounted, computed, watch } from 'vue';
-  import { useRouter } from 'vue-router';
+  import { useRouter, useRoute } from 'vue-router';
   import { toast } from 'vue-sonner';
 
   import LegacyCaseLayout from './LegacyCaseLayout.vue';
@@ -345,6 +345,7 @@
   import { useAuthStore } from '@/stores/auth';
 
   const router = useRouter();
+  const route = useRoute();
   const isDarkMode = inject('isDarkMode');
 
   const casesStore = useCaseStore();
@@ -413,7 +414,7 @@
 
     // Catch-up fetch: if we landed here after a call ended and insights haven't
     // been loaded yet, try fetching using the persisted call ID from the store.
-    const catchUpId = activeCallStore.lastCallUniqueId
+    const catchUpId = route.query.call_id || route.query.uniqueid || activeCallStore.bridge_id || activeCallStore.lastCallUniqueId
     if (catchUpId && activeCallStore.aiInsights.length === 0) {
       fetchAiInsightsForCall(catchUpId)
     }

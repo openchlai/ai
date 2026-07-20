@@ -82,18 +82,33 @@ watch(
     const ext = authStore.profile?.extension || authStore.profile?.exten
     if (!ext) return
 
-    const match = channels.find(ch =>
-      ch.CHAN_EXTEN === String(ext) ||
-      ch.CHAN_CALLERID_NUM === activeCallStore.callerNumber
+    const matches = channels.filter(ch =>
+      (ch.CHAN_EXTEN === String(ext) ||
+       ch.CHAN_CALLERID_NUM === activeCallStore.callerNumber) &&
+      (ch.CHAN_STATE_UP || ch.CHAN_STATE_QUEUE || ch.CHAN_STATE_CONNECT)
     )
+    // Sort descending by CHAN_UNIQUEID (epoch.sequence) so the most recently
+    // created channel wins — stale channels from prior calls sort to the back.
+    const match = matches.sort((a, b) =>
+      parseFloat(b.CHAN_UNIQUEID) - parseFloat(a.CHAN_UNIQUEID)
+    )[0]
 
     if (match) {
+      console.group('[AMI] Call ID snapshot — state: ' + activeCallStore.callState)
+      console.log('candidates          :', matches.length, '→ UIDs:', matches.map(c => c.CHAN_UNIQUEID))
+      console.log('selected CHAN_UNIQUEID  :', match.CHAN_UNIQUEID)
+      console.log('selected CHAN_UNIQUEID_2:', match.CHAN_UNIQUEID_2, '← = ATI_BRIDGE_ID (stored as lastCallerUniqueId)')
+      console.log('selected CHAN_BRIDGE_ID :', match.CHAN_BRIDGE_ID)
+      console.groupEnd()
+
       if (!activeCallStore.src_uid && match.CHAN_UNIQUEID) {
-        console.log('[Realtime] AMI enrichment: syncing UniqueID', match.CHAN_UNIQUEID)
         activeCallStore.setAmiUniqueId(match.CHAN_UNIQUEID)
       }
       if (match.CHAN_BRIDGE_ID) {
         activeCallStore.setBridgeId(match.CHAN_BRIDGE_ID)
+      }
+      if (match.CHAN_UNIQUEID_2) {
+        activeCallStore.setCallerUniqueId(match.CHAN_UNIQUEID_2)
       }
     }
   }
@@ -111,11 +126,14 @@ watch(
   async (notifications) => {
     if (!notifications.length) return
 
-    // Allow processing during active call, wrapup, OR while on case-creation page
-    const isActiveCall = ['active', 'wrapup'].includes(activeCallStore.callState)
-    const isCaseCreation = route.path.includes('case-creation')
+    // AI insights are post-call; block entirely during live call states
+    const callIsLive = ['active', 'calling', 'ringing'].includes(activeCallStore.callState)
+    if (callIsLive) return
 
-    if (!isActiveCall && !isCaseCreation) return
+    const isCaseCreation = route.path.includes('case-creation')
+    const isWrapup = activeCallStore.callState === 'wrapup'
+
+    if (!isWrapup && !isCaseCreation) return
 
     // Collect all possible IDs to match against ATI_BRIDGE_ID
     const callIds = new Set()
@@ -123,17 +141,43 @@ watch(
     if (activeCallStore.src_uid) callIds.add(activeCallStore.src_uid)
     if (activeCallStore.src_callid) callIds.add(activeCallStore.src_callid)
     if (activeCallStore.lastCallUniqueId) callIds.add(activeCallStore.lastCallUniqueId)
+    if (activeCallStore.lastCallerUniqueId) callIds.add(activeCallStore.lastCallerUniqueId)
     if (route.query.uniqueid) callIds.add(route.query.uniqueid)
+    if (route.query.call_id) callIds.add(route.query.call_id)
 
     if (callIds.size === 0) return
 
     // Find matching notification
-    const matchedNotif = notifications.find(n => callIds.has(n.ATI_BRIDGE_ID))
-    if (!matchedNotif) return
+    let matchedNotif = notifications.find(n => callIds.has(n.ATI_BRIDGE_ID))
+
+    if (!matchedNotif) {
+      // Only use fallback when: on case-creation page AND no insights loaded yet.
+      // If insights already loaded (e.g. from catch-up fetch), don't pick a different
+      // call's notification — that would add a second call's insights on top.
+      if (!isCaseCreation || activeCallStore.aiInsights.length > 0) return
+      matchedNotif = notifications.reduce((latest, n) => {
+        return parseFloat(n.ATI_BRIDGE_ID) > parseFloat(latest.ATI_BRIDGE_ID) ? n : latest
+      }, notifications[0])
+      if (!matchedNotif) return
+      console.log('[AI Panel] No ID match — using fallback ATI_BRIDGE_ID:', matchedNotif.ATI_BRIDGE_ID)
+      activeCallStore.setBridgeId(matchedNotif.ATI_BRIDGE_ID)
+    }
 
     const queryCallId = matchedNotif.ATI_BRIDGE_ID
 
+    console.group('[AI DEBUG] ATI notification — call ID resolution')
+    console.log('ATI_BRIDGE_ID (from notification)  :', queryCallId)
+    console.log('activeCallStore.bridge_id           :', activeCallStore.bridge_id)
+    console.log('activeCallStore.lastCallUniqueId     :', activeCallStore.lastCallUniqueId)
+    console.log('activeCallStore.src_uid              :', activeCallStore.src_uid)
+    console.log('activeCallStore.src_callid           :', activeCallStore.src_callid)
+    console.log('activeCallStore.callState            :', activeCallStore.callState)
+    console.log('route.query.call_id                  :', route.query.call_id)
+    console.log('route.query.uniqueid                 :', route.query.uniqueid)
+    console.groupEnd()
+
     console.log('[AI Panel] ATI notification matched call_id:', queryCallId)
+    console.log('Call Ids in store:', Array.from(callIds).join(', '))
 
     await fetchAiInsightsForCall(queryCallId)
     scheduleRetry(queryCallId)
