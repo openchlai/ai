@@ -19,6 +19,10 @@ export function useAiInsightsFetcher() {
     if (!queryCallId || _aiFetchInProgress.value) return
     if (_fetchedCallIds.has(queryCallId)) return
 
+    // Never fetch insights while a call is live — they are post-call only
+    const callIsLive = ['active', 'calling', 'ringing'].includes(activeCallStore.callState)
+    if (callIsLive) return
+
     _aiFetchInProgress.value = true
     _fetchedCallIds.add(queryCallId)
 
@@ -83,11 +87,19 @@ export function useAiInsightsFetcher() {
     }
   }
 
-  // Schedule a one-time retry to catch late-arriving insights (AI pipeline may still be writing)
+  // Schedule a one-time retry to catch late-arriving insights (AI pipeline may still be writing).
+  // Snapshots the current bridge_id so the retry is silently dropped if the call context
+  // has changed by the time the timer fires (prevents stale call 1 data leaking into call 2).
   function scheduleRetry(queryCallId, delayMs = 15000) {
     if (_retryTimer) clearTimeout(_retryTimer)
+    const snapshotBridgeId = activeCallStore.bridge_id
     _retryTimer = setTimeout(() => {
       _retryTimer = null
+      // If the bridge ID changed since scheduling, this retry belongs to a stale call — skip it
+      if (activeCallStore.bridge_id !== snapshotBridgeId) {
+        console.log('[AI DEBUG] scheduleRetry cancelled — bridge_id changed from', snapshotBridgeId, 'to', activeCallStore.bridge_id)
+        return
+      }
       console.log('[AI DEBUG] scheduleRetry firing for call_id:', queryCallId, 'after', delayMs, 'ms')
       console.log('[AI Panel] Retry fetch for late-arriving insights:', queryCallId)
       _fetchedCallIds.delete(queryCallId)
