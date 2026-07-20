@@ -74,8 +74,11 @@ export default defineConfig(({ mode }) => {
             });
           },
         },
+        // NOTE FOR PRODUCTION (nginx): /audio-api/ must be proxied to the AI service
+        // (DEV_TARGET_AI_SERVICE) in your nginx config — required for both audio uploads
+        // and feedback submission (POST /audio-api/api/v1/agent-feedback/update).
         '/audio-api': {
-          target: 'http://192.168.8.18:8125',
+          target: endpoints.DEV_TARGET_AI_SERVICE || 'http://192.168.8.18:8125',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/audio-api/, ''),
         },
