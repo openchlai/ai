@@ -151,16 +151,13 @@ watch(
     let matchedNotif = notifications.find(n => callIds.has(n.ATI_BRIDGE_ID))
 
     if (!matchedNotif) {
-      // Only use fallback when: on case-creation page AND no insights loaded yet.
-      // If insights already loaded (e.g. from catch-up fetch), don't pick a different
-      // call's notification — that would add a second call's insights on top.
-      if (!isCaseCreation || activeCallStore.aiInsights.length > 0) return
-      matchedNotif = notifications.reduce((latest, n) => {
-        return parseFloat(n.ATI_BRIDGE_ID) > parseFloat(latest.ATI_BRIDGE_ID) ? n : latest
-      }, notifications[0])
-      if (!matchedNotif) return
-      console.log('[AI Panel] No ID match — using fallback ATI_BRIDGE_ID:', matchedNotif.ATI_BRIDGE_ID)
-      activeCallStore.setBridgeId(matchedNotif.ATI_BRIDGE_ID)
+      // No ATI notification matches any of our known call IDs — the real notification
+      // for this call hasn't arrived yet (AI pipeline takes 20–120s post-call).
+      // Do NOT fall back to the numerically largest ATI_BRIDGE_ID; that would pick up
+      // a stale notification from a previous call and load the wrong insights.
+      // Just wait — the watcher will fire again when the correct notification arrives.
+      console.log('[AI Panel] No ID match for current call IDs:', Array.from(callIds), '— waiting for correct ATI notification')
+      return
     }
 
     const queryCallId = matchedNotif.ATI_BRIDGE_ID
