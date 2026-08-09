@@ -12,7 +12,7 @@ soundfile==0.13.1
 peft==0.17.1
 
 # MLflow and Experiment Tracking
-mlflow==3.4.0
+mlflow==3.11.0rc1
 tensorboard==2.20.0
 wandb==0.22.1
 
@@ -30,12 +30,12 @@ huggingface-hub==0.35.3
 pyngrok==7.4.0
 
 # Development and Formatting Tools
-black==25.9.0
+black==26.3.1
 isort==6.0.1
 flake8==7.3.0
 
 # System and Utilities
-requests==2.32.5
+requests==2.33.0
 tqdm==4.67.1
 
 # Optional: Jupyter for notebooks
